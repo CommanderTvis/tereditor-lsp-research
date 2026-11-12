@@ -1,0 +1,18 @@
+diff --git a/src/MediatR/Pipeline/IRequestPreProcessor.cs b/src/MediatR/Pipeline/IRequestPreProcessor.cs
+index 35079fe..e524ed3 100644
+--- a/src/MediatR/Pipeline/IRequestPreProcessor.cs
++++ b/src/MediatR/Pipeline/IRequestPreProcessor.cs
+@@ -10,10 +10,10 @@ namespace MediatR.Pipeline;
+ public interface IRequestPreProcessor<in TRequest> where TRequest : notnull
+ {
+     /// <summary>
+-    /// Process method executes before calling the Handle method on your handler
++    /// PreProcess method executes before calling the Handle method on your handler
+     /// </summary>
+     /// <param name="request">Incoming request</param>
+     /// <param name="cancellationToken">Cancellation token</param>
+     /// <returns>An awaitable task</returns>
+-    Task Process(TRequest request, CancellationToken cancellationToken);
++    Task PreProcess(TRequest request, CancellationToken cancellationToken);
+ }
+\ No newline at end of file

@@ -1,0 +1,2 @@
+type = "compile"
+origin = "checker-detectable breakage (Barber); API change ripple"

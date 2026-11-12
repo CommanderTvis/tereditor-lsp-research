@@ -1,0 +1,5 @@
+[
+  {"name": "references at position (Class overload)", "args": {"operation": "references", "path": "gson/src/main/java/com/google/gson/Gson.java", "line": 406, "column": 28}, "expect": ["gson/src/test/java/com/google/gson/GsonTest.java:199"]},
+  {"name": "references by name Gson/getAdapter", "args": {"operation": "references", "query": "Gson/getAdapter"}, "expect": ["gson/src/test/java/com/google/gson/GsonTest.java:199"]},
+  {"name": "logs", "tool": "lsp_status", "args": {"operation": "logs", "server": "intellij"}, "expect": []}
+]

@@ -1,0 +1,11 @@
+# C#, small: MediatR, in-process mediator. Generic handler interfaces (IRequestHandler<,>, INotificationHandler<>),
+# pipeline behaviors, open-generic registration, many same-named handler classes across tests and samples.
+lang = "csharp"
+size = "small"
+repo = "https://github.com/LuckyPennySoftware/MediatR"
+commit = "8a64581e2570e7410c5f44835d9ea112beccbe6b"
+tag = "v12.5.0"
+loc_command = "find . -name '*.cs' -not -path './.git/*' | xargs cat | wc -l"
+loc = 9950
+stripped = []
+task_types = ["refs", "dispatch", "rename", "compile", "bugfix"]

@@ -1,0 +1,9 @@
+stratum,outcome,contrast,estimate,ci_lo,ci_hi,p,tasks,cells,p_adj
+task_type=refs,success (pp),intellij-optional - baseline,0.0,0.0,0.0,1.0,1,1,1.0
+task_type=refs,cost ratio,intellij-optional / baseline,1.0696449108254833,1.0696449108254833,1.0696449108254833,1.0,1,1,1.0
+task_type=refs,success (pp),intellij-enforced - baseline,0.0,0.0,0.0,1.0,1,1,1.0
+task_type=refs,cost ratio,intellij-enforced / baseline,1.1844735634649652,1.1844735634649652,1.1844735634649652,1.0,1,1,1.0
+task_type=rename,success (pp),intellij-optional - baseline,0.0,0.0,0.0,1.0,1,1,1.0
+task_type=rename,cost ratio,intellij-optional / baseline,1.1184399915172791,1.1184399915172791,1.1184399915172791,1.0,1,1,1.0
+task_type=rename,success (pp),intellij-enforced - baseline,0.0,0.0,0.0,1.0,1,1,1.0
+task_type=rename,cost ratio,intellij-enforced / baseline,3.46895233883958,3.46895233883958,3.46895233883958,1.0,1,1,1.0

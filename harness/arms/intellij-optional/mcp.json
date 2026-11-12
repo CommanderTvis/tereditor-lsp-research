@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "sharprail": { "command": "sudo", "args": ["-n", "-u", "sharprail", "/usr/local/bin/sharprail-mcp", "intellij-optional"] }
+  }
+}

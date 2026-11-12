@@ -1,0 +1,9 @@
+/results/runs-*/
+/results/*/runs/
+/results/probe/
+/results/validate/
+/.build-*.log
+.DS_Store
+__pycache__/
+/license.zip
+/.probe.log

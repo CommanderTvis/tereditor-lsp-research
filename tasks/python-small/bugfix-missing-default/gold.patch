@@ -1,0 +1,13 @@
+diff --git b/toolz/itertoolz.py a/toolz/itertoolz.py
+index d403c51..05c36cc 100644
+--- b/toolz/itertoolz.py
++++ a/toolz/itertoolz.py
+@@ -407,7 +407,7 @@ rest = partial(drop, 1)
+ def _get(ind, seq, default):
+     try:
+         return seq[ind]
+-    except KeyError:
++    except (KeyError, IndexError):
+         return default
+ 
+ 

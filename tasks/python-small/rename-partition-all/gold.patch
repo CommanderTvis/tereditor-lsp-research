@@ -1,0 +1,123 @@
+diff --git a/toolz/curried/__init__.py b/toolz/curried/__init__.py
+index 356eddb..f2aa7bd 100644
+--- a/toolz/curried/__init__.py
++++ b/toolz/curried/__init__.py
+@@ -80,7 +80,7 @@ mapcat = toolz.curry(toolz.mapcat)
+ nth = toolz.curry(toolz.nth)
+ partial = toolz.curry(toolz.partial)
+ partition = toolz.curry(toolz.partition)
+-partition_all = toolz.curry(toolz.partition_all)
++chunked = toolz.curry(toolz.chunked)
+ partitionby = toolz.curry(toolz.partitionby)
+ peekn = toolz.curry(toolz.peekn)
+ pluck = toolz.curry(toolz.pluck)
+diff --git a/toolz/itertoolz.py b/toolz/itertoolz.py
+index 05c36cc..8877bf9 100644
+--- a/toolz/itertoolz.py
++++ b/toolz/itertoolz.py
+@@ -12,7 +12,7 @@ __all__ = ('remove', 'accumulate', 'groupby', 'merge_sorted', 'interleave',
+            'unique', 'isiterable', 'isdistinct', 'take', 'drop', 'take_nth',
+            'first', 'second', 'nth', 'last', 'get', 'concat', 'concatv',
+            'mapcat', 'cons', 'interpose', 'frequencies', 'reduceby', 'iterate',
+-           'sliding_window', 'partition', 'partition_all', 'count', 'pluck',
++           'sliding_window', 'partition', 'chunked', 'count', 'pluck',
+            'join', 'tail', 'diff', 'topk', 'peek', 'peekn', 'random_sample')
+ 
+ 
+@@ -695,7 +695,7 @@ def partition(n, seq, pad=no_pad):
+     [(1, 2), (3, 4), (5, None)]
+ 
+     See Also:
+-        partition_all
++        chunked
+     """
+     args = [iter(seq)] * n
+     if pad is no_pad:
+@@ -704,15 +704,15 @@ def partition(n, seq, pad=no_pad):
+         return zip_longest(*args, fillvalue=pad)
+ 
+ 
+-def partition_all(n, seq):
++def chunked(n, seq):
+     """ Partition all elements of sequence into tuples of length at most n
+ 
+     The final tuple may be shorter to accommodate extra elements.
+ 
+-    >>> list(partition_all(2, [1, 2, 3, 4]))
++    >>> list(chunked(2, [1, 2, 3, 4]))
+     [(1, 2), (3, 4)]
+ 
+-    >>> list(partition_all(2, [1, 2, 3, 4, 5]))
++    >>> list(chunked(2, [1, 2, 3, 4, 5]))
+     [(1, 2), (3, 4), (5,)]
+ 
+     See Also:
+diff --git a/toolz/sandbox/parallel.py b/toolz/sandbox/parallel.py
+index e47a124..f589472 100644
+--- a/toolz/sandbox/parallel.py
++++ b/toolz/sandbox/parallel.py
+@@ -1,5 +1,5 @@
+ import functools
+-from toolz.itertoolz import partition_all
++from toolz.itertoolz import chunked
+ from toolz.utils import no_default
+ 
+ 
+@@ -63,7 +63,7 @@ def fold(binop, seq, default=no_default, map=map, chunksize=128, combine=None):
+     if combine is None:
+         combine = binop
+ 
+-    chunks = partition_all(chunksize, seq)
++    chunks = chunked(chunksize, seq)
+ 
+     # Evaluate sequence in chunks via map
+     if default == no_default:
+diff --git a/toolz/tests/test_itertoolz.py b/toolz/tests/test_itertoolz.py
+index d20da2b..e962402 100644
+--- a/toolz/tests/test_itertoolz.py
++++ b/toolz/tests/test_itertoolz.py
+@@ -12,7 +12,7 @@ from toolz.itertoolz import (remove, groupby, merge_sorted,
+                              rest, last, cons, frequencies,
+                              reduceby, iterate, accumulate,
+                              sliding_window, count, partition,
+-                             partition_all, take_nth, pluck, join,
++                             chunked, take_nth, pluck, join,
+                              diff, topk, peek, peekn, random_sample)
+ from operator import add, mul
+ 
+@@ -344,9 +344,9 @@ def test_partition():
+ 
+ 
+ def test_partition_all():
+-    assert list(partition_all(2, [1, 2, 3, 4])) == [(1, 2), (3, 4)]
+-    assert list(partition_all(3, range(5))) == [(0, 1, 2), (3, 4)]
+-    assert list(partition_all(2, [])) == []
++    assert list(chunked(2, [1, 2, 3, 4])) == [(1, 2), (3, 4)]
++    assert list(chunked(3, range(5))) == [(0, 1, 2), (3, 4)]
++    assert list(chunked(2, [])) == []
+ 
+     # Regression test: https://github.com/pytoolz/toolz/issues/387
+     class NoCompare:
+@@ -356,8 +356,8 @@ def test_partition_all():
+             raise ValueError()
+     obj = NoCompare()
+     result = [(obj, obj, obj, obj), (obj, obj, obj)]
+-    assert list(partition_all(4, [obj]*7)) == result
+-    assert list(partition_all(4, iter([obj]*7))) == result
++    assert list(chunked(4, [obj]*7)) == result
++    assert list(chunked(4, iter([obj]*7))) == result
+ 
+     # Test invalid __len__: https://github.com/pytoolz/toolz/issues/602
+     class ListWithBadLength(list):
+@@ -369,9 +369,9 @@ def test_partition_all():
+             return super().__len__() + self.off_by
+ 
+     too_long_list = ListWithBadLength([1, 2], off_by=+1)
+-    assert raises(LookupError, lambda: list(partition_all(5, too_long_list)))
++    assert raises(LookupError, lambda: list(chunked(5, too_long_list)))
+     too_short_list = ListWithBadLength([1, 2], off_by=-1)
+-    assert raises(LookupError, lambda: list(partition_all(5, too_short_list)))
++    assert raises(LookupError, lambda: list(chunked(5, too_short_list)))
+ 
+ 
+ def test_count():

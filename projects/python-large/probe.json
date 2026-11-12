@@ -1,0 +1,7 @@
+[
+  {"name": "references capfirst (cross-file, package and tests)", "args": {"operation": "references", "query": "capfirst", "path": "django/utils/text.py"},
+   "expect": ["django/db/models/base.py:1632", "django/contrib/admin/sites.py:502", "tests/auth_tests/test_forms.py:679"]},
+  {"name": "definition of cached_property from another module", "args": {"operation": "definition", "query": "cached_property"},
+   "expect": ["django/utils/functional.py:7"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["django/utils/text.py"]}, "expect": []}
+]

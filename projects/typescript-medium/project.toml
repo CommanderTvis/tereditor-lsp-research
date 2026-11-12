@@ -1,0 +1,6 @@
+# TypeScript, medium: hono, a web framework for every JS runtime. Several interchangeable Router implementations,
+# a deeply generic Hono/Context API, many middleware modules and adapters, barrel re-exports per entry point.
+lang = "typescript"
+size = "medium"
+repo = "https://github.com/honojs/hono"
+commit = "61f7c59e50244ab4d2dd83c151928cf7ea448510"

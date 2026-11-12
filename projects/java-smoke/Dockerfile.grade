@@ -1,0 +1,14 @@
+# syntax=docker/dockerfile:1
+FROM alpine/git:v2.49.1 AS snapshot
+ARG REPO
+ARG COMMIT
+WORKDIR /snapshot
+RUN git init -q . && git remote add origin "$REPO" && git fetch -q --depth 1 origin "$COMMIT" && git checkout -q FETCH_HEAD \
+    && rm -rf .git && git init -q -b main . && git add -A && git -c user.name=study -c user.email=study@localhost commit -qm snapshot
+
+FROM maven:3.9.11-eclipse-temurin-21
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+COPY --from=snapshot /snapshot /study/snapshot
+# Resolve everything the gson module's build needs, so grading runs offline (--network none).
+RUN cd /study/snapshot && mvn -B -q -pl gson -am test && mvn -B -q -pl gson -am -DskipTests dependency:go-offline \
+    && git clean -fdxq

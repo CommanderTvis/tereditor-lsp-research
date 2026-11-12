@@ -1,0 +1,7 @@
+[
+  {"name": "references get (cross-file)", "args": {"operation": "references", "query": "get", "path": "toolz/itertoolz.py"},
+   "expect": ["toolz/tests/test_itertoolz.py:204", "bench/test_get.py:8"]},
+  {"name": "definition of curry from another module", "args": {"operation": "definition", "query": "curry"},
+   "expect": ["toolz/functoolz.py:169"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["toolz/dicttoolz.py"]}, "expect": []}
+]

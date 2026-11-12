@@ -1,0 +1,6 @@
+# TypeScript, large: NestJS, a dependency-injection server framework (monorepo of @nestjs/* packages). Interfaces
+# implemented across packages (pipes, guards, filters, transports), decorators, path-mapped cross-package imports.
+lang = "typescript"
+size = "large"
+repo = "https://github.com/nestjs/nest"
+commit = "422a1d318b8e468d6618ccd3794c24ae1d66e139"

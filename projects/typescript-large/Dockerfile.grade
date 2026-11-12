@@ -1,0 +1,11 @@
+# syntax=docker/dockerfile:1
+FROM alpine/git:v2.49.1 AS snapshot
+ARG REPO
+ARG COMMIT
+WORKDIR /snapshot
+RUN git init -q . && git remote add origin "$REPO" && git fetch -q --depth 1 origin "$COMMIT" && git checkout -q FETCH_HEAD \
+    && rm -rf .git && git init -q -b main . && git add -A && git -c user.name=study -c user.email=study@localhost commit -qm snapshot
+
+FROM node:24.22.2-bookworm
+COPY --from=snapshot /snapshot /study/snapshot
+RUN cd /study/snapshot && npm ci --ignore-scripts --no-audit --no-fund

@@ -1,0 +1,9 @@
+[
+  {"name": "references DefinitionAggregate::add (cross-file, through the interface)", "args": {"operation": "references", "query": "add", "path": "src/Definition/DefinitionAggregate.php"},
+   "expect": ["src/Container.php:61", "tests/Definition/DefinitionAggregateTest.php:32"]},
+  {"name": "definition of ContainerAwareTrait", "args": {"operation": "definition", "query": "ContainerAwareTrait"},
+   "expect": ["src/ContainerAwareTrait.php:10"]},
+  {"name": "implementations of ServiceProviderInterface", "args": {"operation": "implementation", "query": "ServiceProviderInterface"},
+   "expect": ["src/ServiceProvider/AbstractServiceProvider.php:9"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["src/Container.php"]}, "expect": []}
+]

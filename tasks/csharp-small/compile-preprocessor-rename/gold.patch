@@ -1,0 +1,92 @@
+diff --git a/samples/MediatR.Examples/GenericRequestPreProcessor.cs b/samples/MediatR.Examples/GenericRequestPreProcessor.cs
+index e53d936..efbe2f4 100644
+--- a/samples/MediatR.Examples/GenericRequestPreProcessor.cs
++++ b/samples/MediatR.Examples/GenericRequestPreProcessor.cs
+@@ -14,7 +14,7 @@ public GenericRequestPreProcessor(TextWriter writer)
+         _writer = writer;
+     }
+ 
+-    public Task Process(TRequest request, CancellationToken cancellationToken)
++    public Task PreProcess(TRequest request, CancellationToken cancellationToken)
+     {
+         return _writer.WriteLineAsync("- Starting Up");
+     }
+diff --git a/src/MediatR/Pipeline/RequestPreProcessorBehavior.cs b/src/MediatR/Pipeline/RequestPreProcessorBehavior.cs
+index 1405c4e..1570352 100644
+--- a/src/MediatR/Pipeline/RequestPreProcessorBehavior.cs
++++ b/src/MediatR/Pipeline/RequestPreProcessorBehavior.cs
+@@ -21,7 +21,7 @@ public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRe
+     {
+         foreach (var processor in _preProcessors)
+         {
+-            await processor.Process(request, cancellationToken).ConfigureAwait(false);
++            await processor.PreProcess(request, cancellationToken).ConfigureAwait(false);
+         }
+ 
+         return await next(cancellationToken).ConfigureAwait(false);
+diff --git a/test/MediatR.Benchmarks/GenericRequestPreProcessor.cs b/test/MediatR.Benchmarks/GenericRequestPreProcessor.cs
+index ee25310..5550a56 100644
+--- a/test/MediatR.Benchmarks/GenericRequestPreProcessor.cs
++++ b/test/MediatR.Benchmarks/GenericRequestPreProcessor.cs
+@@ -15,7 +15,7 @@ public GenericRequestPreProcessor(TextWriter writer)
+             _writer = writer;
+         }
+ 
+-        public Task Process(TRequest request, CancellationToken cancellationToken)
++        public Task PreProcess(TRequest request, CancellationToken cancellationToken)
+         {
+             return _writer.WriteLineAsync("- Starting Up");
+         }
+diff --git a/test/MediatR.Tests/MicrosoftExtensionsDI/PipelineTests.cs b/test/MediatR.Tests/MicrosoftExtensionsDI/PipelineTests.cs
+index 129a40c..3b6b6a9 100644
+--- a/test/MediatR.Tests/MicrosoftExtensionsDI/PipelineTests.cs
++++ b/test/MediatR.Tests/MicrosoftExtensionsDI/PipelineTests.cs
+@@ -164,7 +164,7 @@ public FirstPreProcessor(Logger output)
+         {
+             _output = output;
+         }
+-        public Task Process(TRequest request, CancellationToken cancellationToken)
++        public Task PreProcess(TRequest request, CancellationToken cancellationToken)
+         {
+             _output.Messages.Add("First pre processor");
+             return Task.FromResult(0);
+@@ -179,7 +179,7 @@ public FirstConcretePreProcessor(Logger output)
+         {
+             _output = output;
+         }
+-        public Task Process(Ping request, CancellationToken cancellationToken)
++        public Task PreProcess(Ping request, CancellationToken cancellationToken)
+         {
+             _output.Messages.Add("First concrete pre processor");
+             return Task.FromResult(0);
+@@ -194,7 +194,7 @@ public NextPreProcessor(Logger output)
+         {
+             _output = output;
+         }
+-        public Task Process(TRequest request, CancellationToken cancellationToken)
++        public Task PreProcess(TRequest request, CancellationToken cancellationToken)
+         {
+             _output.Messages.Add("Next pre processor");
+             return Task.FromResult(0);
+@@ -209,7 +209,7 @@ public NextConcretePreProcessor(Logger output)
+         {
+             _output = output;
+         }
+-        public Task Process(Ping request, CancellationToken cancellationToken)
++        public Task PreProcess(Ping request, CancellationToken cancellationToken)
+         {
+             _output.Messages.Add("Next concrete pre processor");
+             return Task.FromResult(0);
+diff --git a/test/MediatR.Tests/Pipeline/RequestPreProcessorTests.cs b/test/MediatR.Tests/Pipeline/RequestPreProcessorTests.cs
+index 880d676..1a72359 100644
+--- a/test/MediatR.Tests/Pipeline/RequestPreProcessorTests.cs
++++ b/test/MediatR.Tests/Pipeline/RequestPreProcessorTests.cs
+@@ -30,7 +30,7 @@ public Task<Pong> Handle(Ping request, CancellationToken cancellationToken)
+ 
+     public class PingPreProcessor : IRequestPreProcessor<Ping>
+     {
+-        public Task Process(Ping request, CancellationToken cancellationToken)
++        public Task PreProcess(Ping request, CancellationToken cancellationToken)
+         {
+             request.Message = request.Message + " Ping";
+ 

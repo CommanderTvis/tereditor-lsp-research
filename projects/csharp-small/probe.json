@@ -1,0 +1,9 @@
+[
+  {"name": "references INotificationPublisher (cross-project)", "args": {"operation": "references", "query": "INotificationPublisher", "path": "src/MediatR/INotificationPublisher.cs"},
+   "expect": ["src/MediatR/Mediator.cs:36", "test/MediatR.Tests/PublishTests.cs:124", "test/MediatR.Tests/MicrosoftExtensionsDI/NotificationPublisherTests.cs:44"]},
+  {"name": "definition of TaskWhenAllPublisher", "args": {"operation": "definition", "query": "TaskWhenAllPublisher"},
+   "expect": ["src/MediatR/NotificationPublishers/TaskWhenAllPublisher.cs:18"]},
+  {"name": "implementations of INotificationPublisher", "args": {"operation": "implementation", "query": "INotificationPublisher", "path": "src/MediatR/INotificationPublisher.cs"},
+   "expect": ["src/MediatR/NotificationPublishers/ForeachAwaitPublisher.cs:15", "test/MediatR.Tests/MicrosoftExtensionsDI/NotificationPublisherTests.cs:15"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["src/MediatR/Mediator.cs"]}, "expect": []}
+]

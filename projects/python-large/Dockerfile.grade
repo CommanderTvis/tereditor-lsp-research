@@ -1,0 +1,16 @@
+# syntax=docker/dockerfile:1
+FROM alpine/git:v2.49.1 AS snapshot
+ARG REPO
+ARG COMMIT
+WORKDIR /snapshot
+RUN git init -q . && git remote add origin "$REPO" && git fetch -q --depth 1 origin "$COMMIT" && git checkout -q FETCH_HEAD \
+    && rm -rf .git && git init -q -b main . && git add -A && git -c user.name=study -c user.email=study@localhost commit -qm snapshot
+
+FROM python:3.12.8-slim-bookworm
+# Django's runtime dependencies (plus tblib, which the parallel test runner needs to report failures); the test suite
+# runs on SQLite and skips tests whose optional packages are absent. django itself is imported from the tree under test
+# (PYTHONPATH=/work, see check.sh). Tests run as an unprivileged user: some assert that permissions are enforced.
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir asgiref==3.13.0 sqlparse==0.6.1 tblib==3.2.2 \
+    && useradd -u 1000 -m grader
+COPY --from=snapshot /snapshot /study/snapshot

@@ -1,0 +1,8 @@
+# Java smoke project for the IntelliJ arms (not part of the confirmatory study): gson, Maven, Java only.
+lang = "java"
+size = "smoke"
+repo = "https://github.com/google/gson"
+# gson-parent-2.15.0
+commit = "fcd416909db2bea96eb916bcfb2d0a83cb9b86c3"
+loc_command = "find . -name '*.java' | xargs cat | wc -l"
+loc = 57131

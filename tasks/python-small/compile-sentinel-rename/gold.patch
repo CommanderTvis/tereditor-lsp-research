@@ -1,0 +1,279 @@
+diff --git a/toolz/dicttoolz.py b/toolz/dicttoolz.py
+index 457bc26..314735c 100644
+--- a/toolz/dicttoolz.py
++++ b/toolz/dicttoolz.py
+@@ -300,11 +300,11 @@ def update_in(d, keys, func, default=None, factory=dict):
+     return rv
+ 
+ 
+-def get_in(keys, coll, default=None, no_default=False):
++def get_in(keys, coll, default=None, NO_DEFAULT=False):
+     """ Returns coll[i0][i1]...[iX] where [i0, i1, ..., iX]==keys.
+ 
+     If coll[i0][i1]...[iX] cannot be found, returns ``default``, unless
+-    ``no_default`` is specified, then it raises KeyError or IndexError.
++    ``NO_DEFAULT`` is specified, then it raises KeyError or IndexError.
+ 
+     ``get_in`` is a generalization of ``operator.getitem`` for nested data
+     structures such as dictionaries and lists.
+@@ -322,7 +322,7 @@ def get_in(keys, coll, default=None, no_default=False):
+     >>> get_in(['purchase', 'items', 10], transaction)
+     >>> get_in(['purchase', 'total'], transaction, 0)
+     0
+-    >>> get_in(['y'], {}, no_default=True)
++    >>> get_in(['y'], {}, NO_DEFAULT=True)
+     Traceback (most recent call last):
+         ...
+     KeyError: 'y'
+@@ -334,6 +334,6 @@ def get_in(keys, coll, default=None, no_default=False):
+     try:
+         return reduce(operator.getitem, keys, coll)
+     except (KeyError, IndexError, TypeError):
+-        if no_default:
++        if NO_DEFAULT:
+             raise
+         return default
+diff --git a/toolz/functoolz.py b/toolz/functoolz.py
+index b4cacac..e2ab84b 100644
+--- a/toolz/functoolz.py
++++ b/toolz/functoolz.py
+@@ -5,7 +5,7 @@ from operator import attrgetter, not_
+ from importlib import import_module
+ from types import MethodType
+ 
+-from .utils import no_default
++from .utils import NO_DEFAULT
+ 
+ if sys.version_info >= (3, 14):
+     import annotationlib  # already imported by inspect
+@@ -265,7 +265,7 @@ class curry:
+                 if kwonly:
+                     kind = param.KEYWORD_ONLY
+                 if default is param.empty:
+-                    default = no_default
++                    default = NO_DEFAULT
+             newparams.append(param.replace(default=default, kind=kind))
+ 
+         return sig.replace(parameters=newparams)
+diff --git a/toolz/itertoolz.py b/toolz/itertoolz.py
+index 05c36cc..f434125 100644
+--- a/toolz/itertoolz.py
++++ b/toolz/itertoolz.py
+@@ -5,7 +5,7 @@ import operator
+ from functools import partial
+ from itertools import filterfalse, zip_longest
+ from collections.abc import Sequence
+-from toolz.utils import no_default
++from toolz.utils import NO_DEFAULT
+ 
+ 
+ __all__ = ('remove', 'accumulate', 'groupby', 'merge_sorted', 'interleave',
+@@ -27,7 +27,7 @@ def remove(predicate, seq):
+     return filterfalse(predicate, seq)
+ 
+ 
+-def accumulate(binop, seq, initial=no_default):
++def accumulate(binop, seq, initial=NO_DEFAULT):
+     """ Repeatedly apply binary function to a sequence, accumulating results
+ 
+     >>> from operator import add, mul
+@@ -55,7 +55,7 @@ def accumulate(binop, seq, initial=no_default):
+         itertools.accumulate :  In standard itertools for Python 3.2+
+     """
+     seq = iter(seq)
+-    if initial == no_default:
++    if initial == NO_DEFAULT:
+         try:
+             result = next(seq)
+         except StopIteration:
+@@ -411,7 +411,7 @@ def _get(ind, seq, default):
+         return default
+ 
+ 
+-def get(ind, seq, default=no_default):
++def get(ind, seq, default=NO_DEFAULT):
+     """ Get element in a sequence or dict
+ 
+     Provides standard indexing
+@@ -448,7 +448,7 @@ def get(ind, seq, default=no_default):
+         return seq[ind]
+     except TypeError:  # `ind` may be a list
+         if isinstance(ind, list):
+-            if default == no_default:
++            if default == NO_DEFAULT:
+                 if len(ind) > 1:
+                     return operator.itemgetter(*ind)(seq)
+                 elif ind:
+@@ -457,12 +457,12 @@ def get(ind, seq, default=no_default):
+                     return ()
+             else:
+                 return tuple(_get(i, seq, default) for i in ind)
+-        elif default != no_default:
++        elif default != NO_DEFAULT:
+             return default
+         else:
+             raise
+     except (KeyError, IndexError):  # we know `ind` is not a list
+-        if default == no_default:
++        if default == NO_DEFAULT:
+             raise
+         else:
+             return default
+@@ -549,7 +549,7 @@ def frequencies(seq):
+     return dict(d)
+ 
+ 
+-def reduceby(key, binop, seq, init=no_default):
++def reduceby(key, binop, seq, init=NO_DEFAULT):
+     """ Perform a simultaneous groupby and reduction
+ 
+     The computation:
+@@ -610,7 +610,7 @@ def reduceby(key, binop, seq, init=no_default):
+     {True:  set([2, 4]),
+      False: set([1, 3])}
+     """
+-    is_no_default = init == no_default
++    is_no_default = init == NO_DEFAULT
+     if not is_no_default and not callable(init):
+         _init = init
+         init = lambda: _init
+@@ -769,7 +769,7 @@ def count(seq):
+     return sum(1 for i in seq)
+ 
+ 
+-def pluck(ind, seqs, default=no_default):
++def pluck(ind, seqs, default=NO_DEFAULT):
+     """ plucks an element or several elements from each item in a sequence.
+ 
+     ``pluck`` maps ``itertoolz.get`` over a sequence and returns one or more
+@@ -792,7 +792,7 @@ def pluck(ind, seqs, default=no_default):
+         get
+         map
+     """
+-    if default == no_default:
++    if default == NO_DEFAULT:
+         get = getter(ind)
+         return map(get, seqs)
+     elif isinstance(ind, list):
+@@ -815,7 +815,7 @@ def getter(index):
+ 
+ 
+ def join(leftkey, leftseq, rightkey, rightseq,
+-         left_default=no_default, right_default=no_default):
++         left_default=NO_DEFAULT, right_default=NO_DEFAULT):
+     """ Join two sequences on common attributes
+ 
+     This is a semi-streaming operation.  The LEFT sequence is fully evaluated
+@@ -881,14 +881,14 @@ def join(leftkey, leftseq, rightkey, rightseq,
+ 
+     d = groupby(leftkey, leftseq)
+ 
+-    if left_default == no_default and right_default == no_default:
++    if left_default == NO_DEFAULT and right_default == NO_DEFAULT:
+         # Inner Join
+         for item in rightseq:
+             key = rightkey(item)
+             if key in d:
+                 for left_match in d[key]:
+                     yield (left_match, item)
+-    elif left_default != no_default and right_default == no_default:
++    elif left_default != NO_DEFAULT and right_default == NO_DEFAULT:
+         # Right Join
+         for item in rightseq:
+             key = rightkey(item)
+@@ -897,11 +897,11 @@ def join(leftkey, leftseq, rightkey, rightseq,
+                     yield (left_match, item)
+             else:
+                 yield (left_default, item)
+-    elif right_default != no_default:
++    elif right_default != NO_DEFAULT:
+         seen_keys = set()
+         seen = seen_keys.add
+ 
+-        if left_default == no_default:
++        if left_default == NO_DEFAULT:
+             # Left Join
+             for item in rightseq:
+                 key = rightkey(item)
+@@ -949,8 +949,8 @@ def diff(*seqs, **kwargs):
+         N = len(seqs)
+     if N < 2:
+         raise TypeError('Too few sequences given (min 2 required)')
+-    default = kwargs.get('default', no_default)
+-    if default == no_default:
++    default = kwargs.get('default', NO_DEFAULT)
++    if default == NO_DEFAULT:
+         iters = zip(*seqs)
+     else:
+         iters = zip_longest(*seqs, fillvalue=default)
+diff --git a/toolz/sandbox/parallel.py b/toolz/sandbox/parallel.py
+index e47a124..09cb8da 100644
+--- a/toolz/sandbox/parallel.py
++++ b/toolz/sandbox/parallel.py
+@@ -1,6 +1,6 @@
+ import functools
+ from toolz.itertoolz import partition_all
+-from toolz.utils import no_default
++from toolz.utils import NO_DEFAULT
+ 
+ 
+ def _reduce(func, seq, initial=None):
+@@ -10,7 +10,7 @@ def _reduce(func, seq, initial=None):
+         return functools.reduce(func, seq, initial)
+ 
+ 
+-def fold(binop, seq, default=no_default, map=map, chunksize=128, combine=None):
++def fold(binop, seq, default=NO_DEFAULT, map=map, chunksize=128, combine=None):
+     """
+     Reduce without guarantee of ordered reduction.
+ 
+@@ -66,7 +66,7 @@ def fold(binop, seq, default=no_default, map=map, chunksize=128, combine=None):
+     chunks = partition_all(chunksize, seq)
+ 
+     # Evaluate sequence in chunks via map
+-    if default == no_default:
++    if default == NO_DEFAULT:
+         results = map(
+             functools.partial(_reduce, binop),
+             chunks)
+diff --git a/toolz/sandbox/tests/test_parallel.py b/toolz/sandbox/tests/test_parallel.py
+index 1dae938..76ce63d 100644
+--- a/toolz/sandbox/tests/test_parallel.py
++++ b/toolz/sandbox/tests/test_parallel.py
+@@ -5,7 +5,7 @@ from pickle import dumps, loads
+ from multiprocessing import Pool
+ 
+ 
+-# is comparison will fail between this and no_default
++# is comparison will fail between this and NO_DEFAULT
+ no_default2 = loads(dumps('__no__default__'))
+ 
+ 
+diff --git a/toolz/tests/test_dicttoolz.py b/toolz/tests/test_dicttoolz.py
+index 3188b4f..6631756 100644
+--- a/toolz/tests/test_dicttoolz.py
++++ b/toolz/tests/test_dicttoolz.py
+@@ -287,8 +287,8 @@ def test_get_in_returns_default_for_a_missing_path():
+ 
+ 
+ def test_get_in_raises_when_no_default_is_set():
+-    assert raises(KeyError, lambda: get_in(["a", "z"], {"a": {"b": 7}}, no_default=True))
+-    assert raises(TypeError, lambda: get_in(["a", "b", "c"], {"a": {"b": 7}}, no_default=True))
++    assert raises(KeyError, lambda: get_in(["a", "z"], {"a": {"b": 7}}, NO_DEFAULT=True))
++    assert raises(TypeError, lambda: get_in(["a", "b", "c"], {"a": {"b": 7}}, NO_DEFAULT=True))
+ 
+ 
+ def test_dissoc_agrees_on_both_sides_of_its_size_heuristic():
+diff --git a/toolz/tests/test_itertoolz.py b/toolz/tests/test_itertoolz.py
+index d20da2b..21ba082 100644
+--- a/toolz/tests/test_itertoolz.py
++++ b/toolz/tests/test_itertoolz.py
+@@ -17,7 +17,7 @@ from toolz.itertoolz import (remove, groupby, merge_sorted,
+ from operator import add, mul
+ 
+ 
+-# is comparison will fail between this and no_default
++# is comparison will fail between this and NO_DEFAULT
+ no_default2 = loads(dumps('__no__default__'))
+ 
+ 

@@ -1,0 +1,12 @@
+# Python, medium: click, the command-line interface toolkit. src/ layout; a Command/Group and ParamType class
+# hierarchy with many overrides, decorators that build objects of those classes, and names that collide between the
+# public API (click.Option, click.option) and the parser's private classes (_Option).
+lang = "python"
+size = "medium"
+repo = "https://github.com/pallets/click"
+commit = "cf19179e8e2fd54c601378cec9e0d21bb12b6fb1"
+tag = "8.5.1"
+loc_command = "find . -name '*.py' -not -path './.git/*' | xargs wc -l"
+loc = 29265
+stripped = []
+task_types = ["refs", "impls", "rename", "compile", "bugfix"]

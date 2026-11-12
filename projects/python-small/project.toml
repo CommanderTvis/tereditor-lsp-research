@@ -1,0 +1,9 @@
+# Python, small: toolz, functional utilities. Many modules, star imports, a curried namespace that rebinds most names.
+lang = "python"
+size = "small"
+repo = "https://github.com/pytoolz/toolz"
+commit = "451af60dec590a6010e2babdbf391ea8f815122f"
+loc_command = "find . -name '*.py' -not -path './.git/*' | xargs wc -l"
+loc = 7414
+stripped = []
+task_types = ["refs", "callers", "rename", "compile", "bugfix"]
