@@ -129,7 +129,8 @@ cmd_project() { for p in "$@"; do [ -f "projects/$p/project.toml" ] || die "no p
 cmd_probe() {
   p=$1 mode=${2:-enforced}; load_license
   out=results/probe/$p-$mode; rm -rf "$out"; mkdir -p "$out"
-  env_run "$(group_of "$p")" probe "$p" "$mode" "/study-root/$out" "/study-root/projects/$p/probe.json"
+  r=/study-root; [ "$RT" = native ] && r=$ROOT
+  env_run "$(group_of "$p")" probe "$p" "$mode" "$r/$out" "$r/projects/$p/probe.json"
   log "probe results: $out/probe.jsonl"
 }
 

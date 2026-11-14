@@ -21,11 +21,26 @@ closure_binds() { local p; while IFS= read -r p; do A+=(--ro-bind "$p" "$p"); do
 # etc_dir <dir> <user> <uid> <home>: a minimal /etc for a sandbox.
 etc_dir() {
   mkdir -p "$1/ssl"
-  printf 'root:x:0:0:root:/root:/bin/sh\n%s:x:%s:%s:%s:%s:/bin/bash\n' "$2" "$3" "$3" "$2" "$4" > "$1/passwd"
-  printf 'root:x:0:\n%s:x:%s:\n' "$2" "$3" > "$1/group"
+  # No separate root entry for a uid-0 sandbox user: getpwuid(0) must return its home (Java's user.home, so ~/.m2).
+  { [ "$3" = 0 ] || printf 'root:x:0:0:root:/root:/bin/sh\n'; printf '%s:x:%s:%s:%s:%s:/bin/bash\n' "$2" "$3" "$3" "$2" "$4"; } > "$1/passwd"
+  { [ "$3" = 0 ] || printf 'root:x:0:\n'; printf '%s:x:%s:\n' "$2" "$3"; } > "$1/group"
   printf '127.0.0.1 localhost\n::1 localhost\n' > "$1/hosts"
   cp /etc/resolv.conf "$1/resolv.conf" 2>/dev/null || printf 'nameserver 1.1.1.1\n' > "$1/resolv.conf"
   printf 'hosts: files dns\npasswd: files\ngroup: files\n' > "$1/nsswitch.conf"
+}
+
+# proxy_args: behind an egress proxy that re-signs TLS (a Claude Code cloud session) a sandbox with network must be
+# told about the proxy and trust its CA (the cloud session sets HTTPS_PROXY and CURL_CA_BUNDLE). Maven's repository
+# prefix filter probes with requests such a proxy answers 404, which hides real artifacts, so it is turned off.
+proxy_args() {
+  [ -n "${HTTPS_PROXY:-}" ] && [ -f "${CURL_CA_BUNDLE:-}" ] || return 0
+  A+=(--ro-bind "$CURL_CA_BUNDLE" /study/proxy-ca.crt --setenv HTTPS_PROXY "$HTTPS_PROXY" --setenv https_proxy "$HTTPS_PROXY"
+      --setenv NO_PROXY "${NO_PROXY:-}" --setenv no_proxy "${NO_PROXY:-}" --setenv SSL_CERT_FILE /study/proxy-ca.crt
+      --setenv NODE_EXTRA_CA_CERTS /study/proxy-ca.crt)
+  local jto=${JAVA_TOOL_OPTIONS:-} ts
+  ts=$(printf '%s' "$jto" | sed -n 's/.*-Djavax.net.ssl.trustStore=\([^ ]*\).*/\1/p')
+  if [ -n "$ts" ] && [ -f "$ts" ]; then A+=(--ro-bind "$ts" /study/proxy-truststore); jto=${jto//$ts//study/proxy-truststore}; fi
+  A+=(--setenv JAVA_TOOL_OPTIONS "$jto -Daether.remoteRepositoryFilter.prefixes=false")
 }
 
 # Root without capabilities, in its own PID, IPC and UTS namespaces: what a sandbox can reach is decided by what is
@@ -60,6 +75,7 @@ server_exec() {
   # the downloaded runtimes) are found through /lib explicitly.
   A+=(--setenv LD_LIBRARY_PATH /lib)
   [ -n "${STUDY_JVM:-}" ] && A+=(--setenv JAVA_HOME "$STUDY_JVM/lib/openjdk")
+  proxy_args
   local kv; for kv in "${SERVER_ENV[@]}"; do A+=(--setenv "${kv%%=*}" "${kv#*=}"); done
   [ $# -gt 0 ] || set -- /bin/sh /study/harness/serve.sh
   exec bwrap "${A[@]}" "$@"
@@ -78,6 +94,7 @@ grade_exec() {
       --setenv HOME /grade-home --setenv PATH /bin --setenv SSL_CERT_FILE /etc/ssl/certs/ca-bundle.crt
       --setenv DOTNET_CLI_TELEMETRY_OPTOUT 1 --setenv DOTNET_NOLOGO 1 --setenv TMPDIR /tmp)
   [ -d "$STUDY_GRADE/lib/openjdk" ] && A+=(--setenv JAVA_HOME "$STUDY_GRADE/lib/openjdk")
+  [ "$net" = nonet ] || proxy_args
   A+=("${GRADE_BINDS[@]}")
   exec bwrap "${A[@]}" "$@"
 }
@@ -94,6 +111,10 @@ agent_exec() {
       --ro-bind "$in" /in --bind "$sock" /run/study --ro-bind-try /home/claude/.claude/remote /home/claude/.claude/remote
       --chdir /workspace --setenv HOME /home/agent --setenv USER agent --setenv PATH /bin --setenv LANG C.UTF-8
       --setenv TERM dumb --setenv SSL_CERT_FILE /etc/ssl/certs/ca-bundle.crt)
+  # Behind a TLS-re-signing egress proxy (a cloud session) the API's certificate chains to the proxy's CA.
+  if [ -n "${HTTPS_PROXY:-}" ] && [ -f "${CURL_CA_BUNDLE:-}" ]; then
+    A+=(--ro-bind "$CURL_CA_BUNDLE" /study-proxy-ca.crt --setenv NODE_EXTRA_CA_CERTS /study-proxy-ca.crt --setenv SSL_CERT_FILE /study-proxy-ca.crt)
+  fi
   for kv in "${AGENT_ENV[@]}"; do A+=(--setenv "${kv%%=*}" "${kv#*=}"); done
   exec bwrap "${A[@]}" "$@"
 }

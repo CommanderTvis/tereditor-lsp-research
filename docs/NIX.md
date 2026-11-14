@@ -10,7 +10,7 @@ into `/nix` itself.
 
 | Output | Contents | Used by |
 | --- | --- | --- |
-| `agent` | bash, coreutils, findutils, grep, sed, awk, diff, patch, less, file, tree, procps, ripgrep, jq, gitMinimal (no perl), socat, CA certificates, Claude Code 2.1.322 (the static release binary, by its published sha256) | the agent's sandbox: nothing else exists in it |
+| `agent` | bash, coreutils, findutils, grep, sed, awk, diff, patch, less, file, tree, procps, ripgrep, jq, gitMinimal (no perl), socat, CA certificates, Claude Code 2.1.322 (the musl release binary, by its published sha256, with musl's loader) | the agent's sandbox: nothing else exists in it |
 | `server-fhs` | an FHS-shaped root: the glibc loader and the shared libraries (libstdc++, zlib, ICU, OpenSSL, Kerberos) of the prebuilt binaries tereditor downloads, and the tools its scripts call | the language server's sandbox |
 | `jvm-tools` | JDK 21 and Maven | the JVM language servers (Gradle and Maven import) |
 | `grade-<group>` | the toolchain that builds and tests a group's projects: python, typescript, csharp, php, jvm, cpp (gcc), shell, css | the grader's sandbox |

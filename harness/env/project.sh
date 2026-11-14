@@ -35,7 +35,14 @@ if [ ! -f "$st/.grade-ready" ]; then
     log "grading dependencies of $proj"
     scratch=$STUDY_STATE/scratch/$proj-setup; rm -rf "$scratch"; mkdir -p "$scratch"; cp -a "$st/snapshot" "$scratch/work"
     GRADE_BINDS=(--ro-bind "$pd" /project --bind "$scratch" /scratch --chdir /scratch/work)
-    ( grade_exec net "$st/snapshot" "$st/grade-home" /bin/sh /project/grade-setup.sh )
+    # Package registries behind shared egress IPs rate-limit by answering 404 with retry-after, and Maven then records the
+    # artifact as absent: retry with -U (ignore cached failures); what was downloaded stays in the grade home.
+    GRADE_BINDS+=(--setenv MAVEN_ARGS -U)
+    for try in 1 2 3 4 5 6; do
+      if ( grade_exec net "$st/snapshot" "$st/grade-home" /bin/sh /project/grade-setup.sh ); then break; fi
+      [ "$try" -lt 6 ] || die "grade-setup.sh of $proj failed $try times"
+      log "grade-setup.sh of $proj failed (attempt $try); retrying in 120 s"; sleep 120
+    done
     # Dependencies installed into the tree (vendor/, node_modules/, obj/) are what git ignores there: kept as the overlay
     # that grading copies into its work tree.
     rm -rf "$st/grade-overlay"; mkdir -p "$st/grade-overlay"
