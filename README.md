@@ -4,7 +4,6 @@ Two language-server stacks compete against the same agent without them: [headles
 servers and IntelliJ's, across every language tereditor serves headless plus Java, four project sizes, three models
 and two prompting regimes.
 
-- [AGENTS.md](AGENTS.md): contract, decisions, status.
 - [docs/DESIGN.md](docs/DESIGN.md), [docs/ANALYSIS_PLAN.md](docs/ANALYSIS_PLAN.md) (pre-registered),
   [docs/PROJECTS.md](docs/PROJECTS.md), [docs/TASKS.md](docs/TASKS.md).
 

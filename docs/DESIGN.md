@@ -45,7 +45,7 @@ Arm applicability: Java has no tereditor server without IntelliJ (Eclipse JDT is
 
 The JetBrains side: the IntelliJ server's terms (JetBrains User Agreement 2.0) were accepted by the study's owner for
 the exact terms text named by its hash (`harness/intellij.env`), with region `europe` and usage statistics `none`;
-the acceptance is recorded when the JVM image is built. It runs on the owner's licence (offline activation code,
+the acceptance is recorded when the JVM group is set up (`./study setup jvm`). It runs on the owner's licence (offline activation code,
 README). The JVM image also holds a pinned JDK under `/cache`, given to the Kotlin and IntelliJ servers alike
 (Gradle and Maven import); like every other runtime it is closed to the agent.
 
@@ -92,7 +92,7 @@ Consequences, deliberate and the same in every arm:
   before the first call), and three builtin plugins load (`cc-plugin-agents-md`, `cc-plugin-privacy`,
   `cc-plugin-plugin-authoring`).
 - No network at the language server: runtimes, servers and project dependencies are installed when the image is
-  built (`warm`, `prepare.sh`). The agent container does need the Anthropic API.
+  set up (`./study setup`, `prepare.sh`). The agent's sandbox does need the Anthropic API.
 
 ## Fairness and confounders
 
@@ -123,7 +123,7 @@ Per run, from Claude Code's `stream-json`, tereditor's call log and the grader:
 
 ## Reproducibility
 
-Pinned: the tereditor commit (image built from source), the Claude Code version, the model IDs, every project's
-commit, every base image by digest after the first build (`harness/lock.txt`). The only host requirements are a
-container runtime (Docker on Linux or macOS, or Apple `container` on macOS) and an Anthropic credential; `claude`
-on the host is needed only to create a token with `claude setup-token`. Analysis runs in a container too.
+Pinned: tereditor (its published image, by digest), nixpkgs (`nix/flake.lock`, so every toolchain and library), the
+Claude Code version, the `nixos/nix` image (by digest), the model IDs and every project's commit. The only host
+requirements are a container runtime (Docker, or Apple `container` on macOS), an Anthropic credential and a JetBrains
+licence.

@@ -3,7 +3,7 @@
 # Linux host without one, the native backend (run as root) bootstraps its own pinned Nix. Every command runs the
 # scripts in harness/env in the study's Nix environment (nix/flake.nix).
 #
-#   ./study setup [group ...]          build tereditor; install the language servers of the groups (default: all)
+#   ./study setup [group ...]          tereditor from its pinned image; the language servers of the groups (default: all)
 #   ./study project <project> ...      snapshot, server preparation and grading dependencies of projects
 #   ./study probe <project> [arm]      the language server on this project, no model (results/probe/)
 #   ./study validate <project> ...     every task: starting state fails, reference solution passes, twice
@@ -15,7 +15,8 @@
 #   ./study archive <plan> <project>   pack a project's runs into results/<plan>/archive/; restore <plan> unpacks all
 #   ./study prune <project> ...        drop a finished project's snapshot and caches
 #
-# Environment: STUDY_RUNTIME=docker|container|native, STUDY_CPUS (default 4), STUDY_MEMORY (default 8g) per container,
+# Environment: STUDY_RUNTIME=docker|container|native, STUDY_CPUS (default 4), STUDY_MEMORY (default 8g) per container
+# (a container holds all parallel runs of a language group: size it for -j runs),
 # ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN (or STUDY_ENV_FILE, default ~/.config/tereditor-study/env).
 set -eu
 ROOT=$(cd "$(dirname "$0")" && pwd)
@@ -34,8 +35,6 @@ RT=$STUDY_RUNTIME
 CPUS=${STUDY_CPUS:-4}
 MEMORY=${STUDY_MEMORY:-8g}
 NIX_IMAGE=docker.io/nixos/nix:2.35.6@sha256:b49cb33f3a7e5cf3933ad8774529de0e3807ec5cf54987aa7ccdfb49f2fc55ed
-UBUNTU_IMAGE=docker.io/library/ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5
-TEREDITOR_COMMIT=$(sed -n 's/^TEREDITOR_COMMIT=//p' harness/tereditor.env)
 GROUPS_ALL="python typescript csharp php jvm cpp shell css"
 
 # The language group of a project: its toolchain and language servers.
@@ -118,22 +117,10 @@ env_run() {
   fi
 }
 
-# tereditor is built with its own pinned toolchain on an Ubuntu root: the host itself (native) or a pinned container.
-build_tereditor() {
-  if [ "$RT" = native ]; then
-    st=${STUDY_STATE:-/var/lib/study}; sh harness/env/build-tereditor.sh "$st/tereditor/$TEREDITOR_COMMIT-$(uname -m)" "$TEREDITOR_COMMIT"
-  else
-    $RT run --rm --cpus "${STUDY_BUILD_CPUS:-6}" --memory "${STUDY_BUILD_MEMORY:-12g}" -v study-state:/state \
-      -v "$ROOT/harness/env:/env:ro" --entrypoint /bin/sh "$UBUNTU_IMAGE" \
-      -c "sh /env/build-tereditor.sh /state/tereditor/$TEREDITOR_COMMIT-\$(uname -m) $TEREDITOR_COMMIT"
-  fi
-}
-
 # --- commands -------------------------------------------------------------------------------------------------------
 
 cmd_setup() {
   [ "$RT" = native ] || ctr_volumes
-  log "tereditor $TEREDITOR_COMMIT"; build_tereditor
   for g in ${*:-$GROUPS_ALL}; do env_run "$g" setup; done
 }
 
@@ -154,23 +141,27 @@ cmd_plan() { name=$1; shift; mkdir -p "results/$name"; env_run python plan "$nam
 plan_ids() { awk -F'\t' -v p="${2:-}" 'NR>1 && (p=="" || $2==p) {print $1}' "results/$1/plan.tsv"; }
 parse_jp() { j=2; only=""; while [ $# -gt 0 ]; do case "$1" in -j) j=$2; shift 2 ;; --project) only=$2; shift 2 ;; *) die "unknown option $1" ;; esac; done; }
 
+# The runs (or gradings) of a plan go to one environment per language group, N at a time inside it.
+by_group() { # <run|grade> <plan>
+  what=$1 plan=$2
+  ids=$(plan_ids "$plan" "$only" | while read -r r; do
+    f=results/$plan/runs/$r
+    if [ "$what" = run ]; then [ -f "$f/exit.json" ] || echo "$r"
+    else [ -f "$f/exit.json" ] && [ ! -f "$f/grade/result.json" ] && echo "$r"; fi
+  done)
+  [ -n "$ids" ] || { log "nothing to $what"; return 0; }
+  for g in $(for r in $ids; do group_of "$(awk -F'\t' -v r="$r" '$1==r {print $2}' "results/$plan/plan.tsv")"; done | sort -u); do
+    sel=$(for r in $ids; do [ "$(group_of "$(awk -F'\t' -v r="$r" '$1==r {print $2}' "results/$plan/plan.tsv")")" = "$g" ] && echo "$r"; done)
+    env_run "$g" run-many "$what" "$plan" "$j" $sel
+  done
+}
+
 cmd_run() {
   plan=$1; shift; parse_jp "$@"; load_credentials; load_license
   [ "$RT" = native ] || ctr_volumes
-  export STUDY_LICENSE_ZIP_B64 STUDY_LICENSE_NAME
-  plan_ids "$plan" "$only" | xargs -P "$j" -n 1 "$ROOT/study" run-one "$plan"
+  by_group run "$plan"
 }
-cmd_run_one() {
-  plan=$1 rid=$2; [ -f "results/$plan/runs/$rid/exit.json" ] && return 0
-  proj=$(awk -F'\t' -v r="$rid" '$1==r {print $2}' "results/$plan/plan.tsv")
-  env_run "$(group_of "$proj")" run-one "$plan" "$rid" || log "run $rid: exit $?"
-}
-cmd_grade() { plan=$1; shift; parse_jp "$@"; plan_ids "$plan" "$only" | xargs -P "$j" -n 1 "$ROOT/study" grade-one "$plan"; }
-cmd_grade_one() {
-  plan=$1 rid=$2; [ -f "results/$plan/runs/$rid/exit.json" ] || return 0; [ -f "results/$plan/runs/$rid/grade/result.json" ] && return 0
-  proj=$(awk -F'\t' -v r="$rid" '$1==r {print $2}' "results/$plan/plan.tsv")
-  env_run "$(group_of "$proj")" grade-one "$plan" "$rid"
-}
+cmd_grade() { plan=$1; shift; parse_jp "$@"; by_group grade "$plan"; }
 
 cmd_analyze() { env_run python analyze "$1"; }
 
@@ -208,9 +199,7 @@ case "$c" in
   validate) cmd_validate "$@" ;;
   plan) cmd_plan "$@" ;;
   run) cmd_run "$@" ;;
-  run-one) cmd_run_one "$@" ;;
   grade) cmd_grade "$@" ;;
-  grade-one) cmd_grade_one "$@" ;;
   analyze) cmd_analyze "$@" ;;
   status) cmd_status "$@" ;;
   archive) cmd_archive "$@" ;;

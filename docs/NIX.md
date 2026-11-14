@@ -22,19 +22,19 @@ The agent closure contains claude, git, rg and jq and none of python3, perl, nod
 bun, curl, wget. Closure sizes (aarch64): agent 528 MB, server-fhs about 300 MB, jvm-tools 636 MB, grading from
 206 MB (shell) to 2.2 GB (jvm); closures share store paths, so a group needs a few GB.
 
-tereditor itself is built by `harness/env/build-tereditor.sh` with its own pinned toolchain at the commit in
-`harness/tereditor.env`, on an Ubuntu root (the pinned `ubuntu:24.04` image, or the native host), because its NativeAOT
-build needs network and the .NET SDK and Zig its `scripts/mise` pins.
+tereditor is taken from its published headless image, pinned by digest in `harness/tereditor.env`:
+`harness/env/fetch-tereditor.sh` downloads the image's layers from the registry, checks each against its digest and
+keeps `/opt/tereditor`; no Docker is involved.
 
 ## Sandboxes
 
-Each run is three bubblewrap sandboxes, each with its own user, PID, IPC and UTS namespaces, a private `/tmp` and an
-empty environment:
+Each run is three bubblewrap sandboxes, each without capabilities in its own PID, IPC and UTS namespaces, with a
+private `/tmp` and an empty environment; what a sandbox can reach is what is mounted into it:
 
-- Agent (uid 1001): the agent closure's store paths, its `bin` at `/bin`, `/workspace`, a fresh home, the prompt and
+- Agent: the agent closure's store paths, its `bin` at `/bin`, `/workspace`, a fresh home, the prompt and
   MCP configuration at `/in`, the bridge socket at `/run/study`. Network on (the Anthropic API). In a Claude Code cloud
   session the session's token file is bound read-only at its own path, so Claude Code authenticates with it.
-- Server (uid 1000), started per MCP connection by the bridge (`socat` on the run's socket): `server-fhs` at `/bin`,
+- Server, started per MCP connection by the bridge (`socat` on the run's socket): `server-fhs` at `/bin`,
   `/lib`, `/lib64` and `/usr/lib`, tereditor at `/opt/tereditor`, the runtime cache at `/cache`, the same
   `/workspace`, the call log and the licence. The agent's sandbox contains none of these.
 - Grader (no network): `grade-<group>` at `/bin`, the snapshot, the dependency cache and overlay of the project, the

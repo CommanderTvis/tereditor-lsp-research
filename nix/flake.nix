@@ -37,9 +37,17 @@
             installPhase = "install -Dm755 $src $out/bin/claude";
           };
 
+          # Claude Code's musl build asks for /lib/ld-musl-<arch>.so.1 and libc.musl-<arch>.so.1 (Alpine's names); both are
+          # musl's libc. Part of the agent closure, whose lib/ is bound at /lib in the agent's sandbox.
+          musl-loader = let arch = pkgs.stdenv.hostPlatform.parsed.cpu.name; in pkgs.runCommand "study-musl-loader" { } ''
+            mkdir -p $out/lib
+            ln -s ${pkgs.musl}/lib/libc.so $out/lib/ld-musl-${arch}.so.1
+            ln -s ${pkgs.musl}/lib/libc.so $out/lib/libc.musl-${arch}.so.1
+          '';
+
           # The agent's whole world: core utilities, search, git (without perl), jq, socat (its end of the MCP bridge)
           # and Claude Code. No compiler, interpreter, package manager or downloader, in any arm.
-          agent = env "study-agent" (common ++ (with pkgs; [ less file tree procps ripgrep jq socat claude-code ]));
+          agent = env "study-agent" (common ++ (with pkgs; [ less file tree procps ripgrep jq socat claude-code ]) ++ [ musl-loader ]);
 
           # The language server's runtime: an FHS-shaped root (lib/ with the glibc loader and every shared library the
           # prebuilt binaries tereditor downloads need; bin/ with the tools its scripts call), bound at /lib, /lib64,

@@ -74,8 +74,8 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
 
 - `study`: the driver (POSIX sh; images, project, probe, validate, plan, run, grade, analyze).
 - `nix/flake.nix`: every environment (docs/NIX.md). `harness/env/`: the scripts every command runs in it.
-  `harness/server/`: what runs inside the language server's sandbox. tereditor is built from the commit in
-  `harness/tereditor.env`.
+  `harness/server/`: what runs inside the language server's sandbox. tereditor comes from its published image,
+  pinned by digest in `harness/tereditor.env`.
 - `harness/arms/<arm>/`: `mcp.json` and the workspace overlay. `harness/grade/grade.sh`, `harness/bin/probe-inside.sh`.
 - `projects/<lang>-<size>/`, `tasks/<lang>-<size>/<task>/`: see `docs/TASKS.md`. Most projects are stubs
   (`status = "stub"` in `project.toml`); done so far: python-small (4 tasks), java-medium (2), csharp-small
@@ -94,7 +94,7 @@ cloud environment needs only this GitHub repository (github.com/CommanderTvis/te
 Full network access; the credential is the session's own login, and the owner attaches the JetBrains activation code
 (zip or txt) to the first message, saved as git-ignored `license.zip`/`license.txt`. Starting that session with "Run
 the study per docs/CLOUD_RUN.md" is the owner's go for the confirmatory run. The cloud run needs the native backend
-(docs/NIX.md), which is still being built. Local runs on this Mac are for development only (Apple
+(docs/NIX.md), which has not run without a container runtime yet. Local runs on this Mac are for development only (Apple
 `container` is too heavy for RAM and disk here).
 
 ## Working here

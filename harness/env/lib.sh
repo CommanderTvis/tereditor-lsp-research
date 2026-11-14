@@ -2,7 +2,8 @@
 #   agent   only the agent closure (core utilities, git, ripgrep, jq, socat, Claude Code); no compiler exists in it
 #   server  the server's FHS-shaped root, tereditor and its runtime cache; the agent reaches it only through a socket
 #   grade   one language's toolchain, the project and the task, no network
-# Every sandbox gets its own user, PID, IPC and UTS namespaces, a private /tmp and an empty environment.
+# Every sandbox runs without capabilities in its own PID, IPC and UTS namespaces, with a private /tmp and an empty
+# environment.
 
 log() { echo "[env $(date -u +%H:%M:%S)] $*" >&2; }
 die() { echo "env: $*" >&2; exit 2; }
@@ -19,7 +20,7 @@ closure_binds() { local p; while IFS= read -r p; do A+=(--ro-bind "$p" "$p"); do
 
 # etc_dir <dir> <user> <uid> <home>: a minimal /etc for a sandbox.
 etc_dir() {
-  mkdir -p "$1"
+  mkdir -p "$1/ssl"
   printf 'root:x:0:0:root:/root:/bin/sh\n%s:x:%s:%s:%s:%s:/bin/bash\n' "$2" "$3" "$3" "$2" "$4" > "$1/passwd"
   printf 'root:x:0:\n%s:x:%s:\n' "$2" "$3" > "$1/group"
   printf '127.0.0.1 localhost\n::1 localhost\n' > "$1/hosts"
@@ -27,19 +28,22 @@ etc_dir() {
   printf 'hosts: files dns\npasswd: files\ngroup: files\n' > "$1/nsswitch.conf"
 }
 
-base_args() { # <uid>
-  A=(--unshare-user --unshare-ipc --unshare-uts --unshare-pid --die-with-parent --uid "$1" --gid "$1"
+# Root without capabilities, in its own PID, IPC and UTS namespaces: what a sandbox can reach is decided by what is
+# mounted into it, and without capabilities nothing inside can mount or remount. (A user namespace would also map
+# uids, but inside a container it forbids mounting a fresh /proc.)
+base_args() {
+  A=(--unshare-ipc --unshare-uts --unshare-pid --die-with-parent --cap-drop ALL
      --proc /proc --dev /dev --tmpfs /tmp --clearenv)
 }
 
-# server_exec <mode> <workspace> <lsplog-dir> <license-dir> [cmd...]: the language server's sandbox, as uid 1000.
+# server_exec <mode> <workspace> <lsplog-dir> <license-dir> [cmd...]: the language server's sandbox.
 # Without a command it serves MCP on stdin and stdout (harness/server/serve.sh).
 server_exec() {
   local mode=$1 ws=$2 lsplog=$3 licdir=$4 intellij=0 etc; shift 4
-  [ -x "$TEREDITOR_DIR/tereditor-headless" ] || die "tereditor is not built ($TEREDITOR_DIR): run ./study setup"
+  [ -x "$TEREDITOR_DIR/tereditor-headless" ] || die "tereditor is missing ($TEREDITOR_DIR): run ./study setup"
   case "$mode" in intellij-*) intellij=1; mode=${mode#intellij-} ;; esac
-  etc=$STUDY_STATE/etc-server; [ -f "$etc/passwd" ] || etc_dir "$etc" tereditor 1000 /cache/home
-  base_args 1000
+  etc=$(mktemp -d); etc_dir "$etc" tereditor 0 /cache/home
+  base_args
   closure_binds "$STUDY_SERVER_CLOSURE"
   [ -n "${STUDY_JVM_CLOSURE:-}" ] && closure_binds "$STUDY_JVM_CLOSURE"
   A+=(--ro-bind "$STUDY_SERVER_FHS/bin" /bin --ro-bind "$STUDY_SERVER_FHS/bin" /usr/bin
@@ -49,6 +53,12 @@ server_exec() {
       --bind "$lsplog" /study/lsplog --ro-bind "$licdir" /study/license --ro-bind "$STUDY_ROOT/harness/server" /study/harness
       --chdir /workspace --setenv HOME /cache/home --setenv PATH "/bin${STUDY_JVM:+:$STUDY_JVM/bin}"
       --setenv SSL_CERT_FILE /etc/ssl/certs/ca-bundle.crt --setenv TEREDITOR_MODE "$mode" --setenv TEREDITOR_INTELLIJ "$intellij")
+  # .NET looks for ICU under versioned names; tell tereditor and the .NET SDK it manages which one the root has.
+  local icu; icu=$(ls "$STUDY_SERVER_FHS/lib" | sed -n 's/^libicuuc\.so\.\([0-9][0-9]*\)$/\1/p' | head -n1)
+  [ -n "$icu" ] && A+=(--setenv CLR_ICU_VERSION_OVERRIDE "$icu")
+  # Nix's glibc searches only its own store directory by default, so libraries opened at run time (ICU, libstdc++ of
+  # the downloaded runtimes) are found through /lib explicitly.
+  A+=(--setenv LD_LIBRARY_PATH /lib)
   [ -n "${STUDY_JVM:-}" ] && A+=(--setenv JAVA_HOME "$STUDY_JVM/lib/openjdk")
   local kv; for kv in "${SERVER_ENV[@]}"; do A+=(--setenv "${kv%%=*}" "${kv#*=}"); done
   [ $# -gt 0 ] || set -- /bin/sh /study/harness/serve.sh
@@ -59,8 +69,8 @@ server_exec() {
 # The caller binds the task's own directories by setting GRADE_BINDS (an array of extra bwrap arguments).
 grade_exec() {
   local net=$1 snap=$2 home=$3 etc; shift 3
-  etc=$STUDY_STATE/etc-grade; [ -f "$etc/passwd" ] || etc_dir "$etc" grader 0 /grade-home
-  base_args 0
+  etc=$(mktemp -d); etc_dir "$etc" grader 0 /grade-home
+  base_args
   [ "$net" = nonet ] && A+=(--unshare-net)
   closure_binds "$STUDY_GRADE_CLOSURE"
   A+=(--ro-bind "$STUDY_GRADE/bin" /bin --ro-bind "$STUDY_GRADE/bin" /usr/bin --ro-bind "$etc" /etc
@@ -72,14 +82,14 @@ grade_exec() {
   exec bwrap "${A[@]}" "$@"
 }
 
-# agent_exec <workspace> <home> <in-dir> <socket-dir> cmd...: the agent's sandbox, as uid 1001, network on (the API).
+# agent_exec <workspace> <home> <in-dir> <socket-dir> cmd...: the agent's sandbox, network on (the API).
 # Credentials come in as AGENT_ENV (an array of NAME=value); the cloud session's token file is bound if present.
 agent_exec() {
   local ws=$1 home=$2 in=$3 sock=$4 etc kv; shift 4
-  etc=$STUDY_STATE/etc-agent; [ -f "$etc/passwd" ] || etc_dir "$etc" agent 1001 /home/agent
-  base_args 1001
+  etc=$(mktemp -d); etc_dir "$etc" agent 0 /home/agent
+  base_args
   closure_binds "$STUDY_AGENT_CLOSURE"
-  A+=(--ro-bind "$STUDY_AGENT/bin" /bin --ro-bind "$STUDY_AGENT/bin" /usr/bin --ro-bind "$etc" /etc
+  A+=(--ro-bind "$STUDY_AGENT/bin" /bin --ro-bind "$STUDY_AGENT/bin" /usr/bin --ro-bind "$STUDY_AGENT/lib" /lib --ro-bind "$etc" /etc
       --ro-bind "$STUDY_AGENT/etc/ssl" /etc/ssl --bind "$ws" /workspace --bind "$home" /home/agent
       --ro-bind "$in" /in --bind "$sock" /run/study --ro-bind-try /home/claude/.claude/remote /home/claude/.claude/remote
       --chdir /workspace --setenv HOME /home/agent --setenv USER agent --setenv PATH /bin --setenv LANG C.UTF-8

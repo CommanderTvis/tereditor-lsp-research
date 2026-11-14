@@ -24,7 +24,7 @@ if [ "$arm" != baseline ]; then
   printf '{"mcpServers":{"tereditor":{"command":"socat","args":["STDIO","UNIX-CONNECT:/run/study/mcp.sock"]}}}\n' > "$w/in/mcp.json"
   if [ -n "${STUDY_LICENSE_ZIP_B64:-}" ]; then printf '%s' "$STUDY_LICENSE_ZIP_B64" | base64 -d > "$w/lic/${STUDY_LICENSE_NAME:-license.zip}"; fi
   socat UNIX-LISTEN:"$w/sock/mcp.sock",fork,mode=0777 \
-    SYSTEM:"exec bash $STUDY_ROOT/harness/env/serve-conn.sh $arm $w/ws $w/lsplog $w/lic" &
+    EXEC:"$STUDY_HOST/bin/bash $STUDY_ROOT/harness/env/serve-conn.sh $arm $w/ws $w/lsplog $w/lic" &
   bridge=$!
 fi
 unset STUDY_LICENSE_ZIP_B64

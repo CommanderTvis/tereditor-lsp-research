@@ -6,7 +6,7 @@ native backend (docs/NIX.md): no Docker daemon is needed in the cloud VM.
 
 ## Why one cloud session, and what it implies
 
-- A cloud session is a free Ubuntu 24.04 x86_64 VM (about 4 vCPUs, 16 GB of memory, 30 GB of disk) with Docker,
+- A cloud session is a free Ubuntu 24.04 x86_64 VM (about 4 vCPUs, 16 GB of memory, 30 GB of disk),
   isolated from the owner's machine. Model usage counts against the owner's plan.
 - 30 GB of disk holds one project at a time: build, use, then `./study prune`. Never keep more than one project's
   snapshot, caches and grading environment.
@@ -30,8 +30,8 @@ variables, no setup script, no network secrets.
 3. Starting the session with the prompt "Run the study per docs/CLOUD_RUN.md" (plus the attachment) is the owner's go
    for the confirmatory run, within the budget below.
 
-Status: the native backend this runbook relies on in the cloud (Nix bootstrapped by `./study`, bubblewrap sandboxes,
-docs/NIX.md) is being built. Until `./study` supports `STUDY_RUNTIME=native`, do not start a cloud run.
+Status: the environments and sandboxes run end to end on Apple `container`; the native backend (no container runtime)
+has not run yet, so the first cloud session is also its first test.
 
 ## Rules for the session
 

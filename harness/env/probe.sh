@@ -13,7 +13,7 @@ snap=$STUDY_STATE/projects/$proj/snapshot; [ -d "$snap" ] || die "project $proj 
 w=$(mktemp -d "$STUDY_STATE/probe-XXXXXX"); mkdir -p "$w/sock" "$w/lsplog" "$w/lic" "$out"
 cp -a "$snap" "$w/ws"
 if [ -n "${STUDY_LICENSE_ZIP_B64:-}" ]; then printf '%s' "$STUDY_LICENSE_ZIP_B64" | base64 -d > "$w/lic/${STUDY_LICENSE_NAME:-license.zip}"; fi
-socat UNIX-LISTEN:"$w/sock/mcp.sock",fork SYSTEM:"exec bash $STUDY_ROOT/harness/env/serve-conn.sh $mode $w/ws $w/lsplog $w/lic" &
+socat UNIX-LISTEN:"$w/sock/mcp.sock",fork EXEC:"$STUDY_HOST/bin/bash $STUDY_ROOT/harness/env/serve-conn.sh $mode $w/ws $w/lsplog $w/lic" &
 bridge=$!
 for _ in $(seq 1 50); do [ -S "$w/sock/mcp.sock" ] && break; sleep 0.1; done
 coproc S { socat STDIO UNIX-CONNECT:"$w/sock/mcp.sock"; }
@@ -52,8 +52,9 @@ while IFS= read -r spec; do
      '{name:$name, complete:($missing==[]), attempts:$attempts, secondsToComplete:($secs|tonumber), secondsToFirstAnswer:(if $first=="" then null else ($first|tonumber) end),
        sinceServerStart:($since0|tonumber), missing:$missing, found:($got|split("\n")|map(select(.!=""))), lastResult:$text}' >> $out/probe.jsonl
 done < <(jq -c '.[]' "$probe")
+# Close the connection (the client, then the bridge): the server sees end of input and its sandbox exits.
 exec 3>&- 4<&-
-kill "$bridge" 2>/dev/null || true; wait 2>/dev/null || true
+kill "$S_PID" 2>/dev/null || true; sleep 1; kill "$bridge" 2>/dev/null || true; wait 2>/dev/null || true
 mkdir -p "$out/lsplog"; cp -a "$w/lsplog/." "$out/lsplog/" 2>/dev/null || true
 rm -rf "$w"
 [ -n "${STUDY_HOST_UID:-}" ] && chown -R "$STUDY_HOST_UID:${STUDY_HOST_GID:-$STUDY_HOST_UID}" "$out" 2>/dev/null || true
