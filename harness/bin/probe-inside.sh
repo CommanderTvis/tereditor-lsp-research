@@ -1,5 +1,5 @@
 #!/bin/bash
-# Runs inside a run image (entrypoint "probe" mode, as root). Talks MCP to headless SharpRail exactly as the agent
+# Runs inside a run image (entrypoint "probe" mode, as root). Talks MCP to headless tereditor exactly as the agent
 # would (same sudo wrapper), with no model involved. Input: /in/probe.json, a list of
 #   {"name": "...", "tool": "lsp_navigate", "args": {...}, "expect": ["path:line", ...]}
 # expect lists 1-based locations that a complete answer must contain. Each call is repeated until every expected
@@ -10,15 +10,16 @@ set -euo pipefail
 mode=${1:-enforced}; POLL_S=${POLL_S:-180}
 mkdir -p /out
 rm -rf /workspace && cp -a /study/snapshot /workspace && chmod -R a+rwX /workspace
-install -d -o sharprail -g sharprail -m 0700 /study/lsplog
+install -d -o tereditor -g tereditor -m 0700 /study/lsplog
 # The IntelliJ licence, decoded exactly as the run entrypoint does it (only uid 1000 can read it).
-rm -rf /study/license && install -d -o sharprail -g sharprail -m 0700 /study/license
+rm -rf /study/license && install -d -o tereditor -g tereditor -m 0700 /study/license
 if [ -n "${STUDY_LICENSE_ZIP_B64:-}" ]; then
-  printf '%s' "$STUDY_LICENSE_ZIP_B64" | base64 -d > /study/license/license.zip
-  chown sharprail:sharprail /study/license/license.zip && chmod 0400 /study/license/license.zip
+  lf=/study/license/${STUDY_LICENSE_NAME:-license.zip}
+  printf '%s' "$STUDY_LICENSE_ZIP_B64" | base64 -d > "$lf"
+  chown tereditor:tereditor "$lf" && chmod 0400 "$lf"
 fi
 unset STUDY_LICENSE_ZIP_B64
-coproc S { sudo -n -u sharprail /usr/local/bin/sharprail-mcp "$mode"; }
+coproc S { sudo -n -u tereditor /usr/local/bin/tereditor-mcp "$mode"; }
 exec 3>&"${S[1]}" 4<&"${S[0]}"
 send() { printf '%s\n' "$1" >&3; }
 recv() { local line; while IFS= read -r -t 600 line <&4; do if jq -e --argjson id "$1" '.id == $id' >/dev/null 2>&1 <<<"$line"; then printf '%s\n' "$line"; return 0; fi; done; return 1; }

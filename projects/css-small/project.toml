@@ -1,0 +1,11 @@
+# css, small: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "css"
+size = "small"
+status = "stub"
+repo = "https://github.com/primer/css"
+tag = "v22.3.0"
+commit = "a59d1b9d7adad1e37f40c14ce213bcd94e41db9b"
+loc = 5552
+loc_by_language = { "Sass" = 5552 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

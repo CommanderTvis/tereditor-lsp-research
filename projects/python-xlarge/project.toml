@@ -1,0 +1,11 @@
+# python, xlarge: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "python"
+size = "xlarge"
+status = "stub"
+repo = "https://github.com/saltstack/salt"
+tag = "v3007.17"
+commit = "6d6c1a9c8ff6c186af2e2d1577c2d68c2ac1016a"
+loc = 1121852
+loc_by_language = { "Python" = 1121852 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

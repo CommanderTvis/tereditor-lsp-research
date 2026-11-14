@@ -1,0 +1,11 @@
+# java, large: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "java"
+size = "large"
+status = "stub"
+repo = "https://github.com/FasterXML/jackson-databind"
+tag = "jackson-databind-3.3.0"
+commit = "2747e06451e405cfa146caf9408d4cce124e8727"
+loc = 220742
+loc_by_language = { "Java" = 220742 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

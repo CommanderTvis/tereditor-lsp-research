@@ -1,0 +1,11 @@
+# java-kotlin, medium: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "java-kotlin"
+size = "medium"
+status = "stub"
+repo = "https://github.com/square/moshi"
+tag = "parent-1.15.0"
+commit = "491e66bd6475860ec0cba35f76dd14ec88fbeeca"
+loc = 26558
+loc_by_language = { "Java" = 18420, "Kotlin" = 8138 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

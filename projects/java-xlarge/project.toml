@@ -1,0 +1,11 @@
+# java, xlarge: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "java"
+size = "xlarge"
+status = "stub"
+repo = "https://github.com/apache/lucene"
+tag = "releases/lucene/10.6.0"
+commit = "4ae946e5a9b99d1e22c23865c99e561b8dcc9d71"
+loc = 979941
+loc_by_language = { "Java" = 979941 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

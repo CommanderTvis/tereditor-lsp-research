@@ -4,3 +4,6 @@ lang = "php"
 size = "small"
 repo = "https://github.com/thephpleague/container"
 commit = "58accbc032f0090a9bd08326f93062c5a658b2c5"
+loc = 3800
+loc_by_language = { "PHP" = 3800 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

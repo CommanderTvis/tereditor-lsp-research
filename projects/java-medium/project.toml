@@ -1,0 +1,9 @@
+# Java, medium: gson (Maven, Java only); chosen by size, see docs/PROJECTS.md. Two tasks so far (first used as the IntelliJ smoke project).
+lang = "java"
+size = "medium"
+repo = "https://github.com/google/gson"
+# gson-parent-2.15.0
+commit = "fcd416909db2bea96eb916bcfb2d0a83cb9b86c3"
+loc = 38889
+loc_by_language = { "Java" = 38889 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

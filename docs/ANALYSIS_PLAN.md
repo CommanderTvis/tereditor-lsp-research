@@ -25,7 +25,7 @@ F1 on answer tasks; wall time; turns; input+output tokens; number of tool calls;
 
 For each of these pairs of arms, pooled over everything else in the tasks where both arms run:
 
-- SharpRail: optional vs baseline, enforced vs baseline, enforced vs optional (all projects);
+- tereditor: optional vs baseline, enforced vs baseline, enforced vs optional (all projects);
 - IntelliJ: intellij-optional vs baseline, intellij-enforced vs baseline (JVM projects), and intellij-optional vs
   optional, intellij-enforced vs enforced (Kotlin and mixed projects, where both servers exist);
 

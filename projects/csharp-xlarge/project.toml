@@ -1,0 +1,11 @@
+# csharp, xlarge: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "csharp"
+size = "xlarge"
+status = "stub"
+repo = "https://github.com/dotnet/aspnetcore"
+tag = "v10.0.15"
+commit = "547fc16b976e18911f9df7630f1f75758ab248f2"
+loc = 1138640
+loc_by_language = { "C#" = 1138640 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

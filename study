@@ -2,7 +2,7 @@
 # The study driver. Host requirements: POSIX sh, a container runtime (docker, or Apple `container` on macOS) and an
 # Anthropic credential. Everything else (git, jq, toolchains, analysis) runs in containers.
 #
-#   ./study images [lang ...]          build sharprail, agent, warm-<lang> images
+#   ./study images [lang ...]          build tereditor, agent, warm-<lang> images
 #   ./study project <lang-size> ...    build the run and grade images of projects
 #   ./study probe <lang-size> [arm]    scripted LSP probe, no model (results/probe/<project>/)
 #   ./study validate <lang-size> ...   grader validity: start state fails, gold passes, twice
@@ -11,6 +11,10 @@
 #   ./study run-one <plan> <run-id>    run one line
 #   ./study grade <plan-name> [-j N]   grade every finished, ungraded run
 #   ./study analyze <plan-name>        tables and figures into results/<plan>/report/
+#   ./study status <plan-name>         per project: runs planned, finished, graded
+#   ./study archive <plan> <project>   pack a project's runs into results/<plan>/archive/ (committed); restore <plan>
+#   ./study prune <project>... [--warm <lang>]   free disk after a project (run/grade images, layers, build cache)
+#   run and grade take --project <lang-size> to work through one project of a plan at a time
 #
 # Environment: STUDY_RUNTIME=docker|container (default: whichever exists), ANTHROPIC_API_KEY or
 # CLAUDE_CODE_OAUTH_TOKEN (runs only), STUDY_CPUS (default 4), STUDY_MEMORY (default 6g).
@@ -26,8 +30,8 @@ fi
 RT=$STUDY_RUNTIME
 CPUS=${STUDY_CPUS:-4}
 MEMORY=${STUDY_MEMORY:-6g}
-SHARPRAIL_COMMIT=$(sed -n 's/^ARG SHARPRAIL_COMMIT=//p' harness/images/sharprail/Dockerfile)
-SHARPRAIL_TAG=study/sharprail:$(printf %.7s "$SHARPRAIL_COMMIT")
+TEREDITOR_COMMIT=$(sed -n 's/^ARG TEREDITOR_COMMIT=//p' harness/images/tereditor/Dockerfile)
+TEREDITOR_TAG=study/tereditor:$(printf %.7s "$TEREDITOR_COMMIT")
 
 die() { echo "study: $*" >&2; exit 2; }
 log() { echo "[study $(date -u +%H:%M:%S)] $*" >&2; }
@@ -35,7 +39,7 @@ log() { echo "[study $(date -u +%H:%M:%S)] $*" >&2; }
 # toml_get <file> <key>: a flat `key = "value"` or `key = value` from project.toml / task.toml.
 toml_get() { sed -n "s/^$2[[:space:]]*=[[:space:]]*\"\{0,1\}\([^\"]*\)\"\{0,1\}[[:space:]]*\$/\1/p" "$1" | head -n1; }
 
-# One platform for every language: the native one (clangd has a pinned linux/arm64 build since SharpRail 0da30195).
+# One platform for every language: the native one (clangd has a pinned linux/arm64 build since tereditor 0da30195).
 platform_of() { echo "linux/$(native_arch)"; }
 native_arch() { case "$(uname -m)" in x86_64|amd64) echo amd64 ;; arm64|aarch64) echo arm64 ;; *) uname -m ;; esac; }
 servers_of() { case "$1" in cpp) echo clangd ;; *) echo "$1" ;; esac; }
@@ -63,8 +67,8 @@ cmd_images() {
   for l in $langs; do p=$(platform_of "$l"); case " $plats " in *" $p "*) ;; *) plats="$plats $p" ;; esac; done
   for p in $plats; do
     a=$(arch_tag "$p")
-    build "$p" "$SHARPRAIL_TAG-$a" harness/images/sharprail
-    build "$p" "study/agent:$a" harness/images/agent --build-arg "SHARPRAIL_IMAGE=$SHARPRAIL_TAG-$a"
+    build "$p" "$TEREDITOR_TAG-$a" harness/images/tereditor
+    build "$p" "study/agent:$a" harness/images/agent --build-arg "TEREDITOR_IMAGE=$TEREDITOR_TAG-$a"
   done
   done_warm=""
   for l in $langs; do
@@ -95,14 +99,27 @@ cmd_project() {
   done
 }
 
+# The IntelliJ licence: ./license.zip (the offline-activation zip) or ./license.txt (the bare code from it), or
+# STUDY_INTELLIJ_LICENSE; where no file exists (a
+# cloud session: license.zip is never committed) an already-set STUDY_LICENSE_ZIP_B64 environment variable is used.
+load_license() {
+  lic=${STUDY_INTELLIJ_LICENSE:-}
+  [ -n "$lic" ] || for f in "$ROOT/license.zip" "$ROOT/license.txt"; do [ -f "$f" ] && { lic=$f; break; }; done
+  if [ -n "$lic" ] && [ -f "$lic" ]; then
+    STUDY_LICENSE_ZIP_B64=$(base64 < "$lic" | tr -d '\n')
+    case "$lic" in *.zip) STUDY_LICENSE_NAME=license.zip ;; *) STUDY_LICENSE_NAME=license.txt ;; esac
+  fi
+  STUDY_LICENSE_ZIP_B64=${STUDY_LICENSE_ZIP_B64:-}; STUDY_LICENSE_NAME=${STUDY_LICENSE_NAME:-license.zip}
+  export STUDY_LICENSE_ZIP_B64 STUDY_LICENSE_NAME
+}
+
 cmd_probe() {
   proj=$1 mode=${2:-enforced}
   d=projects/$proj; l=$(project_lang "$proj"); p=$(platform_of "$l")
   out=$ROOT/results/probe/$proj-$mode; rm -rf "$out"; mkdir -p "$out" "$out.in"
   cp "$d/probe.json" "$out.in/probe.json"; cp harness/bin/probe-inside.sh "$out.in/"
-  lic=${STUDY_INTELLIJ_LICENSE:-$ROOT/license.zip}
-  STUDY_LICENSE_ZIP_B64=""; [ -f "$lic" ] && STUDY_LICENSE_ZIP_B64=$(base64 < "$lic" | tr -d '\n'); export STUDY_LICENSE_ZIP_B64
-  run_ctr "$p" "study/run-$proj" -v "$out.in:/in:ro" -v "$out:/out" ${STUDY_LICENSE_ZIP_B64:+-e STUDY_LICENSE_ZIP_B64} \
+  load_license
+  run_ctr "$p" "study/run-$proj" -v "$out.in:/in:ro" -v "$out:/out" ${STUDY_LICENSE_ZIP_B64:+-e STUDY_LICENSE_ZIP_B64 -e STUDY_LICENSE_NAME} \
     -e "POLL_S=${POLL_S:-180}" "study/run-$proj" probe bash /in/probe-inside.sh "$mode"
   rm -rf "$out.in"
   log "probe results: $out/probe.jsonl"
@@ -154,7 +171,7 @@ cmd_run_one() {
   { cat harness/prompt-preamble.md; cat "$tdir/prompt.md"; } > "$out.in/prompt.md"
   [ -f "$tdir/setup.patch" ] && cp "$tdir/setup.patch" "$out.in/setup.patch"
   [ -f "harness/arms/$arm/mcp.json" ] && cp "harness/arms/$arm/mcp.json" "$out.in/mcp.json"
-  # The IntelliJ arms reuse their SharpRail twin's workspace overlay (CLAUDE.md, hooks), so the two cannot drift apart.
+  # The IntelliJ arms reuse their tereditor twin's workspace overlay (CLAUDE.md, hooks), so the two cannot drift apart.
   ov=harness/arms/$arm/overlay; [ -d "$ov" ] || ov=harness/arms/${arm#intellij-}/overlay
   case "$arm" in intellij-*|enforced|optional) ;; *) ov=/nonexistent ;; esac
   [ -d "$ov" ] && cp -R "$ov" "$out.in/arm"
@@ -164,17 +181,22 @@ cmd_run_one() {
   run_ctr "$p" "study/run-$proj" -v "$out.in:/in:ro" -v "$out:/out" \
     -e ARM="$arm" -e MODEL="$model" -e EFFORT="$effort" -e MAX_BUDGET_USD="$budget" -e MAX_TURNS="$turns" -e TIMEOUT_S="$tmo" \
     ${ANTHROPIC_API_KEY:+-e ANTHROPIC_API_KEY} ${CLAUDE_CODE_OAUTH_TOKEN:+-e CLAUDE_CODE_OAUTH_TOKEN} \
-    ${STUDY_LICENSE_ZIP_B64:+-e STUDY_LICENSE_ZIP_B64} \
+    ${STUDY_LICENSE_ZIP_B64:+-e STUDY_LICENSE_ZIP_B64 -e STUDY_LICENSE_NAME} \
     "study/run-$proj" > "$out/container.log" 2>&1 || log "run $rid: container exited $?"
   cp -R "$out.in" "$out/in" && rm -rf "$out.in"
   # The arm and task inputs are kept, minus nothing secret (no credential ever reaches /in).
 }
 
+# plan_ids <plan> [project]: run ids of a plan, in plan order, optionally only one project's.
+plan_ids() { awk -F'\t' -v p="${2:-}" 'NR>1 && (p=="" || $2==p) {print $1}' "results/$1/plan.tsv"; }
+
+# run/grade options: -j N (parallel runs), --project P (only that project's runs).
+parse_jp() { j=3; only=""; while [ $# -gt 0 ]; do case "$1" in -j) j=$2; shift 2 ;; --project) only=$2; shift 2 ;; *) die "unknown option $1" ;; esac; done; }
+
 cmd_run() {
-  plan=$1; shift; j=3
-  [ "${1:-}" = -j ] && j=$2
+  plan=$1; shift; parse_jp "$@"
   # The credential: from the environment, else from an env file (KEY=value lines), never from the command line.
-  envf=${STUDY_ENV_FILE:-$HOME/.config/sharprail-study/env}
+  envf=${STUDY_ENV_FILE:-$HOME/.config/tereditor-study/env}
   if [ -z "${ANTHROPIC_API_KEY:-}${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ -f "$envf" ]; then
     ANTHROPIC_API_KEY=$(sed -n 's/^ANTHROPIC_API_KEY=//p' "$envf" | tr -d '"'"'"' \r')
     CLAUDE_CODE_OAUTH_TOKEN=$(sed -n 's/^CLAUDE_CODE_OAUTH_TOKEN=//p' "$envf" | tr -d '"'"'"' \r')
@@ -182,16 +204,14 @@ cmd_run() {
   [ -n "${ANTHROPIC_API_KEY:-}${CLAUDE_CODE_OAUTH_TOKEN:-}" ] || die "set ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN, or put one in $envf"
   # A JetBrains offline-activation zip for the IntelliJ arms (optional): ./license.zip, or STUDY_INTELLIJ_LICENSE.
   # It travels base64-encoded in an environment variable, never as a mount the agent could read.
-  lic=${STUDY_INTELLIJ_LICENSE:-$ROOT/license.zip}
-  STUDY_LICENSE_ZIP_B64=""; [ -f "$lic" ] && STUDY_LICENSE_ZIP_B64=$(base64 < "$lic" | tr -d '\n')
+  load_license
   export ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN STUDY_RUNTIME STUDY_LICENSE_ZIP_B64
-  tail -n +2 "results/$plan/plan.tsv" | cut -f1 | xargs -P "$j" -n 1 "$ROOT/study" run-one "$plan"
+  plan_ids "$plan" "$only" | xargs -P "$j" -n 1 "$ROOT/study" run-one "$plan"
 }
 
 cmd_grade() {
-  plan=$1; shift; j=3
-  [ "${1:-}" = -j ] && j=$2
-  tail -n +2 "results/$plan/plan.tsv" | cut -f1 | xargs -P "$j" -n 1 "$ROOT/study" grade-one "$plan"
+  plan=$1; shift; parse_jp "$@"
+  plan_ids "$plan" "$only" | xargs -P "$j" -n 1 "$ROOT/study" grade-one "$plan"
 }
 
 cmd_grade_one() {
@@ -218,6 +238,46 @@ cmd_analyze() {
   run_ctr "linux/$(native_arch)" study/analysis -v "$ROOT:/study-root" study/analysis "$name"
 }
 
+# prune <project> ...: drop the run and grade images of finished projects and every dangling layer and build cache, so
+# a small disk (a cloud VM) holds one project at a time. --warm <lang> also drops that language's warm image.
+cmd_prune() {
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --warm) w=$(warm_of "$2"); $RT image rm "study/warm-$w:$(native_arch)" >/dev/null 2>&1 || true; shift 2 ;;
+      *) $RT image rm "study/run-$1" "study/grade-$1" >/dev/null 2>&1 || true; shift ;;
+    esac
+  done
+  if [ "$RT" = docker ]; then docker image prune -f >/dev/null; docker builder prune -af >/dev/null 2>&1 || true
+  else container image prune >/dev/null 2>&1 || true; fi
+  log "pruned; disk: $(df -h "$ROOT" | awk 'NR==2 {print $4" free"}')"
+}
+
+# archive <plan> <project>: pack that project's finished run directories into results/<plan>/archive/<project>.tar.gz
+# (committed; raw run directories are git-ignored). restore <plan>: unpack every archive back into results/<plan>/runs,
+# so a new session or machine resumes where the last one stopped.
+cmd_archive() {
+  plan=$1 proj=$2; P=results/$plan; mkdir -p "$P/archive"
+  ids=$(plan_ids "$plan" "$proj" | while read -r r; do [ -f "$P/runs/$r/exit.json" ] && echo "$r"; done)
+  [ -n "$ids" ] || { log "archive: no finished runs for $proj"; return 0; }
+  (cd "$P/runs" && tar -czf "../archive/$proj.tar.gz" $ids)
+  log "archived $(echo "$ids" | wc -l | tr -d ' ') runs of $proj: $(du -h "$P/archive/$proj.tar.gz" | cut -f1)"
+}
+cmd_restore() {
+  P=results/$1; mkdir -p "$P/runs"
+  for a in "$P"/archive/*.tar.gz; do [ -f "$a" ] && tar -xzf "$a" -C "$P/runs"; done
+  log "restored: $(ls "$P/runs" | wc -l | tr -d ' ') run directories"
+}
+
+# status <plan>: per project, runs planned, finished and graded (what is left to do after an interruption).
+cmd_status() {
+  P=results/$1
+  printf '%-22s %7s %8s %7s\n' project planned finished graded
+  awk -F'\t' 'NR>1 {print $1"\t"$2}' "$P/plan.tsv" | while IFS="$(printf '\t')" read -r rid proj; do
+    f=0; g=0; [ -f "$P/runs/$rid/exit.json" ] && f=1; [ -f "$P/runs/$rid/grade/result.json" ] && g=1
+    printf '%s\t%s\t%s\n' "$proj" "$f" "$g"
+  done | awk -F'\t' '{n[$1]++; f[$1]+=$2; g[$1]+=$3} END {for (p in n) printf "%-22s %7d %8d %7d\n", p, n[p], f[p], g[p]}' | sort
+}
+
 c=${1:-}; [ -n "$c" ] || { sed -n '2,20p' "$0"; exit 2; }; shift
 case "$c" in
   images) cmd_images "$@" ;;
@@ -230,5 +290,9 @@ case "$c" in
   grade) cmd_grade "$@" ;;
   grade-one) cmd_grade_one "$@" ;;
   analyze) cmd_analyze "$@" ;;
+  prune) cmd_prune "$@" ;;
+  status) cmd_status "$@" ;;
+  archive) cmd_archive "$@" ;;
+  restore) cmd_restore "$@" ;;
   *) die "unknown command $c" ;;
 esac

@@ -3,7 +3,8 @@ lang = "python"
 size = "small"
 repo = "https://github.com/pytoolz/toolz"
 commit = "451af60dec590a6010e2babdbf391ea8f815122f"
-loc_command = "find . -name '*.py' -not -path './.git/*' | xargs wc -l"
-loc = 7414
+loc = 5765
 stripped = []
 task_types = ["refs", "callers", "rename", "compile", "bugfix"]
+loc_by_language = { "Python" = 5765 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

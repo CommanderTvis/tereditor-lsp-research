@@ -4,10 +4,10 @@
 ARG AGENT_IMAGE=study/agent:latest
 FROM ${AGENT_IMAGE}
 ARG SERVERS
-USER sharprail
+USER tereditor
 RUN test -n "$SERVERS" \
-    && HOME=/cache/home SHARPRAIL_TOOLCHAINS=managed SHARPRAIL_MANAGED_CACHE=/cache/managed SHARPRAIL_STATE_DIR=/cache/state \
-       sharprail-headless warm $SERVERS --workspace /tmp
+    && HOME=/cache/home TEREDITOR_TOOLCHAINS=managed TEREDITOR_MANAGED_CACHE=/cache/managed TEREDITOR_STATE_DIR=/cache/state \
+       tereditor-headless warm $SERVERS --workspace /tmp
 USER root
-RUN chown -R sharprail:sharprail /cache && chmod 0700 /cache
+RUN chown -R tereditor:tereditor /cache && chmod 0700 /cache
 LABEL study.servers="${SERVERS}"

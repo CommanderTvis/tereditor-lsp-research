@@ -1,7 +1,7 @@
-# The "optional" arm: remove headless SharpRail's advice to prefer its tools over other tools, so the tools are
+# The "optional" arm: remove headless tereditor's advice to prefer its tools over other tools, so the tools are
 # available but nothing urges them. Applied to every JSON-RPC line the server writes. Only the initialize instructions
 # and three sentences of tool descriptions change; schemas, operations and results are untouched.
-# Removed (SharpRail 95f7048):
+# Removed (tereditor 95f7048):
 #   initialize: "Use lsp_navigate instead of grep to find symbols, implementations and references, and lsp_diagnostics
 #                to check edited files." and "For semantic changes (...) use ... instead of hand-editing; ..."
 #   lsp_navigate:     "Use it instead of grep for code: it finds implementations, overloads, partial classes and

@@ -5,7 +5,8 @@ size = "small"
 repo = "https://github.com/LuckyPennySoftware/MediatR"
 commit = "8a64581e2570e7410c5f44835d9ea112beccbe6b"
 tag = "v12.5.0"
-loc_command = "find . -name '*.cs' -not -path './.git/*' | xargs cat | wc -l"
-loc = 9950
+loc = 7582
 stripped = []
 task_types = ["refs", "dispatch", "rename", "compile", "bugfix"]
+loc_by_language = { "C#" = 7582 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

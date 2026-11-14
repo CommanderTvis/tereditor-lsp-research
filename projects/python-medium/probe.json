@@ -1,7 +1,0 @@
-[
-  {"name": "references strip_ansi (cross-file, src and tests)", "args": {"operation": "references", "query": "strip_ansi", "path": "src/click/_compat.py"},
-   "expect": ["src/click/utils.py:331", "src/click/termui.py:777", "tests/test_compat.py:127"]},
-  {"name": "definition of format_filename from another module", "args": {"operation": "definition", "query": "format_filename"},
-   "expect": ["src/click/utils.py:430"]},
-  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["src/click/formatting.py"]}, "expect": []}
-]

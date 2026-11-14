@@ -1,0 +1,11 @@
+# cpp, small: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "cpp"
+size = "small"
+status = "stub"
+repo = "https://github.com/leethomason/tinyxml2"
+tag = "11.0.0"
+commit = "9148bdf719e997d1f474be6bcc7943881046dba1"
+loc = 5820
+loc_by_language = { "C++" = 4556, "C Header" = 1264 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

@@ -1,0 +1,11 @@
+# typescript, xlarge: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "typescript"
+size = "xlarge"
+status = "stub"
+repo = "https://github.com/angular/angular"
+tag = "v22.2.6"
+commit = "dda2d41d948380d63619d597c9815db0aa77fd1d"
+loc = 775624
+loc_by_language = { "TypeScript" = 769362, "TypeScript Typings" = 6262 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

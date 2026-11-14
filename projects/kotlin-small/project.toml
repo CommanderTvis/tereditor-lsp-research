@@ -1,0 +1,11 @@
+# kotlin, small: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "kotlin"
+size = "small"
+status = "stub"
+repo = "https://github.com/michaelbull/kotlin-result"
+tag = "2.3.1"
+commit = "a528dd0f2e40522df0a45287ffcf46fbd9893d56"
+loc = 8485
+loc_by_language = { "Kotlin" = 8485 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

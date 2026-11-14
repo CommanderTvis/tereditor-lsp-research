@@ -1,0 +1,11 @@
+# php, xlarge: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "php"
+size = "xlarge"
+status = "stub"
+repo = "https://github.com/drupal/drupal"
+tag = "11.4.12"
+commit = "aa556ff13046baca57d5f69fac25c96fc30b4f43"
+loc = 984961
+loc_by_language = { "PHP" = 984961 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

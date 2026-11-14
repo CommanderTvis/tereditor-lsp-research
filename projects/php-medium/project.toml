@@ -1,0 +1,11 @@
+# php, medium: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "php"
+size = "medium"
+status = "stub"
+repo = "https://github.com/guzzle/guzzle"
+tag = "8.3.1"
+commit = "7d9b1f430bb65ac664e120af227bf9a795ad6333"
+loc = 47450
+loc_by_language = { "PHP" = 47450 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

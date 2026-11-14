@@ -1,0 +1,11 @@
+# kotlin, xlarge: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "kotlin"
+size = "xlarge"
+status = "stub"
+repo = "https://github.com/JetBrains/kotlin"
+tag = "v2.4.21"
+commit = "9180ce6a7a7d3627f88b424717583f28ddca052d"
+loc = 2533743
+loc_by_language = { "Kotlin" = 2533743 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

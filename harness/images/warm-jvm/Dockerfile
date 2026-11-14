@@ -2,7 +2,7 @@
 # The JVM warm image (Kotlin, Java, mixed): the Kotlin server, the opt-in IntelliJ server with the owner's recorded
 # acceptance of its terms (harness/intellij.env), and a pinned JDK at /cache/jdk for project import. Everything lives
 # under /cache (uid 1000, 0700): the agent can reach none of it. The IntelliJ server is used only by the intellij-* arms
-# (SHARPRAIL_PREFETCH=intellij in harness/images/agent/sharprail-mcp); the other arms keep the Kotlin server.
+# (TEREDITOR_PREFETCH=intellij in harness/images/agent/tereditor-mcp); the other arms keep the Kotlin server.
 ARG AGENT_IMAGE=study/agent:latest
 
 FROM ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852 AS jdk
@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
     && mkdir -p /jdk && tar -xzf /tmp/jdk.tgz -C /jdk --strip-components=1 && /jdk/bin/java -version
 
 # Apache Maven: IntelliJ's native Maven import runs `mvn` from PATH (without it the import fails and answers stay
-# within one file). Pinned and checked like the JDK; on the servers' PATH only (harness/images/agent/sharprail-mcp).
+# within one file). Pinned and checked like the JDK; on the servers' PATH only (harness/images/agent/tereditor-mcp).
 FROM ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852 AS maven
 ARG MAVEN_URL=https://archive.apache.org/dist/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz
 ARG MAVEN_SHA512=bcfe4fe305c962ace56ac7b5fc7a08b87d5abd8b7e89027ab251069faebee516b0ded8961445d6d91ec1985dfe30f8153268843c89aa392733d1a3ec956c9978
@@ -29,20 +29,20 @@ FROM ${AGENT_IMAGE}
 ARG INTELLIJ_TERMS_HASH
 ARG INTELLIJ_REGION
 ARG INTELLIJ_DATA_SHARING
-COPY --from=jdk --chown=sharprail:sharprail /jdk /cache/jdk
-COPY --from=maven --chown=sharprail:sharprail /maven /cache/maven
-USER sharprail
-ENV STUDY_WARM_ENV="HOME=/cache/home SHARPRAIL_TOOLCHAINS=managed SHARPRAIL_MANAGED_CACHE=/cache/managed SHARPRAIL_STATE_DIR=/cache/state JAVA_HOME=/cache/jdk"
+COPY --from=jdk --chown=tereditor:tereditor /jdk /cache/jdk
+COPY --from=maven --chown=tereditor:tereditor /maven /cache/maven
+USER tereditor
+ENV STUDY_WARM_ENV="HOME=/cache/home TEREDITOR_TOOLCHAINS=managed TEREDITOR_MANAGED_CACHE=/cache/managed TEREDITOR_STATE_DIR=/cache/state JAVA_HOME=/cache/jdk"
 # Without the three INTELLIJ_* build args the image has no IntelliJ server and no acceptance (./study images without
 # STUDY_INTELLIJ=1); the intellij-* arms then refuse to start and the other arms are unaffected.
-RUN env $STUDY_WARM_ENV sharprail-headless warm kotlin --workspace /tmp \
+RUN env $STUDY_WARM_ENV tereditor-headless warm kotlin --workspace /tmp \
     && if [ -z "$INTELLIJ_TERMS_HASH" ]; then exit 0; fi \
     && test -n "$INTELLIJ_REGION" && test -n "$INTELLIJ_DATA_SHARING" \
-    && env $STUDY_WARM_ENV SHARPRAIL_PREFETCH=intellij SHARPRAIL_ACCEPT_TERMS="intellij:$INTELLIJ_TERMS_HASH" \
+    && env $STUDY_WARM_ENV TEREDITOR_PREFETCH=intellij TEREDITOR_ACCEPT_TERMS="intellij:$INTELLIJ_TERMS_HASH" \
          INTELLIJ_REGION="$INTELLIJ_REGION" INTELLIJ_DATA_SHARING="$INTELLIJ_DATA_SHARING" \
-         sharprail-headless warm intellij --workspace /tmp \
+         tereditor-headless warm intellij --workspace /tmp \
     && printf 'INTELLIJ_TERMS_HASH=%s\nINTELLIJ_REGION=%s\nINTELLIJ_DATA_SHARING=%s\n' \
          "$INTELLIJ_TERMS_HASH" "$INTELLIJ_REGION" "$INTELLIJ_DATA_SHARING" > /cache/study-intellij.env
 USER root
-RUN chown -R sharprail:sharprail /cache && chmod 0700 /cache
+RUN chown -R tereditor:tereditor /cache && chmod 0700 /cache
 LABEL study.servers="kotlin intellij" study.intellij.terms="${INTELLIJ_TERMS_HASH}"

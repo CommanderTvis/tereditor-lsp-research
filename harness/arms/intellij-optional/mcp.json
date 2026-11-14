@@ -1,5 +1,5 @@
 {
   "mcpServers": {
-    "sharprail": { "command": "sudo", "args": ["-n", "-u", "sharprail", "/usr/local/bin/sharprail-mcp", "intellij-optional"] }
+    "tereditor": { "command": "sudo", "args": ["-n", "-u", "tereditor", "/usr/local/bin/tereditor-mcp", "intellij-optional"] }
   }
 }

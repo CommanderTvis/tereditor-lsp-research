@@ -30,7 +30,7 @@ where both languages carry real code and call each other). `<size>` is `small me
 - The upstream repository at a pinned full commit SHA, re-committed as a single commit (no history: history could
   reveal fixes for seeded bugs and is not what the study measures).
 - Removed before the commit: `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.claude/`, `.cursor/`, `.cursorrules`,
-  `.github/copilot-instructions.md`, `.windsurfrules`, `.sharprail/`, `.mcp.json`, `.vscode/`, `.idea/` and any other
+  `.github/copilot-instructions.md`, `.windsurfrules`, `.tereditor/`, `.mcp.json`, `.vscode/`, `.idea/` and any other
   agent or editor instruction file. `project.toml` lists what was removed.
 - A task's `setup.patch` is applied and committed as a second commit, so `git log` shows nothing task-specific beyond
   "task setup". The arm overlay (enforced arm only) is a third commit. The graded diff is against the last of these.
@@ -39,15 +39,16 @@ where both languages carry real code and call each other). `<size>` is `small me
 
 ## Size classes
 
-Measured with `scc` or `tokei` on the snapshot, counting the project's own language only, excluding vendored and
-generated code. Record the command and number in `project.toml`.
+Code lines in the project's main language, measured identically for every language (`scc`, blank and comment
+lines excluded, tests included, vendored code skipped); bands, the measurement script and the chosen projects are in
+[PROJECTS.md](PROJECTS.md). Record the count in `project.toml` (`loc`, `loc_by_language`).
 
-| Size | Lines of code (primary language) |
-| --- | --- |
-| small | 1k to 10k |
-| medium | 10k to 100k |
-| large | 100k to 1M |
-| xlarge | about 1M or more: the biggest well-known codebases of the language (for example VS Code, Roslyn or the .NET runtime, Django-scale and beyond such as Home Assistant, Magento or Drupal, LLVM or the Linux kernel, the Kotlin compiler or IntelliJ Community) |
+| Size | Band (code lines) | Target |
+| --- | --- | --- |
+| small | 3k to 12k | 6k |
+| medium | 25k to 80k | 45k |
+| large | 140k to 450k | 250k |
+| xlarge | 700k to 3M | 1.2M |
 
 `xlarge` projects exist to measure what happens where text search and whole-file reading stop scaling and where a
 language server's indexing cost is highest. They may be too big to build or test as a whole: their edit tasks are
@@ -87,7 +88,7 @@ The grader normalises whitespace, a leading `./`, and duplicate lines. Nothing e
 
 ## Oracles must not come from the tool under test
 
-Ground truth for `refs`, `impls`, `callers` and `inspect` is derived without the language server SharpRail runs:
+Ground truth for `refs`, `impls`, `callers` and `inspect` is derived without the language server tereditor runs:
 compiler-driven mutation (rename the declaration, build, collect the errors), a different analyser (mypy for Python,
 PHPStan for PHP, `kotlinc` for Kotlin, `clang -fsyntax-only` with the real compilation database for C/C++, `sass`
 for SCSS), or an exhaustive text candidate list checked by hand. `oracle.md` records which, with commands, and lists

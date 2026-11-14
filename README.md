@@ -1,8 +1,8 @@
 # LSP efficiency study: does a language server help a Claude Code agent?
 
 A controlled, reproducible experiment on whether giving Claude Code the language-server tools of
-[headless SharpRail](https://github.com/CommanderTvis/sharprail/blob/main/docs/headless.md) changes success, cost and
-time on real code tasks, across every language SharpRail serves headless, three project sizes, three models and three
+[headless tereditor](https://github.com/CommanderTvis/tereditor/blob/main/docs/headless.md) changes success, cost and
+time on real code tasks, across every language tereditor serves headless, three project sizes, three models and three
 prompting regimes.
 
 - [docs/DESIGN.md](docs/DESIGN.md): question, factors, arms, contamination control, measures.
@@ -20,7 +20,7 @@ prompting regimes.
 ### The IntelliJ arms need your own JetBrains licence
 
 The arms that use the IntelliJ language server (Java and Kotlin) run only with a licence you own that includes
-IntelliJ IDEA Ultimate (an IntelliJ IDEA Ultimate or All Products Pack subscription). Headless SharpRail has no trial
+IntelliJ IDEA Ultimate (an IntelliJ IDEA Ultimate or All Products Pack subscription). Headless tereditor has no trial
 and no sign-in, so it uses JetBrains' offline activation code:
 
 1. Sign in at <https://account.jetbrains.com/licenses>, choose the licence and click **Download a code for offline
@@ -36,7 +36,7 @@ and no sign-in, so it uses JetBrains' offline activation code:
 
 `license.zip` is git-ignored: never commit it. At run time `./study run` hands it to each run's container in an
 environment variable (base64), the container writes it to a directory only the language server's user can read, and the
-agent's environment is rebuilt without it, so the agent under test cannot see it. SharpRail reads the zip itself
+agent's environment is rebuilt without it, so the agent under test cannot see it. tereditor reads the zip itself
 (`INTELLIJ_SERVER_LICENSE_FILE`, see its `docs/headless.md`). Without the file, the other arms run as usual; leave the
 IntelliJ arms out of your plan (`--arms`). Results from the IntelliJ arms can only be reproduced by someone with such a licence.
 
@@ -54,8 +54,8 @@ runtime and an API key; nothing else is installed on your machine.
    ```sh
    export ANTHROPIC_API_KEY=sk-ant-...
    # or, so it is not in your shell history:
-   mkdir -p ~/.config/sharprail-study
-   printf 'ANTHROPIC_API_KEY=%s\n' 'sk-ant-...' > ~/.config/sharprail-study/env && chmod 600 ~/.config/sharprail-study/env
+   mkdir -p ~/.config/tereditor-study
+   printf 'ANTHROPIC_API_KEY=%s\n' 'sk-ant-...' > ~/.config/tereditor-study/env && chmod 600 ~/.config/tereditor-study/env
    ```
 
    The key reaches each run's container by variable name only, is redacted from every output file, and is billed per
@@ -91,7 +91,7 @@ Docker Desktop on macOS have not been run by the authors yet; Apple `container` 
 ## Reproduce
 
 ```sh
-./study images                      # SharpRail from the pinned commit, the agent image, one warm image per language
+./study images                      # tereditor from the pinned commit, the agent image, one warm image per language
 ./study project python-small ...    # run + grade images per project (or: ./study project $(ls projects))
 ./study probe python-small          # language server works on this project, no model involved
 ./study validate python-small       # every task: start state fails, gold solution passes, twice

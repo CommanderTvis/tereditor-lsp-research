@@ -16,6 +16,6 @@ pending=$(awk -F'\t' '$1=="diag"{delete e; next} $1=="edit"{e[$2]=1} END{for(k i
 last=$(tail -n1 <<<"$uses")
 if [ -n "$pending" ] || [ "${last%%$'\t'*}" = edit ]; then
   files=$(paste -sd, - <<<"$pending")
-  jq -cn --arg r "CLAUDE.md: source files were edited after the last lsp_diagnostics check${files:+ ($files)}. Run mcp__sharprail__lsp_diagnostics with paths listing every file you edited and fix what it reports before finishing." \
+  jq -cn --arg r "CLAUDE.md: source files were edited after the last lsp_diagnostics check${files:+ ($files)}. Run mcp__tereditor__lsp_diagnostics with paths listing every file you edited and fix what it reports before finishing." \
     '{decision:"block", reason:$r}'
 fi

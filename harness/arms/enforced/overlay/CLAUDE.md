@@ -3,7 +3,7 @@
 ## Code intelligence: use the language tools, not grep
 
 This codebase is too large for grep-based symbol work. Symbol search, references, implementations, call hierarchy,
-diagnostics and renames go through the language server, which the `sharprail` MCP server exposes:
+diagnostics and renames go through the language server, which the `tereditor` MCP server exposes:
 
 1. `lsp_navigate` for every question about a symbol: `definition`, `references`, `implementation`, `hover`,
    `incomingCalls`/`outgoingCalls`, `symbols` (outline of a file), `workspaceSymbols`. Name the symbol in `query`;

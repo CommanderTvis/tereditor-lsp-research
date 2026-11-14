@@ -1,0 +1,38 @@
+#!/bin/sh
+# Starts headless tereditor for /workspace as uid 1000 (tereditor). The agent (uid 1001) may run only this script
+# through sudo, so it can reach the language tools but never the runtimes in /cache (.NET SDK, Bun, servers),
+# which would otherwise give the agent a compiler that the baseline does not have.
+#
+#   tereditor-mcp optional   initialize text and tool descriptions neutralised (tools available, nothing urges them)
+#   tereditor-mcp enforced   shipped text unchanged ("Use lsp_navigate instead of grep ...")
+#   tereditor-mcp intellij-optional|intellij-enforced   the same, with the opt-in IntelliJ server for .kt and .java
+set -eu
+case "${1:-}" in
+  optional|enforced) mode=$1 ;;
+  intellij-optional|intellij-enforced) mode=${1#intellij-}; intellij=1 ;;
+  *) echo "usage: tereditor-mcp optional|enforced|intellij-optional|intellij-enforced" >&2; exit 2 ;;
+esac
+
+export HOME=/cache/home TEREDITOR_TOOLCHAINS=managed TEREDITOR_MANAGED_CACHE=/cache/managed \
+  TEREDITOR_STATE_DIR=/cache/state TEREDITOR_ROOT=/workspace DOTNET_NOLOGO=1 DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+  GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0='*' \
+  TEREDITOR_TOOLS_ALLOW=lsp_navigate,lsp_diagnostics,lsp_status,lsp_code_actions,lsp_rename,lsp_format \
+  TEREDITOR_LOG=1 TEREDITOR_LOG_LEVEL=args TEREDITOR_RUNS_DIR=/study/lsplog
+# The JVM image's pinned JDK, for the Kotlin and IntelliJ servers alike.
+[ -d /cache/jdk ] && export JAVA_HOME=/cache/jdk PATH=/cache/jdk/bin:$PATH
+[ -d /cache/maven ] && export MAVEN_HOME=/cache/maven PATH=/cache/maven/bin:$PATH
+# IntelliJ: asked for, with the acceptance recorded when the JVM image was built (the exact terms hash only).
+if [ "${intellij:-0}" = 1 ]; then
+  [ -f /cache/study-intellij.env ] || { echo "tereditor-mcp: this image has no IntelliJ server (not a JVM image)" >&2; exit 2; }
+  . /cache/study-intellij.env
+  export TEREDITOR_PREFETCH=intellij TEREDITOR_ACCEPT_TERMS="intellij:$INTELLIJ_TERMS_HASH" INTELLIJ_REGION INTELLIJ_DATA_SHARING
+fi
+# The IntelliJ server reads the offline-activation zip itself (tereditor 0f80c69e); unused unless an arm asks for IntelliJ.
+for lf in /study/license/license.zip /study/license/license.txt; do [ -f "$lf" ] && export INTELLIJ_SERVER_LICENSE_FILE="$lf"; done
+umask 000
+cd /workspace
+if [ "$mode" = enforced ]; then
+  exec /opt/tereditor/tereditor-headless mcp --workspace /workspace 2>>/study/lsplog/server.stderr
+fi
+/opt/tereditor/tereditor-headless mcp --workspace /workspace 2>>/study/lsplog/server.stderr \
+  | jq -c --unbuffered -f /usr/local/share/study/neutral.jq

@@ -1,7 +1,7 @@
 """Turns every finished run of a plan into one row of results/<plan>/runs.csv.
 
 Sources per run directory (results/<plan>/runs/<run_id>/): stream.jsonl (Claude Code stream-json), exit.json,
-grade/result.json, lsplog/*.jsonl (SharpRail's call log), patch.diff. Also checks each run's system/init event
+grade/result.json, lsplog/*.jsonl (tereditor's call log), patch.diff. Also checks each run's system/init event
 against what its arm must offer (the contamination check, docs/DESIGN.md).
 """
 from __future__ import annotations
@@ -14,7 +14,7 @@ import re
 import sys
 from collections import Counter
 
-LSP_TOOLS = {f"mcp__sharprail__{t}" for t in
+LSP_TOOLS = {f"mcp__tereditor__{t}" for t in
              ("lsp_navigate", "lsp_diagnostics", "lsp_status", "lsp_code_actions", "lsp_rename", "lsp_format")}
 FORBIDDEN_TOOLS = {"LSP", "WebFetch", "WebSearch"}
 SEARCH_CMD = re.compile(r"(^|[|;&\s(])(grep|egrep|fgrep|rg|ag|ack|git\s+grep)(\s|$)")
@@ -57,7 +57,7 @@ def contamination(arm: str, init: dict | None) -> list[str]:
     else:
         if mcp_tools != LSP_TOOLS:
             problems.append(f"MCP tools {sorted(mcp_tools)} != the six lsp tools")
-        if servers != {"sharprail": "connected"}:
+        if servers != {"tereditor": "connected"}:
             problems.append(f"MCP servers {servers}")
     # Claude Code's own builtin plugins load in every arm; anything else means outside configuration leaked in.
     foreign = [p for p in init.get("plugins") or [] if not str(p.get("source", "")).endswith("@builtin")]
@@ -168,7 +168,7 @@ def summarize(run_dir: str, plan_row: dict) -> dict:
     row["capped"] = row["result_subtype"] in ("error_max_turns", "error_max_budget_usd", "error_max_budget") or row["timed_out"]
     row["reached_model"] = any(e.get("type") == "assistant" for e in events)
 
-    # SharpRail's own call log: errors, initializing answers, time in tools.
+    # tereditor's own call log: errors, initializing answers, time in tools.
     calls = [c for p in glob.glob(os.path.join(run_dir, "lsplog", "*.jsonl")) for c in load_jsonl(p) if c.get("ev") == "call"]
     row["lsp_log_calls"] = len(calls)
     row["lsp_log_errors"] = sum(1 for c in calls if c.get("isError"))

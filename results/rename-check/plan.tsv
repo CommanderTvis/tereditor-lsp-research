@@ -1,0 +1,2 @@
+run_id	project	task	arm	model	rep	effort	budget_usd	max_turns	timeout_s
+r00001	python-small	refs-get	enforced	claude-haiku-5-5	1	-	1	60	1200

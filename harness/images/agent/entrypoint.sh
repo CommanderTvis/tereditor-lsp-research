@@ -30,15 +30,16 @@ chown -R agent:agent /workspace && chmod -R a+rwX /workspace
 
 # The JetBrains licence for the IntelliJ arms: decoded into a directory only uid 1000 (the server) can read. The agent's
 # environment is rebuilt from nothing below (env -i), so the variable never reaches it either.
-rm -rf /study/license && install -d -o sharprail -g sharprail -m 0700 /study/license
+rm -rf /study/license && install -d -o tereditor -g tereditor -m 0700 /study/license
 if [ -n "${STUDY_LICENSE_ZIP_B64:-}" ]; then
-  printf '%s' "$STUDY_LICENSE_ZIP_B64" | base64 -d > /study/license/license.zip
-  chown sharprail:sharprail /study/license/license.zip && chmod 0400 /study/license/license.zip
+  lf=/study/license/${STUDY_LICENSE_NAME:-license.zip}
+  printf '%s' "$STUDY_LICENSE_ZIP_B64" | base64 -d > "$lf"
+  chown tereditor:tereditor "$lf" && chmod 0400 "$lf"
 fi
 unset STUDY_LICENSE_ZIP_B64
 
 # A per-run language-server call log, written by uid 1000 and collected afterwards.
-rm -rf /study/lsplog && install -d -o sharprail -g sharprail -m 0700 /study/lsplog
+rm -rf /study/lsplog && install -d -o tereditor -g tereditor -m 0700 /study/lsplog
 
 args=(-p "$(cat /in/prompt.md)"
       --model "$MODEL"

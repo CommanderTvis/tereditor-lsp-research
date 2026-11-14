@@ -1,0 +1,11 @@
+# cpp, medium: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "cpp"
+size = "medium"
+status = "stub"
+repo = "https://github.com/fmtlib/fmt"
+tag = "12.2.1"
+commit = "208219daff58f2a7438f6931cc2ddc358acf33ef"
+loc = 47341
+loc_by_language = { "C" = 83, "C++" = 20340, "C Header" = 26918 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

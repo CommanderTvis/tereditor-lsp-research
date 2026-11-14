@@ -6,8 +6,8 @@ Study design. The analysis is fixed in advance in [ANALYSIS_PLAN.md](ANALYSIS_PL
 ## Question
 
 Given the same Claude Code agent, the same model, the same task and the same environment, what changes when the
-agent also has SharpRail's language-server tools (`lsp_navigate`, `lsp_diagnostics`, `lsp_status`,
-`lsp_code_actions`, `lsp_rename`, `lsp_format`, served by headless SharpRail over MCP)? And does it matter whether the
+agent also has tereditor's language-server tools (`lsp_navigate`, `lsp_diagnostics`, `lsp_status`,
+`lsp_code_actions`, `lsp_rename`, `lsp_format`, served by headless tereditor over MCP)? And does it matter whether the
 agent is merely offered them or pushed to use them?
 
 ## Factors
@@ -16,7 +16,7 @@ agent is merely offered them or pushed to use them?
 | --- | --- |
 | Arm | `baseline`, `optional`, `enforced`, `intellij-optional`, `intellij-enforced` (below) |
 | Model | `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5`, through `claude -p` |
-| Language | every language headless SharpRail serves: C#, TypeScript/JavaScript, Python, PHP, C/C++, Kotlin, Shell, CSS/SCSS; plus Java and mixed Java+Kotlin for the IntelliJ arms |
+| Language | every language headless tereditor serves: C#, TypeScript/JavaScript, Python, PHP, C/C++, Kotlin, Shell, CSS/SCSS; plus Java and mixed Java+Kotlin for the IntelliJ arms |
 | Project size | small, medium, large (lines of code, see TASKS.md) |
 | Task type | `refs`, `impls`, `dispatch`, `callers`, `inspect`, `rename`, `signature`, `compile`, `bugfix` |
 | Repetition | independent runs of the same cell |
@@ -30,17 +30,17 @@ starting workspace. They differ only in what is listed here.
 
 | | baseline | optional | enforced |
 | --- | --- | --- | --- |
-| SharpRail MCP server | none | yes | yes |
+| tereditor MCP server | none | yes | yes |
 | MCP `initialize` text and tool descriptions | n/a | neutralised: what the tools do, no advice to prefer them | as shipped: "Use lsp_navigate instead of grep ..., and lsp_diagnostics to check edited files" |
 | `CLAUDE.md` in the workspace | none | none | code-intelligence rules modelled on a production repo's (use the language tools for symbol work, never grep for symbols, check edited files with diagnostics) |
 | Hooks in `.claude/settings.json` | none | none | SessionStart reminder; PreToolUse advisory on Grep/Glob and on `grep`/`rg` in Bash when the pattern looks like a symbol; PreToolUse advisory on edits of source files; Stop hook that blocks once if edited source files were never checked with `lsp_diagnostics` |
 
-The two IntelliJ arms are `optional` and `enforced` with one change: headless SharpRail is started with its opt-in
-IntelliJ server (`SHARPRAIL_PREFETCH=intellij`), which then serves `.kt` instead of the Kotlin server and is the only
+The two IntelliJ arms are `optional` and `enforced` with one change: headless tereditor is started with its opt-in
+IntelliJ server (`TEREDITOR_PREFETCH=intellij`), which then serves `.kt` instead of the Kotlin server and is the only
 server for `.java`. The same six tools, the same text handling and (for `intellij-enforced`) the same CLAUDE.md and
-hooks. They run on JVM projects only (Kotlin, Java, mixed); elsewhere they would equal the SharpRail arms.
+hooks. They run on JVM projects only (Kotlin, Java, mixed); elsewhere they would equal the tereditor arms.
 
-Arm applicability: Java has no SharpRail server without IntelliJ (Eclipse JDT is not headless), so Java projects run
+Arm applicability: Java has no tereditor server without IntelliJ (Eclipse JDT is not headless), so Java projects run
 `baseline`, `intellij-optional` and `intellij-enforced` only. Kotlin and mixed projects run all five arms.
 
 The JetBrains side: the IntelliJ server's terms (JetBrains User Agreement 2.0) were accepted by the study's owner for
@@ -70,7 +70,7 @@ Consequences, deliberate and the same in every arm:
   run builds and tests); a follow-up with toolchains in every arm would measure the marginal value of LSP on top of a
   compiler.
 - The language server's runtimes (.NET SDK, Bun, clangd, the Kotlin server) live in `/cache`, owned by uid 1000 with
-  mode 0700, and so does `/opt/sharprail` (the headless binary, which could download runtimes itself, and the
+  mode 0700, and so does `/opt/tereditor` (the headless binary, which could download runtimes itself, and the
   preinstalled clangd, whose `--check` mode is a C/C++ type checker). The server runs as uid 1000 through a single sudo
   rule; the agent runs as uid 1001 and cannot read or run any of them. Without this, the LSP arms would get a compiler (`dotnet build`, Bun) that the baseline does not.
 
@@ -97,17 +97,19 @@ Consequences, deliberate and the same in every arm:
 - Cold start is part of the treatment: every run starts a fresh server, which indexes the project. Its cost is
   measured separately (server readiness time per project, from the call log and a scripted probe) so it can be
   reported apart from agent behaviour.
-- Run order is randomised over all cells and arms are interleaved, so API latency drift or model-serving changes do
-  not line up with an arm.
+- Run order is randomised and arms are interleaved, so API latency drift or model-serving changes do not line up
+  with an arm. Because the cloud VM's disk holds one project at a time (docs/CLOUD_RUN.md), runs execute project by
+  project, in the order of each project's first run in the randomised plan, and in plan order within a project; arm
+  contrasts are within project, so the interleaving that matters is kept.
 - Same `--max-budget-usd` and `--max-turns` caps and the same wall-clock timeout in every arm; hitting a cap is a
   failure, never an exclusion.
 - Hidden tests and oracles are never in the agent container. Grading happens afterwards in a separate grade image.
 - One architecture for every project and arm: the host's native one (linux/arm64 on Apple silicon; clangd has a
-  pinned arm64 build since SharpRail `0da30195`). Wall-time comparisons are within project.
+  pinned arm64 build since tereditor `0da30195`). Wall-time comparisons are within project.
 
 ## Measures
 
-Per run, from Claude Code's `stream-json`, SharpRail's call log and the grader:
+Per run, from Claude Code's `stream-json`, tereditor's call log and the grader:
 
 - success (graded), and for answer tasks precision, recall and F1;
 - cost in USD (`total_cost_usd`), input, output, cache-read and cache-write tokens;
@@ -119,7 +121,7 @@ Per run, from Claude Code's `stream-json`, SharpRail's call log and the grader:
 
 ## Reproducibility
 
-Pinned: the SharpRail commit (image built from source), the Claude Code version, the model IDs, every project's
+Pinned: the tereditor commit (image built from source), the Claude Code version, the model IDs, every project's
 commit, every base image by digest after the first build (`harness/lock.txt`). The only host requirements are a
 container runtime (Docker on Linux or macOS, or Apple `container` on macOS) and an Anthropic credential; `claude`
 on the host is needed only to create a token with `claude setup-token`. Analysis runs in a container too.

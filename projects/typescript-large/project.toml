@@ -1,6 +1,11 @@
-# TypeScript, large: NestJS, a dependency-injection server framework (monorepo of @nestjs/* packages). Interfaces
-# implemented across packages (pipes, guards, filters, transports), decorators, path-mapped cross-package imports.
+# typescript, large: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
 lang = "typescript"
 size = "large"
-repo = "https://github.com/nestjs/nest"
-commit = "422a1d318b8e468d6618ccd3794c24ae1d66e139"
+status = "stub"
+repo = "https://github.com/typeorm/typeorm"
+tag = "1.1.3"
+commit = "7a2707cb6a956db1e0c9d43e77ed00a324286f51"
+loc = 233118
+loc_by_language = { "TypeScript" = 233106, "TypeScript Typings" = 12 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

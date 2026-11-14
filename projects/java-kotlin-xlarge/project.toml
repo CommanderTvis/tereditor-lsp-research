@@ -1,0 +1,11 @@
+# java-kotlin, xlarge: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "java-kotlin"
+size = "xlarge"
+status = "stub"
+repo = "https://github.com/gradle/gradle"
+tag = "v9.9.1"
+commit = "47a96e4ed1822d6aa7fa32bed4461208e69077a6"
+loc = 731905
+loc_by_language = { "Java" = 562031, "Kotlin" = 169874 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

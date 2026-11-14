@@ -1,0 +1,11 @@
+# shell, medium: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "shell"
+size = "medium"
+status = "stub"
+repo = "https://github.com/acmesh-official/acme.sh"
+tag = "3.1.6"
+commit = "807da6498377ee5e0cf43a78091f46f12dc59a89"
+loc = 52686
+loc_by_language = { "Shell" = 52686 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

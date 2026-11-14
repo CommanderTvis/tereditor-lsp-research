@@ -5,3 +5,6 @@ lang = "typescript"
 size = "small"
 repo = "https://github.com/ianstormtaylor/superstruct"
 commit = "d31f007fbe39d304b68e25604b12d452869a5264"
+loc = 4603
+loc_by_language = { "TypeScript" = 4603 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"

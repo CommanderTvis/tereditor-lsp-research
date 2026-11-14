@@ -44,7 +44,7 @@ Five per project unless the language cannot support a type: `refs`, `rename`, `c
 Build and check with the driver (Apple `container` is the runtime on this machine; `STUDY_RUNTIME=container`):
 
 ```sh
-./study images <lang>              # once; the sharprail and agent images may already exist
+./study images <lang>              # once; the tereditor and agent images may already exist
 ./study project <lang>-small
 ./study probe <lang>-small         # results/probe/<lang>-small-enforced/probe.jsonl
 ./study validate <lang>-small      # every line must say VALID
@@ -68,7 +68,7 @@ it instead of making it.
 
 - All three run on `study/warm-jvm:<arch>` (`./study images kotlin` builds it): the Kotlin server, the opt-in IntelliJ
   server with the terms accepted, and a pinned JDK 21 at `/cache/jdk`. Arms: Kotlin and mixed projects run all five
-  arms; Java projects run `baseline`, `intellij-optional`, `intellij-enforced` (no SharpRail Java server without
+  arms; Java projects run `baseline`, `intellij-optional`, `intellij-enforced` (no tereditor Java server without
   IntelliJ).
 - Build-tool import is the main cost: both servers import the Gradle or Maven model. `prepare.sh` (uid 1000,
   `JAVA_HOME=/cache/jdk`, `HOME=/cache/home`, network available at image build) must resolve the build once so the

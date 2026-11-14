@@ -1,0 +1,11 @@
+# css, medium: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# probe.json are still to be written (docs/CURATION.md).
+lang = "css"
+size = "medium"
+status = "stub"
+repo = "https://github.com/carbon-design-system/carbon"
+tag = "v11.120.0"
+commit = "d9c9a18b8ffcc3c03881c88999a3675e4e1b6b1a"
+loc = 64395
+loc_by_language = { "Sass" = 64395 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
