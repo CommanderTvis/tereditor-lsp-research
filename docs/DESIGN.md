@@ -54,14 +54,15 @@ edits, a stop hook) rather than inventing one: hooks advise, and only the stop h
 in `harness/arms/enforced/`.
 
 "Optional" is LSP that is available but not mandatory: the server's own text tells the agent to prefer it over grep,
-so the harness rewrites that text in this arm (a `jq` filter on the server's stdout, `harness/images/agent/neutral.jq`)
+so the harness rewrites that text in this arm (a `jq` filter on the server's stdout, `harness/server/neutral.jq`)
 to keep the tool on the menu without advice.
 
 ## Baseline: the same agent with core utilities
 
-The agent image (`harness/images/agent/Dockerfile`) has Claude Code, coreutils, git, ripgrep, jq, findutils, diff,
-patch, less, file, tree, procps. It has no compiler, interpreter, test runner, package manager, `curl` or `wget`,
-in every arm. Claude Code's built-in tools are all on except `WebFetch` and `WebSearch`.
+The agent's sandbox contains exactly the `agent` closure (docs/NIX.md): Claude Code, bash, coreutils, findutils, grep,
+sed, awk, diff, patch, less, file, tree, procps, git (without perl), ripgrep, jq. No compiler, interpreter, test
+runner, package manager, `curl` or `wget` exists in it, in any arm. Claude Code gets the built-in tools Bash, Read,
+Edit, Write, Task (subagents) and ToolSearch (`--tools`; MCP tools are deferred behind ToolSearch); web tools are off.
 
 Consequences, deliberate and the same in every arm:
 
@@ -69,15 +70,16 @@ Consequences, deliberate and the same in every arm:
   replaces it in the baseline. This isolates static code intelligence. It is not how most people run agents (they also
   run builds and tests); a follow-up with toolchains in every arm would measure the marginal value of LSP on top of a
   compiler.
-- The language server's runtimes (.NET SDK, Bun, clangd, the Kotlin server) live in `/cache`, owned by uid 1000 with
-  mode 0700, and so does `/opt/tereditor` (the headless binary, which could download runtimes itself, and the
-  preinstalled clangd, whose `--check` mode is a C/C++ type checker). The server runs as uid 1000 through a single sudo
-  rule; the agent runs as uid 1001 and cannot read or run any of them. Without this, the LSP arms would get a compiler (`dotnet build`, Bun) that the baseline does not.
+- The language server's runtimes (.NET SDK, Bun, clangd, the JDK, IntelliJ) and tereditor itself exist only in the
+  server's sandbox; the agent reaches the server through a socket and cannot run any of them. Otherwise the LSP arms
+  would get a compiler (`dotnet build`, `clangd --check`, Bun) that the baseline does not.
 
 ## Contamination control
 
-- Claude Code runs in the container with an empty `HOME`. No user `CLAUDE.md`, settings, plugins, skills, hooks, MCP
+- Claude Code runs in its sandbox with an empty `HOME`. No user `CLAUDE.md`, settings, plugins, skills, hooks, MCP
   servers, memory or keychain exist. `--setting-sources project`, `--strict-mcp-config`, `--no-session-persistence`.
+- The workspace starts as one fresh commit (the snapshot with the task's setup and the arm's files): no history shows
+  where a bug was seeded.
 - Snapshots strip every agent or editor instruction file from the upstream repository (TASKS.md).
 - Every run's `system/init` event is checked against the arm's expected tool list, MCP servers, slash commands,
   plugins and memory files (`analysis/contamination.py`). A run that does not match is excluded and counted.
@@ -103,9 +105,9 @@ Consequences, deliberate and the same in every arm:
   contrasts are within project, so the interleaving that matters is kept.
 - Same `--max-budget-usd` and `--max-turns` caps and the same wall-clock timeout in every arm; hitting a cap is a
   failure, never an exclusion.
-- Hidden tests and oracles are never in the agent container. Grading happens afterwards in a separate grade image.
-- One architecture for every project and arm: the host's native one (linux/arm64 on Apple silicon; clangd has a
-  pinned arm64 build since tereditor `0da30195`). Wall-time comparisons are within project.
+- Hidden tests and oracles are never in the agent's sandbox. Grading happens afterwards in the grading sandbox,
+  without network.
+- One architecture for every project and arm: the host's native one. Wall-time comparisons are within project.
 
 ## Measures
 

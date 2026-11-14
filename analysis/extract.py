@@ -16,7 +16,8 @@ from collections import Counter
 
 LSP_TOOLS = {f"mcp__tereditor__{t}" for t in
              ("lsp_navigate", "lsp_diagnostics", "lsp_status", "lsp_code_actions", "lsp_rename", "lsp_format")}
-FORBIDDEN_TOOLS = {"LSP", "WebFetch", "WebSearch"}
+# Exactly these built-in tools in every arm (harness/env/run.sh and the entrypoint pass them with --tools).
+BUILTIN_TOOLS = {"Bash", "Read", "Edit", "Write", "Task", "ToolSearch"}
 SEARCH_CMD = re.compile(r"(^|[|;&\s(])(grep|egrep|fgrep|rg|ag|ack|git\s+grep)(\s|$)")
 READ_CMD = re.compile(r"(^|[|;&\s(])(cat|head|tail|sed\s+-n|less|awk)(\s|$)")
 FIND_CMD = re.compile(r"(^|[|;&\s(])(find|ls|tree|fd)(\s|$)")
@@ -47,8 +48,9 @@ def contamination(arm: str, init: dict | None) -> list[str]:
     tools = set(init.get("tools") or [])
     mcp_tools = {t for t in tools if t.startswith("mcp__")}
     servers = {s.get("name"): s.get("status") for s in init.get("mcp_servers") or []}
-    for t in sorted(tools & FORBIDDEN_TOOLS):
-        problems.append(f"forbidden tool {t}")
+    builtins = {t for t in tools if not t.startswith("mcp__")}
+    if builtins != BUILTIN_TOOLS:
+        problems.append(f"built-in tools {sorted(builtins)} != {sorted(BUILTIN_TOOLS)}")
     if arm == "baseline":
         if mcp_tools:
             problems.append(f"baseline has MCP tools {sorted(mcp_tools)}")
@@ -193,7 +195,7 @@ def summarize(run_dir: str, plan_row: dict) -> dict:
 
 
 def main(plan: str) -> None:
-    base = os.path.join("/study-root/results", plan)
+    base = os.path.join(os.environ.get("STUDY_ROOT", "."), "results", plan)
     with open(os.path.join(base, "plan.tsv")) as f:
         plan_rows = list(csv.DictReader(f, delimiter="\t"))
     tasks = {}
@@ -205,7 +207,7 @@ def main(plan: str) -> None:
         key = (pr["project"], pr["task"])
         if key not in tasks:
             tasks[key] = {}
-            tt = os.path.join("/study-root/tasks", pr["project"], pr["task"], "task.toml")
+            tt = os.path.join(os.environ.get("STUDY_ROOT", "."), "tasks", pr["project"], pr["task"], "task.toml")
             with open(tt) as f:
                 m = re.search(r'^type\s*=\s*"([a-z]+)"', f.read(), re.M)
             tasks[key]["type"] = m.group(1) if m else ""

@@ -3,11 +3,11 @@
 #   plan.sh <name> [--projects "python-small csharp-*"] [--models "claude-haiku-5-5 ..."] [--arms "baseline optional enforced"]
 #                  [--reps N] [--reps-per-model "claude-haiku-5-5=3,claude-opus-5-5=1"] [--tasks "refs-*"]
 #                  [--budget USD] [--turns N] [--timeout S] [--effort LEVEL|-] [--seed N]
-# Runs inside the agent image (bash, coreutils); the study root is mounted at /study-root.
+# Runs in the study environment (harness/env/entry.sh), so the seeded shuffle is the same on every host.
 set -euo pipefail
-cd /study-root
+cd "$STUDY_ROOT"
 name=$1; shift
-projects="*"; models="claude-haiku-5-5 claude-sonnet-5-5 claude-opus-5-5"; arms="baseline optional enforced"
+projects="*"; models="claude-haiku-5-5 claude-sonnet-5-5 claude-opus-5-5"; arms="baseline optional enforced intellij-optional intellij-enforced"
 reps=1; rpm=""; tasks="*"; budget=10; turns=200; timeout=3600; effort="-"; seed=20261110
 while [ $# -gt 0 ]; do
   case "$1" in

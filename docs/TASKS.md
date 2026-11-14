@@ -3,24 +3,18 @@
 This is the contract every project and task in the study follows. The harness, graders and analysis read these files
 and nothing else.
 
-## Layout
+## Projects and tasks
 
-```
-projects/<lang>-<size>/
-  project.toml            identity, pin, size measurement, LSP probe symbols
-  Dockerfile.run          FROM the warm agent image; places the snapshot at /study/snapshot (see below)
-  Dockerfile.grade        toolchain + dependencies needed to build and test the project, offline at grade time
-  prepare.sh              optional, runs as uid 1000 in the run image (e.g. dotnet restore, compile_commands.json)
-tasks/<lang>-<size>/<task-id>/
-  task.toml               type, grading mode, budget hints
-  prompt.md               the exact text given to the agent (identical in every arm)
-  setup.patch             optional: applied to the snapshot to create the task's starting state (seeded bug, broken build)
-  gold.patch              a reference solution; proves the task is solvable and the grader accepts a correct answer
-  hidden/                 files copied in at grade time only (held-out tests); never visible to the agent
-  oracle.txt              ground truth for answer tasks (one item per line, see "Answers")
-  oracle.md               how the oracle was derived, with the exact commands, and why it does not depend on the LSP
-  grade.sh                optional override; otherwise the grader of the task type is used
-```
+A project (`projects/<lang>-<size>/`) is its pinned upstream repository plus what the harness needs to run it: the
+identity, pin, measured size and probe symbols (`project.toml`), how the language server is prepared without a
+compiler (`prepare.sh`), and how its build and test dependencies are fetched once (`grade-setup.sh`, with network) and how it is built
+and tested at grade time, without network (`check.sh`).
+
+A task (`tasks/<lang>-<size>/<task-id>/`) is the prompt given to the agent, identical in every arm (`prompt.md`), its
+type (`task.toml`), an optional starting state (`setup.patch`: a seeded bug, a broken build), and its grading: held-out
+tests that the agent never sees (`hidden/`), the ground truth of answer tasks with how it was derived (`oracle.txt`,
+`oracle.md`), task-specific checks (`grade.sh`), and a reference solution that proves the task solvable
+(`gold.patch`).
 
 `<lang>` is one of `csharp typescript python php cpp kotlin java java-kotlin shell css` (`java-kotlin`: one project
 where both languages carry real code and call each other). `<size>` is `small medium large xlarge`.
@@ -96,13 +90,13 @@ any item that needed a judgement call. A task whose ground truth is ambiguous is
 
 ## Validity checks (run before any model is spent)
 
-For every task, in the grade image:
+For every task, in the grading sandbox:
 
 1. The unmodified starting state FAILS the grader (for edit tasks) or an empty `ANSWER.txt` scores 0.
 2. `gold.patch` (or `oracle.txt` copied to `ANSWER.txt`) PASSES the grader.
 3. The grader is deterministic: two runs of 2. give the same result.
 
-For every project, in the run image: the LSP probe (`harness/bin/probe`) gets correct cross-file `references` and
+For every project, through the same bridge and server sandbox as a run: the LSP probe (`./study probe`) gets correct cross-file `references` and
 `definition` results for the symbols in `project.toml` within the readiness timeout. A project whose language server
 cannot do this is reported as such and kept, because that is a finding about the product, but it is analysed
 separately (see ANALYSIS_PLAN.md).

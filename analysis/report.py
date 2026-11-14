@@ -156,7 +156,7 @@ def describe(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main(plan: str) -> None:
-    base = os.path.join("/study-root/results", plan)
+    base = os.path.join(os.environ.get("STUDY_ROOT", "."), "results", plan)
     rep = os.path.join(base, "report")
     os.makedirs(rep, exist_ok=True)
     df = pd.read_csv(os.path.join(base, "runs.csv"))

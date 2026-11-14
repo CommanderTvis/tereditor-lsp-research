@@ -21,12 +21,13 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
   (`enforced`). Baseline: the same Claude Code agent with core utilities only.
 - A third contestant: IntelliJ's language server through tereditor (`intellij-optional`, `intellij-enforced`).
 - Externally reproducible on macOS and Linux (Docker, Docker on macOS, Apple `container`) with nothing installed but
-  Claude Code and a container runtime; documented for people who only have an Anthropic API key. Hard requirement:
+  Claude Code and a container runtime (plus an Anthropic credential and a JetBrains licence, both required; there is
+  no reproduction flow without IntelliJ). Hard requirement:
   Nix (used to define the environments, docs/NIX.md) must never be a requirement for a reproducer; it runs inside a
   builder container, or self-bootstrapped in the native backend.
 - The owner's `~/.claude/CLAUDE.md` (and any other user configuration) must not contaminate the study.
 - Budget about USD 2,000 for the confirmatory run, which is ON HOLD: the owner asked to wait for the IntelliJ
-  contestant. IntelliJ now works in the harness (2026-11-11 smoke test), but get an explicit go from the owner
+  contestant. IntelliJ works in the harness, but get an explicit go from the owner
   before launching anything beyond small smoke or calibration runs.
 
 ## Decisions already made, and why
@@ -35,18 +36,19 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
   --no-session-persistence`, `--permission-mode bypassPermissions`; WebFetch/WebSearch off. Every run's
   `system/init` event is checked against its arm (`analysis/extract.py`); mismatches are excluded and counted.
 - No arm has a compiler, interpreter, package manager, curl or wget. The language servers and their runtimes (.NET
-  SDK, Bun, clangd, JDK, Maven, IntelliJ) live in `/cache` and `/opt/tereditor`, readable only by uid 1000
-  (`tereditor`); the agent is uid 1001 and reaches the server only via `sudo /usr/local/bin/tereditor-mcp <mode>`.
+  SDK, Bun, clangd, JDK, Maven, IntelliJ) exist only in the language server's sandbox; the agent's sandbox contains
+  only its own closure and reaches the server through a socket (docs/NIX.md).
   Otherwise the LSP arms would get a compiler the baseline lacks.
 - `optional` removes tereditor's own "use lsp_navigate instead of grep" advice (sentences only) with
-  `harness/images/agent/neutral.jq`; `enforced` keeps the shipped text and adds `harness/arms/enforced/overlay`
+  `harness/server/neutral.jq`; `enforced` keeps the shipped text and adds `harness/arms/enforced/overlay`
   (CLAUDE.md + advisory hooks + a stop hook that blocks once if edited files were not checked with diagnostics).
   The IntelliJ arms reuse these, with `TEREDITOR_PREFETCH=intellij`.
 - Arm applicability: IntelliJ arms only on JVM projects; Java runs baseline + IntelliJ arms (tereditor has no
   headless Java server otherwise); Kotlin and mixed run all five arms.
 - `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` is OFF: in Claude Code 2.1.322 it forces the default permission mode, a
   bubblewrap+socat sandbox and drops Grep, i.e. changes the agent. Credentials are redacted from outputs instead.
-- IntelliJ is opt-in (`STUDY_INTELLIJ=1`). `harness/intellij.env` records the owner's acceptance of the JetBrains
+- IntelliJ is part of every JVM image and every plan; the licence is required (`./study run` refuses without it).
+  `harness/intellij.env` records the owner's acceptance of the JetBrains
   User Agreement 2.0 (terms hash `cd82e6cd...0c9a25`, region europe, data sharing none). The owner's offline
   activation code is `./license.zip` (git-ignored, never print/copy/commit it); it travels base64 in an env var and
   is decoded into a uid-1000-only directory.
@@ -71,8 +73,9 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
 ## Where things are
 
 - `study`: the driver (POSIX sh; images, project, probe, validate, plan, run, grade, analyze).
-- `harness/images/{tereditor,agent,warm,warm-jvm,run}`: images. tereditor is built from a pinned upstream commit
-  (`TEREDITOR_COMMIT` in `harness/images/tereditor/Dockerfile`).
+- `nix/flake.nix`: every environment (docs/NIX.md). `harness/env/`: the scripts every command runs in it.
+  `harness/server/`: what runs inside the language server's sandbox. tereditor is built from the commit in
+  `harness/tereditor.env`.
 - `harness/arms/<arm>/`: `mcp.json` and the workspace overlay. `harness/grade/grade.sh`, `harness/bin/probe-inside.sh`.
 - `projects/<lang>-<size>/`, `tasks/<lang>-<size>/<task>/`: see `docs/TASKS.md`. Most projects are stubs
   (`status = "stub"` in `project.toml`); done so far: python-small (4 tasks), java-medium (2), csharp-small
@@ -108,7 +111,7 @@ the study per docs/CLOUD_RUN.md" is the owner's go for the confirmatory run. The
 
 ## Next steps
 
-1. Curate the stub projects (tasks, prepare.sh, Dockerfile.grade, check.sh, probe.json), validate and probe them on
+1. Curate the stub projects (tasks, prepare.sh, grade-setup.sh, check.sh, probe.json), validate and probe them on
    the current tereditor pin, both servers for JVM projects.
 2. Re-run the toolz and gson smokes on the renamed images.
 3. Calibration pilot (Haiku on small projects, a few Opus runs on large ones) to fix repetitions per model under

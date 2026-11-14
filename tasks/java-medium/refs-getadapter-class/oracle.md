@@ -1,6 +1,6 @@
 # Oracle: calls of Gson.getAdapter(Class<T>) in the gson module
 
-Derived with javac, not a language server: `derive-oracle.sh`, run in the grade image (`--network none`).
+Derived with javac, not a language server: `derive-oracle.sh`, run in the grading environment (`--network none`).
 
 1. Compile every `.java` under `gson/src/main/java`, `gson/src/test/java` and the module's generated sources, with the
    module's test-scope classpath: 0 errors.

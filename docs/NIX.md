@@ -1,60 +1,47 @@
-# Environments on Nix (in progress: milestone 1 done)
+# Environments
 
-Hard requirement (owner, 2026-11-14): a reproducer needs only a container runtime. Nix is never a requirement:
-with Docker or Apple `container`, Nix runs inside a pinned `nixos/nix` builder container, which builds the images as
-tarballs (`dockerTools`) that `./study` loads into the runtime. The native backend, meant for hosts without a usable
-container runtime (the owner's cloud session), downloads a pinned, checksummed static Nix binary into the study's own
-cache directory and uses it from there; nothing is installed system-wide.
+Every environment of the study is defined by `nix/flake.nix` with a locked nixpkgs: the agent's sandbox, the language
+server's runtime, one grading toolchain per language group, and the planner and analysis. A reproducer never installs
+Nix: with Docker or Apple `container`, every command runs in the pinned `nixos/nix` image; on a Linux host without a
+container runtime (the native backend, used in a Claude Code cloud session), `./study` unpacks the pinned Nix release
+into `/nix` itself.
 
-Decided 2026-11-14: every environment of the study (the agent's sandbox, the language server's runtime, the grading
-toolchains, and the Docker images) is defined by one `flake.nix` with a locked nixpkgs. Two backends use it:
+## Closures
 
-- `native`: a Linux host with Nix (a Claude Code cloud session, any VM). Each run is a bubblewrap sandbox; no daemon.
-- `docker` / `container`: images built from the same closures with `dockerTools.buildLayeredImage`, so both backends
-  see byte-identical toolchains.
-
-tereditor itself is not built by Nix: its NativeAOT build needs network and its own pinned toolchain, so it is built
-with its `scripts/mise` at `TEREDITOR_COMMIT` and imported as a tarball. Its language servers keep downloading their
-pinned runtimes into `/cache` (`TEREDITOR_TOOLCHAINS=managed`).
-
-## Closures (flake outputs, per linux system)
-
-| Output | Contents | Visible to |
+| Output | Contents | Used by |
 | --- | --- | --- |
-| `claude-code` | the static musl release binary of Claude Code 2.1.322, fetched with its published sha256 | agent |
-| `agent` | bash, coreutils, findutils, grep, sed, awk, diff, patch, less, file, tree, procps, ripgrep, jq, gitMinimal (no perl), socat, CA certificates, `claude-code` | agent (the sandbox allow-list) |
-| `server-fhs` | a minimal FHS root (glibc loader, libstdc++, libgcc, zlib, ICU, OpenSSL, Kerberos, CA certificates, bash, coreutils, git, util-linux) for the downloaded server binaries | language server only |
-| `jvm-tools` | JDK 21 and Maven, copied into `/cache` at warm time (mode 0700) | language servers only |
-| `grade-<lang>` | the toolchain that builds and tests that language's projects (python, typescript, csharp, php, jvm, cpp, shell, css) | grader only, no network |
+| `agent` | bash, coreutils, findutils, grep, sed, awk, diff, patch, less, file, tree, procps, ripgrep, jq, gitMinimal (no perl), socat, CA certificates, Claude Code 2.1.322 (the static release binary, by its published sha256) | the agent's sandbox: nothing else exists in it |
+| `server-fhs` | an FHS-shaped root: the glibc loader and the shared libraries (libstdc++, zlib, ICU, OpenSSL, Kerberos) of the prebuilt binaries tereditor downloads, and the tools its scripts call | the language server's sandbox |
+| `jvm-tools` | JDK 21 and Maven | the JVM language servers (Gradle and Maven import) |
+| `grade-<group>` | the toolchain that builds and tests a group's projects: python, typescript, csharp, php, jvm, cpp (gcc), shell, css | the grader's sandbox |
+| `analysis` | Python with numpy, pandas, scipy, statsmodels, matplotlib, tabulate | the planner and the analysis |
+| `host-tools` | bubblewrap, socat, util-linux, jq, git, curl | the harness outside the sandboxes |
+| `env-<group>` | a file naming the closures of a group, sourced by `harness/env/entry.sh` | every command |
 
-Measured 2026-11-14 (aarch64-linux, nixpkgs d4f25a3e, closure sizes with all dependencies): claude-code 310 MB,
-agent 528 MB, server-fhs 297 MB, jvm-tools 636 MB, grade-python 351 MB, grade-typescript 426 MB, grade-csharp
-1,036 MB, grade-php 371 MB, grade-jvm 2,186 MB, grade-cpp 557 MB, grade-shell 206 MB, grade-css 333 MB, host-tools
-249 MB. Closures share store paths (glibc, bash, coreutils), so the sum overstates disk use. The agent closure
-contains claude, git, rg and jq and none of python3, perl, node, gcc, cc, javac, java, dotnet, php, bun, curl, wget
-(checked). C/C++ grading uses gcc only (gcc and clang collide on `cc` in one environment).
+The agent closure contains claude, git, rg and jq and none of python3, perl, node, gcc, cc, javac, java, dotnet, php,
+bun, curl, wget. Closure sizes (aarch64): agent 528 MB, server-fhs about 300 MB, jvm-tools 636 MB, grading from
+206 MB (shell) to 2.2 GB (jvm); closures share store paths, so a group needs a few GB.
 
-## Sandboxes (native backend)
+tereditor itself is built by `harness/env/build-tereditor.sh` with its own pinned toolchain at the commit in
+`harness/tereditor.env`, on an Ubuntu root (the pinned `ubuntu:24.04` image, or the native host), because its NativeAOT
+build needs network and the .NET SDK and Zig its `scripts/mise` pins.
 
-- Agent: bubblewrap with only the `agent` closure's store paths, `/workspace`, `/in`, `/out`, a fresh HOME and the MCP
-  socket; network on (the Anthropic API). No compiler or interpreter exists in this view, by construction: the
-  baseline check (`python3`, `node`, `gcc`, `javac`, `dotnet`, `php` absent) tests the declaration.
-- Server: started per connection by the socket bridge outside the agent sandbox, in its own bubblewrap view
-  (`server-fhs` at `/usr`, `/lib`, `/lib64`; `/opt/tereditor`, `/cache`, the same `/workspace`), as the `tereditor`
-  user. sudo is gone: it cannot run under bubblewrap's no-new-privileges.
-- Grader: bubblewrap with `grade-<lang>`, `/study/snapshot`, `/task`, `/project`, `/grade`, `/run`, `/out` at the
-  paths `harness/grade/grade.sh` already uses, `--unshare-net`.
+## Sandboxes
 
-## Images (docker backend)
+Each run is three bubblewrap sandboxes, each with its own user, PID, IPC and UTS namespaces, a private `/tmp` and an
+empty environment:
 
-- `study/agent`: `agent` + `server-fhs` + tereditor + the entrypoint; the agent user cannot read `/cache` or
-  `/opt/tereditor` (as before); the bridge replaces sudo here too, so both backends start the server the same way.
-- `study/grade-<lang>`: `grade-<lang>` only.
-- Layers per store path: images share glibc, bash and coreutils layers.
+- Agent (uid 1001): the agent closure's store paths, its `bin` at `/bin`, `/workspace`, a fresh home, the prompt and
+  MCP configuration at `/in`, the bridge socket at `/run/study`. Network on (the Anthropic API). In a Claude Code cloud
+  session the session's token file is bound read-only at its own path, so Claude Code authenticates with it.
+- Server (uid 1000), started per MCP connection by the bridge (`socat` on the run's socket): `server-fhs` at `/bin`,
+  `/lib`, `/lib64` and `/usr/lib`, tereditor at `/opt/tereditor`, the runtime cache at `/cache`, the same
+  `/workspace`, the call log and the licence. The agent's sandbox contains none of these.
+- Grader (no network): `grade-<group>` at `/bin`, the snapshot, the dependency cache and overlay of the project, the
+  task, the patch and the output directory.
 
-## Milestones
+## State
 
-1. flake.nix with the closures; build them and record closure sizes (in a nixos/nix container on the Mac).
-2. Native backend in `./study` (`STUDY_RUNTIME=native`): host setup, sandboxes, bridge, grading.
-3. Docker images from the flake replacing the Dockerfiles.
-4. Re-validate python-small and java-medium on both backends; the toolz smoke on both; then the cloud preflight.
+The container backends keep two volumes: `study-nix` (the Nix store) and `study-state` (the tereditor build, the
+language servers' runtime cache, each project's snapshot, dependency cache and overlay). The native backend keeps
+the same state in `/var/lib/study`. `./study prune <project>` drops a project's part.

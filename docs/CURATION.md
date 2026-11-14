@@ -9,15 +9,16 @@ prove each one valid. Read [TASKS.md](TASKS.md) first: it is the contract. `proj
 - Real, well-known open-source projects in the language, pinned to a full commit SHA (a release tag's commit).
 - Size classes from TASKS.md. Where a language has no credible project above 100k lines (shell, CSS), take the largest
   credible one and say so in `project.toml` (`size_note`).
-- The project must build and its tests (or a meaningful subset) must pass offline in `Dockerfile.grade` within about
-  10 minutes on 4 CPUs. Dependencies are installed when the grade image is built, never at grade time
-  (`--network none`).
-- The language server must be able to understand it in the run image, which has no compiler: whatever it needs
-  (restored packages for C#, `node_modules` type declarations for TypeScript, a `compile_commands.json` with paths
-  under `/workspace` and the C/C++ standard headers for clangd, a Gradle-free source layout for Kotlin) must come from
-  `prepare.sh` or from files committed under `projects/<lang>-<size>/` and copied in by `prepare.sh`. `prepare.sh`
-  runs as uid 1000 with the managed runtimes on PATH-less locations under `/cache/managed`; anything it produces must
-  be git-ignored by the project or added to `.git/info/exclude`, so it is not part of the agent's diff.
+- The project must build and its tests (or a meaningful subset) must pass in the grading sandbox, without network,
+  within about 10 minutes on 4 CPUs, with its language group's toolchain (`grade-<group>` in `nix/flake.nix`; add a
+  tool there if one is missing). `grade-setup.sh` fetches the dependencies once, with network: into the home directory
+  (`~/.m2`, `~/.nuget`) or into the tree (`vendor/`, `node_modules/`, kept as an overlay copied into every grading work
+  tree). `check.sh` builds and tests without network.
+- The language server must be able to understand the project without a compiler in the agent's view: whatever it
+  needs (restored packages for C#, `node_modules` type declarations for TypeScript, a `compile_commands.json` with
+  paths under `/workspace` for clangd, resolved Gradle or Maven dependencies) comes from `prepare.sh`, which runs once
+  in the server's sandbox in the snapshot (`/workspace`), with network and tereditor's managed runtimes under
+  `/cache/managed`. What it produces must be git-ignored by the project, so it is not part of the agent's diff.
 - Projects with heavy dynamic magic are fine (they are realistic) but write tasks whose ground truth is still
   unambiguous.
 
@@ -44,7 +45,7 @@ Five per project unless the language cannot support a type: `refs`, `rename`, `c
 Build and check with the driver (Apple `container` is the runtime on this machine; `STUDY_RUNTIME=container`):
 
 ```sh
-./study images <lang>              # once; the tereditor and agent images may already exist
+./study setup <group>              # once per language group (python, typescript, csharp, php, jvm, cpp, shell, css)
 ./study project <lang>-small
 ./study probe <lang>-small         # results/probe/<lang>-small-enforced/probe.jsonl
 ./study validate <lang>-small      # every line must say VALID
@@ -66,12 +67,12 @@ it instead of making it.
 
 ## JVM languages (kotlin, java, java-kotlin)
 
-- All three run on `study/warm-jvm:<arch>` (`./study images kotlin` builds it): the Kotlin server, the opt-in IntelliJ
-  server with the terms accepted, and a pinned JDK 21 at `/cache/jdk`. Arms: Kotlin and mixed projects run all five
+- All three are the `jvm` group (`./study setup jvm`): the Kotlin server, the IntelliJ server with its terms accepted,
+  JDK 21 and Maven for the servers' import. Arms: Kotlin and mixed projects run all five
   arms; Java projects run `baseline`, `intellij-optional`, `intellij-enforced` (no tereditor Java server without
   IntelliJ).
-- Build-tool import is the main cost: both servers import the Gradle or Maven model. `prepare.sh` (uid 1000,
-  `JAVA_HOME=/cache/jdk`, `HOME=/cache/home`, network available at image build) must resolve the build once so the
+- Build-tool import is the main cost: both servers import the Gradle or Maven model. `prepare.sh` (server sandbox,
+  `HOME=/cache/home`, JDK and Maven on PATH, network on) must resolve the build once so the
   wrapper distribution and every dependency are in `/cache/home/.gradle` or `/cache/home/.m2`: e.g.
   `./gradlew --no-daemon dependencies` or a compile of the main source sets, `mvn -q dependency:go-offline`. Do not
   pre-build the servers' own indexes: every run starts its language server cold, in every arm and every language.
@@ -79,10 +80,9 @@ it instead of making it.
   If you choose one anyway, measure its import time with the probe and say so.
 - Probe both servers: `./study probe <proj> enforced` (Kotlin server; no Java server) and
   `./study probe <proj> intellij-enforced` (IntelliJ). Record both in `[probe]` / `[probe_intellij]`, including the
-  IntelliJ licence verdict from `lsp_status servers` and the time until the project graph is loaded. The licence is
-  `./license.zip`, already present; never print, copy or commit it. `./study probe` must pass it (see `cmd_run` for how
-  the driver hands it to a container) — if probing IntelliJ needs a driver change, describe it instead of making it.
-- Grade images: a pinned JDK image (eclipse-temurin) with the build's dependencies resolved at image build, so
-  `--offline` builds work under `--network none`; check.sh compiles (and runs relevant tests of) the affected modules.
+  IntelliJ licence verdict from `lsp_status servers` and the time until the project graph is loaded (`./study probe`
+  passes the licence).
+- Grading: `grade-setup.sh` resolves the build's dependencies into `~/.m2` or `~/.gradle`, so `check.sh` runs
+  `--offline`; it compiles (and runs relevant tests of) the affected modules.
 - Oracles: `javac`/`kotlinc` via the build (rename the declaration, compile, collect the errors), never either language
   server.

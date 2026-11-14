@@ -1,5 +1,5 @@
 #!/bin/sh
-# Grades one run inside a project's grade image (no network). Needs only sh, git, awk, sort, comm, timeout.
+# Grades one run in the grading sandbox (no network). Needs only sh, git, awk, sort, comm, timeout.
 #   /task     the task directory (task.toml, setup.patch, hidden/, oracle.txt, grade.sh)
 #   /project  the project directory (check.sh: build + tests, run in the patched tree)
 #   $1        the run's patch (git diff against the starting state)
@@ -18,7 +18,9 @@ result() { # success extra-json
   exit 0
 }
 
-rm -rf /work && cp -a /study/snapshot /work && cd /work || exit 1
+work=${STUDY_WORK:-/work}
+rm -rf "$work" && cp -a /study/snapshot "$work" && cd "$work" || exit 1
+[ -d /grade-overlay ] && cp -a /grade-overlay/. "$work/"
 git() { command git -c user.name=grader -c user.email=grader@localhost "$@"; }
 if [ -s /task/setup.patch ]; then git apply --whitespace=nowarn /task/setup.patch || result false ',"error":"setup.patch does not apply"'; fi
 applied=true
@@ -38,7 +40,7 @@ case "$type" in
     result "$ok" "$metrics,\"answer_present\":$([ -f ANSWER.txt ] && echo true || echo false)"
     ;;
   rename|signature|compile|bugfix)
-    [ -d /task/hidden ] && cp -R /task/hidden/. /work/
+    [ -d /task/hidden ] && cp -R /task/hidden/. "$work/"
     if [ -f /task/grade.sh ]; then check=/task/grade.sh; else check=/project/check.sh; fi
     TASK_DIR=/task timeout "$timeout_s" sh "$check" > "$out/check.log" 2>&1
     rc=$?

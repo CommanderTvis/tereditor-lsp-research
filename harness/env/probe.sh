@@ -1,25 +1,22 @@
 #!/bin/bash
-# Runs inside a run image (entrypoint "probe" mode, as root). Talks MCP to headless tereditor exactly as the agent
-# would (same sudo wrapper), with no model involved. Input: /in/probe.json, a list of
+# probe.sh <project> <mode> <out-dir> <probe.json>: talks MCP to the project's language server exactly as the agent
+# would (the same bridge and server sandbox), with no model involved. The probe file is a list of
 #   {"name": "...", "tool": "lsp_navigate", "args": {...}, "expect": ["path:line", ...]}
 # expect lists 1-based locations that a complete answer must contain. Each call is repeated until every expected
 # location is present or POLL_S seconds pass, which measures how long the server takes to give a complete answer
 # (a fresh server may answer before it has indexed the workspace).
-# Output (/out): initialize.json, tools.json (as the agent sees them), probe.jsonl (one line per spec).
+# Output (<out-dir>): initialize.json, tools.json (as the agent sees them), probe.jsonl (one line per spec).
 set -euo pipefail
-mode=${1:-enforced}; POLL_S=${POLL_S:-180}
-mkdir -p /out
-rm -rf /workspace && cp -a /study/snapshot /workspace && chmod -R a+rwX /workspace
-install -d -o tereditor -g tereditor -m 0700 /study/lsplog
-# The IntelliJ licence, decoded exactly as the run entrypoint does it (only uid 1000 can read it).
-rm -rf /study/license && install -d -o tereditor -g tereditor -m 0700 /study/license
-if [ -n "${STUDY_LICENSE_ZIP_B64:-}" ]; then
-  lf=/study/license/${STUDY_LICENSE_NAME:-license.zip}
-  printf '%s' "$STUDY_LICENSE_ZIP_B64" | base64 -d > "$lf"
-  chown tereditor:tereditor "$lf" && chmod 0400 "$lf"
-fi
-unset STUDY_LICENSE_ZIP_B64
-coproc S { sudo -n -u tereditor /usr/local/bin/tereditor-mcp "$mode"; }
+. "$STUDY_ROOT/harness/env/lib.sh"
+proj=$1 mode=${2:-enforced} out=$3 probe=$4; POLL_S=${POLL_S:-180}
+snap=$STUDY_STATE/projects/$proj/snapshot; [ -d "$snap" ] || die "project $proj is not set up: ./study project $proj"
+w=$(mktemp -d "$STUDY_STATE/probe-XXXXXX"); mkdir -p "$w/sock" "$w/lsplog" "$w/lic" "$out"
+cp -a "$snap" "$w/ws"
+if [ -n "${STUDY_LICENSE_ZIP_B64:-}" ]; then printf '%s' "$STUDY_LICENSE_ZIP_B64" | base64 -d > "$w/lic/${STUDY_LICENSE_NAME:-license.zip}"; fi
+socat UNIX-LISTEN:"$w/sock/mcp.sock",fork SYSTEM:"exec bash $STUDY_ROOT/harness/env/serve-conn.sh $mode $w/ws $w/lsplog $w/lic" &
+bridge=$!
+for _ in $(seq 1 50); do [ -S "$w/sock/mcp.sock" ] && break; sleep 0.1; done
+coproc S { socat STDIO UNIX-CONNECT:"$w/sock/mcp.sock"; }
 exec 3>&"${S[1]}" 4<&"${S[0]}"
 send() { printf '%s\n' "$1" >&3; }
 recv() { local line; while IFS= read -r -t 600 line <&4; do if jq -e --argjson id "$1" '.id == $id' >/dev/null 2>&1 <<<"$line"; then printf '%s\n' "$line"; return 0; fi; done; return 1; }
@@ -27,12 +24,12 @@ now() { date +%s.%N; }
 calc() { awk "BEGIN{print $1}"; }
 t0=$(now)
 send '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"study-probe","version":"1"}}}'
-recv 1 > /out/initialize.json
+recv 1 > $out/initialize.json
 send '{"jsonrpc":"2.0","method":"notifications/initialized"}'
 send '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
-recv 2 > /out/tools.json
+recv 2 > $out/tools.json
 id=10
-: > /out/probe.jsonl
+: > $out/probe.jsonl
 # Locations in a result, as 1-based path:line (lsp_navigate reports 0-based lines; diagnostics too).
 locs() { jq -r 'try ([.locations[]?, .diagnostics[]?] | .[] | select(.path and .line != null) | "\(.path):\(.line + 1)") catch empty' <<<"$1" | sort -u; }
 while IFS= read -r spec; do
@@ -53,10 +50,10 @@ while IFS= read -r spec; do
   jq -cn --arg name "$name" --argjson attempts $attempts --arg secs "$(calc "$(now) - $start")" --arg first "${first_answer:-}" \
      --arg since0 "$(calc "$(now) - $t0")" --argjson missing "$missing" --arg got "$got" --arg text "$text" \
      '{name:$name, complete:($missing==[]), attempts:$attempts, secondsToComplete:($secs|tonumber), secondsToFirstAnswer:(if $first=="" then null else ($first|tonumber) end),
-       sinceServerStart:($since0|tonumber), missing:$missing, found:($got|split("\n")|map(select(.!=""))), lastResult:$text}' >> /out/probe.jsonl
-done < <(jq -c '.[]' /in/probe.json)
+       sinceServerStart:($since0|tonumber), missing:$missing, found:($got|split("\n")|map(select(.!=""))), lastResult:$text}' >> $out/probe.jsonl
+done < <(jq -c '.[]' "$probe")
 exec 3>&- 4<&-
-kill "$S_PID" 2>/dev/null || true
-wait 2>/dev/null || true
-cp -a /study/lsplog/. /out/lsplog/ 2>/dev/null || true
-[ -n "${STUDY_HOST_UID:-}" ] && chown -R "$STUDY_HOST_UID:${STUDY_HOST_GID:-$STUDY_HOST_UID}" /out 2>/dev/null || true
+kill "$bridge" 2>/dev/null || true; wait 2>/dev/null || true
+mkdir -p "$out/lsplog"; cp -a "$w/lsplog/." "$out/lsplog/" 2>/dev/null || true
+rm -rf "$w"
+[ -n "${STUDY_HOST_UID:-}" ] && chown -R "$STUDY_HOST_UID:${STUDY_HOST_GID:-$STUDY_HOST_UID}" "$out" 2>/dev/null || true

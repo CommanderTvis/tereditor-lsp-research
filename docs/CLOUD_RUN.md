@@ -26,8 +26,7 @@ variables, no setup script, no network secrets.
 2. The IntelliJ licence: attach JetBrains' offline activation code to the first message, either the zip from "Download
    a code for offline activation" or the `... - for 2018.2 or later.txt` file inside it. The session saves it as
    `license.zip` or `license.txt` in the repository root (both git-ignored; check with `git check-ignore`) and never
-   prints, copies elsewhere or commits it. Without it, the IntelliJ arms are left out of the plans and everything else
-   runs.
+   prints, copies elsewhere or commits it. The licence is required: without it, stop and ask for it.
 3. Starting the session with the prompt "Run the study per docs/CLOUD_RUN.md" (plus the attachment) is the owner's go
    for the confirmatory run, within the budget below.
 
@@ -53,8 +52,8 @@ docs/NIX.md) is being built. Until `./study` supports `STUDY_RUNTIME=native`, do
 ```sh
 git check-ignore -q license.zip && git check-ignore -q license.txt && echo "licence files ignored"
 git switch -c run/$(date -u +%F) 2>/dev/null || git switch run/$(date -u +%F)
-export STUDY_RUNTIME=native STUDY_INTELLIJ=1 STUDY_CPUS=3 STUDY_MEMORY=10g
-./study images python        # tereditor from the pinned commit, the agent image, warm-python
+export STUDY_RUNTIME=native STUDY_CPUS=3 STUDY_MEMORY=10g
+./study setup python         # tereditor at the pinned commit, the Python group's language servers
 ```
 
 Then the toolz smoke (`./study plan smoke-cloud --projects python-small --tasks refs-get --models claude-haiku-5-5`,
@@ -65,8 +64,8 @@ do not work around harness failures.
 
 For each `projects/<lang>-<size>` in `docs/PROJECTS.md`, smallest first within each language:
 
-1. `./study images <lang>` (warm image for this language, once per language), `./study project <lang>-<size>`.
-2. If the project is a stub, curate it per `docs/CURATION.md` (tasks, prepare.sh, Dockerfile.grade, check.sh,
+1. `./study setup <group>` (once per language group), `./study project <lang>-<size>`.
+2. If the project is a stub, curate it per `docs/CURATION.md` (tasks, prepare.sh, grade-setup.sh, check.sh,
    probe.json; oracles never from a language server). Subagents may do it, one project each, briefed with
    `docs/CURATION.md` and `docs/TASKS.md`.
 3. `./study validate <lang>-<size>`: every task VALID. Drop a task that cannot be made valid (say why in its
@@ -108,7 +107,7 @@ Then for each project (the planner already randomised the run order; run project
 ```sh
 ./study restore main                    # after a new session or machine
 ./study status main                     # skip projects already finished and graded
-./study images <lang>; ./study project <p>
+./study setup <group>; ./study project <p>
 ./study run main --project <p> -j 2
 ./study grade main --project <p> -j 2
 ./study archive main <p>

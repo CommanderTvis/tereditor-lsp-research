@@ -1,260 +1,188 @@
 #!/bin/sh
-# The study driver. Host requirements: POSIX sh, a container runtime (docker, or Apple `container` on macOS) and an
-# Anthropic credential. Everything else (git, jq, toolchains, analysis) runs in containers.
+# The study driver. Host requirements: POSIX sh and a container runtime (Docker, or Apple `container` on macOS); on a
+# Linux host without one, the native backend (run as root) bootstraps its own pinned Nix. Every command runs the
+# scripts in harness/env in the study's Nix environment (nix/flake.nix).
 #
-#   ./study images [lang ...]          build tereditor, agent, warm-<lang> images
-#   ./study project <lang-size> ...    build the run and grade images of projects
-#   ./study probe <lang-size> [arm]    scripted LSP probe, no model (results/probe/<project>/)
-#   ./study validate <lang-size> ...   grader validity: start state fails, gold passes, twice
-#   ./study plan <plan-name> [args]    write results/<plan>/plan.tsv (randomised order), see analysis/plan.sh
-#   ./study run <plan-name> [-j N]     run every pending line of the plan, N at a time (default 3)
-#   ./study run-one <plan> <run-id>    run one line
-#   ./study grade <plan-name> [-j N]   grade every finished, ungraded run
-#   ./study analyze <plan-name>        tables and figures into results/<plan>/report/
-#   ./study status <plan-name>         per project: runs planned, finished, graded
-#   ./study archive <plan> <project>   pack a project's runs into results/<plan>/archive/ (committed); restore <plan>
-#   ./study prune <project>... [--warm <lang>]   free disk after a project (run/grade images, layers, build cache)
-#   run and grade take --project <lang-size> to work through one project of a plan at a time
+#   ./study setup [group ...]          build tereditor; install the language servers of the groups (default: all)
+#   ./study project <project> ...      snapshot, server preparation and grading dependencies of projects
+#   ./study probe <project> [arm]      the language server on this project, no model (results/probe/)
+#   ./study validate <project> ...     every task: starting state fails, reference solution passes, twice
+#   ./study plan <plan> [options]      results/<plan>/plan.tsv in a seeded random order (analysis/plan.sh)
+#   ./study run <plan> [-j N] [--project P]     run the pending lines of a plan, N at a time (default 2)
+#   ./study grade <plan> [-j N] [--project P]   grade the finished, ungraded runs
+#   ./study analyze <plan>             results/<plan>/report/
+#   ./study status <plan>              per project: runs planned, finished, graded
+#   ./study archive <plan> <project>   pack a project's runs into results/<plan>/archive/; restore <plan> unpacks all
+#   ./study prune <project> ...        drop a finished project's snapshot and caches
 #
-# Environment: STUDY_RUNTIME=docker|container (default: whichever exists), ANTHROPIC_API_KEY or
-# CLAUDE_CODE_OAUTH_TOKEN (runs only), STUDY_CPUS (default 4), STUDY_MEMORY (default 6g).
+# Environment: STUDY_RUNTIME=docker|container|native, STUDY_CPUS (default 4), STUDY_MEMORY (default 8g) per container,
+# ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN (or STUDY_ENV_FILE, default ~/.config/tereditor-study/env).
 set -eu
 ROOT=$(cd "$(dirname "$0")" && pwd)
 cd "$ROOT"
 
-if [ -z "${STUDY_RUNTIME:-}" ]; then
-  if command -v docker >/dev/null 2>&1; then STUDY_RUNTIME=docker
-  elif command -v container >/dev/null 2>&1; then STUDY_RUNTIME=container
-  else echo "study: need docker or Apple container" >&2; exit 2; fi
-fi
-RT=$STUDY_RUNTIME
-CPUS=${STUDY_CPUS:-4}
-MEMORY=${STUDY_MEMORY:-6g}
-TEREDITOR_COMMIT=$(sed -n 's/^ARG TEREDITOR_COMMIT=//p' harness/images/tereditor/Dockerfile)
-TEREDITOR_TAG=study/tereditor:$(printf %.7s "$TEREDITOR_COMMIT")
-
 die() { echo "study: $*" >&2; exit 2; }
 log() { echo "[study $(date -u +%H:%M:%S)] $*" >&2; }
 
-# toml_get <file> <key>: a flat `key = "value"` or `key = value` from project.toml / task.toml.
-toml_get() { sed -n "s/^$2[[:space:]]*=[[:space:]]*\"\{0,1\}\([^\"]*\)\"\{0,1\}[[:space:]]*\$/\1/p" "$1" | head -n1; }
+if [ -z "${STUDY_RUNTIME:-}" ]; then
+  if command -v docker >/dev/null 2>&1; then STUDY_RUNTIME=docker
+  elif command -v container >/dev/null 2>&1; then STUDY_RUNTIME=container
+  elif [ "$(uname -s)" = Linux ]; then STUDY_RUNTIME=native
+  else die "need Docker or Apple container"; fi
+fi
+RT=$STUDY_RUNTIME
+CPUS=${STUDY_CPUS:-4}
+MEMORY=${STUDY_MEMORY:-8g}
+NIX_IMAGE=docker.io/nixos/nix:2.35.6@sha256:b49cb33f3a7e5cf3933ad8774529de0e3807ec5cf54987aa7ccdfb49f2fc55ed
+UBUNTU_IMAGE=docker.io/library/ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5
+TEREDITOR_COMMIT=$(sed -n 's/^TEREDITOR_COMMIT=//p' harness/tereditor.env)
+GROUPS_ALL="python typescript csharp php jvm cpp shell css"
 
-# One platform for every language: the native one (clangd has a pinned linux/arm64 build since tereditor 0da30195).
-platform_of() { echo "linux/$(native_arch)"; }
-native_arch() { case "$(uname -m)" in x86_64|amd64) echo amd64 ;; arm64|aarch64) echo arm64 ;; *) uname -m ;; esac; }
-servers_of() { case "$1" in cpp) echo clangd ;; *) echo "$1" ;; esac; }
-# The warm image a language runs on: the JVM languages share one (Kotlin server, IntelliJ server, JDK).
-warm_of() { case "$1" in kotlin|java|java-kotlin) echo jvm ;; *) echo "$1" ;; esac; }
-arch_tag() { echo "$1" | sed 's|linux/||'; }
+# The language group of a project: its toolchain and language servers.
+group_of() { l=${1%-*}; case "$l" in kotlin|java|java-kotlin) echo jvm ;; *) echo "$l" ;; esac; }
 
-build() { # platform tag context [build args...]
-  plat=$1 tag=$2 ctx=$3; shift 3
-  log "build $tag ($plat)"
-  # Apple container restarts its builder with 2 CPUs / 2 GB unless told otherwise; the NativeAOT build needs ~12 GB.
-  extra=""; [ "$RT" = container ] && extra="--cpus ${STUDY_BUILD_CPUS:-8} --memory ${STUDY_BUILD_MEMORY:-12g}"
-  $RT build $extra --platform "$plat" -t "$tag" "$@" "$ctx"
-}
-
-run_ctr() { # platform image [run args...] -- [cmd...]
-  plat=$1 image=$2; shift 2
-  # Files the containers write into results/ are handed back to the caller (matters on Linux, where uids are shared).
-  $RT run --rm --platform "$plat" --cpus "$CPUS" --memory "$MEMORY" -e "STUDY_HOST_UID=$(id -u)" -e "STUDY_HOST_GID=$(id -g)" "$@"
-}
-
-cmd_images() {
-  langs=${*:-"csharp typescript python php cpp kotlin java java-kotlin shell css"}
-  plats=""
-  for l in $langs; do p=$(platform_of "$l"); case " $plats " in *" $p "*) ;; *) plats="$plats $p" ;; esac; done
-  for p in $plats; do
-    a=$(arch_tag "$p")
-    build "$p" "$TEREDITOR_TAG-$a" harness/images/tereditor
-    build "$p" "study/agent:$a" harness/images/agent --build-arg "TEREDITOR_IMAGE=$TEREDITOR_TAG-$a"
-  done
-  done_warm=""
-  for l in $langs; do
-    p=$(platform_of "$l"); a=$(arch_tag "$p"); w=$(warm_of "$l")
-    case " $done_warm " in *" $w "*) continue ;; esac; done_warm="$done_warm $w"
-    if [ "$w" = jvm ]; then
-      # IntelliJ is opt-in: only STUDY_INTELLIJ=1 records the terms acceptance in harness/intellij.env (yours to give).
-      if [ "${STUDY_INTELLIJ:-0}" = 1 ]; then set -- $(grep -v '^#' harness/intellij.env | sed 's/^/--build-arg /'); else set --; fi
-      build "$p" "study/warm-jvm:$a" harness/images/warm-jvm --build-arg "AGENT_IMAGE=study/agent:$a" "$@"
-    else
-      build "$p" "study/warm-$w:$a" harness/images/warm --build-arg "AGENT_IMAGE=study/agent:$a" --build-arg "SERVERS=$(servers_of "$l")"
-    fi
-  done
-}
-
-project_lang() { echo "${1%-*}"; }
-
-cmd_project() {
-  for proj in "$@"; do
-    d=projects/$proj; [ -f "$d/project.toml" ] || die "no $d/project.toml"
-    l=$(project_lang "$proj"); p=$(platform_of "$l"); a=$(arch_tag "$p")
-    repo=$(toml_get "$d/project.toml" repo); commit=$(toml_get "$d/project.toml" commit)
-    [ -n "$repo" ] && [ -n "$commit" ] || die "$d/project.toml needs repo and commit"
-    [ -f "$d/prepare.sh" ] || die "$d/prepare.sh missing (an empty script is fine)"
-    build "$p" "study/run-$proj" "$d" -f harness/images/run/Dockerfile \
-      --build-arg "WARM_IMAGE=study/warm-$(warm_of "$l"):$a" --build-arg "REPO=$repo" --build-arg "COMMIT=$commit"
-    build "$p" "study/grade-$proj" "$d" -f "$d/Dockerfile.grade" --build-arg "REPO=$repo" --build-arg "COMMIT=$commit"
-  done
-}
-
-# The IntelliJ licence: ./license.zip (the offline-activation zip) or ./license.txt (the bare code from it), or
-# STUDY_INTELLIJ_LICENSE; where no file exists (a
-# cloud session: license.zip is never committed) an already-set STUDY_LICENSE_ZIP_B64 environment variable is used.
-load_license() {
-  lic=${STUDY_INTELLIJ_LICENSE:-}
-  [ -n "$lic" ] || for f in "$ROOT/license.zip" "$ROOT/license.txt"; do [ -f "$f" ] && { lic=$f; break; }; done
-  if [ -n "$lic" ] && [ -f "$lic" ]; then
-    STUDY_LICENSE_ZIP_B64=$(base64 < "$lic" | tr -d '\n')
-    case "$lic" in *.zip) STUDY_LICENSE_NAME=license.zip ;; *) STUDY_LICENSE_NAME=license.txt ;; esac
-  fi
-  STUDY_LICENSE_ZIP_B64=${STUDY_LICENSE_ZIP_B64:-}; STUDY_LICENSE_NAME=${STUDY_LICENSE_NAME:-license.zip}
-  export STUDY_LICENSE_ZIP_B64 STUDY_LICENSE_NAME
-}
-
-cmd_probe() {
-  proj=$1 mode=${2:-enforced}
-  d=projects/$proj; l=$(project_lang "$proj"); p=$(platform_of "$l")
-  out=$ROOT/results/probe/$proj-$mode; rm -rf "$out"; mkdir -p "$out" "$out.in"
-  cp "$d/probe.json" "$out.in/probe.json"; cp harness/bin/probe-inside.sh "$out.in/"
-  load_license
-  run_ctr "$p" "study/run-$proj" -v "$out.in:/in:ro" -v "$out:/out" ${STUDY_LICENSE_ZIP_B64:+-e STUDY_LICENSE_ZIP_B64 -e STUDY_LICENSE_NAME} \
-    -e "POLL_S=${POLL_S:-180}" "study/run-$proj" probe bash /in/probe-inside.sh "$mode"
-  rm -rf "$out.in"
-  log "probe results: $out/probe.jsonl"
-}
-
-# Grading runs in the project's grade image; answer tasks are scored there too (the grader needs only sh and awk).
-grade_dir() { # project task-dir patch-file out-dir
-  proj=$1 task=$2 patch=$3 out=$4
-  l=$(project_lang "$proj"); p=$(platform_of "$l")
-  mkdir -p "$out"
-  run_ctr "$p" "study/grade-$proj" --network none \
-    -v "$ROOT/$task:/task:ro" -v "$ROOT/projects/$proj:/project:ro" -v "$ROOT/harness/grade:/grade:ro" \
-    -v "$(cd "$(dirname "$patch")" && pwd):/run:ro" -v "$out:/out" \
-    --entrypoint /bin/sh "study/grade-$proj" /grade/grade.sh "/run/$(basename "$patch")"
-}
-
-cmd_validate() {
-  for proj in "$@"; do
-    for task in tasks/"$proj"/*/; do
-      task=${task%/}; id=$(basename "$task"); v=$ROOT/results/validate/$proj/$id; rm -rf "$v"; mkdir -p "$v"
-      : > "$v/empty.diff"
-      grade_dir "$proj" "$task" "$v/empty.diff" "$v/start" >/dev/null 2>&1 || true
-      if [ -f "$task/gold.patch" ]; then cp "$task/gold.patch" "$v/gold.diff"
-      else # answer task: the oracle as the answer
-        printf 'diff --git a/ANSWER.txt b/ANSWER.txt\nnew file mode 100644\n--- /dev/null\n+++ b/ANSWER.txt\n@@ -0,0 +1,%s @@\n' "$(wc -l < "$task/oracle.txt" | tr -d ' ')" > "$v/gold.diff"
-        sed 's/^/+/' "$task/oracle.txt" >> "$v/gold.diff"
-      fi
-      grade_dir "$proj" "$task" "$v/gold.diff" "$v/gold1" >/dev/null 2>&1 || true
-      grade_dir "$proj" "$task" "$v/gold.diff" "$v/gold2" >/dev/null 2>&1 || true
-      s=$(sed -n 's/.*"success":\([a-z]*\).*/\1/p' "$v/start/result.json" 2>/dev/null)
-      g1=$(sed -n 's/.*"success":\([a-z]*\).*/\1/p' "$v/gold1/result.json" 2>/dev/null)
-      g2=$(sed -n 's/.*"success":\([a-z]*\).*/\1/p' "$v/gold2/result.json" 2>/dev/null)
-      ok=VALID; [ "$s" = false ] && [ "$g1" = true ] && [ "$g2" = true ] || ok=INVALID
-      echo "$ok $proj/$id start=$s gold=$g1,$g2"
-    done
-  done
-}
-
-cmd_run_one() {
-  plan=$1 rid=$2
-  P=$ROOT/results/$plan; line=$(awk -F'\t' -v r="$rid" '$1==r' "$P/plan.tsv")
-  [ -n "$line" ] || die "no run $rid in $P/plan.tsv"
-  # plan.tsv columns: run_id project task arm model rep effort budget max_turns timeout_s
-  set -- $(echo "$line" | tr '\t' ' ')
-  rid=$1 proj=$2 task=$3 arm=$4 model=$5 effort=$7 budget=$8 turns=$9; shift 9; tmo=$1
-  out=$P/runs/$rid; [ -f "$out/exit.json" ] && { log "skip $rid (done)"; return 0; }
-  rm -rf "$out" "$out.in"; mkdir -p "$out" "$out.in"
-  tdir=tasks/$proj/$task
-  { cat harness/prompt-preamble.md; cat "$tdir/prompt.md"; } > "$out.in/prompt.md"
-  [ -f "$tdir/setup.patch" ] && cp "$tdir/setup.patch" "$out.in/setup.patch"
-  [ -f "harness/arms/$arm/mcp.json" ] && cp "harness/arms/$arm/mcp.json" "$out.in/mcp.json"
-  # The IntelliJ arms reuse their tereditor twin's workspace overlay (CLAUDE.md, hooks), so the two cannot drift apart.
-  ov=harness/arms/$arm/overlay; [ -d "$ov" ] || ov=harness/arms/${arm#intellij-}/overlay
-  case "$arm" in intellij-*|enforced|optional) ;; *) ov=/nonexistent ;; esac
-  [ -d "$ov" ] && cp -R "$ov" "$out.in/arm"
-  l=$(project_lang "$proj"); p=$(platform_of "$l")
-  [ "$effort" = - ] && effort=""
-  log "run $rid $proj/$task arm=$arm model=$model"
-  run_ctr "$p" "study/run-$proj" -v "$out.in:/in:ro" -v "$out:/out" \
-    -e ARM="$arm" -e MODEL="$model" -e EFFORT="$effort" -e MAX_BUDGET_USD="$budget" -e MAX_TURNS="$turns" -e TIMEOUT_S="$tmo" \
-    ${ANTHROPIC_API_KEY:+-e ANTHROPIC_API_KEY} ${CLAUDE_CODE_OAUTH_TOKEN:+-e CLAUDE_CODE_OAUTH_TOKEN} \
-    ${STUDY_LICENSE_ZIP_B64:+-e STUDY_LICENSE_ZIP_B64 -e STUDY_LICENSE_NAME} \
-    "study/run-$proj" > "$out/container.log" 2>&1 || log "run $rid: container exited $?"
-  cp -R "$out.in" "$out/in" && rm -rf "$out.in"
-  # The arm and task inputs are kept, minus nothing secret (no credential ever reaches /in).
-}
-
-# plan_ids <plan> [project]: run ids of a plan, in plan order, optionally only one project's.
-plan_ids() { awk -F'\t' -v p="${2:-}" 'NR>1 && (p=="" || $2==p) {print $1}' "results/$1/plan.tsv"; }
-
-# run/grade options: -j N (parallel runs), --project P (only that project's runs).
-parse_jp() { j=3; only=""; while [ $# -gt 0 ]; do case "$1" in -j) j=$2; shift 2 ;; --project) only=$2; shift 2 ;; *) die "unknown option $1" ;; esac; done; }
-
-cmd_run() {
-  plan=$1; shift; parse_jp "$@"
-  # The credential: from the environment, else from an env file (KEY=value lines), never from the command line.
+# Credentials and the JetBrains licence, passed to the environment by variable name only.
+load_credentials() {
   envf=${STUDY_ENV_FILE:-$HOME/.config/tereditor-study/env}
   if [ -z "${ANTHROPIC_API_KEY:-}${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ -f "$envf" ]; then
     ANTHROPIC_API_KEY=$(sed -n 's/^ANTHROPIC_API_KEY=//p' "$envf" | tr -d '"'"'"' \r')
     CLAUDE_CODE_OAUTH_TOKEN=$(sed -n 's/^CLAUDE_CODE_OAUTH_TOKEN=//p' "$envf" | tr -d '"'"'"' \r')
   fi
-  [ -n "${ANTHROPIC_API_KEY:-}${CLAUDE_CODE_OAUTH_TOKEN:-}" ] || die "set ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN, or put one in $envf"
-  # A JetBrains offline-activation zip for the IntelliJ arms (optional): ./license.zip, or STUDY_INTELLIJ_LICENSE.
-  # It travels base64-encoded in an environment variable, never as a mount the agent could read.
-  load_license
-  export ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN STUDY_RUNTIME STUDY_LICENSE_ZIP_B64
+  # In a Claude Code cloud session the session's own login (a token file) is used; nothing has to be set.
+  [ -n "${ANTHROPIC_API_KEY:-}${CLAUDE_CODE_OAUTH_TOKEN:-}" ] || [ -s /home/claude/.claude/remote/.oauth_token ] \
+    || die "set ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN, or put one in $envf"
+  export ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN
+}
+load_license() {
+  lic=""; for f in "$ROOT/license.zip" "$ROOT/license.txt"; do [ -f "$f" ] && { lic=$f; break; }; done
+  [ -n "$lic" ] || die "no JetBrains licence: put license.zip (or license.txt) in $ROOT, see README.md"
+  STUDY_LICENSE_ZIP_B64=$(base64 < "$lic" | tr -d '\n')
+  case "$lic" in *.zip) STUDY_LICENSE_NAME=license.zip ;; *) STUDY_LICENSE_NAME=license.txt ;; esac
+  export STUDY_LICENSE_ZIP_B64 STUDY_LICENSE_NAME
+}
+
+# --- backends -------------------------------------------------------------------------------------------------------
+
+# Container backends: the pinned nixos/nix image with two volumes, the Nix store (study-nix, initialised from the
+# image once) and the state (study-state: tereditor, caches, snapshots); this repository is mounted at /study-root.
+# bubblewrap inside needs the capabilities to create namespaces.
+priv() { if [ "$RT" = docker ]; then echo --privileged; else echo "--cap-add ALL"; fi; }
+ctr_volumes() {
+  if [ "$RT" = docker ]; then
+    docker volume inspect study-nix >/dev/null 2>&1 || docker volume create study-nix >/dev/null
+    docker volume inspect study-state >/dev/null 2>&1 || docker volume create study-state >/dev/null
+  else
+    container volume inspect study-nix >/dev/null 2>&1 || container volume create study-nix >/dev/null
+    container volume inspect study-state >/dev/null 2>&1 || container volume create study-state >/dev/null
+  fi
+  if ! $RT run --rm -v study-nix:/nix --entrypoint /bin/sh "$NIX_IMAGE" -c 'test -x /nix/var/nix/profiles/default/bin/nix' >/dev/null 2>&1; then
+    log "initialising the Nix store volume"
+    $RT run --rm -v study-nix:/mnt --entrypoint /bin/sh "$NIX_IMAGE" -c 'cp -a /nix/. /mnt/'
+  fi
+}
+
+# Native backend: a Linux host, as root, with the pinned Nix release unpacked into /nix (no daemon, nothing else
+# installed). STUDY_STATE defaults to /var/lib/study.
+NIX_VERSION=2.35.6
+nix_sha256() { case "$1" in x86_64) echo b12ab64a291e41846b9da37b7f56eafa7683deaa267bafb2ed43440ab2f45f13 ;;
+                             aarch64) echo 1f177b572baadf8c09750028f047fe943a3615a34f3e4a43927367a1e0120801 ;; esac; }
+native_nix() {
+  [ "$(id -u)" = 0 ] || die "the native backend runs as root"
+  command -v nix >/dev/null 2>&1 && return 0
+  [ -x /nix/var/study-nix/bin/nix ] && { PATH=/nix/var/study-nix/bin:$PATH; return 0; }
+  a=$(uname -m); t=$(mktemp -d)
+  log "installing the pinned Nix $NIX_VERSION into /nix"
+  curl -fsSL -o "$t/nix.tar.xz" "https://releases.nixos.org/nix/nix-$NIX_VERSION/nix-$NIX_VERSION-$a-linux.tar.xz"
+  echo "$(nix_sha256 "$a")  $t/nix.tar.xz" | sha256sum -c - >/dev/null || die "Nix download checksum mismatch"
+  tar -xJf "$t/nix.tar.xz" -C "$t"; d=$(echo "$t"/nix-*-linux)
+  mkdir -p /nix/store /nix/var/study-nix/bin && cp -a "$d"/store/* /nix/store/
+  n=$(ls -d /nix/store/*-nix-"$NIX_VERSION" | head -n1)
+  "$n/bin/nix-store" --load-db < "$d/.reginfo"
+  ln -sf "$n/bin/nix" "$n/bin/nix-store" /nix/var/study-nix/bin/
+  PATH=/nix/var/study-nix/bin:$PATH; rm -rf "$t"
+}
+
+# env_run <group> <script> [args...]: one harness script in the environment of a language group.
+env_run() {
+  g=$1; shift
+  if [ "$RT" = native ]; then
+    native_nix
+    STUDY_ROOT=$ROOT STUDY_STATE=${STUDY_STATE:-/var/lib/study} sh "$ROOT/harness/env/entry.sh" "$g" "$@"
+  else
+    $RT run --rm $(priv) --cpus "$CPUS" --memory "$MEMORY" \
+      -v study-nix:/nix -v study-state:/state -v "$ROOT:/study-root" \
+      -e "STUDY_HOST_UID=$(id -u)" -e "STUDY_HOST_GID=$(id -g)" -e POLL_S \
+      ${ANTHROPIC_API_KEY:+-e ANTHROPIC_API_KEY} ${CLAUDE_CODE_OAUTH_TOKEN:+-e CLAUDE_CODE_OAUTH_TOKEN} \
+      ${STUDY_LICENSE_ZIP_B64:+-e STUDY_LICENSE_ZIP_B64 -e STUDY_LICENSE_NAME} \
+      --entrypoint /bin/sh "$NIX_IMAGE" /study-root/harness/env/entry.sh "$g" "$@"
+  fi
+}
+
+# tereditor is built with its own pinned toolchain on an Ubuntu root: the host itself (native) or a pinned container.
+build_tereditor() {
+  if [ "$RT" = native ]; then
+    st=${STUDY_STATE:-/var/lib/study}; sh harness/env/build-tereditor.sh "$st/tereditor/$TEREDITOR_COMMIT-$(uname -m)" "$TEREDITOR_COMMIT"
+  else
+    $RT run --rm --cpus "${STUDY_BUILD_CPUS:-6}" --memory "${STUDY_BUILD_MEMORY:-12g}" -v study-state:/state \
+      -v "$ROOT/harness/env:/env:ro" --entrypoint /bin/sh "$UBUNTU_IMAGE" \
+      -c "sh /env/build-tereditor.sh /state/tereditor/$TEREDITOR_COMMIT-\$(uname -m) $TEREDITOR_COMMIT"
+  fi
+}
+
+# --- commands -------------------------------------------------------------------------------------------------------
+
+cmd_setup() {
+  [ "$RT" = native ] || ctr_volumes
+  log "tereditor $TEREDITOR_COMMIT"; build_tereditor
+  for g in ${*:-$GROUPS_ALL}; do env_run "$g" setup; done
+}
+
+cmd_project() { for p in "$@"; do [ -f "projects/$p/project.toml" ] || die "no projects/$p"; env_run "$(group_of "$p")" project "$p"; done; }
+
+cmd_probe() {
+  p=$1 mode=${2:-enforced}; load_license
+  out=results/probe/$p-$mode; rm -rf "$out"; mkdir -p "$out"
+  env_run "$(group_of "$p")" probe "$p" "$mode" "/study-root/$out" "/study-root/projects/$p/probe.json"
+  log "probe results: $out/probe.jsonl"
+}
+
+cmd_validate() { for p in "$@"; do env_run "$(group_of "$p")" validate "$p"; done; }
+
+cmd_plan() { name=$1; shift; mkdir -p "results/$name"; env_run python plan "$name" "$@"
+             log "wrote results/$name/plan.tsv ($(($(wc -l < "results/$name/plan.tsv") - 1)) runs)"; }
+
+plan_ids() { awk -F'\t' -v p="${2:-}" 'NR>1 && (p=="" || $2==p) {print $1}' "results/$1/plan.tsv"; }
+parse_jp() { j=2; only=""; while [ $# -gt 0 ]; do case "$1" in -j) j=$2; shift 2 ;; --project) only=$2; shift 2 ;; *) die "unknown option $1" ;; esac; done; }
+
+cmd_run() {
+  plan=$1; shift; parse_jp "$@"; load_credentials; load_license
+  [ "$RT" = native ] || ctr_volumes
+  export STUDY_LICENSE_ZIP_B64 STUDY_LICENSE_NAME
   plan_ids "$plan" "$only" | xargs -P "$j" -n 1 "$ROOT/study" run-one "$plan"
 }
-
-cmd_grade() {
-  plan=$1; shift; parse_jp "$@"
-  plan_ids "$plan" "$only" | xargs -P "$j" -n 1 "$ROOT/study" grade-one "$plan"
+cmd_run_one() {
+  plan=$1 rid=$2; [ -f "results/$plan/runs/$rid/exit.json" ] && return 0
+  proj=$(awk -F'\t' -v r="$rid" '$1==r {print $2}' "results/$plan/plan.tsv")
+  env_run "$(group_of "$proj")" run-one "$plan" "$rid" || log "run $rid: exit $?"
 }
-
+cmd_grade() { plan=$1; shift; parse_jp "$@"; plan_ids "$plan" "$only" | xargs -P "$j" -n 1 "$ROOT/study" grade-one "$plan"; }
 cmd_grade_one() {
-  plan=$1 rid=$2; P=$ROOT/results/$plan; out=$P/runs/$rid
-  [ -f "$out/exit.json" ] || return 0
-  [ -f "$out/grade/result.json" ] && return 0
-  line=$(awk -F'\t' -v r="$rid" '$1==r' "$P/plan.tsv"); set -- $(echo "$line" | tr '\t' ' ')
-  run_dir=$out  # grade_dir reuses the name `out` (POSIX sh has no locals)
-  grade_dir "$2" "tasks/$2/$3" "$run_dir/patch.diff" "$run_dir/grade" > "$run_dir/grade.log" 2>&1 || true
-  log "graded $rid: $(cat "$run_dir/grade/result.json" 2>/dev/null || echo none)"
+  plan=$1 rid=$2; [ -f "results/$plan/runs/$rid/exit.json" ] || return 0; [ -f "results/$plan/runs/$rid/grade/result.json" ] && return 0
+  proj=$(awk -F'\t' -v r="$rid" '$1==r {print $2}' "results/$plan/plan.tsv")
+  env_run "$(group_of "$proj")" grade-one "$plan" "$rid"
 }
 
-cmd_plan() {
-  name=$1; shift
-  mkdir -p "results/$name"
-  run_ctr "linux/$(native_arch)" "study/agent:$(native_arch)" -v "$ROOT:/study-root" --entrypoint /bin/bash \
-    "study/agent:$(native_arch)" /study-root/analysis/plan.sh "$name" "$@"
-  log "wrote results/$name/plan.tsv ($(($(wc -l < "results/$name/plan.tsv") - 1)) runs)"
+cmd_analyze() { env_run python analyze "$1"; }
+
+cmd_status() {
+  P=results/$1
+  printf '%-22s %7s %8s %7s\n' project planned finished graded
+  awk -F'\t' 'NR>1 {print $1"\t"$2}' "$P/plan.tsv" | while IFS="$(printf '\t')" read -r rid proj; do
+    f=0; g=0; [ -f "$P/runs/$rid/exit.json" ] && f=1; [ -f "$P/runs/$rid/grade/result.json" ] && g=1
+    printf '%s\t%s\t%s\n' "$proj" "$f" "$g"
+  done | awk -F'\t' '{n[$1]++; f[$1]+=$2; g[$1]+=$3} END {for (p in n) printf "%-22s %7d %8d %7d\n", p, n[p], f[p], g[p]}' | sort
 }
 
-cmd_analyze() {
-  name=$1
-  build "linux/$(native_arch)" study/analysis analysis
-  run_ctr "linux/$(native_arch)" study/analysis -v "$ROOT:/study-root" study/analysis "$name"
-}
-
-# prune <project> ...: drop the run and grade images of finished projects and every dangling layer and build cache, so
-# a small disk (a cloud VM) holds one project at a time. --warm <lang> also drops that language's warm image.
-cmd_prune() {
-  while [ $# -gt 0 ]; do
-    case "$1" in
-      --warm) w=$(warm_of "$2"); $RT image rm "study/warm-$w:$(native_arch)" >/dev/null 2>&1 || true; shift 2 ;;
-      *) $RT image rm "study/run-$1" "study/grade-$1" >/dev/null 2>&1 || true; shift ;;
-    esac
-  done
-  if [ "$RT" = docker ]; then docker image prune -f >/dev/null; docker builder prune -af >/dev/null 2>&1 || true
-  else container image prune >/dev/null 2>&1 || true; fi
-  log "pruned; disk: $(df -h "$ROOT" | awk 'NR==2 {print $4" free"}')"
-}
-
-# archive <plan> <project>: pack that project's finished run directories into results/<plan>/archive/<project>.tar.gz
-# (committed; raw run directories are git-ignored). restore <plan>: unpack every archive back into results/<plan>/runs,
-# so a new session or machine resumes where the last one stopped.
 cmd_archive() {
   plan=$1 proj=$2; P=results/$plan; mkdir -p "$P/archive"
   ids=$(plan_ids "$plan" "$proj" | while read -r r; do [ -f "$P/runs/$r/exit.json" ] && echo "$r"; done)
@@ -268,19 +196,13 @@ cmd_restore() {
   log "restored: $(ls "$P/runs" | wc -l | tr -d ' ') run directories"
 }
 
-# status <plan>: per project, runs planned, finished and graded (what is left to do after an interruption).
-cmd_status() {
-  P=results/$1
-  printf '%-22s %7s %8s %7s\n' project planned finished graded
-  awk -F'\t' 'NR>1 {print $1"\t"$2}' "$P/plan.tsv" | while IFS="$(printf '\t')" read -r rid proj; do
-    f=0; g=0; [ -f "$P/runs/$rid/exit.json" ] && f=1; [ -f "$P/runs/$rid/grade/result.json" ] && g=1
-    printf '%s\t%s\t%s\n' "$proj" "$f" "$g"
-  done | awk -F'\t' '{n[$1]++; f[$1]+=$2; g[$1]+=$3} END {for (p in n) printf "%-22s %7d %8d %7d\n", p, n[p], f[p], g[p]}' | sort
+cmd_prune() {
+  for p in "$@"; do env_run "$(group_of "$p")" prune "$p"; done
 }
 
 c=${1:-}; [ -n "$c" ] || { sed -n '2,20p' "$0"; exit 2; }; shift
 case "$c" in
-  images) cmd_images "$@" ;;
+  setup) cmd_setup "$@" ;;
   project) cmd_project "$@" ;;
   probe) cmd_probe "$@" ;;
   validate) cmd_validate "$@" ;;
@@ -290,9 +212,9 @@ case "$c" in
   grade) cmd_grade "$@" ;;
   grade-one) cmd_grade_one "$@" ;;
   analyze) cmd_analyze "$@" ;;
-  prune) cmd_prune "$@" ;;
   status) cmd_status "$@" ;;
   archive) cmd_archive "$@" ;;
   restore) cmd_restore "$@" ;;
+  prune) cmd_prune "$@" ;;
   *) die "unknown command $c" ;;
 esac

@@ -12,7 +12,7 @@ CSS counts Sass/SCSS sources only (compiled `.css` in `dist/` is output, not sou
 and requires each language to be at least 10% of the total.
 
 Reproduce every number below with `sh harness/size/measure.sh > counts.jsonl` (container runtime only);
-`harness/size/counts.jsonl` holds the measurement of 2026-11-12 for all 98 candidates considered, chosen or not.
+`harness/size/counts.jsonl` holds the measurement of all 98 candidates considered, chosen or not.
 
 ## Bands
 
