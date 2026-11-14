@@ -17,7 +17,7 @@
 #
 # Environment: STUDY_RUNTIME=docker|container|native, STUDY_CPUS (default 4), STUDY_MEMORY (default 8g) per container
 # (a container holds all parallel runs of a language group: size it for -j runs),
-# ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN (or STUDY_ENV_FILE, default ~/.config/tereditor-study/env).
+# ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN (or STUDY_ENV_FILE, default ./study.env).
 set -eu
 ROOT=$(cd "$(dirname "$0")" && pwd)
 cd "$ROOT"
@@ -42,7 +42,7 @@ group_of() { l=${1%-*}; case "$l" in kotlin|java|java-kotlin) echo jvm ;; *) ech
 
 # Credentials and the JetBrains licence, passed to the environment by variable name only.
 load_credentials() {
-  envf=${STUDY_ENV_FILE:-$HOME/.config/tereditor-study/env}
+  envf=${STUDY_ENV_FILE:-$ROOT/study.env}
   if [ -z "${ANTHROPIC_API_KEY:-}${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ -f "$envf" ]; then
     ANTHROPIC_API_KEY=$(sed -n 's/^ANTHROPIC_API_KEY=//p' "$envf" | tr -d '"'"'"' \r')
     CLAUDE_CODE_OAUTH_TOKEN=$(sed -n 's/^CLAUDE_CODE_OAUTH_TOKEN=//p' "$envf" | tr -d '"'"'"' \r')

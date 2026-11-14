@@ -1,5 +1,5 @@
 {
-  description = "LSP efficiency study: pinned environments for the agent, the language server and grading (docs/NIX.md)";
+  description = "Does LSP help Claude Code? Pinned environments for the agent, the language server and grading (docs/NIX.md)";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 

@@ -9,3 +9,6 @@ __pycache__/
 /.probe.log
 /license.txt
 /.*.log
+/deploy_key
+/deploy_key.pub
+/study.env

@@ -1,4 +1,4 @@
-# LSP efficiency study: does a language server help a Claude Code agent?
+# Does LSP help Claude Code?
 
 Two language-server stacks compete against the same agent without them: [headless tereditor](https://github.com/CommanderTvis/tereditor/blob/main/docs/headless.md)'s
 servers and IntelliJ's, across every language tereditor serves headless plus Java, four project sizes, three models
@@ -19,7 +19,7 @@ and two prompting regimes.
 1. On <https://account.jetbrains.com/licenses>, **Download a code for offline activation** and save the zip as
    `./license.zip` (or the bare code as `./license.txt`).
 2. Put your own answers to JetBrains' terms in `harness/intellij.env` (the committed ones are the study owner's).
-3. Put the credential in `~/.config/tereditor-study/env` as `ANTHROPIC_API_KEY=...`, or export it.
+3. Put the credential in `./study.env` as `ANTHROPIC_API_KEY=...`, or export it.
 4. Run:
 
    ```sh
@@ -33,4 +33,4 @@ and two prompting regimes.
    ```
 
 `STUDY_RUNTIME=docker|container` picks the runtime when both exist. Docker is untested; Apple `container` is tested.
-The authors' run uses one Claude Code cloud session: [docs/CLOUD_RUN.md](docs/CLOUD_RUN.md).
+The author's run uses one Claude Code cloud session: [docs/CLOUD_RUN.md](docs/CLOUD_RUN.md).

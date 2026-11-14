@@ -54,6 +54,10 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
   is decoded into a uid-1000-only directory.
 - The JVM image adds a pinned JDK 21 and Apache Maven 3.9.11 under `/cache`: IntelliJ's Maven import runs `mvn` from
   PATH, and without it answers never left the current file.
+- Task counts are balanced in the design, not reweighted afterwards: small to large projects get 6 tasks (refs,
+  rename, compile, bugfix, plus 2 of impls/dispatch/callers/inspect/signature on a fixed rotation, balanced separately
+  within the JVM projects); xlarge projects get 3 (refs, compile, one rotating answer type); at most 186 tasks
+  (docs/TASKS.md, docs/research/task-type-weighting.md).
 - Oracles never come from a language server: compiler mutation (rename the declaration, compile, collect errors),
   another analyser, or hand-classified exhaustive candidate lists. Every task must pass `./study validate`.
 - The analysis is pre-registered in `docs/ANALYSIS_PLAN.md` (14 primary tests, Holm; mixed models, task-clustered
@@ -83,19 +87,19 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
 - `analysis/`: planner, extraction, report. `results/<plan>/`: plan, runs.csv, report (raw runs are git-ignored).
 - Upstream checkout (read-only from this repo): `~/TereditorProjects/tereditor`, remote
   `github.com/CommanderTvis/tereditor` (formerly `CommanderTvis/sharprail`); image `ghcr.io/commandertvis/tereditor`.
-- Credential: `~/.config/tereditor-study/env` (`CLAUDE_CODE_OAUTH_TOKEN=` or `ANTHROPIC_API_KEY=`).
+- Local secrets live git-ignored in the repository root: `study.env` (`CLAUDE_CODE_OAUTH_TOKEN=` or
+  `ANTHROPIC_API_KEY=`), `license.zip`/`license.txt`, `deploy_key`. Nothing goes into `~`.
 
 ## Running the study (cloud)
 
 The study runs in ONE Claude Code cloud session, unattended, following `docs/CLOUD_RUN.md`: projects one at a time
-(build, curate if a stub, validate, probe, run, grade, archive, push, prune Docker), a calibration pilot fixing the
-allocation before the confirmatory run, and at the end a pull request with `REPORT.md`, signed with the date. The
-cloud environment needs only this GitHub repository (github.com/CommanderTvis/tereditor-lsp-research, private) and
-Full network access; the credential is the session's own login, and the owner attaches the JetBrains activation code
-(zip or txt) to the first message, saved as git-ignored `license.zip`/`license.txt`. Starting that session with "Run
-the study per docs/CLOUD_RUN.md" is the owner's go for the confirmatory run. The cloud run needs the native backend
-(docs/NIX.md), which has not run without a container runtime yet. Local runs on this Mac are for development only (Apple
-`container` is too heavy for RAM and disk here).
+(set up, curate if a stub, validate, probe, run, grade, archive, prune), a calibration pilot fixing the allocation
+before the confirmatory run, and at the end `REPORT.md`, signed with the date. The session needs no GitHub account and
+no environment configuration beyond Full network access: it clones this public repository, uses its own login, and
+sends its work to the owner as downloads (a git bundle of its branch after every project, then the report and a
+results tarball). The owner attaches the JetBrains activation code (zip or txt) to the first message. Starting that
+session with "Run the study per docs/CLOUD_RUN.md" is the owner's go for the confirmatory run. Local runs on this Mac
+are for development.
 
 ## Working here
 
@@ -106,8 +110,8 @@ the study per docs/CLOUD_RUN.md" is the owner's go for the confirmatory run. The
 - Use `./study probe` and `./study validate` before spending model money; smoke with Haiku first.
 - Curation is done by subagents following `docs/CURATION.md`, one language each, about four at a time; they stop when
   a session ends, so check what is on disk before relaunching.
-- Locally: commit only when the owner asks; commits are SSH-signed; never push from here. The cloud session commits
-  and pushes its own `run/<date>` branch, as `docs/CLOUD_RUN.md` says.
+- Locally: commit and push only when the owner asks; commits are SSH-signed. The cloud session commits on its own
+  `run/<date>` branch and sends it as a git bundle; the owner applies it and opens the pull request.
 
 ## Next steps
 

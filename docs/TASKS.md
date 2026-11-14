@@ -66,9 +66,15 @@ Every type has a deterministic grader. No LLM judge is used anywhere.
 | `compile` | The build is broken in N places by an API change; fix it | checker-detectable defects (Barber) | the edit | build (and tests) pass |
 | `bugfix` | A seeded semantic bug, described by symptom; fix it | Barber held-out tests; SWE-bench style | the edit | hidden tests pass, visible tests still pass |
 
-Target per project: `refs`, `rename`, `compile`, `bugfix` and one of `impls`, `dispatch`, `callers`, `inspect`,
-`signature` that the language supports. Shell and CSS take the types that make sense for them and say which in
-`project.toml`.
+Task counts are balanced in the design rather than reweighted afterwards (docs/research/task-type-weighting.md):
+
+- Small, medium and large projects: 6 tasks each, `refs`, `rename`, `compile`, `bugfix`, plus 2 of `impls`,
+  `dispatch`, `callers`, `inspect`, `signature` on a fixed rotation across projects, so each of the five appears
+  equally often; the rotation is balanced separately within the JVM projects (Kotlin, Java, mixed), whose arms differ.
+- Xlarge projects: 3 tasks each, `refs`, `compile` and one rotating answer type (`impls`, `dispatch`, `callers`,
+  `inspect`).
+- At most 186 tasks in all. A type the language cannot express (Shell and CSS have no `impls` or `signature`) is
+  replaced by the next type in the rotation, and `project.toml` says which.
 
 ## Answers
 
