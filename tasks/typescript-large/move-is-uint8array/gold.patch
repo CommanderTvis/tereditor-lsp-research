@@ -1,0 +1,138 @@
+diff --git a/packages/typeorm/src/metadata/ColumnMetadata.ts b/packages/typeorm/src/metadata/ColumnMetadata.ts
+index e49f89003..9e2af7a7f 100644
+--- a/packages/typeorm/src/metadata/ColumnMetadata.ts
++++ b/packages/typeorm/src/metadata/ColumnMetadata.ts
+@@ -10,7 +10,8 @@ import type { ValueTransformer } from "../decorator/options/ValueTransformer"
+ import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
+ import { ObjectUtils } from "../util/ObjectUtils"
+ import { InstanceChecker } from "../util/InstanceChecker"
+-import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
++import { areUint8ArraysEqual } from "../util/Uint8ArrayUtils"
++import { isUint8Array } from "../util/guards/isUint8Array"
+ import type { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
+ 
+ /**
+diff --git a/packages/typeorm/src/persistence/Subject.ts b/packages/typeorm/src/persistence/Subject.ts
+index 7d83dcb5a..feb11879a 100644
+--- a/packages/typeorm/src/persistence/Subject.ts
++++ b/packages/typeorm/src/persistence/Subject.ts
+@@ -6,7 +6,7 @@ import type { RelationMetadata } from "../metadata/RelationMetadata"
+ import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+ import { ObjectUtils } from "../util/ObjectUtils"
+ import { InstanceChecker } from "../util/InstanceChecker"
+-import { isUint8Array } from "../util/Uint8ArrayUtils"
++import { isUint8Array } from "../util/guards/isUint8Array"
+ 
+ /**
+  * Subject is a subject of persistence.
+diff --git a/packages/typeorm/src/persistence/SubjectChangedColumnsComputer.ts b/packages/typeorm/src/persistence/SubjectChangedColumnsComputer.ts
+index 339fc83a0..263501c4c 100644
+--- a/packages/typeorm/src/persistence/SubjectChangedColumnsComputer.ts
++++ b/packages/typeorm/src/persistence/SubjectChangedColumnsComputer.ts
+@@ -4,7 +4,8 @@ import { DateUtils } from "../util/DateUtils"
+ import { ObjectUtils } from "../util/ObjectUtils"
+ import { OrmUtils } from "../util/OrmUtils"
+ import type { Subject } from "./Subject"
+-import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
++import { areUint8ArraysEqual } from "../util/Uint8ArrayUtils"
++import { isUint8Array } from "../util/guards/isUint8Array"
+ 
+ /**
+  * Finds what columns are changed in the subject entities.
+diff --git a/packages/typeorm/src/query-builder/UpdateQueryBuilder.ts b/packages/typeorm/src/query-builder/UpdateQueryBuilder.ts
+index a47110704..abeddf3a9 100644
+--- a/packages/typeorm/src/query-builder/UpdateQueryBuilder.ts
++++ b/packages/typeorm/src/query-builder/UpdateQueryBuilder.ts
+@@ -18,7 +18,7 @@ import { TypeORMError } from "../error"
+ import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
+ import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
+ import { DriverUtils } from "../driver/DriverUtils"
+-import { isUint8Array } from "../util/Uint8ArrayUtils"
++import { isUint8Array } from "../util/guards/isUint8Array"
+ import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
+ import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
+ 
+diff --git a/packages/typeorm/src/query-builder/transformer/RawSqlResultsToEntityTransformer.ts b/packages/typeorm/src/query-builder/transformer/RawSqlResultsToEntityTransformer.ts
+index 76c5783b5..a58bd6044 100644
+--- a/packages/typeorm/src/query-builder/transformer/RawSqlResultsToEntityTransformer.ts
++++ b/packages/typeorm/src/query-builder/transformer/RawSqlResultsToEntityTransformer.ts
+@@ -6,7 +6,8 @@ import type { EntityMetadata } from "../../metadata/EntityMetadata"
+ import type { RelationMetadata } from "../../metadata/RelationMetadata"
+ import type { QueryRunner } from "../../query-runner/QueryRunner"
+ import { ObjectUtils } from "../../util/ObjectUtils"
+-import { isUint8Array, uint8ArrayToHex } from "../../util/Uint8ArrayUtils"
++import { uint8ArrayToHex } from "../../util/Uint8ArrayUtils"
++import { isUint8Array } from "../../util/guards/isUint8Array"
+ import { OrmUtils } from "../../util/OrmUtils"
+ import type { Alias } from "../Alias"
+ import type { QueryExpressionMap } from "../QueryExpressionMap"
+diff --git a/packages/typeorm/src/util/OrmUtils.ts b/packages/typeorm/src/util/OrmUtils.ts
+index c20d7f8b6..55b058084 100644
+--- a/packages/typeorm/src/util/OrmUtils.ts
++++ b/packages/typeorm/src/util/OrmUtils.ts
+@@ -7,7 +7,8 @@ import type {
+ import type { InvalidFindOptionsWhereBehavior } from "../driver/types/InvalidFindOptionsWhereBehavior"
+ import { TypeORMError } from "../error"
+ import { IsNull } from "../find-options/operator/IsNull"
+-import { areUint8ArraysEqual, isUint8Array } from "./Uint8ArrayUtils"
++import { areUint8ArraysEqual } from "./Uint8ArrayUtils"
++import { isUint8Array } from "./guards/isUint8Array"
+ 
+ export class OrmUtils {
+     // -------------------------------------------------------------------------
+diff --git a/packages/typeorm/src/util/Uint8ArrayUtils.ts b/packages/typeorm/src/util/Uint8ArrayUtils.ts
+index 5197e22b6..53c6a93c8 100644
+--- a/packages/typeorm/src/util/Uint8ArrayUtils.ts
++++ b/packages/typeorm/src/util/Uint8ArrayUtils.ts
+@@ -3,18 +3,6 @@ const isBuffer = (
+ ): value is Uint8Array & { equals(other: Uint8Array): boolean } =>
+     typeof Buffer !== "undefined" && Buffer.isBuffer(value)
+ 
+-export const isUint8Array = (value: unknown): value is Uint8Array => {
+-    if (value instanceof Uint8Array) {
+-        return true
+-    }
+-
+-    if (!ArrayBuffer.isView(value)) {
+-        return false
+-    }
+-
+-    return Object.prototype.toString.call(value) === "[object Uint8Array]"
+-}
+-
+ export const areUint8ArraysEqual = (
+     left: Uint8Array,
+     right: Uint8Array,
+diff --git a/packages/typeorm/src/util/guards/isUint8Array.ts b/packages/typeorm/src/util/guards/isUint8Array.ts
+new file mode 100644
+index 000000000..fe74ced6c
+--- /dev/null
++++ b/packages/typeorm/src/util/guards/isUint8Array.ts
+@@ -0,0 +1,11 @@
++export const isUint8Array = (value: unknown): value is Uint8Array => {
++    if (value instanceof Uint8Array) {
++        return true
++    }
++
++    if (!ArrayBuffer.isView(value)) {
++        return false
++    }
++
++    return Object.prototype.toString.call(value) === "[object Uint8Array]"
++}
+diff --git a/packages/typeorm/test/unit/util/uint8-array-utils.test.ts b/packages/typeorm/test/unit/util/uint8-array-utils.test.ts
+index c58ff70bd..8a223a5c2 100644
+--- a/packages/typeorm/test/unit/util/uint8-array-utils.test.ts
++++ b/packages/typeorm/test/unit/util/uint8-array-utils.test.ts
+@@ -1,9 +1,7 @@
+ import { expect } from "chai"
+ import { runInNewContext } from "node:vm"
+-import {
+-    areUint8ArraysEqual,
+-    isUint8Array,
+-} from "../../../src/util/Uint8ArrayUtils"
++import { areUint8ArraysEqual } from "../../../src/util/Uint8ArrayUtils"
++import { isUint8Array } from "../../../src/util/guards/isUint8Array"
+ 
+ describe("Uint8ArrayUtils", () => {
+     describe("isUint8Array", () => {

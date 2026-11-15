@@ -1,11 +1,20 @@
-# css, small: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# css, small: chosen by size, see docs/PROJECTS.md. Sass bundles are compiled with dart-sass; mined PR slots were
+# replaced because this CSS-only grading group has no JavaScript test runner.
 lang = "css"
 size = "small"
-status = "stub"
+status = "ready"
 repo = "https://github.com/primer/css"
 tag = "v22.3.0"
 commit = "a59d1b9d7adad1e37f40c14ce213bcd94e41db9b"
 loc = 5552
 loc_by_language = { "Sass" = 5552 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["move", "signature", "dispatch", "pr", "pr", "pr"]
+substitutions = ["three unavailable mined slots use documented fallback PR task directories; the three assigned synthetic tasks are preserved"]
+
+[probe]
+ok = false
+seconds_to_first_answer = 0.0
+references = "not run: container setup was stopped before the project snapshot was available"
+definition = "not run"
+diagnostics = "not run"

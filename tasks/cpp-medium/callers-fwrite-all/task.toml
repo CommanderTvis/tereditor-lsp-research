@@ -1,0 +1,4 @@
+type = "callers"
+origin = "call hierarchy (incoming calls, transitive) to an exported API boundary"
+symbol = "fmt::detail::fwrite_all"
+selection = "functions named fmt::detail::NAME (not members of class template specializations) in clang's static-analyzer call graph of src/format.cc and src/os.cc (callers.py), reached transitively from at least 3 and at most 20 of the 28 exported entry points outside fmt::detail (entry-points.txt: the FMT_API declarations of include/fmt; 21 entry points reach the whole formatting engine through error reporting, so larger sets are not discriminating): 5 candidates sorted by name; index awk 'BEGIN{srand(20261110); print int(rand()*5)+1}' = 4"

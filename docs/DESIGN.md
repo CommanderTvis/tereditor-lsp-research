@@ -15,10 +15,10 @@ agent is merely offered them or pushed to use them?
 | Factor | Levels |
 | --- | --- |
 | Arm | `baseline`, `optional`, `enforced`, `intellij-optional`, `intellij-enforced` (below) |
-| Model | `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5`, through `claude -p` |
+| Model | `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5`, through `claude -p`, each at Claude Code's default effort (`medium` for all three) |
 | Language | every language headless tereditor serves: C#, TypeScript/JavaScript, Python, PHP, C/C++, Kotlin, Shell, CSS/SCSS; plus Java and mixed Java+Kotlin for the IntelliJ arms |
 | Project size | small, medium, large (lines of code, see TASKS.md) |
-| Task type | `refs`, `impls`, `dispatch`, `callers`, `inspect`, `rename`, `signature`, `compile`, `bugfix` |
+| Task | half synthetic (refactorings: `rename`, `rename-file`, `move`, `signature`; navigation: `refs`, `impls`, `dispatch`, `callers`, `inspect`), half mined pull requests merged before 2022-11-30 (docs/TASKS.md) |
 | Repetition | independent runs of the same cell |
 
 Tasks are nested in projects, projects in language x size. Arm and model are crossed with every task.
@@ -109,6 +109,14 @@ Consequences, deliberate and the same in every arm:
   without network.
 - One architecture for every project and arm: the host's native one. Wall-time comparisons are within project.
 
+## Effort
+
+No arm sets an effort level: no `--effort`, no `CLAUDE_CODE_EFFORT_LEVEL` (the sandbox environment starts empty), and no
+effort setting in any settings file. Claude Code therefore uses each model's default, which its documentation gives
+as `medium` for Haiku 5.5, Sonnet 5.5 and Opus 5.5 (code.claude.com/docs/en/model-config, "Adjust effort level").
+The run's own output does not report the level, so it is recorded from these inputs; the documentation describes
+the current Claude Code, the study pins 2.1.322.
+
 ## Measures
 
 Per run, from Claude Code's `stream-json`, tereditor's call log and the grader:
@@ -123,7 +131,7 @@ Per run, from Claude Code's `stream-json`, tereditor's call log and the grader:
 
 ## Reproducibility
 
-Pinned: tereditor (its published image, by digest), nixpkgs (`nix/flake.lock`, so every toolchain and library), the
+Pinned: tereditor (a dated release archive, by sha256), nixpkgs (`nix/flake.lock`, so every toolchain and library), the
 Claude Code version, the `nixos/nix` image (by digest), the model IDs and every project's commit. The only host
 requirements are a container runtime (Docker, or Apple `container` on macOS), an Anthropic credential and a JetBrains
 licence.

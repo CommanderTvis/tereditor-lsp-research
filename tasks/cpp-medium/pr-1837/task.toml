@@ -1,0 +1,11 @@
+type = "pr"
+pr = 1837
+issue = 1819
+base_commit = "c7e6d8afb06cec7b8244f963dc081daf7e70f7f6"
+merged_at = "2020-08-28T14:41:39Z"
+head_commit = "e6fd5e84323ddf8dfe160520af9681d1288a4139"
+origin = "mined pull request github.com/fmtlib/fmt/pull/1837"
+test_programs = "chrono-test"
+grade_timeout_s = 2400
+loc_at_base = 46772
+loc_method = "scc 3.5.0 code lines (C, C++, C Header, C++ Header) at base_commit, harness/size/measure.sh"

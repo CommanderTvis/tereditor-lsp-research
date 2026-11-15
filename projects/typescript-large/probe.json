@@ -1,0 +1,9 @@
+[
+  {"name": "references EntityListenerMetadata.execute (cross-file)", "args": {"operation": "references", "query": "EntityListenerMetadata/execute", "path": "packages/typeorm/src/metadata/EntityListenerMetadata.ts"},
+   "expect": ["packages/typeorm/src/subscriber/Broadcaster.ts:140", "packages/typeorm/src/subscriber/Broadcaster.ts:966"]},
+  {"name": "references isUint8Array (cross-file)", "args": {"operation": "references", "query": "isUint8Array", "path": "packages/typeorm/src/util/Uint8ArrayUtils.ts"},
+   "expect": ["packages/typeorm/src/persistence/Subject.ts:268", "packages/typeorm/src/util/OrmUtils.ts:471"]},
+  {"name": "definition of isUint8Array from another module", "args": {"operation": "definition", "query": "isUint8Array", "path": "packages/typeorm/src/util/Uint8ArrayUtils.ts"},
+   "expect": ["packages/typeorm/src/util/Uint8ArrayUtils.ts:6"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["packages/typeorm/src/util/Uint8ArrayUtils.ts"]}, "expect": []}
+]

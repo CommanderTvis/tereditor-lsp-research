@@ -1,0 +1,5 @@
+type = "rename-file"
+origin = "module rename: a C# project (directory, project file, assembly) and every reference to it"
+subject = "src/MediatR/MediatR.csproj -> src/MediatR.Core/MediatR.Core.csproj"
+selection = "C# has no file-level imports, so the renamed unit is a project (the module of a .NET build). Candidates: .csproj files referenced by ProjectReference from at least 2 other projects of the solution, sorted by path; 1 candidate (src/MediatR/MediatR.csproj; MediatR.Contracts is consumed as a package); index int(rand()*1)+1 after srand(20261110) = 1"
+gold = "git mv of the directory and project file, then the path substituted in the solution, the four referencing projects and Build.ps1; compiled and tested"

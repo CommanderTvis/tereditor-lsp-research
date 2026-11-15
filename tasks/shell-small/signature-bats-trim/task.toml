@@ -1,0 +1,4 @@
+type = "signature"
+origin = "synthetic: reorder a function's parameters through every call site (devrig change signature)"
+symbol = "bats_trim"
+selection = "Candidates: functions defined exactly once in lib/bats-core/*.bash or libexec/bats-core/* whose definition line documents at least 2 parameters (# <a> <b>), used on at least 3 non-comment lines in at least 2 files other than the defining one (bin/, lib/, libexec/, test/); 9 candidates, sorted by name, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk), first taken: bats_trim. Change: swap the first two parameters."

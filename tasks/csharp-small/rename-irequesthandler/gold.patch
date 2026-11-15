@@ -1,0 +1,704 @@
+diff --git a/samples/MediatR.Examples.Autofac/Program.cs b/samples/MediatR.Examples.Autofac/Program.cs
+index 572b30f..84c6b85 100644
+--- a/samples/MediatR.Examples.Autofac/Program.cs
++++ b/samples/MediatR.Examples.Autofac/Program.cs
+@@ -29,7 +29,7 @@ private static IMediator BuildMediator(WrappingWriter writer)
+ 
+         var mediatrOpenTypes = new[]
+         {
+-                typeof(IRequestHandler<,>),
++                typeof(IQueryHandler<,>),
+                 typeof(IRequestExceptionHandler<,,>),
+                 typeof(IRequestExceptionAction<,>),
+                 typeof(INotificationHandler<>),
+@@ -43,7 +43,7 @@ private static IMediator BuildMediator(WrappingWriter writer)
+                 .AsClosedTypesOf(mediatrOpenType)
+                 // when having a single class implementing several handler types
+                 // this call will cause a handler to be called twice
+-                // in general you should try to avoid having a class implementing for instance `IRequestHandler<,>` and `INotificationHandler<>`
++                // in general you should try to avoid having a class implementing for instance `IQueryHandler<,>` and `INotificationHandler<>`
+                 // the other option would be to remove this call
+                 // see also https://github.com/jbogard/MediatR/issues/462
+                 .AsImplementedInterfaces();
+diff --git a/samples/MediatR.Examples.Lamar/Program.cs b/samples/MediatR.Examples.Lamar/Program.cs
+index a74b3fa..d41e91d 100644
+--- a/samples/MediatR.Examples.Lamar/Program.cs
++++ b/samples/MediatR.Examples.Lamar/Program.cs
+@@ -23,7 +23,7 @@ private static IMediator BuildMediator(WrappingWriter writer)
+             cfg.Scan(scanner =>
+             {
+                 scanner.AssemblyContainingType<Ping>();
+-                scanner.ConnectImplementationsToTypesClosing(typeof(IRequestHandler<,>));
++                scanner.ConnectImplementationsToTypesClosing(typeof(IQueryHandler<,>));
+                 scanner.ConnectImplementationsToTypesClosing(typeof(INotificationHandler<>));
+                 scanner.ConnectImplementationsToTypesClosing(typeof(IRequestExceptionAction<,>));
+                 scanner.ConnectImplementationsToTypesClosing(typeof(IRequestExceptionHandler<,,>));
+diff --git a/samples/MediatR.Examples.LightInject/Program.cs b/samples/MediatR.Examples.LightInject/Program.cs
+index 2aba4f2..d62c162 100644
+--- a/samples/MediatR.Examples.LightInject/Program.cs
++++ b/samples/MediatR.Examples.LightInject/Program.cs
+@@ -28,7 +28,7 @@ private static IMediator BuildMediator(WrappingWriter writer)
+         serviceContainer.RegisterAssembly(typeof(Ping).GetTypeInfo().Assembly, (serviceType, implementingType) =>
+             serviceType.IsConstructedGenericType &&
+             (
+-                serviceType.GetGenericTypeDefinition() == typeof(IRequestHandler<,>) ||
++                serviceType.GetGenericTypeDefinition() == typeof(IQueryHandler<,>) ||
+                 serviceType.GetGenericTypeDefinition() == typeof(INotificationHandler<>)
+             ));
+                     
+diff --git a/samples/MediatR.Examples.SimpleInjector/Program.cs b/samples/MediatR.Examples.SimpleInjector/Program.cs
+index 12fc58b..c2d6615 100644
+--- a/samples/MediatR.Examples.SimpleInjector/Program.cs
++++ b/samples/MediatR.Examples.SimpleInjector/Program.cs
+@@ -32,7 +32,7 @@ private static IMediator BuildMediator(WrappingWriter writer)
+ 
+         var assemblies = GetAssemblies().ToArray();
+         container.RegisterSingleton<IMediator, Mediator>();
+-        container.Register(typeof(IRequestHandler<,>), assemblies);
++        container.Register(typeof(IQueryHandler<,>), assemblies);
+ 
+         RegisterHandlers(container, typeof(INotificationHandler<>), assemblies);
+         RegisterHandlers(container, typeof(IRequestExceptionAction<,>), assemblies);
+diff --git a/samples/MediatR.Examples.Windsor/Program.cs b/samples/MediatR.Examples.Windsor/Program.cs
+index d1de75a..bd93c3d 100644
+--- a/samples/MediatR.Examples.Windsor/Program.cs
++++ b/samples/MediatR.Examples.Windsor/Program.cs
+@@ -33,7 +33,7 @@ private static IMediator BuildMediator(WrappingWriter writer)
+         // *** If you are using ASP.net, it's better to register your services with 'Per Web Request LifeStyle'.
+ 
+         var fromAssemblyContainingPing = Classes.FromAssemblyContaining<Ping>();
+-        container.Register(fromAssemblyContainingPing.BasedOn(typeof(IRequestHandler<,>)).WithServiceAllInterfaces().AllowMultipleMatches());
++        container.Register(fromAssemblyContainingPing.BasedOn(typeof(IQueryHandler<,>)).WithServiceAllInterfaces().AllowMultipleMatches());
+         container.Register(fromAssemblyContainingPing.BasedOn(typeof(INotificationHandler<>)).WithServiceAllInterfaces().AllowMultipleMatches());
+         container.Register(Component.For(typeof(IPipelineBehavior<,>)).ImplementedBy(typeof(RequestExceptionProcessorBehavior<,>)));
+         container.Register(Component.For(typeof(IPipelineBehavior<,>)).ImplementedBy(typeof(RequestExceptionActionProcessorBehavior<,>)));
+diff --git a/samples/MediatR.Examples/ExceptionHandler/Handlers.cs b/samples/MediatR.Examples/ExceptionHandler/Handlers.cs
+index 13e25b4..13c41ae 100644
+--- a/samples/MediatR.Examples/ExceptionHandler/Handlers.cs
++++ b/samples/MediatR.Examples/ExceptionHandler/Handlers.cs
+@@ -4,7 +4,7 @@
+ 
+ namespace MediatR.Examples.ExceptionHandler;
+ 
+-public class PingResourceHandler : IRequestHandler<PingResource, Pong>
++public class PingResourceHandler : IQueryHandler<PingResource, Pong>
+ {
+     private readonly TextWriter _writer;
+ 
+@@ -16,7 +16,7 @@ public Task<Pong> Handle(PingResource request, CancellationToken cancellationTok
+     }
+ }
+ 
+-public class PingNewResourceHandler : IRequestHandler<PingNewResource, Pong>
++public class PingNewResourceHandler : IQueryHandler<PingNewResource, Pong>
+ {
+     private readonly TextWriter _writer;
+ 
+@@ -28,7 +28,7 @@ public Task<Pong> Handle(PingNewResource request, CancellationToken cancellation
+     }
+ }
+ 
+-public class PingResourceTimeoutHandler : IRequestHandler<PingResourceTimeout, Pong>
++public class PingResourceTimeoutHandler : IQueryHandler<PingResourceTimeout, Pong>
+ {
+     private readonly TextWriter _writer;
+ 
+@@ -40,7 +40,7 @@ public Task<Pong> Handle(PingResourceTimeout request, CancellationToken cancella
+     }
+ }
+ 
+-public class PingResourceTimeoutOverrideHandler : IRequestHandler<Overrides.PingResourceTimeout, Pong>
++public class PingResourceTimeoutOverrideHandler : IQueryHandler<Overrides.PingResourceTimeout, Pong>
+ {
+     private readonly TextWriter _writer;
+ 
+@@ -52,7 +52,7 @@ public Task<Pong> Handle(Overrides.PingResourceTimeout request, CancellationToke
+     }
+ }
+ 
+-public class PingProtectedResourceHandler : IRequestHandler<PingProtectedResource, Pong>
++public class PingProtectedResourceHandler : IQueryHandler<PingProtectedResource, Pong>
+ {
+     private readonly TextWriter _writer;
+ 
+diff --git a/samples/MediatR.Examples/PingHandler.cs b/samples/MediatR.Examples/PingHandler.cs
+index b451d49..ab703d3 100644
+--- a/samples/MediatR.Examples/PingHandler.cs
++++ b/samples/MediatR.Examples/PingHandler.cs
+@@ -5,7 +5,7 @@ namespace MediatR.Examples;
+ 
+ using System.Threading.Tasks;
+ 
+-public class PingHandler : IRequestHandler<Ping, Pong>
++public class PingHandler : IQueryHandler<Ping, Pong>
+ {
+     private readonly TextWriter _writer;
+ 
+diff --git a/src/MediatR/IRequestHandler.cs b/src/MediatR/IRequestHandler.cs
+index 5aa399b..573b03c 100644
+--- a/src/MediatR/IRequestHandler.cs
++++ b/src/MediatR/IRequestHandler.cs
+@@ -8,7 +8,7 @@ namespace MediatR;
+ /// </summary>
+ /// <typeparam name="TRequest">The type of request being handled</typeparam>
+ /// <typeparam name="TResponse">The type of response from the handler</typeparam>
+-public interface IRequestHandler<in TRequest, TResponse>
++public interface IQueryHandler<in TRequest, TResponse>
+     where TRequest : IRequest<TResponse>
+ {
+     /// <summary>
+diff --git a/src/MediatR/Registration/ServiceRegistrar.cs b/src/MediatR/Registration/ServiceRegistrar.cs
+index 5d22cc8..7aa5fa5 100644
+--- a/src/MediatR/Registration/ServiceRegistrar.cs
++++ b/src/MediatR/Registration/ServiceRegistrar.cs
+@@ -44,7 +44,7 @@ public static void AddMediatRClasses(IServiceCollection services, MediatRService
+ 
+         var assembliesToScan = configuration.AssembliesToRegister.Distinct().ToArray();
+ 
+-        ConnectImplementationsToTypesClosing(typeof(IRequestHandler<,>), services, assembliesToScan, false, configuration, cancellationToken);
++        ConnectImplementationsToTypesClosing(typeof(IQueryHandler<,>), services, assembliesToScan, false, configuration, cancellationToken);
+         ConnectImplementationsToTypesClosing(typeof(IRequestHandler<>), services, assembliesToScan, false, configuration, cancellationToken);
+         ConnectImplementationsToTypesClosing(typeof(INotificationHandler<>), services, assembliesToScan, true, configuration);
+         ConnectImplementationsToTypesClosing(typeof(IStreamRequestHandler<,>), services, assembliesToScan, false, configuration);
+diff --git a/src/MediatR/Wrappers/RequestHandlerWrapper.cs b/src/MediatR/Wrappers/RequestHandlerWrapper.cs
+index dc21356..cd15b4d 100644
+--- a/src/MediatR/Wrappers/RequestHandlerWrapper.cs
++++ b/src/MediatR/Wrappers/RequestHandlerWrapper.cs
+@@ -34,7 +34,7 @@ public class RequestHandlerWrapperImpl<TRequest, TResponse> : RequestHandlerWrap
+     public override Task<TResponse> Handle(IRequest<TResponse> request, IServiceProvider serviceProvider,
+         CancellationToken cancellationToken)
+     {
+-        Task<TResponse> Handler(CancellationToken t = default) => serviceProvider.GetRequiredService<IRequestHandler<TRequest, TResponse>>()
++        Task<TResponse> Handler(CancellationToken t = default) => serviceProvider.GetRequiredService<IQueryHandler<TRequest, TResponse>>()
+             .Handle((TRequest) request, t == default ? cancellationToken : t);
+ 
+         return serviceProvider
+diff --git a/test/MediatR.Tests/ExceptionTests.cs b/test/MediatR.Tests/ExceptionTests.cs
+index 9b8e67a..1032dfe 100644
+--- a/test/MediatR.Tests/ExceptionTests.cs
++++ b/test/MediatR.Tests/ExceptionTests.cs
+@@ -53,7 +53,7 @@ public class NullPinged : INotification
+     {
+     }
+ 
+-    public class NullPingHandler : IRequestHandler<NullPing, Pong>
++    public class NullPingHandler : IQueryHandler<NullPing, Pong>
+     {
+         public Task<Pong> Handle(NullPing request, CancellationToken cancellationToken)
+         {
+@@ -142,7 +142,7 @@ public async Task Should_throw_argument_exception_for_send_when_request_is_null(
+                 scanner.AssemblyContainingType(typeof(NullPing));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+             });
+             cfg.For<IMediator>().Use<Mediator>();
+         });
+@@ -163,7 +163,7 @@ public async Task Should_throw_argument_exception_for_void_send_when_request_is_
+                 scanner.AssemblyContainingType(typeof(VoidNullPing));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+             });
+             cfg.For<IMediator>().Use<Mediator>();
+         });
+@@ -184,7 +184,7 @@ public async Task Should_throw_argument_exception_for_publish_when_request_is_nu
+                 scanner.AssemblyContainingType(typeof(NullPinged));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+             });
+             cfg.For<IMediator>().Use<Mediator>();
+         });
+@@ -205,7 +205,7 @@ public async Task Should_throw_argument_exception_for_publish_when_request_is_nu
+                 scanner.AssemblyContainingType(typeof(NullPinged));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+             });
+             cfg.For<IMediator>().Use<Mediator>();
+         });
+@@ -226,7 +226,7 @@ public async Task Should_throw_argument_exception_for_publish_when_request_is_no
+                 scanner.AssemblyContainingType(typeof(NullPinged));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+             });
+             cfg.For<IMediator>().Use<Mediator>();
+         });
+@@ -260,7 +260,7 @@ public async Task Should_throw_exception_for_non_generic_send_when_exception_occ
+                 scanner.AssemblyContainingType(typeof(NullPinged));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+                 scanner.AddAllTypesOf(typeof(IRequestHandler<>));
+             });
+             cfg.For<IMediator>().Use<Mediator>();
+@@ -282,7 +282,7 @@ public async Task Should_throw_exception_for_non_request_send()
+                 scanner.AssemblyContainingType(typeof(NullPinged));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+             });
+             cfg.For<IMediator>().Use<Mediator>();
+         });
+@@ -309,7 +309,7 @@ public async Task Should_throw_exception_for_generic_send_when_exception_occurs(
+                 scanner.AssemblyContainingType(typeof(NullPinged));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+                 scanner.AddAllTypesOf(typeof(IRequestHandler<>));
+             });
+             cfg.For<IMediator>().Use<Mediator>();
+diff --git a/test/MediatR.Tests/GenericTypeConstraintsTests.cs b/test/MediatR.Tests/GenericTypeConstraintsTests.cs
+index 5a84f12..bd591bd 100644
+--- a/test/MediatR.Tests/GenericTypeConstraintsTests.cs
++++ b/test/MediatR.Tests/GenericTypeConstraintsTests.cs
+@@ -77,7 +77,7 @@ public class Pong
+         public string? Message { get; set; }
+     }
+ 
+-    public class PingHandler : IRequestHandler<Ping, Pong>
++    public class PingHandler : IQueryHandler<Ping, Pong>
+     {
+         public Task<Pong> Handle(Ping request, CancellationToken cancellationToken)
+         {
+@@ -97,7 +97,7 @@ public GenericTypeConstraintsTests()
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.IncludeNamespaceContainingType<Jing>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+                 scanner.AddAllTypesOf(typeof(IRequestHandler<>));
+             });
+             cfg.For<IMediator>().Use<Mediator>();
+diff --git a/test/MediatR.Tests/MicrosoftExtensionsDI/AssemblyResolutionTests.cs b/test/MediatR.Tests/MicrosoftExtensionsDI/AssemblyResolutionTests.cs
+index 6e27757..bc7debc 100644
+--- a/test/MediatR.Tests/MicrosoftExtensionsDI/AssemblyResolutionTests.cs
++++ b/test/MediatR.Tests/MicrosoftExtensionsDI/AssemblyResolutionTests.cs
+@@ -32,7 +32,7 @@ public void ShouldResolveMediator()
+     [Fact]
+     public void ShouldResolveRequestHandler()
+     {
+-        _provider.GetService<IRequestHandler<Ping, Pong>>().ShouldNotBeNull();
++        _provider.GetService<IQueryHandler<Ping, Pong>>().ShouldNotBeNull();
+     }
+ 
+     [Fact]
+@@ -72,13 +72,13 @@ public void ShouldResolveGenericVoidRequestHandler()
+     [Fact]
+     public void ShouldResolveGenericReturnTypeRequestHandler()
+     {
+-        _provider.GetService<IRequestHandler<OpenGenericReturnTypeRequest<ConcreteTypeArgument>, string>>().ShouldNotBeNull();
++        _provider.GetService<IQueryHandler<OpenGenericReturnTypeRequest<ConcreteTypeArgument>, string>>().ShouldNotBeNull();
+     }
+ 
+     [Fact]
+     public void ShouldResolveGenericPingRequestHandler()
+     {
+-        _provider.GetService<IRequestHandler<GenericPing<Pong>, Pong>>().ShouldNotBeNull();
++        _provider.GetService<IQueryHandler<GenericPing<Pong>, Pong>>().ShouldNotBeNull();
+     }
+ 
+     [Fact]
+diff --git a/test/MediatR.Tests/MicrosoftExtensionsDI/CustomMediatorTests.cs b/test/MediatR.Tests/MicrosoftExtensionsDI/CustomMediatorTests.cs
+index 65eb327..d304e0a 100644
+--- a/test/MediatR.Tests/MicrosoftExtensionsDI/CustomMediatorTests.cs
++++ b/test/MediatR.Tests/MicrosoftExtensionsDI/CustomMediatorTests.cs
+@@ -33,7 +33,7 @@ public void ShouldResolveMediator()
+     [Fact]
+     public void ShouldResolveRequestHandler()
+     {
+-        _provider.GetService<IRequestHandler<Ping, Pong>>().ShouldNotBeNull();
++        _provider.GetService<IQueryHandler<Ping, Pong>>().ShouldNotBeNull();
+     }
+ 
+     [Fact]
+diff --git a/test/MediatR.Tests/MicrosoftExtensionsDI/Handlers.cs b/test/MediatR.Tests/MicrosoftExtensionsDI/Handlers.cs
+index 5dbe0c1..2b82e65 100644
+--- a/test/MediatR.Tests/MicrosoftExtensionsDI/Handlers.cs
++++ b/test/MediatR.Tests/MicrosoftExtensionsDI/Handlers.cs
+@@ -89,7 +89,7 @@ public class Logger
+         public IList<string> Messages { get; } = new List<string>();
+     }
+ 
+-    public class PingHandler : IRequestHandler<Ping, Pong>
++    public class PingHandler : IQueryHandler<Ping, Pong>
+     {
+         private readonly Logger _logger;
+ 
+@@ -107,7 +107,7 @@ public Task<Pong> Handle(Ping message, CancellationToken cancellationToken)
+         }
+     }
+ 
+-    public class DerivedPingHandler : IRequestHandler<DerivedPing, Pong>
++    public class DerivedPingHandler : IQueryHandler<DerivedPing, Pong>
+     {
+         private readonly Logger _logger;
+ 
+@@ -122,7 +122,7 @@ public Task<Pong> Handle(DerivedPing message, CancellationToken cancellationToke
+         }
+     }
+ 
+-    public class ZingHandler : IRequestHandler<Zing, Zong>
++    public class ZingHandler : IQueryHandler<Zing, Zong>
+     {
+         private readonly Logger _output;
+ 
+@@ -154,7 +154,7 @@ public async IAsyncEnumerable<Pong> Handle(StreamPing request, [EnumeratorCancel
+ 
+ 
+     public class DuplicateTest : IRequest<string> { }
+-    public class DuplicateHandler1 : IRequestHandler<DuplicateTest, string>
++    public class DuplicateHandler1 : IQueryHandler<DuplicateTest, string>
+     {
+         public Task<string> Handle(DuplicateTest message, CancellationToken cancellationToken)
+         {
+@@ -162,7 +162,7 @@ public Task<string> Handle(DuplicateTest message, CancellationToken cancellation
+         }
+     }
+ 
+-    public class DuplicateHandler2 : IRequestHandler<DuplicateTest, string>
++    public class DuplicateHandler2 : IQueryHandler<DuplicateTest, string>
+     {
+         public Task<string> Handle(DuplicateTest message, CancellationToken cancellationToken)
+         {
+@@ -227,7 +227,7 @@ class OpenGenericVoidRequestHandler<T> : IRequestHandler<OpenGenericVoidRequest<
+     class OpenGenericReturnTypeRequest<T> : IRequest<string>
+         where T : class, ITypeArgument
+     { }
+-    class OpenGenericReturnTypeRequestHandler<T> : IRequestHandler<OpenGenericReturnTypeRequest<T>, string>
++    class OpenGenericReturnTypeRequestHandler<T> : IQueryHandler<OpenGenericReturnTypeRequest<T>, string>
+         where T : class, ITypeArgument
+     {
+         public Task<string> Handle(OpenGenericReturnTypeRequest<T> request, CancellationToken cancellationToken) => Task.FromResult(nameof(request));
+@@ -239,7 +239,7 @@ public class GenericPing<T> : IRequest<T>
+         public T? Pong { get; set; }
+     }
+ 
+-    public class GenericPingHandler<T> : IRequestHandler<GenericPing<T>, T>
++    public class GenericPingHandler<T> : IQueryHandler<GenericPing<T>, T>
+         where T : Pong
+     {
+         public Task<T> Handle(GenericPing<T> request, CancellationToken cancellationToken) => Task.FromResult(request.Pong!);
+@@ -273,7 +273,7 @@ public class Bar
+         public string? Message { get; init; }
+     }
+ 
+-    public class FooHandler : IRequestHandler<Foo, Bar>
++    public class FooHandler : IQueryHandler<Foo, Bar>
+     {
+         private readonly Logger _logger;
+ 
+diff --git a/test/MediatR.Tests/MicrosoftExtensionsDI/PipeLineMultiCallToConstructorTest.cs b/test/MediatR.Tests/MicrosoftExtensionsDI/PipeLineMultiCallToConstructorTest.cs
+index c46d14a..78e4853 100644
+--- a/test/MediatR.Tests/MicrosoftExtensionsDI/PipeLineMultiCallToConstructorTest.cs
++++ b/test/MediatR.Tests/MicrosoftExtensionsDI/PipeLineMultiCallToConstructorTest.cs
+@@ -37,7 +37,7 @@ public class ConstructorTestResponse
+         public string? Message { get; set; }
+     }
+ 
+-    public class ConstructorTestHandler : IRequestHandler<ConstructorTestRequest, ConstructorTestResponse>
++    public class ConstructorTestHandler : IQueryHandler<ConstructorTestRequest, ConstructorTestResponse>
+     {
+ 
+         private static volatile object _lockObject = new();
+diff --git a/test/MediatR.Tests/MicrosoftExtensionsDI/TypeEvaluatorTests.cs b/test/MediatR.Tests/MicrosoftExtensionsDI/TypeEvaluatorTests.cs
+index 311b9a9..d492396 100644
+--- a/test/MediatR.Tests/MicrosoftExtensionsDI/TypeEvaluatorTests.cs
++++ b/test/MediatR.Tests/MicrosoftExtensionsDI/TypeEvaluatorTests.cs
+@@ -36,8 +36,8 @@ public void ShouldResolveMediator()
+     [Fact]
+     public void ShouldOnlyResolveIncludedRequestHandlers()
+     {
+-        _provider.GetService<IRequestHandler<Foo, Bar>>().ShouldNotBeNull();
+-        _provider.GetService<IRequestHandler<Ping, Pong>>().ShouldBeNull();
++        _provider.GetService<IQueryHandler<Foo, Bar>>().ShouldNotBeNull();
++        _provider.GetService<IQueryHandler<Ping, Pong>>().ShouldBeNull();
+     }
+ 
+     [Fact]
+diff --git a/test/MediatR.Tests/MicrosoftExtensionsDI/TypeResolutionTests.cs b/test/MediatR.Tests/MicrosoftExtensionsDI/TypeResolutionTests.cs
+index 4438caf..fcbc2eb 100644
+--- a/test/MediatR.Tests/MicrosoftExtensionsDI/TypeResolutionTests.cs
++++ b/test/MediatR.Tests/MicrosoftExtensionsDI/TypeResolutionTests.cs
+@@ -43,7 +43,7 @@ public void ShouldResolvePublisher()
+     [Fact]
+     public void ShouldResolveRequestHandler()
+     {
+-        _provider.GetService<IRequestHandler<Ping, Pong>>().ShouldNotBeNull();
++        _provider.GetService<IQueryHandler<Ping, Pong>>().ShouldNotBeNull();
+     }
+ 
+     [Fact]
+@@ -67,15 +67,15 @@ public void ShouldNotThrowWithMissingEnumerables()
+     [Fact]
+     public void ShouldResolveFirstDuplicateHandler()
+     {
+-        _provider.GetService<IRequestHandler<DuplicateTest, string>>().ShouldNotBeNull();
+-        _provider.GetService<IRequestHandler<DuplicateTest, string>>()
++        _provider.GetService<IQueryHandler<DuplicateTest, string>>().ShouldNotBeNull();
++        _provider.GetService<IQueryHandler<DuplicateTest, string>>()
+             .ShouldBeAssignableTo<DuplicateHandler1>();
+     }
+ 
+     [Fact]
+     public void ShouldResolveIgnoreSecondDuplicateHandler()
+     {
+-        _provider.GetServices<IRequestHandler<DuplicateTest, string>>().Count().ShouldBe(1);
++        _provider.GetServices<IQueryHandler<DuplicateTest, string>>().Count().ShouldBe(1);
+     }
+ 
+     [Fact]
+diff --git a/test/MediatR.Tests/Pipeline/RequestExceptionActionTests.cs b/test/MediatR.Tests/Pipeline/RequestExceptionActionTests.cs
+index c4e94f5..3d6ec99 100644
+--- a/test/MediatR.Tests/Pipeline/RequestExceptionActionTests.cs
++++ b/test/MediatR.Tests/Pipeline/RequestExceptionActionTests.cs
+@@ -41,7 +41,7 @@ public PongException(string message) : base(message)
+         }
+     }
+ 
+-    public class PingHandler : IRequestHandler<Ping, Pong>
++    public class PingHandler : IQueryHandler<Ping, Pong>
+     {
+         public Task<Pong> Handle(Ping request, CancellationToken cancellationToken)
+         {
+@@ -101,7 +101,7 @@ public async Task Should_run_all_exception_actions_that_match_base_type()
+         var pingPongExceptionAction = new PingPongExceptionAction<Ping>();
+         var container = new Container(cfg =>
+         {
+-            cfg.For<IRequestHandler<Ping, Pong>>().Use<PingHandler>();
++            cfg.For<IQueryHandler<Ping, Pong>>().Use<PingHandler>();
+             cfg.For<IRequestExceptionAction<Ping, PingException>>().Use(_ => pingExceptionAction);
+             cfg.For<IRequestExceptionAction<Ping, PingPongException>>().Use(_ => pingPongExceptionAction);
+             cfg.For<IRequestExceptionAction<Ping, PongException>>().Use(_ => pongExceptionAction);
+@@ -125,7 +125,7 @@ public async Task Should_run_matching_exception_actions_only_once()
+         var genericExceptionAction = new GenericExceptionAction<Ping>();
+         var container = new Container(cfg =>
+         {
+-            cfg.For<IRequestHandler<Ping, Pong>>().Use<PingHandler>();
++            cfg.For<IQueryHandler<Ping, Pong>>().Use<PingHandler>();
+             cfg.For<IRequestExceptionAction<Ping, Exception>>().Use(_ => genericExceptionAction);
+             cfg.For(typeof(IPipelineBehavior<,>)).Add(typeof(RequestExceptionActionProcessorBehavior<,>));
+             cfg.For<IMediator>().Use<Mediator>();
+diff --git a/test/MediatR.Tests/Pipeline/RequestExceptionHandlerTests.cs b/test/MediatR.Tests/Pipeline/RequestExceptionHandlerTests.cs
+index 63ed413..c0e3b70 100644
+--- a/test/MediatR.Tests/Pipeline/RequestExceptionHandlerTests.cs
++++ b/test/MediatR.Tests/Pipeline/RequestExceptionHandlerTests.cs
+@@ -27,7 +27,7 @@ public PingException(string? message) : base(message + " Thrown")
+         }
+     }
+ 
+-    public class PingHandler : IRequestHandler<Ping, Pong>
++    public class PingHandler : IQueryHandler<Ping, Pong>
+     {
+         public Task<Pong> Handle(Ping request, CancellationToken cancellationToken)
+         {
+@@ -89,7 +89,7 @@ public async Task Should_run_exception_handler_and_allow_for_exception_not_to_th
+     {
+         var container = new Container(cfg =>
+         {
+-            cfg.For<IRequestHandler<Ping, Pong>>().Use<PingHandler>();
++            cfg.For<IQueryHandler<Ping, Pong>>().Use<PingHandler>();
+             cfg.For<IRequestExceptionHandler<Ping, Pong, Exception>>().Use<PingPongExceptionHandler>();
+             cfg.For<IRequestExceptionHandler<Ping, Pong, PingException>>().Use<PingPongExceptionHandlerForType>();
+             cfg.For(typeof(IPipelineBehavior<,>)).Add(typeof(RequestExceptionProcessorBehavior<,>));
+@@ -108,7 +108,7 @@ public async Task Should_run_exception_handler_and_allow_for_exception_to_be_sti
+     {
+         var container = new Container(cfg =>
+         {
+-            cfg.For<IRequestHandler<Ping, Pong>>().Use<PingHandler>();
++            cfg.For<IQueryHandler<Ping, Pong>>().Use<PingHandler>();
+             cfg.For<IRequestExceptionHandler<Ping, Pong, Exception>>().Use<PingPongExceptionHandlerNotHandled>();
+             cfg.For(typeof(IPipelineBehavior<,>)).Add(typeof(RequestExceptionProcessorBehavior<,>));
+             cfg.For<IMediator>().Use<Mediator>();
+@@ -130,7 +130,7 @@ public async Task Should_run_exception_handler_and_unwrap_expections_thrown_in_t
+     {
+         var container = new Container(cfg =>
+         {
+-            cfg.For<IRequestHandler<Ping, Pong>>().Use<PingHandler>();
++            cfg.For<IQueryHandler<Ping, Pong>>().Use<PingHandler>();
+             cfg.For<IRequestExceptionHandler<Ping, Pong, Exception>>().Use<PingPongThrowingExceptionHandler>();
+             cfg.For(typeof(IPipelineBehavior<,>)).Add(typeof(RequestExceptionProcessorBehavior<,>));
+             cfg.For<IMediator>().Use<Mediator>();
+@@ -151,7 +151,7 @@ public async Task Should_run_matching_exception_handlers_only_once()
+         var genericPingExceptionHandler = new GenericPingExceptionHandler();
+         var container = new Container(cfg =>
+         {
+-            cfg.For<IRequestHandler<Ping, Pong>>().Use<PingHandler>();
++            cfg.For<IQueryHandler<Ping, Pong>>().Use<PingHandler>();
+             cfg.For<IRequestExceptionHandler<Ping, Pong, Exception>>().Use(genericPingExceptionHandler);
+             cfg.For(typeof(IPipelineBehavior<,>)).Add(typeof(RequestExceptionProcessorBehavior<,>));
+             cfg.For<IMediator>().Use<Mediator>();
+diff --git a/test/MediatR.Tests/Pipeline/RequestPostProcessorTests.cs b/test/MediatR.Tests/Pipeline/RequestPostProcessorTests.cs
+index f237bfc..8fc40de 100644
+--- a/test/MediatR.Tests/Pipeline/RequestPostProcessorTests.cs
++++ b/test/MediatR.Tests/Pipeline/RequestPostProcessorTests.cs
+@@ -20,7 +20,7 @@ public class Pong
+         public string? Message { get; set; }
+     }
+ 
+-    public class PingHandler : IRequestHandler<Ping, Pong>
++    public class PingHandler : IQueryHandler<Ping, Pong>
+     {
+         public Task<Pong> Handle(Ping request, CancellationToken cancellationToken)
+         {
+@@ -48,7 +48,7 @@ public async Task Should_run_postprocessors()
+                 scanner.AssemblyContainingType(typeof(PublishTests));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+                 scanner.AddAllTypesOf(typeof(IRequestPostProcessor<,>));
+             });
+             cfg.For(typeof(IPipelineBehavior<,>)).Add(typeof(RequestPostProcessorBehavior<,>));
+diff --git a/test/MediatR.Tests/Pipeline/RequestPreProcessorTests.cs b/test/MediatR.Tests/Pipeline/RequestPreProcessorTests.cs
+index 880d676..c897636 100644
+--- a/test/MediatR.Tests/Pipeline/RequestPreProcessorTests.cs
++++ b/test/MediatR.Tests/Pipeline/RequestPreProcessorTests.cs
+@@ -20,7 +20,7 @@ public class Pong
+         public string? Message { get; set; }
+     }
+ 
+-    public class PingHandler : IRequestHandler<Ping, Pong>
++    public class PingHandler : IQueryHandler<Ping, Pong>
+     {
+         public Task<Pong> Handle(Ping request, CancellationToken cancellationToken)
+         {
+@@ -48,7 +48,7 @@ public async Task Should_run_preprocessors()
+                 scanner.AssemblyContainingType(typeof(PublishTests));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+                 scanner.AddAllTypesOf(typeof(IRequestPreProcessor<>));
+             });
+             cfg.For(typeof(IPipelineBehavior<,>)).Add(typeof(RequestPreProcessorBehavior<,>));
+diff --git a/test/MediatR.Tests/PipelineTests.cs b/test/MediatR.Tests/PipelineTests.cs
+index 31241e5..e20642a 100644
+--- a/test/MediatR.Tests/PipelineTests.cs
++++ b/test/MediatR.Tests/PipelineTests.cs
+@@ -35,7 +35,7 @@ public class Zong
+         public string? Message { get; set; }
+     }
+ 
+-    public class PingHandler : IRequestHandler<Ping, Pong>
++    public class PingHandler : IQueryHandler<Ping, Pong>
+     {
+         private readonly Logger _output;
+ 
+@@ -65,7 +65,7 @@ public Task Handle(VoidPing request, CancellationToken cancellationToken)
+         }
+     }
+ 
+-    public class ZingHandler : IRequestHandler<Zing, Zong>
++    public class ZingHandler : IQueryHandler<Zing, Zong>
+     {
+         private readonly Logger _output;
+ 
+@@ -251,7 +251,7 @@ public async Task Should_wrap_with_behavior()
+                 scanner.AssemblyContainingType(typeof(PublishTests));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+             });
+             cfg.For<Logger>().Use(output);
+             cfg.For<IPipelineBehavior<Ping, Pong>>().Add<OuterBehavior>();
+@@ -319,7 +319,7 @@ public async Task Should_wrap_generics_with_behavior()
+                 scanner.AssemblyContainingType(typeof(PublishTests));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+             });
+             cfg.For<Logger>().Use(output);
+ 
+@@ -356,7 +356,7 @@ public async Task Should_wrap_void_generics_with_behavior()
+                 scanner.AssemblyContainingType(typeof(PublishTests));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+                 scanner.AddAllTypesOf(typeof(IRequestHandler<>));
+             });
+             cfg.For<Logger>().Use(output);
+@@ -392,7 +392,7 @@ public async Task Should_handle_constrained_generics()
+                 scanner.AssemblyContainingType(typeof(PublishTests));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+             });
+             cfg.For<Logger>().Use(output);
+ 
+@@ -449,7 +449,7 @@ public async Task Should_handle_concrete_and_open_generics()
+                 scanner.AssemblyContainingType(typeof(PublishTests));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof(IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof(IQueryHandler<,>));
+             });
+             cfg.For<Logger>().Use(output);
+ 
+diff --git a/test/MediatR.Tests/SendTests.cs b/test/MediatR.Tests/SendTests.cs
+index 8aa82a0..3042e08 100644
+--- a/test/MediatR.Tests/SendTests.cs
++++ b/test/MediatR.Tests/SendTests.cs
+@@ -44,7 +44,7 @@ public class Pong
+         public string? Message { get; set; }
+     }
+ 
+-    public class PingHandler : IRequestHandler<Ping, Pong>
++    public class PingHandler : IQueryHandler<Ping, Pong>
+     {
+         public Task<Pong> Handle(Ping request, CancellationToken cancellationToken)
+         {
+@@ -78,7 +78,7 @@ public class GenericPing<T> : IRequest<T>
+         public T? Pong { get; set; }
+     }
+ 
+-    public class GenericPingHandler<T> : IRequestHandler<GenericPing<T>, T>
++    public class GenericPingHandler<T> : IQueryHandler<GenericPing<T>, T>
+         where T : Pong
+     {
+         private readonly Dependency _dependency;
+@@ -145,7 +145,7 @@ public class MultipleGenericTypeParameterRequest<T1, T2, T3> : IRequest<int>
+         public int Foo { get; set; }
+     }
+ 
+-    public class MultipleGenericTypeParameterRequestHandler<T1, T2, T3> : IRequestHandler<MultipleGenericTypeParameterRequest<T1, T2, T3>, int>
++    public class MultipleGenericTypeParameterRequestHandler<T1, T2, T3> : IQueryHandler<MultipleGenericTypeParameterRequest<T1, T2, T3>, int>
+         where T1 : ITestInterface1
+         where T2 : ITestInterface2
+         where T3 : ITestInterface3
+@@ -195,7 +195,7 @@ public async Task Handle(TimeoutRequest request, CancellationToken cancellationT
+         }
+     }
+ 
+-    public class TimeoutRequest2Handler : IRequestHandler<TimeoutRequest2, int>
++    public class TimeoutRequest2Handler : IQueryHandler<TimeoutRequest2, int>
+     {
+         private readonly Dependency _dependency;
+ 
+diff --git a/test/MediatR.Tests/SendVoidInterfaceTests.cs b/test/MediatR.Tests/SendVoidInterfaceTests.cs
+index 52bfb83..47f3e10 100644
+--- a/test/MediatR.Tests/SendVoidInterfaceTests.cs
++++ b/test/MediatR.Tests/SendVoidInterfaceTests.cs
+@@ -39,7 +39,7 @@ public async Task Should_resolve_main_void_handler()
+                 scanner.AssemblyContainingType(typeof(PublishTests));
+                 scanner.IncludeNamespaceContainingType<Ping>();
+                 scanner.WithDefaultConventions();
+-                scanner.AddAllTypesOf(typeof (IRequestHandler<,>));
++                scanner.AddAllTypesOf(typeof (IQueryHandler<,>));
+                 scanner.AddAllTypesOf(typeof (IRequestHandler<>));
+             });
+             cfg.For<TextWriter>().Use(writer);

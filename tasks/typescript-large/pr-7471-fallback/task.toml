@@ -1,0 +1,9 @@
+type = "pr"
+pr = 7471
+issue = 5338
+base_commit = "3d876c61fafc815e429c68f4f4e1ab79e47c7b9c"
+merged_at = "2021-03-29T08:32:10Z"
+merge_commit = "2dcb493d55d95536ba4c2085c8f7af740be9ec72"
+fallback_for = "pr"
+source_candidate = "tasks/typescript-large/pr-candidates.jsonl record 2"
+gold_from = "diff base_commit..merge_commit excluding test files"

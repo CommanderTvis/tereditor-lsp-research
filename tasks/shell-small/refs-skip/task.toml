@@ -1,0 +1,4 @@
+type = "refs"
+origin = "synthetic: find usages of a function whose name is also defined elsewhere (devrig find-usages)"
+symbol = "skip (lib/bats-core/test_functions.bash)"
+selection = "Candidates: function names defined at top level in two or more files under bin/, lib/, libexec/ (14 names), sorted, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk); the subject is the definition in the path-sorted first defining file. First: flush (libexec/bats-core/bats-format-junit), dropped because that definition is never called (empty answer); second taken: skip, defined in lib/bats-core/test_functions.bash (the other definition is in libexec/bats-core/bats-format-pretty)."

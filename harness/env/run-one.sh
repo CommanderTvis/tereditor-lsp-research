@@ -5,8 +5,8 @@ plan=$1 rid=$2; P=$STUDY_ROOT/results/$plan; out=$P/runs/$rid
 line=$(awk -F'\t' -v r="$rid" '$1==r' "$P/plan.tsv"); [ -n "$line" ] || die "no run $rid in $P/plan.tsv"
 IFS=$'\t' read -r _ proj task arm model rep effort budget turns tmo <<<"$line"
 [ -f "$out/exit.json" ] && { log "skip $rid (done)"; exit 0; }
-snap=$STUDY_STATE/projects/$proj/snapshot; [ -d "$snap" ] || die "project $proj is not set up: ./study project $proj"
 td=$STUDY_ROOT/tasks/$proj/$task
+snap=$(state_dir "$proj" "$(task_commit "$proj" "$td")")/snapshot; [ -d "$snap" ] || die "project $proj is not set up at this task's commit: ./study project $proj"
 w=$STUDY_STATE/runs/$plan/$rid; rm -rf "$w" "$out"; mkdir -p "$w/in" "$w/home" "$w/sock" "$w/lsplog" "$w/lic" "$out"
 chmod 0777 "$w/sock"
 

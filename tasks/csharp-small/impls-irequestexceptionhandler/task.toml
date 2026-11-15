@@ -1,0 +1,4 @@
+type = "impls"
+origin = "devrig find-implementations; same-named classes in different namespaces, an inherited implementation"
+symbol = "MediatR.Pipeline.IRequestExceptionHandler`3"
+selection = "public interfaces and abstract classes declared in the MediatR assembly (src/MediatR) with at least 5 implementing or deriving classes or structs (transitively, interfaces excluded) in at least 2 projects of MediatR.sln, counted from the compiled assemblies' metadata; sorted by full name; 10 candidates; index int(rand()*10)+1 after srand(20261110) = 8"

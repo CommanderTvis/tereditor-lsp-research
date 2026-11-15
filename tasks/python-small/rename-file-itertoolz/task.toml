@@ -1,0 +1,4 @@
+type = "rename-file"
+origin = "devrig safe rename (module)"
+module = "toolz/itertoolz.py -> toolz/sequences.py"
+selection = "modules of the toolz package (not __init__.py, not tests, name without a leading underscore) imported by module path in at least 3 other .py files (python3 select.py <snapshot> toolz: an ast walk over absolute, from-package and relative imports); sorted by path: toolz/functoolz.py, toolz/itertoolz.py, toolz/utils.py (3 candidates); index random.Random(20261110).randrange(3) = 1 (CPython 3.12)"

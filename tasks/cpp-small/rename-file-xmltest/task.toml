@@ -1,0 +1,4 @@
+type = "rename-file"
+origin = "devrig safe rename (file)"
+file = "xmltest.cpp -> tinyxml2_test.cpp"
+selection = "tracked .h and .cpp files whose base name occurs in at least 3 other tracked files outside docs/ (grep -F over git ls-files): tinyxml2.cpp (6), tinyxml2.h (9), xmltest.cpp (8); 3 candidates sorted by path; index awk 'BEGIN{srand(20261110); print int(rand()*3)+1}' = 3"

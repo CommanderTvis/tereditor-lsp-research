@@ -1,0 +1,9 @@
+type = "pr"
+pr = 496
+issue = 340
+base_commit = "cd47f8e0d3d7ced34d17c14224351d21cda1c8a9"
+merged_at = "2016-11-15T22:08:04Z"
+head_commit = "446c3bcae3b3c89e119e83763ba46804e4559080"
+origin = "mined pull request github.com/leethomason/tinyxml2/pull/496"
+loc_at_base = 4443
+loc_method = "scc 3.5.0 code lines (C, C++, C Header, C++ Header) at base_commit, harness/size/measure.sh"

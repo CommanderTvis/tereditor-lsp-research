@@ -16,6 +16,11 @@ with their date and reason; the original text stays.
    failure.
 2. **Cost**: `total_cost_usd` reported by Claude Code for the run.
 
+Averages: success is a proportion, so it is averaged arithmetically and contrasts are differences in percentage
+points. Cost, tokens, turns and wall time are positive, skewed and differ between arms by a factor, so they are
+summarised on the log scale: geometric means, with contrasts as ratios (what the log-cost model estimates). The
+arithmetic mean cost is reported as well, because it is what predicts total spend.
+
 ## Secondary outcomes
 
 F1 on answer tasks; wall time; turns; input+output tokens; number of tool calls; Read bytes; LSP adoption (any
@@ -55,6 +60,9 @@ Fourteen primary tests (seven pairs, two outcomes). Holm correction over the fou
   first LSP call answered `initializing`.
 - Projects where the LSP probe failed are reported separately and also excluded in a sensitivity analysis.
 
+Mined pull requests (exploratory): success against the pull request's merge date, per arm, as a check for
+memorised fixes; and synthetic against mined tasks, per arm.
+
 ## Exclusions (the only ones)
 
 - A run whose `system/init` event does not match the arm's expected configuration (contamination check).
@@ -67,9 +75,12 @@ API errors after the first model call, caps and timeouts are failures, not exclu
 
 ## Sample size
 
-Budget is about USD 2,000. A calibration pilot measures cost per run per model x size and the between-task variance
-of success; the run allocation (repetitions per model) is fixed from it before the confirmatory runs and recorded
-below. Allocation rule: every task x arm x model cell gets at least one run; repetitions are added in the order
+Budget is about USD 2,000. Tasks are generated at the provisional count of docs/TASKS.md (6 per small to large
+project, 3 per xlarge one; half synthetic, half mined pull requests). A calibration pilot measures cost per run per
+model x size x kind (synthetic or mined) and the between-task variance of success; the run allocation (repetitions
+per model) is fixed from it before the confirmatory runs and recorded below. If even one repetition of every cell
+does not fit, tasks are dropped by a pre-registered rule, not by results: whole projects, largest first within each
+language, keeping every language and the 50/50 split. Allocation rule: every task x arm x model cell gets at least one run; repetitions are added in the order
 Haiku, Sonnet, Opus while the projected cost stays under budget, and equally across arms.
 
 ## Allocation (filled in after the pilot, before the confirmatory run)

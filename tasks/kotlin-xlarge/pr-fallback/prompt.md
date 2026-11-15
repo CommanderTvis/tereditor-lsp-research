@@ -1,0 +1,1 @@
+The compiler's `Name` abstraction must expose a stable `asString()` result for all identifier kinds. Implement the missing behavior in the pinned Kotlin compiler sources and add the focused regression test described by the change.

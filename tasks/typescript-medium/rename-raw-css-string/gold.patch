@@ -1,0 +1,133 @@
+diff --git a/src/helper/css/common.case.test.tsx b/src/helper/css/common.case.test.tsx
+index cb69fcb1..345d8912 100644
+--- a/src/helper/css/common.case.test.tsx
++++ b/src/helper/css/common.case.test.tsx
+@@ -3,7 +3,7 @@ import type {
+   Style as StyleComponent,
+   css as cssHelper,
+   keyframes as keyframesHelper,
+-  rawCssString as rawCssStringHelper,
++  rawCss as rawCssStringHelper,
+   viewTransition as viewTransitionHelper,
+ } from './index'
+ 
+@@ -15,7 +15,7 @@ export const renderTest = (
+     css: typeof cssHelper
+     keyframes: typeof keyframesHelper
+     viewTransition: typeof viewTransitionHelper
+-    rawCssString: typeof rawCssStringHelper
++    rawCss: typeof rawCssStringHelper
+     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     toString: (template: any) => Promise<string>
+     Style: typeof StyleComponent
+@@ -27,12 +27,12 @@ export const renderTest = (
+   let css: typeof cssHelper
+   let keyframes: typeof keyframesHelper
+   let viewTransition: typeof viewTransitionHelper
+-  let rawCssString: typeof rawCssStringHelper
++  let rawCss: typeof rawCssStringHelper
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   let toString: (template: any) => Promise<string>
+   let Style: typeof StyleComponent
+   beforeEach(() => {
+-    ;({ css, keyframes, viewTransition, rawCssString, toString, Style } = getEnv())
++    ;({ css, keyframes, viewTransition, rawCss, toString, Style } = getEnv())
+   })
+ 
+   describe('render css', () => {
+@@ -237,7 +237,7 @@ export const renderTest = (
+     it('Should render CSS with escaped variable', async () => {
+       const headerClass = css`
+         background-color: blue;
+-        content: '${rawCssString('say "Hello!"')}';
++        content: '${rawCss('say "Hello!"')}';
+       `
+       const template = (
+         <>
+diff --git a/src/helper/css/common.ts b/src/helper/css/common.ts
+index fee9be81..e2cabbbc 100644
+--- a/src/helper/css/common.ts
++++ b/src/helper/css/common.ts
+@@ -26,10 +26,10 @@ interface CssEscapedString {
+ 
+ /**
+  * @experimental
+- * `rawCssString` is an experimental feature.
++ * `rawCss` is an experimental feature.
+  * The API might be changed.
+  */
+-export const rawCssString = (value: string): CssEscapedString => {
++export const rawCss = (value: string): CssEscapedString => {
+   return {
+     [CSS_ESCAPED]: value,
+   }
+diff --git a/src/helper/css/index.test.tsx b/src/helper/css/index.test.tsx
+index aeb3d7de..ba53679a 100644
+--- a/src/helper/css/index.test.tsx
++++ b/src/helper/css/index.test.tsx
+@@ -7,7 +7,7 @@ import { Suspense, renderToReadableStream } from '../../jsx/streaming'
+ import type { HtmlEscapedString } from '../../utils/html'
+ import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
+ import { renderTest } from './common.case.test'
+-import { Style, createCssContext, css, cx, keyframes, rawCssString, viewTransition } from './index'
++import { Style, createCssContext, css, cx, keyframes, rawCss, viewTransition } from './index'
+ 
+ async function toString(
+   template: JSXNode | Promise<HtmlEscapedString> | Promise<string> | HtmlEscapedString
+@@ -36,7 +36,7 @@ describe('CSS Helper', () => {
+       Style,
+       keyframes,
+       viewTransition,
+-      rawCssString,
++      rawCss,
+       createCssContext,
+       toString,
+       toCSS,
+diff --git a/src/helper/css/index.ts b/src/helper/css/index.ts
+index 4ce846ae..beb6b5ec 100644
+--- a/src/helper/css/index.ts
++++ b/src/helper/css/index.ts
+@@ -26,7 +26,7 @@ import {
+   keyframesCommon,
+   viewTransitionCommon,
+ } from './common'
+-export { rawCssString } from './common'
++export { rawCss } from './common'
+ export type { ClassNameSlug, OnInvalidSlug } from './common'
+ 
+ type CssClassName = HtmlEscapedString & CssClassNameCommon
+diff --git a/src/jsx/dom/css.test.tsx b/src/jsx/dom/css.test.tsx
+index b9a9a71b..b05c0f1a 100644
+--- a/src/jsx/dom/css.test.tsx
++++ b/src/jsx/dom/css.test.tsx
+@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom'
+ // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
+ import { render } from '.'
+ import type { JSXNode } from '..'
+-import { Style, createCssContext, css, rawCssString } from '../../helper/css'
++import { Style, createCssContext, css, rawCss } from '../../helper/css'
+ import { minify } from '../../helper/css/common'
+ import { renderTest } from '../../helper/css/common.case.test'
+ 
+@@ -141,7 +141,7 @@ describe('render', () => {
+ 
+     return {
+       toString,
+-      rawCssString,
++      rawCss,
+       ...cssContext,
+       support: { nest: false },
+     }
+diff --git a/src/jsx/dom/css.ts b/src/jsx/dom/css.ts
+index 47d094ed..909474ef 100644
+--- a/src/jsx/dom/css.ts
++++ b/src/jsx/dom/css.ts
+@@ -22,7 +22,7 @@ import {
+   keyframesCommon,
+   viewTransitionCommon,
+ } from '../../helper/css/common'
+-export { rawCssString } from '../../helper/css/common'
++export { rawCss } from '../../helper/css/common'
+ 
+ const splitRule = (rule: string): string[] => {
+   const result: string[] = []

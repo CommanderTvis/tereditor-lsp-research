@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic: which definition runs when a sourced hook redefines a function of the main script; replaces impls, which Shell cannot express"
+symbol = "_fingerprint"
+selection = "Candidates: function names defined both in acme.sh and in a hook file that acme.sh sources (so the later definition shadows the earlier one in the hook's process); 1 candidate at the pinned commit (_fingerprint: acme.sh and dnsapi/dns_oci.sh), so no shuffle was needed. Question: the call inside the hook."

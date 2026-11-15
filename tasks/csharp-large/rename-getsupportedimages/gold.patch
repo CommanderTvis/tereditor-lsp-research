@@ -1,0 +1,417 @@
+diff --git a/MediaBrowser.Controller/Providers/IDynamicImageProvider.cs b/MediaBrowser.Controller/Providers/IDynamicImageProvider.cs
+index ab66462..ca60a5a 100644
+--- a/MediaBrowser.Controller/Providers/IDynamicImageProvider.cs
++++ b/MediaBrowser.Controller/Providers/IDynamicImageProvider.cs
+@@ -15,7 +15,7 @@ namespace MediaBrowser.Controller.Providers
+         /// </summary>
+         /// <param name="item">The item.</param>
+         /// <returns>IEnumerable{ImageType}.</returns>
+-        IEnumerable<ImageType> GetSupportedImages(BaseItem item);
++        IEnumerable<ImageType> GetAvailableImages(BaseItem item);
+ 
+         /// <summary>
+         /// Gets the image.
+diff --git a/MediaBrowser.Controller/Providers/IRemoteImageProvider.cs b/MediaBrowser.Controller/Providers/IRemoteImageProvider.cs
+index de1631d..5092122 100644
+--- a/MediaBrowser.Controller/Providers/IRemoteImageProvider.cs
++++ b/MediaBrowser.Controller/Providers/IRemoteImageProvider.cs
+@@ -18,7 +18,7 @@ namespace MediaBrowser.Controller.Providers
+         /// </summary>
+         /// <param name="item">The item.</param>
+         /// <returns>IEnumerable{ImageType}.</returns>
+-        IEnumerable<ImageType> GetSupportedImages(BaseItem item);
++        IEnumerable<ImageType> GetAvailableImages(BaseItem item);
+ 
+         /// <summary>
+         /// Gets the images.
+diff --git a/MediaBrowser.Providers/Books/ComicImageProvider.cs b/MediaBrowser.Providers/Books/ComicImageProvider.cs
+index 34936cf..1c3e4ff 100644
+--- a/MediaBrowser.Providers/Books/ComicImageProvider.cs
++++ b/MediaBrowser.Providers/Books/ComicImageProvider.cs
+@@ -52,7 +52,7 @@ public class ComicImageProvider : IDynamicImageProvider
+     }
+ 
+     /// <inheritdoc />
+-    public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++    public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+     {
+         yield return ImageType.Primary;
+     }
+diff --git a/MediaBrowser.Providers/Books/OpenPackagingFormat/EpubImageProvider.cs b/MediaBrowser.Providers/Books/OpenPackagingFormat/EpubImageProvider.cs
+index dbd8b28..e8110ef 100644
+--- a/MediaBrowser.Providers/Books/OpenPackagingFormat/EpubImageProvider.cs
++++ b/MediaBrowser.Providers/Books/OpenPackagingFormat/EpubImageProvider.cs
+@@ -38,7 +38,7 @@ namespace MediaBrowser.Providers.Books.OpenPackagingFormat
+         }
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+         {
+             yield return ImageType.Primary;
+         }
+diff --git a/MediaBrowser.Providers/Manager/ItemImageProvider.cs b/MediaBrowser.Providers/Manager/ItemImageProvider.cs
+index 3317e33..84c23b6 100644
+--- a/MediaBrowser.Providers/Manager/ItemImageProvider.cs
++++ b/MediaBrowser.Providers/Manager/ItemImageProvider.cs
+@@ -197,7 +197,7 @@ namespace MediaBrowser.Providers.Manager
+         {
+             try
+             {
+-                var images = provider.GetSupportedImages(item);
++                var images = provider.GetAvailableImages(item);
+ 
+                 foreach (var imageType in images)
+                 {
+@@ -291,7 +291,7 @@ namespace MediaBrowser.Providers.Manager
+ 
+                 if (!refreshOptions.ReplaceAllImages &&
+                     refreshOptions.ReplaceImages.Count == 0 &&
+-                    ContainsImages(item, provider.GetSupportedImages(item).ToList(), savedOptions, backdropLimit))
++                    ContainsImages(item, provider.GetAvailableImages(item).ToList(), savedOptions, backdropLimit))
+                 {
+                     return;
+                 }
+diff --git a/MediaBrowser.Providers/Manager/ProviderManager.cs b/MediaBrowser.Providers/Manager/ProviderManager.cs
+index 8387f24..66ca76c 100644
+--- a/MediaBrowser.Providers/Manager/ProviderManager.cs
++++ b/MediaBrowser.Providers/Manager/ProviderManager.cs
+@@ -311,7 +311,7 @@ namespace MediaBrowser.Providers.Manager
+ 
+             if (query.ImageType is not null)
+             {
+-                providers = providers.Where(i => i.GetSupportedImages(item).Contains(query.ImageType.Value));
++                providers = providers.Where(i => i.GetAvailableImages(item).Contains(query.ImageType.Value));
+             }
+ 
+             var preferredLanguage = item.GetPreferredMetadataLanguage();
+@@ -378,7 +378,7 @@ namespace MediaBrowser.Providers.Manager
+         /// <inheritdoc/>
+         public IEnumerable<ImageProviderInfo> GetRemoteImageProviderInfo(BaseItem item)
+         {
+-            return GetRemoteImageProviders(item, true).Select(i => new ImageProviderInfo(i.Name, i.GetSupportedImages(item).ToArray()));
++            return GetRemoteImageProviders(item, true).Select(i => new ImageProviderInfo(i.Name, i.GetAvailableImages(item).ToArray()));
+         }
+ 
+         private IEnumerable<IRemoteImageProvider> GetRemoteImageProviders(BaseItem item, bool includeDisabled)
+@@ -725,11 +725,11 @@ namespace MediaBrowser.Providers.Manager
+             summary.Plugins = pluginList.ToArray();
+ 
+             var supportedImageTypes = imageProviders.OfType<IRemoteImageProvider>()
+-                .SelectMany(i => i.GetSupportedImages(dummy))
++                .SelectMany(i => i.GetAvailableImages(dummy))
+                 .ToList();
+ 
+             supportedImageTypes.AddRange(imageProviders.OfType<IDynamicImageProvider>()
+-                .SelectMany(i => i.GetSupportedImages(dummy)));
++                .SelectMany(i => i.GetAvailableImages(dummy)));
+ 
+             summary.SupportedImageTypes = supportedImageTypes.Distinct().ToArray();
+ 
+diff --git a/MediaBrowser.Providers/MediaInfo/AudioImageProvider.cs b/MediaBrowser.Providers/MediaInfo/AudioImageProvider.cs
+index cc2b3fa..a91c5ec 100644
+--- a/MediaBrowser.Providers/MediaInfo/AudioImageProvider.cs
++++ b/MediaBrowser.Providers/MediaInfo/AudioImageProvider.cs
+@@ -51,7 +51,7 @@ namespace MediaBrowser.Providers.MediaInfo
+         public string Name => "Image Extractor";
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+         {
+             return new[] { ImageType.Primary };
+         }
+diff --git a/MediaBrowser.Providers/MediaInfo/EmbeddedImageProvider.cs b/MediaBrowser.Providers/MediaInfo/EmbeddedImageProvider.cs
+index 0bfee07..535e160 100644
+--- a/MediaBrowser.Providers/MediaInfo/EmbeddedImageProvider.cs
++++ b/MediaBrowser.Providers/MediaInfo/EmbeddedImageProvider.cs
+@@ -73,7 +73,7 @@ namespace MediaBrowser.Providers.MediaInfo
+         public int Order => 99;
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+         {
+             if (item is Video)
+             {
+diff --git a/MediaBrowser.Providers/MediaInfo/VideoImageProvider.cs b/MediaBrowser.Providers/MediaInfo/VideoImageProvider.cs
+index 3d44605..0062b88 100644
+--- a/MediaBrowser.Providers/MediaInfo/VideoImageProvider.cs
++++ b/MediaBrowser.Providers/MediaInfo/VideoImageProvider.cs
+@@ -48,7 +48,7 @@ namespace MediaBrowser.Providers.MediaInfo
+         public int Order => 100;
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+         {
+             return new[] { ImageType.Primary };
+         }
+diff --git a/MediaBrowser.Providers/Plugins/AudioDb/AudioDbAlbumImageProvider.cs b/MediaBrowser.Providers/Plugins/AudioDb/AudioDbAlbumImageProvider.cs
+index d2eeb7f..fecb4cc 100644
+--- a/MediaBrowser.Providers/Plugins/AudioDb/AudioDbAlbumImageProvider.cs
++++ b/MediaBrowser.Providers/Plugins/AudioDb/AudioDbAlbumImageProvider.cs
+@@ -40,7 +40,7 @@ namespace MediaBrowser.Providers.Plugins.AudioDb
+         public int Order => 2;
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+         {
+             yield return ImageType.Primary;
+             yield return ImageType.Disc;
+diff --git a/MediaBrowser.Providers/Plugins/AudioDb/AudioDbArtistImageProvider.cs b/MediaBrowser.Providers/Plugins/AudioDb/AudioDbArtistImageProvider.cs
+index 28cfc8f..9567bdb 100644
+--- a/MediaBrowser.Providers/Plugins/AudioDb/AudioDbArtistImageProvider.cs
++++ b/MediaBrowser.Providers/Plugins/AudioDb/AudioDbArtistImageProvider.cs
+@@ -32,7 +32,7 @@ namespace MediaBrowser.Providers.Plugins.AudioDb
+         public int Order => 1;
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+         {
+             return
+             [
+diff --git a/MediaBrowser.Providers/Plugins/Omdb/OmdbImageProvider.cs b/MediaBrowser.Providers/Plugins/Omdb/OmdbImageProvider.cs
+index 140a64f..cd36f1d 100644
+--- a/MediaBrowser.Providers/Plugins/Omdb/OmdbImageProvider.cs
++++ b/MediaBrowser.Providers/Plugins/Omdb/OmdbImageProvider.cs
+@@ -36,7 +36,7 @@ namespace MediaBrowser.Providers.Plugins.Omdb
+         // But before fallback providers like screengrab
+         public int Order => 90;
+ 
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+         {
+             yield return ImageType.Primary;
+         }
+diff --git a/MediaBrowser.Providers/Plugins/StudioImages/StudiosImageProvider.cs b/MediaBrowser.Providers/Plugins/StudioImages/StudiosImageProvider.cs
+index a50d69d..218cfe5 100644
+--- a/MediaBrowser.Providers/Plugins/StudioImages/StudiosImageProvider.cs
++++ b/MediaBrowser.Providers/Plugins/StudioImages/StudiosImageProvider.cs
+@@ -51,7 +51,7 @@ namespace MediaBrowser.Providers.Plugins.StudioImages
+         }
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+         {
+             return [ImageType.Thumb];
+         }
+diff --git a/MediaBrowser.Providers/Plugins/Tmdb/BoxSets/TmdbBoxSetImageProvider.cs b/MediaBrowser.Providers/Plugins/Tmdb/BoxSets/TmdbBoxSetImageProvider.cs
+index 23f8d89..6d36e2f 100644
+--- a/MediaBrowser.Providers/Plugins/Tmdb/BoxSets/TmdbBoxSetImageProvider.cs
++++ b/MediaBrowser.Providers/Plugins/Tmdb/BoxSets/TmdbBoxSetImageProvider.cs
+@@ -44,7 +44,7 @@ namespace MediaBrowser.Providers.Plugins.Tmdb.BoxSets
+         }
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item) =>
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item) =>
+         [
+             ImageType.Primary,
+             ImageType.Backdrop,
+diff --git a/MediaBrowser.Providers/Plugins/Tmdb/Movies/TmdbMovieImageProvider.cs b/MediaBrowser.Providers/Plugins/Tmdb/Movies/TmdbMovieImageProvider.cs
+index e686577..dfbda46 100644
+--- a/MediaBrowser.Providers/Plugins/Tmdb/Movies/TmdbMovieImageProvider.cs
++++ b/MediaBrowser.Providers/Plugins/Tmdb/Movies/TmdbMovieImageProvider.cs
+@@ -45,7 +45,7 @@ namespace MediaBrowser.Providers.Plugins.Tmdb.Movies
+         }
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item) =>
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item) =>
+         [
+             ImageType.Primary,
+             ImageType.Backdrop,
+diff --git a/MediaBrowser.Providers/Plugins/Tmdb/People/TmdbPersonImageProvider.cs b/MediaBrowser.Providers/Plugins/Tmdb/People/TmdbPersonImageProvider.cs
+index d386148..43e4943 100644
+--- a/MediaBrowser.Providers/Plugins/Tmdb/People/TmdbPersonImageProvider.cs
++++ b/MediaBrowser.Providers/Plugins/Tmdb/People/TmdbPersonImageProvider.cs
+@@ -43,7 +43,7 @@ namespace MediaBrowser.Providers.Plugins.Tmdb.People
+         }
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+         {
+             yield return ImageType.Primary;
+         }
+diff --git a/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbEpisodeImageProvider.cs b/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbEpisodeImageProvider.cs
+index 1f8c873..da75729 100644
+--- a/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbEpisodeImageProvider.cs
++++ b/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbEpisodeImageProvider.cs
+@@ -43,7 +43,7 @@ namespace MediaBrowser.Providers.Plugins.Tmdb.TV
+         }
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+         {
+             yield return ImageType.Primary;
+         }
+diff --git a/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeasonImageProvider.cs b/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeasonImageProvider.cs
+index bc44d02..e42393c 100644
+--- a/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeasonImageProvider.cs
++++ b/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeasonImageProvider.cs
+@@ -44,7 +44,7 @@ namespace MediaBrowser.Providers.Plugins.Tmdb.TV
+         }
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+         {
+             yield return ImageType.Primary;
+         }
+diff --git a/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeriesImageProvider.cs b/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeriesImageProvider.cs
+index dc4f860..337d78c 100644
+--- a/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeriesImageProvider.cs
++++ b/MediaBrowser.Providers/Plugins/Tmdb/TV/TmdbSeriesImageProvider.cs
+@@ -44,7 +44,7 @@ namespace MediaBrowser.Providers.Plugins.Tmdb.TV
+         }
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item) =>
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item) =>
+         [
+             ImageType.Primary,
+             ImageType.Backdrop,
+diff --git a/src/Jellyfin.LiveTv/Channels/ChannelImageProvider.cs b/src/Jellyfin.LiveTv/Channels/ChannelImageProvider.cs
+index 32e2245..7b14ba3 100644
+--- a/src/Jellyfin.LiveTv/Channels/ChannelImageProvider.cs
++++ b/src/Jellyfin.LiveTv/Channels/ChannelImageProvider.cs
+@@ -29,7 +29,7 @@ namespace Jellyfin.LiveTv.Channels
+         public string Name => "Channel Image Provider";
+ 
+         /// <inheritdoc />
+-        public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
++        public IEnumerable<ImageType> GetAvailableImages(BaseItem item)
+         {
+             return GetChannel(item).GetSupportedChannelImages();
+         }
+@@ -58,7 +58,7 @@ namespace Jellyfin.LiveTv.Channels
+         /// <inheritdoc />
+         public bool HasChanged(BaseItem item, IDirectoryService directoryService)
+         {
+-            return GetSupportedImages(item).Any(i => !item.HasImage(i));
++            return GetAvailableImages(item).Any(i => !item.HasImage(i));
+         }
+     }
+ }
+diff --git a/tests/Jellyfin.Providers.Tests/Manager/ItemImageProviderTests.cs b/tests/Jellyfin.Providers.Tests/Manager/ItemImageProviderTests.cs
+index e234e07..2c12529 100644
+--- a/tests/Jellyfin.Providers.Tests/Manager/ItemImageProviderTests.cs
++++ b/tests/Jellyfin.Providers.Tests/Manager/ItemImageProviderTests.cs
+@@ -257,7 +257,7 @@ namespace Jellyfin.Providers.Tests.Manager
+ 
+             var dynamicProvider = new Mock<IDynamicImageProvider>(MockBehavior.Strict);
+             dynamicProvider.Setup(rp => rp.Name).Returns("MockDynamicProvider");
+-            dynamicProvider.Setup(rp => rp.GetSupportedImages(item))
++            dynamicProvider.Setup(rp => rp.GetAvailableImages(item))
+                 .Returns(new[] { imageType });
+             dynamicProvider.Setup(rp => rp.GetImage(item, imageType, It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(imageResponse);
+@@ -313,7 +313,7 @@ namespace Jellyfin.Providers.Tests.Manager
+ 
+             var dynamicProvider = new Mock<IDynamicImageProvider>(MockBehavior.Strict);
+             dynamicProvider.Setup(rp => rp.Name).Returns("MockDynamicProvider");
+-            dynamicProvider.Setup(rp => rp.GetSupportedImages(item))
++            dynamicProvider.Setup(rp => rp.GetAvailableImages(item))
+                 .Returns(new[] { imageType });
+             dynamicProvider.Setup(rp => rp.GetImage(item, imageType, It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(imageResponse);
+@@ -354,7 +354,7 @@ namespace Jellyfin.Providers.Tests.Manager
+ 
+             var remoteProvider = new Mock<IRemoteImageProvider>(MockBehavior.Strict);
+             remoteProvider.Setup(rp => rp.Name).Returns("MockRemoteProvider");
+-            remoteProvider.Setup(rp => rp.GetSupportedImages(item))
++            remoteProvider.Setup(rp => rp.GetAvailableImages(item))
+                 .Returns(new[] { imageType });
+ 
+             var refreshOptions = forceRefresh
+@@ -416,7 +416,7 @@ namespace Jellyfin.Providers.Tests.Manager
+             const string Content = "Content";
+             var remoteProvider = new Mock<IRemoteImageProvider>(MockBehavior.Strict);
+             remoteProvider.Setup(rp => rp.Name).Returns("MockRemoteProvider");
+-            remoteProvider.Setup(rp => rp.GetSupportedImages(item))
++            remoteProvider.Setup(rp => rp.GetAvailableImages(item))
+                 .Returns(new[] { imageType });
+             remoteProvider.Setup(rp => rp.GetImageResponse(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((string url, CancellationToken _) => new HttpResponseMessage
+@@ -472,7 +472,7 @@ namespace Jellyfin.Providers.Tests.Manager
+ 
+             var remoteProvider = new Mock<IRemoteImageProvider>(MockBehavior.Strict);
+             remoteProvider.Setup(rp => rp.Name).Returns("MockRemoteProvider");
+-            remoteProvider.Setup(rp => rp.GetSupportedImages(item))
++            remoteProvider.Setup(rp => rp.GetAvailableImages(item))
+                 .Returns(new[] { imageType });
+ 
+             var refreshOptions = new ImageRefreshOptions(Mock.Of<IDirectoryService>());
+@@ -516,7 +516,7 @@ namespace Jellyfin.Providers.Tests.Manager
+ 
+             var remoteProvider = new Mock<IRemoteImageProvider>(MockBehavior.Strict);
+             remoteProvider.Setup(rp => rp.Name).Returns("MockRemoteProvider");
+-            remoteProvider.Setup(rp => rp.GetSupportedImages(item))
++            remoteProvider.Setup(rp => rp.GetAvailableImages(item))
+                 .Returns(new[] { imageType });
+ 
+             var refreshOptions = new ImageRefreshOptions(Mock.Of<IDirectoryService>())
+@@ -563,7 +563,7 @@ namespace Jellyfin.Providers.Tests.Manager
+ 
+             var remoteProvider = new Mock<IRemoteImageProvider>(MockBehavior.Strict);
+             remoteProvider.Setup(rp => rp.Name).Returns("MockRemoteProvider");
+-            remoteProvider.Setup(rp => rp.GetSupportedImages(item))
++            remoteProvider.Setup(rp => rp.GetAvailableImages(item))
+                 .Returns(new[] { imageType });
+ 
+             var refreshOptions = new ImageRefreshOptions(Mock.Of<IDirectoryService>());
+@@ -596,7 +596,7 @@ namespace Jellyfin.Providers.Tests.Manager
+ 
+             var dynamicProvider = new Mock<IDynamicImageProvider>(MockBehavior.Strict);
+             dynamicProvider.Setup(rp => rp.Name).Returns("MockDynamicProvider");
+-            dynamicProvider.Setup(rp => rp.GetSupportedImages(item))
++            dynamicProvider.Setup(rp => rp.GetAvailableImages(item))
+                 .Returns(new[] { ImageType.Primary });
+             dynamicProvider.Setup(rp => rp.GetImage(item, ImageType.Primary, It.IsAny<CancellationToken>()))
+                 .ThrowsAsync(new InvalidOperationException("provider is broken"));
+@@ -616,7 +616,7 @@ namespace Jellyfin.Providers.Tests.Manager
+ 
+             var remoteProvider = new Mock<IRemoteImageProvider>(MockBehavior.Strict);
+             remoteProvider.Setup(rp => rp.Name).Returns("MockRemoteProvider");
+-            remoteProvider.Setup(rp => rp.GetSupportedImages(item))
++            remoteProvider.Setup(rp => rp.GetAvailableImages(item))
+                 .Returns(new[] { ImageType.Primary });
+ 
+             var providerManager = new Mock<IProviderManager>(MockBehavior.Strict);
+diff --git a/tests/Jellyfin.Providers.Tests/Manager/MetadataServiceRefreshTests.cs b/tests/Jellyfin.Providers.Tests/Manager/MetadataServiceRefreshTests.cs
+index acf8de4..1fdb405 100644
+--- a/tests/Jellyfin.Providers.Tests/Manager/MetadataServiceRefreshTests.cs
++++ b/tests/Jellyfin.Providers.Tests/Manager/MetadataServiceRefreshTests.cs
+@@ -352,7 +352,7 @@ namespace Jellyfin.Providers.Tests.Manager
+ 
+             var imageProvider = new Mock<IDynamicImageProvider>(MockBehavior.Loose);
+             imageProvider.Setup(p => p.Name).Returns("Throwing Image Provider");
+-            imageProvider.Setup(p => p.GetSupportedImages(It.IsAny<BaseItem>())).Returns(new[] { ImageType.Primary });
++            imageProvider.Setup(p => p.GetAvailableImages(It.IsAny<BaseItem>())).Returns(new[] { ImageType.Primary });
+             imageProvider.Setup(p => p.GetImage(It.IsAny<BaseItem>(), ImageType.Primary, It.IsAny<CancellationToken>()))
+                 .Returns(providerThrows
+                     ? Task.FromException<DynamicImageResponse>(new InvalidOperationException("image fetch failed"))
+diff --git a/tests/Jellyfin.Providers.Tests/MediaInfo/EmbeddedImageProviderTests.cs b/tests/Jellyfin.Providers.Tests/MediaInfo/EmbeddedImageProviderTests.cs
+index c0b41ba..6307b6b 100644
+--- a/tests/Jellyfin.Providers.Tests/MediaInfo/EmbeddedImageProviderTests.cs
++++ b/tests/Jellyfin.Providers.Tests/MediaInfo/EmbeddedImageProviderTests.cs
+@@ -28,11 +28,11 @@ namespace Jellyfin.Providers.Tests.MediaInfo
+         [InlineData(typeof(Season))]
+         [InlineData(typeof(Episode), ImageType.Primary)]
+         [InlineData(typeof(Movie), ImageType.Logo, ImageType.Backdrop, ImageType.Primary)]
+-        public void GetSupportedImages_AnyBaseItem_ReturnsExpected(Type type, params ImageType[] expected)
++        public void GetAvailableImages_AnyBaseItem_ReturnsExpected(Type type, params ImageType[] expected)
+         {
+             BaseItem item = (BaseItem)Activator.CreateInstance(type)!;
+             var embeddedImageProvider = new EmbeddedImageProvider(Mock.Of<IMediaSourceManager>(), Mock.Of<IMediaEncoder>(), new NullLogger<EmbeddedImageProvider>());
+-            var actual = embeddedImageProvider.GetSupportedImages(item);
++            var actual = embeddedImageProvider.GetAvailableImages(item);
+             Assert.Equal(expected.OrderBy(i => i.ToString()), actual.OrderBy(i => i.ToString()));
+         }
+ 

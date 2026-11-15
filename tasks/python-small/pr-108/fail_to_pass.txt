@@ -1,0 +1,6 @@
+toolz/functoolz/tests/test_core.py::test_complement
+toolz/functoolz/tests/test_core.py::test_compose
+toolz/functoolz/tests/test_core.py::test_curry_docstring
+toolz/functoolz/tests/test_core.py::test_pipe
+toolz/functoolz/tests/test_core.py::test_thread_first
+toolz/functoolz/tests/test_core.py::test_thread_last

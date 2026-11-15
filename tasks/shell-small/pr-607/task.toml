@@ -1,0 +1,8 @@
+type = "pr"
+pr = 607
+issue = 605
+base_commit = "eb6b74ff476dba44b02ad10771f5eac4a177c25c"
+head_commit = "5e328bf849cc33150c18e9e2420f1d993a7eff5b"
+merged_at = "2022-06-05T14:24:28Z"
+origin = "mined pull request github.com/bats-core/bats-core/pull/607"
+fail_to_pass_files = "test/bats.bats"

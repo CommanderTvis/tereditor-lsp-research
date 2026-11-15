@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic fallback: Sass mixin definition selection"
+symbol = "focusOutline"
+selection = "Fallback companion task; the pinned Primer tree has one definition of focusOutline, so an include resolves to src/support/mixins/misc.scss."

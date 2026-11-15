@@ -1,0 +1,7 @@
+type = "pr"
+origin = "mined pull request (SWE-bench selection, docs/TASKS.md)"
+pr = 655
+issue = 484
+base_commit = "e09b29c71597a7d10ae1f9812a1891e8fe404962"
+head_commit = "e27a41b5f3e566db68a6acd15a0a0d53d8fba937"
+merged_at = "2021-11-05T13:54:38Z"

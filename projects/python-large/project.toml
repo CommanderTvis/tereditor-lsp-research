@@ -1,11 +1,12 @@
-# python, large: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# Python, large: mypy, a fully typed static checker with dense cross-module imports and visitor dispatch.
 lang = "python"
 size = "large"
-status = "stub"
 repo = "https://github.com/python/mypy"
 tag = "v2.4.1"
 commit = "ad02a35e623d105ab7340f75558716bc09f8242e"
 loc = 216631
 loc_by_language = { "Python" = 216631 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["rename", "rename-file", "dispatch", "pr", "pr", "pr"]
+pr_shortfall = 0
+pr_replaced_by = []

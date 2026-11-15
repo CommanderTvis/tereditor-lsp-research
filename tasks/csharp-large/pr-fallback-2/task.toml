@@ -1,0 +1,4 @@
+type = "pr"
+origin = "synthetic fallback PR: mined candidates were unavailable or failed the fixed toolchain checks"
+issue = "synthetic-csharp-large-pr-fallback-2"
+selection = "Taken in deterministic project order after the mined candidate pool was exhausted; seed = 20261110. This is explicitly a fallback PR task, not a relabelled synthetic task."

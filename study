@@ -67,6 +67,7 @@ load_license() {
 # bubblewrap inside needs the capabilities to create namespaces.
 priv() { if [ "$RT" = docker ]; then echo --privileged; else echo "--cap-add ALL"; fi; }
 ctr_volumes() {
+  container_lock
   if [ "$RT" = docker ]; then
     docker volume inspect study-nix >/dev/null 2>&1 || docker volume create study-nix >/dev/null
     docker volume inspect study-state >/dev/null 2>&1 || docker volume create study-state >/dev/null
@@ -101,6 +102,20 @@ native_nix() {
   PATH=/nix/var/study-nix/bin:$PATH; rm -rf "$t"
 }
 
+# Apple container attaches a volume to one container at a time, so with it every environment command waits for the
+# previous one (several agents can share the repository). The lock is released when this process exits.
+container_lock() {
+  [ "$RT" = container ] || return 0
+  [ "${STUDY_LOCK_HELD:-}" = 1 ] && return 0
+  lock=$ROOT/.study-lock
+  until mkdir "$lock" 2>/dev/null; do
+    if [ -f "$lock/pid" ] && ! kill -0 "$(cat "$lock/pid")" 2>/dev/null; then rm -rf "$lock"; continue; fi
+    sleep 5
+  done
+  echo $$ > "$lock/pid"; STUDY_LOCK_HELD=1; export STUDY_LOCK_HELD
+  trap 'rm -rf "$lock"' EXIT INT TERM
+}
+
 # env_run <group> <script> [args...]: one harness script in the environment of a language group.
 env_run() {
   g=$1; shift
@@ -108,6 +123,7 @@ env_run() {
     native_nix
     STUDY_ROOT=$ROOT STUDY_STATE=${STUDY_STATE:-/var/lib/study} sh "$ROOT/harness/env/entry.sh" "$g" "$@"
   else
+    container_lock
     $RT run --rm $(priv) --cpus "$CPUS" --memory "$MEMORY" \
       -v study-nix:/nix -v study-state:/state -v "$ROOT:/study-root" \
       -e "STUDY_HOST_UID=$(id -u)" -e "STUDY_HOST_GID=$(id -g)" -e POLL_S \

@@ -1,0 +1,5 @@
+[
+  {"name":"references for a shared Carbon mixin","args":{"operation":"references","path":"packages/styles/scss/mixins/_focus-outline.scss","line":1,"column":0},"expect":[]},
+  {"name":"definition of a Sass variable","args":{"operation":"definition","query":"$interactive-01"},"expect":[]},
+  {"name":"diagnostics on a Sass partial","tool":"lsp_diagnostics","args":{"paths":["packages/styles/scss/components/button/_button.scss"]},"expect":[]}
+]

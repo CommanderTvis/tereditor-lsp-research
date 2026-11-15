@@ -1,0 +1,3 @@
+src/Jellyfin.Drawing/ImageProcessor.cs:114
+src/Jellyfin.Drawing/ImageProcessor.cs:225
+MediaBrowser.Controller/Drawing/IImageProcessor.cs:108

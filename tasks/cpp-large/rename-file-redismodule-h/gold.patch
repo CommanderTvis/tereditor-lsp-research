@@ -1,0 +1,877 @@
+diff --git a/modules/vector-sets/Makefile b/modules/vector-sets/Makefile
+index 4d3f63c6c..733eb8d9a 100644
+--- a/modules/vector-sets/Makefile
++++ b/modules/vector-sets/Makefile
+@@ -58,7 +58,7 @@ all: vset.so
+ .c.xo:
+ 	$(CC) -I. $(CFLAGS) $(SHOBJ_CFLAGS) -fPIC -c $< -o $@
+ 
+-vset.xo: ../../src/redismodule.h expr.c
++vset.xo: ../../src/redis_module_api.h expr.c
+ 
+ vset.so: vset.xo hnsw.xo vset_config.xo
+ 	$(CC) -o $@ $^ $(SHOBJ_LDFLAGS) $(LIBS) $(SAN) -lc
+diff --git a/modules/vector-sets/vset.c b/modules/vector-sets/vset.c
+index c72aa2edd..483dbc9c3 100644
+--- a/modules/vector-sets/vset.c
++++ b/modules/vector-sets/vset.c
+@@ -105,7 +105,7 @@
+ #define _USE_MATH_DEFINES
+ #define _POSIX_C_SOURCE 200809L
+ 
+-#include "../../src/redismodule.h"
++#include "../../src/redis_module_api.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <ctype.h>
+diff --git a/modules/vector-sets/vset_config.h b/modules/vector-sets/vset_config.h
+index 8da94fa06..aefcc5a3b 100644
+--- a/modules/vector-sets/vset_config.h
++++ b/modules/vector-sets/vset_config.h
+@@ -11,7 +11,7 @@
+ #ifndef VSET_CONFIG_H
+ #define VSET_CONFIG_H
+ 
+-#include "../../src/redismodule.h"
++#include "../../src/redis_module_api.h"
+ 
+ typedef struct {
+   int forceSingleThreadExec;
+diff --git a/scripts/build.sh b/scripts/build.sh
+index 6b27ee6d6..4cfbb44eb 100755
+--- a/scripts/build.sh
++++ b/scripts/build.sh
+@@ -10,7 +10,7 @@
+ #
+ # Each selected module is built via `make -C modules/<name>` using its
+ # upstream defaults — RM_INCLUDE_DIR / RS_INCLUDE_DIR are intentionally
+-# NOT overridden here, so a bundled build resolves `redismodule.h` the
++# NOT overridden here, so a bundled build resolves `redis_module_api.h` the
+ # same way the module would when built standalone in its own repo.
+ # REDIS_SERVER is overridden so module test harnesses run against the
+ # Redis we just built.
+diff --git a/src/functions.h b/src/functions.h
+index e8a3042aa..1059e9cf8 100644
+--- a/src/functions.h
++++ b/src/functions.h
+@@ -30,7 +30,7 @@
+ 
+ #include "server.h"
+ #include "script.h"
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ typedef struct functionLibInfo functionLibInfo;
+ 
+diff --git a/src/keymeta.h b/src/keymeta.h
+index 722a4a0a6..5504ac677 100644
+--- a/src/keymeta.h
++++ b/src/keymeta.h
+@@ -23,7 +23,7 @@
+  *   bit number corresponds to class ID. 
+  * - Expiration: class ID 0 is reserved for TTL/expire; 
+  * - Registration: redisServer.keyMetaClass[] stores registered classes. Modules
+- *   register via keyMetaClassCreate (see redismodule.h) and may provide callbacks
++ *   register via keyMetaClassCreate (see redis_module_api.h) and may provide callbacks
+  *   for persistence, copy/rename behavior, and lifecycle hooks (unlink/free).
+  * - modules: modules can register metadata classes and provide callbacks.  
+  */
+diff --git a/src/module.c b/src/module.c
+index ff646d593..1c7975f20 100644
+--- a/src/module.c
++++ b/src/module.c
+@@ -464,17 +464,17 @@ typedef struct RedisModuleUser {
+ } RedisModuleUser;
+ 
+ /* Data structures related to redis module configurations */
+-/* The function signatures for module config get callbacks. These are identical to the ones exposed in redismodule.h. */
++/* The function signatures for module config get callbacks. These are identical to the ones exposed in redis_module_api.h. */
+ typedef RedisModuleString * (*RedisModuleConfigGetStringFunc)(const char *name, void *privdata);
+ typedef long long (*RedisModuleConfigGetNumericFunc)(const char *name, void *privdata);
+ typedef int (*RedisModuleConfigGetBoolFunc)(const char *name, void *privdata);
+ typedef int (*RedisModuleConfigGetEnumFunc)(const char *name, void *privdata);
+-/* The function signatures for module config set callbacks. These are identical to the ones exposed in redismodule.h. */
++/* The function signatures for module config set callbacks. These are identical to the ones exposed in redis_module_api.h. */
+ typedef int (*RedisModuleConfigSetStringFunc)(const char *name, RedisModuleString *val, void *privdata, RedisModuleString **err);
+ typedef int (*RedisModuleConfigSetNumericFunc)(const char *name, long long val, void *privdata, RedisModuleString **err);
+ typedef int (*RedisModuleConfigSetBoolFunc)(const char *name, int val, void *privdata, RedisModuleString **err);
+ typedef int (*RedisModuleConfigSetEnumFunc)(const char *name, int val, void *privdata, RedisModuleString **err);
+-/* Apply signature, identical to redismodule.h */
++/* Apply signature, identical to redis_module_api.h */
+ typedef int (*RedisModuleConfigApplyFunc)(RedisModuleCtx *ctx, void *privdata, RedisModuleString **err);
+ 
+ /* Struct representing a module config. These are stored in a list in the module struct */
+@@ -840,7 +840,7 @@ static void moduleUpdateKeyspaceSubscribersTypes(void) {
+  *
+  * Note that all the exported APIs are called RM_<funcname> in the core
+  * and RedisModule_<funcname> in the module side (defined as function
+- * pointers in redismodule.h). In this way the dynamic linker does not
++ * pointers in redis_module_api.h). In this way the dynamic linker does not
+  * mess with our global function pointers, overriding it with the symbols
+  * defined in the main executable having the same names.
+  * -------------------------------------------------------------------------- */
+@@ -851,7 +851,7 @@ int RM_GetApi(const char *funcname, void **targetPtrPtr) {
+      * named API, otherwise REDISMODULE_OK.
+      *
+      * This function is not meant to be used by modules developer, it is only
+-     * used implicitly by including redismodule.h. */
++     * used implicitly by including redis_module_api.h. */
+     dictEntry *he = dictFind(server.moduleapi, funcname);
+     if (!he) return REDISMODULE_ERR;
+     *targetPtrPtr = dictGetVal(he);
+@@ -13003,7 +13003,7 @@ int RM_SubscribeToServerEvent(RedisModuleCtx *ctx, RedisModuleEvent event, Redis
+     /* Protect in case of calls from contexts without a module reference. */
+     if (ctx->module == NULL) return REDISMODULE_ERR;
+     if (event.id >= _REDISMODULE_EVENT_NEXT) return REDISMODULE_ERR;
+-    if (event.dataver > moduleEventVersions[event.id]) return REDISMODULE_ERR; /* Module compiled with a newer redismodule.h than we support */
++    if (event.dataver > moduleEventVersions[event.id]) return REDISMODULE_ERR; /* Module compiled with a newer redis_module_api.h than we support */
+ 
+     /* Search an event matching this module and event ID. */
+     listIter li;
+diff --git a/src/modules/Makefile b/src/modules/Makefile
+index 0dd113e3c..e504e76af 100644
+--- a/src/modules/Makefile
++++ b/src/modules/Makefile
+@@ -30,42 +30,42 @@ all: helloworld.so hellotype.so helloblock.so hellocluster.so hellotimer.so hell
+ .c.xo:
+ 	$(CC) -I. $(CFLAGS) $(SHOBJ_CFLAGS) -fPIC -c $< -o $@
+ 
+-helloworld.xo: ../redismodule.h
++helloworld.xo: ../redis_module_api.h
+ 
+ helloworld.so: helloworld.xo
+ 	$(LD) -o $@ $^ $(SHOBJ_LDFLAGS) $(LIBS) -lc
+ 
+-hellotype.xo: ../redismodule.h
++hellotype.xo: ../redis_module_api.h
+ 
+ hellotype.so: hellotype.xo
+ 	$(LD) -o $@ $^ $(SHOBJ_LDFLAGS) $(LIBS) -lc
+ 
+-helloblock.xo: ../redismodule.h
++helloblock.xo: ../redis_module_api.h
+ 
+ helloblock.so: helloblock.xo
+ 	$(LD) -o $@ $^ $(SHOBJ_LDFLAGS) $(LIBS) -lpthread -lc
+ 
+-hellocluster.xo: ../redismodule.h
++hellocluster.xo: ../redis_module_api.h
+ 
+ hellocluster.so: hellocluster.xo
+ 	$(LD) -o $@ $^ $(SHOBJ_LDFLAGS) $(LIBS) -lc
+ 
+-hellotimer.xo: ../redismodule.h
++hellotimer.xo: ../redis_module_api.h
+ 
+ hellotimer.so: hellotimer.xo
+ 	$(LD) -o $@ $^ $(SHOBJ_LDFLAGS) $(LIBS) -lc
+ 
+-hellodict.xo: ../redismodule.h
++hellodict.xo: ../redis_module_api.h
+ 
+ hellodict.so: hellodict.xo
+ 	$(LD) -o $@ $^ $(SHOBJ_LDFLAGS) $(LIBS) -lc
+ 
+-hellohook.xo: ../redismodule.h
++hellohook.xo: ../redis_module_api.h
+ 
+ hellohook.so: hellohook.xo
+ 	$(LD) -o $@ $^ $(SHOBJ_LDFLAGS) $(LIBS) -lc
+ 
+-helloacl.xo: ../redismodule.h
++helloacl.xo: ../redis_module_api.h
+ 
+ helloacl.so: helloacl.xo
+ 	$(LD) -o $@ $^ $(SHOBJ_LDFLAGS) $(LIBS) -lc
+diff --git a/src/modules/helloacl.c b/src/modules/helloacl.c
+index 82d05f780..3883749f0 100644
+--- a/src/modules/helloacl.c
++++ b/src/modules/helloacl.c
+@@ -31,7 +31,7 @@
+  * POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+-#include "../redismodule.h"
++#include "../redis_module_api.h"
+ #include <pthread.h>
+ #include <unistd.h>
+ 
+diff --git a/src/modules/helloblock.c b/src/modules/helloblock.c
+index 44bb01081..5635ce9d4 100644
+--- a/src/modules/helloblock.c
++++ b/src/modules/helloblock.c
+@@ -11,7 +11,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "../redismodule.h"
++#include "../redis_module_api.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <pthread.h>
+diff --git a/src/modules/hellocluster.c b/src/modules/hellocluster.c
+index 38d7e1f1b..84a48b9d5 100644
+--- a/src/modules/hellocluster.c
++++ b/src/modules/hellocluster.c
+@@ -10,7 +10,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "../redismodule.h"
++#include "../redis_module_api.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <ctype.h>
+diff --git a/src/modules/hellodict.c b/src/modules/hellodict.c
+index 00c4964ae..b83d258c6 100644
+--- a/src/modules/hellodict.c
++++ b/src/modules/hellodict.c
+@@ -13,7 +13,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "../redismodule.h"
++#include "../redis_module_api.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <ctype.h>
+diff --git a/src/modules/hellohook.c b/src/modules/hellohook.c
+index c8c371d23..2ff56ca8b 100644
+--- a/src/modules/hellohook.c
++++ b/src/modules/hellohook.c
+@@ -10,7 +10,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "../redismodule.h"
++#include "../redis_module_api.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <ctype.h>
+diff --git a/src/modules/hellotimer.c b/src/modules/hellotimer.c
+index 1c0c3a65d..729a6c7d2 100644
+--- a/src/modules/hellotimer.c
++++ b/src/modules/hellotimer.c
+@@ -10,7 +10,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "../redismodule.h"
++#include "../redis_module_api.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <ctype.h>
+diff --git a/src/modules/hellotype.c b/src/modules/hellotype.c
+index aecb331a9..1542ff2cc 100644
+--- a/src/modules/hellotype.c
++++ b/src/modules/hellotype.c
+@@ -15,7 +15,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "../redismodule.h"
++#include "../redis_module_api.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <ctype.h>
+diff --git a/src/modules/helloworld.c b/src/modules/helloworld.c
+index fdeb0a0c1..8e4b35dbc 100644
+--- a/src/modules/helloworld.c
++++ b/src/modules/helloworld.c
+@@ -14,7 +14,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "../redismodule.h"
++#include "../redis_module_api.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <ctype.h>
+diff --git a/src/redismodule.h b/src/redis_module_api.h
+similarity index 99%
+rename from src/redismodule.h
+rename to src/redis_module_api.h
+index 8df977c44..87c7df4da 100644
+--- a/src/redismodule.h
++++ b/src/redis_module_api.h
+@@ -574,7 +574,7 @@ typedef void (*RedisModuleEventCallback)(struct RedisModuleCtx *ctx, RedisModule
+  *          2
+  *      }
+  * The reason for that is forward-compatibility: We want that module that
+- * compiled with a new redismodule.h to be able to work with a old server,
++ * compiled with a new redis_module_api.h to be able to work with a old server,
+  * unless the author explicitly decided to use the newer event type.
+  */
+ static const RedisModuleEvent
+diff --git a/src/server.h b/src/server.h
+index b4285dff4..fa8b71082 100644
+--- a/src/server.h
++++ b/src/server.h
+@@ -69,7 +69,7 @@ typedef long long ustime_t; /* microsecond time type. */
+ #include "memory_prefetch.h"
+ #include "client_comp.h"
+ 
+-/* Forward declarations needed by redismodule.h and keymeta.h */
++/* Forward declarations needed by redis_module_api.h and keymeta.h */
+ struct redisObject;
+ struct RedisModule;
+ 
+@@ -85,7 +85,7 @@ struct RedisModuleKeyOptCtx {
+ 
+ #define REDISMODULE_CORE 1
+ 
+-#include "redismodule.h"    /* Redis modules API defines. */
++#include "redis_module_api.h"    /* Redis modules API defines. */
+ 
+ /* Following includes allow test functions to be called from Redis main() */
+ #include "zipmap.h"
+@@ -909,7 +909,7 @@ typedef enum {
+  * - db.c - obj_type_name, copyCommand
+  * - debug.c - xorObjectDigest, serverLogObjectDebugInfo
+  * - defrag.c - defragKey
+- * - module.c - RM_KeyType (and add the new keytype to redismodule.h)
++ * - module.c - RM_KeyType (and add the new keytype to redis_module_api.h)
+  * - object.c - object(create/free/dismiss/allocSize/Length)
+  * - tests/support/util.tcl:generate_fuzzy_traffic_on_key - add command(s) for the new object type to the `commands` dict.
+  *
+diff --git a/tests/modules/Makefile b/tests/modules/Makefile
+index a52473180..c5af059b7 100644
+--- a/tests/modules/Makefile
++++ b/tests/modules/Makefile
+@@ -102,7 +102,7 @@ all: $(TEST_MODULES)
+ 32bit:
+ 	$(MAKE) CFLAGS="-m32" LDFLAGS="-m32"
+ 
+-%.xo: %.c ../../src/redismodule.h
++%.xo: %.c ../../src/redis_module_api.h
+ 	$(CC) -I../../src $(CFLAGS) $(SHOBJ_CFLAGS) -fPIC -c $< -o $@
+ 
+ %.so: %.xo
+diff --git a/tests/modules/aclcheck.c b/tests/modules/aclcheck.c
+index d7e4e3bfe..d4067f6aa 100644
+--- a/tests/modules/aclcheck.c
++++ b/tests/modules/aclcheck.c
+@@ -1,5 +1,5 @@
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <errno.h>
+ #include <assert.h>
+ #include <string.h>
+diff --git a/tests/modules/atomicslotmigration.c b/tests/modules/atomicslotmigration.c
+index e18e4c98a..7dc580876 100644
+--- a/tests/modules/atomicslotmigration.c
++++ b/tests/modules/atomicslotmigration.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #include <stdlib.h>
+ #include <memory.h>
+diff --git a/tests/modules/auth.c b/tests/modules/auth.c
+index cc2378e11..fb628b14b 100644
+--- a/tests/modules/auth.c
++++ b/tests/modules/auth.c
+@@ -2,7 +2,7 @@
+ #define _BSD_SOURCE
+ #define _DEFAULT_SOURCE
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #include <string.h>
+ #include <unistd.h>
+diff --git a/tests/modules/basics.c b/tests/modules/basics.c
+index 85c6196d8..4b7da8e11 100644
+--- a/tests/modules/basics.c
++++ b/tests/modules/basics.c
+@@ -10,7 +10,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <string.h>
+ #include <stdlib.h>
+ 
+diff --git a/tests/modules/blockedclient.c b/tests/modules/blockedclient.c
+index dc226eeaa..d357c205e 100644
+--- a/tests/modules/blockedclient.c
++++ b/tests/modules/blockedclient.c
+@@ -3,7 +3,7 @@
+ #define _DEFAULT_SOURCE
+ #include <unistd.h>
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <assert.h>
+ #include <stdio.h>
+ #include <pthread.h>
+diff --git a/tests/modules/blockonbackground.c b/tests/modules/blockonbackground.c
+index 7aeb011e4..7033078d7 100644
+--- a/tests/modules/blockonbackground.c
++++ b/tests/modules/blockonbackground.c
+@@ -1,5 +1,5 @@
+ #define _XOPEN_SOURCE 700
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <pthread.h>
+diff --git a/tests/modules/blockonkeys.c b/tests/modules/blockonkeys.c
+index 94bb36123..e8a718498 100644
+--- a/tests/modules/blockonkeys.c
++++ b/tests/modules/blockonkeys.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #include <string.h>
+ #include <strings.h>
+diff --git a/tests/modules/cluster_topology.c b/tests/modules/cluster_topology.c
+index aaa0b41ce..be3cbf770 100644
+--- a/tests/modules/cluster_topology.c
++++ b/tests/modules/cluster_topology.c
+@@ -14,7 +14,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ static long long event_count = 0;      /* Total notifications received. */
+ static long long slot_count = 0;       /* Notifications with the SLOT flag. */
+diff --git a/tests/modules/cmdintrospection.c b/tests/modules/cmdintrospection.c
+index 69d67315d..fa2a770a0 100644
+--- a/tests/modules/cmdintrospection.c
++++ b/tests/modules/cmdintrospection.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #define UNUSED(V) ((void) V)
+ 
+diff --git a/tests/modules/commandfilter.c b/tests/modules/commandfilter.c
+index 333b26336..b08a1b296 100644
+--- a/tests/modules/commandfilter.c
++++ b/tests/modules/commandfilter.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #include <string.h>
+ #include <strings.h>
+diff --git a/tests/modules/configaccess.c b/tests/modules/configaccess.c
+index 7bc8a48e7..d553e9a73 100644
+--- a/tests/modules/configaccess.c
++++ b/tests/modules/configaccess.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <assert.h>
+ #include <string.h>
+ 
+diff --git a/tests/modules/crash.c b/tests/modules/crash.c
+index c5063d037..75f69b984 100644
+--- a/tests/modules/crash.c
++++ b/tests/modules/crash.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #include <strings.h>
+ #include <sys/mman.h>
+diff --git a/tests/modules/datatype.c b/tests/modules/datatype.c
+index 05cf2337c..42e53ad66 100644
+--- a/tests/modules/datatype.c
++++ b/tests/modules/datatype.c
+@@ -7,7 +7,7 @@
+ #define _DEFAULT_SOURCE
+ #include <unistd.h>
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ static RedisModuleType *datatype = NULL;
+ static int load_encver = 0;
+diff --git a/tests/modules/datatype2.c b/tests/modules/datatype2.c
+index bc0dc3dfe..b1aefa21a 100644
+--- a/tests/modules/datatype2.c
++++ b/tests/modules/datatype2.c
+@@ -72,7 +72,7 @@
+  *
+  **/
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <ctype.h>
+diff --git a/tests/modules/defragtest.c b/tests/modules/defragtest.c
+index 8b9e182c7..16731084d 100644
+--- a/tests/modules/defragtest.c
++++ b/tests/modules/defragtest.c
+@@ -1,7 +1,7 @@
+ /* A module that implements defrag callback mechanisms.
+  */
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <stdlib.h>
+ #include <string.h>
+ 
+diff --git a/tests/modules/eventloop.c b/tests/modules/eventloop.c
+index c0cfdf04f..88d4bad44 100644
+--- a/tests/modules/eventloop.c
++++ b/tests/modules/eventloop.c
+@@ -11,7 +11,7 @@
+  * 4- test.oneshot   : Test for oneshot API
+  */
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+diff --git a/tests/modules/fork.c b/tests/modules/fork.c
+index d7a0d154f..139dc9120 100644
+--- a/tests/modules/fork.c
++++ b/tests/modules/fork.c
+@@ -3,7 +3,7 @@
+ #define _BSD_SOURCE
+ #define _DEFAULT_SOURCE
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <string.h>
+ #include <assert.h>
+ #include <unistd.h>
+diff --git a/tests/modules/getchannels.c b/tests/modules/getchannels.c
+index 330531d1a..0f3dce5b9 100644
+--- a/tests/modules/getchannels.c
++++ b/tests/modules/getchannels.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <strings.h>
+ #include <assert.h>
+ #include <unistd.h>
+diff --git a/tests/modules/getkeys.c b/tests/modules/getkeys.c
+index cee3b3e13..8fadb49b4 100644
+--- a/tests/modules/getkeys.c
++++ b/tests/modules/getkeys.c
+@@ -1,5 +1,5 @@
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <strings.h>
+ #include <assert.h>
+ #include <unistd.h>
+diff --git a/tests/modules/hash.c b/tests/modules/hash.c
+index 462c21e1d..55612e4b9 100644
+--- a/tests/modules/hash.c
++++ b/tests/modules/hash.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <strings.h>
+ #include <errno.h>
+ #include <stdlib.h>
+diff --git a/tests/modules/hooks.c b/tests/modules/hooks.c
+index 59c849276..cc6ad0d08 100644
+--- a/tests/modules/hooks.c
++++ b/tests/modules/hooks.c
+@@ -10,7 +10,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <stdio.h>
+ #include <string.h>
+ #include <strings.h>
+diff --git a/tests/modules/infotest.c b/tests/modules/infotest.c
+index a9f2b0ab9..5cbd0d4ac 100644
+--- a/tests/modules/infotest.c
++++ b/tests/modules/infotest.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #include <string.h>
+ 
+diff --git a/tests/modules/internalsecret.c b/tests/modules/internalsecret.c
+index 043089c6f..d9ba49d41 100644
+--- a/tests/modules/internalsecret.c
++++ b/tests/modules/internalsecret.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <errno.h>
+ 
+ int InternalAuth_GetInternalSecret(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+diff --git a/tests/modules/keymeta_notify.c b/tests/modules/keymeta_notify.c
+index b02949c6e..1cfb942e2 100644
+--- a/tests/modules/keymeta_notify.c
++++ b/tests/modules/keymeta_notify.c
+@@ -18,7 +18,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <string.h>
+ #include <stdlib.h>
+ 
+diff --git a/tests/modules/keyspace_events.c b/tests/modules/keyspace_events.c
+index 4a0397266..3ea2e008f 100644
+--- a/tests/modules/keyspace_events.c
++++ b/tests/modules/keyspace_events.c
+@@ -13,7 +13,7 @@
+ #define _BSD_SOURCE
+ #define _DEFAULT_SOURCE /* For usleep */
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <stdio.h>
+ #include <string.h>
+ #include <strings.h>
+diff --git a/tests/modules/keyspecs.c b/tests/modules/keyspecs.c
+index 0a70de814..074b2e4e6 100644
+--- a/tests/modules/keyspecs.c
++++ b/tests/modules/keyspecs.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #define UNUSED(V) ((void) V)
+ 
+diff --git a/tests/modules/list.c b/tests/modules/list.c
+index 401b2d802..5b73e80db 100644
+--- a/tests/modules/list.c
++++ b/tests/modules/list.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <assert.h>
+ #include <errno.h>
+ #include <strings.h>
+diff --git a/tests/modules/mallocsize.c b/tests/modules/mallocsize.c
+index a1d31c136..d50304eb6 100644
+--- a/tests/modules/mallocsize.c
++++ b/tests/modules/mallocsize.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <string.h>
+ #include <assert.h>
+ #include <unistd.h>
+diff --git a/tests/modules/misc.c b/tests/modules/misc.c
+index dbf0fecee..ca1841a27 100644
+--- a/tests/modules/misc.c
++++ b/tests/modules/misc.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #include <string.h>
+ #include <assert.h>
+diff --git a/tests/modules/moduleauthtwo.c b/tests/modules/moduleauthtwo.c
+index 0a4f56b65..a46ba1d40 100644
+--- a/tests/modules/moduleauthtwo.c
++++ b/tests/modules/moduleauthtwo.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #include <string.h>
+ 
+diff --git a/tests/modules/moduleconfigs.c b/tests/modules/moduleconfigs.c
+index 2c3701537..8ceb82396 100644
+--- a/tests/modules/moduleconfigs.c
++++ b/tests/modules/moduleconfigs.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <string.h>
+ #include <strings.h>
+ #include <assert.h>
+diff --git a/tests/modules/moduleconfigstwo.c b/tests/modules/moduleconfigstwo.c
+index c0e8f9136..175bc3e63 100644
+--- a/tests/modules/moduleconfigstwo.c
++++ b/tests/modules/moduleconfigstwo.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <strings.h>
+ 
+ /* Second module configs module, for testing.
+diff --git a/tests/modules/postnotifications.c b/tests/modules/postnotifications.c
+index 96fb85918..5fb1987d3 100644
+--- a/tests/modules/postnotifications.c
++++ b/tests/modules/postnotifications.c
+@@ -28,7 +28,7 @@
+ #define _BSD_SOURCE
+ #define _DEFAULT_SOURCE /* For usleep */
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <stdio.h>
+ #include <string.h>
+ #include <unistd.h>
+diff --git a/tests/modules/postnotifications_perkey_metadata.c b/tests/modules/postnotifications_perkey_metadata.c
+index 41963e98c..cbd933f0b 100644
+--- a/tests/modules/postnotifications_perkey_metadata.c
++++ b/tests/modules/postnotifications_perkey_metadata.c
+@@ -25,7 +25,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <string.h>
+ #include <stdlib.h>
+ #include <errno.h>
+diff --git a/tests/modules/propagate.c b/tests/modules/propagate.c
+index 689d6881e..99f53651f 100644
+--- a/tests/modules/propagate.c
++++ b/tests/modules/propagate.c
+@@ -17,7 +17,7 @@
+  * GNU Affero General Public License v3 (AGPLv3).
+  */
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <pthread.h>
+ #include <errno.h>
+ 
+diff --git a/tests/modules/publish.c b/tests/modules/publish.c
+index ff276d8c8..e9129fca6 100644
+--- a/tests/modules/publish.c
++++ b/tests/modules/publish.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <string.h>
+ #include <assert.h>
+ #include <unistd.h>
+diff --git a/tests/modules/rdbloadsave.c b/tests/modules/rdbloadsave.c
+index 687269a5a..4e00d10e1 100644
+--- a/tests/modules/rdbloadsave.c
++++ b/tests/modules/rdbloadsave.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #include <stdlib.h>
+ #include <unistd.h>
+diff --git a/tests/modules/reply.c b/tests/modules/reply.c
+index 7362cbff4..c086972f0 100644
+--- a/tests/modules/reply.c
++++ b/tests/modules/reply.c
+@@ -2,7 +2,7 @@
+  * A module the tests RM_ReplyWith family of commands
+  */
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <math.h>
+ 
+ int rw_string(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+diff --git a/tests/modules/scan.c b/tests/modules/scan.c
+index 1723d3097..4ac8dc99d 100644
+--- a/tests/modules/scan.c
++++ b/tests/modules/scan.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #include <string.h>
+ #include <assert.h>
+diff --git a/tests/modules/stream.c b/tests/modules/stream.c
+index 65762a399..d19202ed4 100644
+--- a/tests/modules/stream.c
++++ b/tests/modules/stream.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #include <string.h>
+ #include <strings.h>
+diff --git a/tests/modules/subcommands.c b/tests/modules/subcommands.c
+index 09610326a..84113bc55 100644
+--- a/tests/modules/subcommands.c
++++ b/tests/modules/subcommands.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #define UNUSED(V) ((void) V)
+ 
+diff --git a/tests/modules/test_keymeta.c b/tests/modules/test_keymeta.c
+index efb8518a3..e070d6372 100644
+--- a/tests/modules/test_keymeta.c
++++ b/tests/modules/test_keymeta.c
+@@ -47,7 +47,7 @@
+  *    Return total number of active metadata at the moment.
+  */
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <string.h>
+ #include <stdlib.h>
+ #include <assert.h>
+diff --git a/tests/modules/test_lazyfree.c b/tests/modules/test_lazyfree.c
+index 7ba213ff8..e5f08383b 100644
+--- a/tests/modules/test_lazyfree.c
++++ b/tests/modules/test_lazyfree.c
+@@ -1,7 +1,7 @@
+ /* This module emulates a linked list for lazyfree testing of modules, which
+  is a simplified version of 'hellotype.c'
+  */
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <ctype.h>
+diff --git a/tests/modules/testrdb.c b/tests/modules/testrdb.c
+index c31aebb10..f2919fc05 100644
+--- a/tests/modules/testrdb.c
++++ b/tests/modules/testrdb.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ #include <string.h>
+ #include <assert.h>
+diff --git a/tests/modules/timer.c b/tests/modules/timer.c
+index c9bd636c8..9d9944712 100644
+--- a/tests/modules/timer.c
++++ b/tests/modules/timer.c
+@@ -1,5 +1,5 @@
+ 
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ 
+ static void timer_callback(RedisModuleCtx *ctx, void *data)
+ {
+diff --git a/tests/modules/usercall.c b/tests/modules/usercall.c
+index dd013af08..2a809259c 100644
+--- a/tests/modules/usercall.c
++++ b/tests/modules/usercall.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <pthread.h>
+ #include <assert.h>
+ 
+diff --git a/tests/modules/zset.c b/tests/modules/zset.c
+index adb318d17..425d1c7e1 100644
+--- a/tests/modules/zset.c
++++ b/tests/modules/zset.c
+@@ -1,4 +1,4 @@
+-#include "redismodule.h"
++#include "redis_module_api.h"
+ #include <math.h>
+ #include <errno.h>
+ 

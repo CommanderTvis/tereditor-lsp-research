@@ -1,0 +1,4 @@
+type = "refs"
+origin = "devrig find-usages; three overloads with the same name on different receivers"
+symbol = "com.github.michaelbull.result.tryMap (Result<Iterable<V>, E> receiver, Map.kt:291)"
+selection = "Names declared at least twice in kotlin-result/src/commonMain (overloads), with at least 15 whole-word occurrences in at least 4 .kt/.kts files other than the declaring files; sorted by name: tryAssociateBy, tryGroupBy, tryMap (3 candidates); k = 1 + int(rand() * 3) after srand(20261110) = 3; the target is the name's first declaration in commonMain by path and line (Map.kt:291 before Try.kt:464)."

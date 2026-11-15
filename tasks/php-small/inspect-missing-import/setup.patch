@@ -1,0 +1,103 @@
+diff --git a/src/Argument/Literal/IntegerArgument.php b/src/Argument/Literal/IntegerArgument.php
+index 0aa1563..a7bd6e0 100644
+--- a/src/Argument/Literal/IntegerArgument.php
++++ b/src/Argument/Literal/IntegerArgument.php
+@@ -4,12 +4,11 @@ declare(strict_types=1);
+ 
+ namespace League\Container\Argument\Literal;
+ 
+-use League\Container\Argument\LiteralArgument;
+ 
+-class IntegerArgument extends LiteralArgument
++class IntegerArgument extends \League\Container\Argument\LiteralArgument
+ {
+     public function __construct(int $value)
+     {
+-        parent::__construct($value, LiteralArgument::TYPE_INT);
++        parent::__construct($value, \League\Container\Argument\LiteralArgument::TYPE_INT);
+     }
+ }
+diff --git a/src/ContainerAwareTrait.php b/src/ContainerAwareTrait.php
+index d4e7711..8454e04 100644
+--- a/src/ContainerAwareTrait.php
++++ b/src/ContainerAwareTrait.php
+@@ -5,7 +5,6 @@ declare(strict_types=1);
+ namespace League\Container;
+ 
+ use BadMethodCallException;
+-use League\Container\Exception\ContainerException;
+ 
+ trait ContainerAwareTrait
+ {
+diff --git a/src/Definition/Definition.php b/src/Definition/Definition.php
+index 9014e95..c43862f 100644
+--- a/src/Definition/Definition.php
++++ b/src/Definition/Definition.php
+@@ -4,7 +4,6 @@ declare(strict_types=1);
+ 
+ namespace League\Container\Definition;
+ 
+-use League\Container\Argument\ArgumentInterface;
+ use League\Container\Argument\ArgumentResolverInterface;
+ use League\Container\Argument\ArgumentResolverTrait;
+ use League\Container\Argument\LiteralArgumentInterface;
+diff --git a/src/Event/DefinitionResolvedEvent.php b/src/Event/DefinitionResolvedEvent.php
+index b222ca0..8a79bb6 100644
+--- a/src/Event/DefinitionResolvedEvent.php
++++ b/src/Event/DefinitionResolvedEvent.php
+@@ -4,25 +4,24 @@ declare(strict_types=1);
+ 
+ namespace League\Container\Event;
+ 
+-use League\Container\Definition\DefinitionInterface;
+ 
+ final class DefinitionResolvedEvent extends ContainerEvent
+ {
+     public function __construct(
+         string $id,
+-        DefinitionInterface $definition,
++        \League\Container\Definition\DefinitionInterface $definition,
+         array $tags = [],
+         protected bool $new = false,
+     ) {
+         parent::__construct($id, $definition, $tags);
+     }
+ 
+-    public function getDefinition(): DefinitionInterface
++    public function getDefinition(): \League\Container\Definition\DefinitionInterface
+     {
+         return $this->definition;
+     }
+ 
+-    public function setDefinition(DefinitionInterface $definition): void
++    public function setDefinition(\League\Container\Definition\DefinitionInterface $definition): void
+     {
+         $this->definition = $definition;
+     }
+diff --git a/src/Event/OnDefineEvent.php b/src/Event/OnDefineEvent.php
+index f177627..9376534 100644
+--- a/src/Event/OnDefineEvent.php
++++ b/src/Event/OnDefineEvent.php
+@@ -4,7 +4,6 @@ declare(strict_types=1);
+ 
+ namespace League\Container\Event;
+ 
+-use League\Container\Definition\DefinitionInterface;
+ 
+ final class OnDefineEvent extends ContainerEvent
+ {
+diff --git a/src/Exception/ContainerException.php b/src/Exception/ContainerException.php
+index 747ec6d..22bc2d7 100644
+--- a/src/Exception/ContainerException.php
++++ b/src/Exception/ContainerException.php
+@@ -4,9 +4,8 @@ declare(strict_types=1);
+ 
+ namespace League\Container\Exception;
+ 
+-use Psr\Container\ContainerExceptionInterface;
+ use RuntimeException;
+ 
+-class ContainerException extends RuntimeException implements ContainerExceptionInterface
++class ContainerException extends RuntimeException implements \Psr\Container\ContainerExceptionInterface
+ {
+ }

@@ -1,0 +1,6 @@
+type = "rename"
+origin = "devrig safe rename; arity-overloaded generic name"
+symbol = "MediatR.IRequestHandler`2"
+new_name = "MediatR.IQueryHandler`2"
+selection = "public types declared in src/MediatR whose simple name is declared more than once in the repository (another arity, namespace, nested type or member) and occurs as a whole word in at least 4 .cs files; sorted by Name`arity; 2 candidates (IRequestHandler`1, IRequestHandler`2); index int(rand()*2)+1 after srand(20261110) = 2. The first draw was over src/ (4 candidates, drew IRequest`0 in src/MediatR.Contracts), but the solution consumes MediatR.Contracts as a NuGet package, so its types cannot be renamed in the repository: the rule was restricted to src/MediatR and redrawn"
+gold = "scripted: every IRequestHandler<...>, IRequestHandler<,> and IRequestHandler{...} with exactly two type arguments (balanced-bracket parse), then compiled and tested"

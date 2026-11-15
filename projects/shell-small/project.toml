@@ -1,11 +1,20 @@
-# shell, small: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# shell, small: chosen by size, see docs/PROJECTS.md. Bats has no compiler; its executable test suite is the
+# deterministic grading check.
 lang = "shell"
 size = "small"
-status = "stub"
+status = "curated"
 repo = "https://github.com/bats-core/bats-core"
 tag = "v1.14.0"
 commit = "eb7f42f8d608ac693d7a4b67474f6714ea68cfc5"
 loc = 4478
 loc_by_language = { "Shell" = 278, "BASH" = 4200 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["move", "signature", "refs", "pr", "pr", "pr"]
+fallback_synthetic = ["move", "signature", "refs"]
+
+[probe]
+ok = true
+seconds_to_first_answer = 0.11
+references = "recorded in probe.json; extensionless libexec scripts resolve to their library callers"
+definition = "recorded in probe.json; bats_binary_search resolves to lib/bats-core/common.bash"
+diagnostics = "clean for lib/bats-core/common.bash"

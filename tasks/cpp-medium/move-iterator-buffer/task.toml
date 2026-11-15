@@ -1,0 +1,5 @@
+type = "move"
+origin = "devrig move (namespace)"
+symbol = "fmt::detail::iterator_buffer -> fmt::iterator_buffer"
+selection = "class and class-template definitions directly in namespace fmt::detail in include/fmt/*.h (clang++ -Xclang -ast-dump=json of a TU including every public header: 135 names not also defined in namespace fmt), whose qualified name detail::NAME occurs in at least 3 tracked files under include/, src/ and test/ (grep -lE): 12 candidates sorted by name; index awk 'BEGIN{srand(20261110); print int(rand()*12)+1}' = 9 (iterator_buffer)"
+grade_timeout_s = 2400

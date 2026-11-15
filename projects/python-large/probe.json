@@ -1,0 +1,5 @@
+[
+  {"file":"mypy/types.py","line":323,"character":20,"method":"definition"},
+  {"file":"mypy/typeops.py","line":606,"character":5,"method":"references"},
+  {"file":"mypy/checker.py","line":1,"character":0,"method":"lsp_diagnostics"}
+]

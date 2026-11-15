@@ -1,0 +1,1214 @@
+diff --git a/src/acl.c b/src/acl.c
+index b1b7d8dda..ca62073e6 100644
+--- a/src/acl.c
++++ b/src/acl.c
+@@ -221,7 +221,7 @@ sds ACLHashPassword(unsigned char *cleartext, size_t len) {
+         hex[j*2] = cset[((hash[j]&0xF0)>>4)];
+         hex[j*2+1] = cset[(hash[j]&0xF)];
+     }
+-    return sdsnewlen(hex,HASH_PASSWORD_LEN);
++    return sdsnewbuf(hex,HASH_PASSWORD_LEN);
+ }
+ 
+ /* Given a hash and the hash length, returns C_OK if it is a valid password
+@@ -427,7 +427,7 @@ aclSelector *ACLUserGetRootSelector(user *u) {
+ user *ACLCreateUser(const char *name, size_t namelen) {
+     if (raxFind(Users,(unsigned char*)name,namelen,NULL)) return NULL;
+     user *u = zmalloc(sizeof(*u));
+-    u->name = sdsnewlen(name,namelen);
++    u->name = sdsnewbuf(name,namelen);
+     atomicSet(u->flags, USER_FLAG_DISABLED | USER_FLAG_SANITIZE_PAYLOAD);
+     u->passwords = listCreate();
+     u->acl_string = NULL;
+@@ -996,7 +996,7 @@ aclSelector *aclCreateSelectorFromOpSet(const char *opset, size_t opsetlen) {
+     aclSelector *s = ACLCreateSelector(0);
+ 
+     int argc = 0;
+-    sds trimmed = sdsnewlen(opset + 1, opsetlen - 2);
++    sds trimmed = sdsnewbuf(opset + 1, opsetlen - 2);
+     sds *argv = sdssplitargs(trimmed, &argc);
+     for (int i = 0; i < argc; i++) {
+         if (ACLSetSelector(s, argv[i], sdslen(argv[i])) == C_ERR) {
+@@ -1114,7 +1114,7 @@ int ACLSetSelector(aclSelector *selector, const char* op, size_t oplen) {
+             errno = EINVAL;
+             return C_ERR;
+         }
+-        keyPattern *newpat = ACLKeyPatternCreate(sdsnewlen(op+offset,oplen-offset), flags);
++        keyPattern *newpat = ACLKeyPatternCreate(sdsnewbuf(op+offset,oplen-offset), flags);
+         listNode *ln = listSearchKey(selector->patterns,newpat);
+         /* Avoid re-adding the same key pattern multiple times. */
+         if (ln == NULL) {
+@@ -1133,7 +1133,7 @@ int ACLSetSelector(aclSelector *selector, const char* op, size_t oplen) {
+             errno = EINVAL;
+             return C_ERR;
+         }
+-        sds newpat = sdsnewlen(op+1,oplen-1);
++        sds newpat = sdsnewbuf(op+1,oplen-1);
+         listNode *ln = listSearchKey(selector->channels,newpat);
+         /* Avoid re-adding the same channel pattern multiple times. */
+         if (ln == NULL)
+@@ -1328,7 +1328,7 @@ int ACLSetUser(user *u, const char *op, ssize_t oplen) {
+                 errno = EBADMSG;
+                 return C_ERR;
+             }
+-            newpass = sdsnewlen(op+1,oplen-1);
++            newpass = sdsnewbuf(op+1,oplen-1);
+         }
+ 
+         listNode *ln = listSearchKey(u->passwords,newpass);
+@@ -1347,7 +1347,7 @@ int ACLSetUser(user *u, const char *op, ssize_t oplen) {
+                 errno = EBADMSG;
+                 return C_ERR;
+             }
+-            delpass = sdsnewlen(op+1,oplen-1);
++            delpass = sdsnewbuf(op+1,oplen-1);
+         }
+         listNode *ln = listSearchKey(u->passwords,delpass);
+         sdsfree(delpass);
+diff --git a/src/aof.c b/src/aof.c
+index dedda4afc..5214b8fd2 100644
+--- a/src/aof.c
++++ b/src/aof.c
+@@ -1939,7 +1939,7 @@ int loadSingleAppendOnlyFile(char *filename) {
+             len = strtol(buf+1,NULL,10);
+ 
+             /* Read it into a string object. */
+-            argsds = sdsnewlen(SDS_NOINIT,len);
++            argsds = sdsnewbuf(SDS_NOINIT,len);
+             if (len && fread(argsds,len,1,fp) == 0) {
+                 sdsfree(argsds);
+                 fakeClient->argc = j; /* Free up to j-1. */
+diff --git a/src/bitops.c b/src/bitops.c
+index 45315a710..ecb633e89 100644
+--- a/src/bitops.c
++++ b/src/bitops.c
+@@ -797,7 +797,7 @@ static kvobj *lookupStringForBitCommand(client *c, uint64_t maxbit,
+     if (checkType(c,o,OBJ_STRING)) return NULL;
+ 
+     if (o == NULL) {
+-        o = createObject(OBJ_STRING,sdsnewlen(NULL, byte+1));
++        o = createObject(OBJ_STRING,sdsnewbuf(NULL, byte+1));
+         dbAddByLink(c->db,c->argv[1],&o,&link);
+         *strGrowSize = byte + 1;
+         *strOldSize = 0;
+@@ -1321,7 +1321,7 @@ void bitopCommand(client *c) {
+ 
+     /* Compute the bit operation, if at least one string is not empty. */
+     if (maxlen) {
+-        res = (unsigned char*) sdsnewlen(NULL,maxlen);
++        res = (unsigned char*) sdsnewbuf(NULL,maxlen);
+         unsigned char output, byte, disjunction, common_bits;
+         unsigned long i;
+         int useAVX = 0;
+diff --git a/src/chk.c b/src/chk.c
+index f15cfb112..a065930bf 100644
+--- a/src/chk.c
++++ b/src/chk.c
+@@ -565,7 +565,7 @@ update_heap:
+ 
+         topk->heap[0].count = entry->count;
+         topk->heap[0].fp = fp;
+-        topk->heap[0].item = sdsnewlen(item, itemlen);
++        topk->heap[0].item = sdsnewbuf(item, itemlen);
+         topk->alloc_size += sdsAllocSize(topk->heap[0].item);
+ 
+         chkHeapifyDown(topk->heap, topk->k, 0);
+diff --git a/src/cluster.c b/src/cluster.c
+index 68ba7d807..d145dced5 100644
+--- a/src/cluster.c
++++ b/src/cluster.c
+@@ -97,7 +97,7 @@ void createDumpPayload(rio *payload, robj *o, robj *key, int dbid, int flags, si
+      * the payload in a single allocation to avoid reallocations. */
+     sds buffer;
+     if (size_hint) {
+-        buffer = sdsnewlen(SDS_NOINIT, size_hint);
++        buffer = sdsnewbuf(SDS_NOINIT, size_hint);
+         sdssetlen(buffer, 0);
+         buffer[0] = '\0';
+     } else {
+diff --git a/src/cluster_asm.c b/src/cluster_asm.c
+index ab6f61096..5e773d6d4 100644
+--- a/src/cluster_asm.c
++++ b/src/cluster_asm.c
+@@ -400,7 +400,7 @@ asmTask *asmTaskCreate(const char *task_id) {
+     if (task_id) {
+         task->id = sdsnew(task_id);
+     } else {
+-        task->id = sdsnewlen(NULL, CLUSTER_NAMELEN);
++        task->id = sdsnewbuf(NULL, CLUSTER_NAMELEN);
+         getRandomHexChars(task->id, CLUSTER_NAMELEN);
+     }
+ 
+@@ -1347,7 +1347,7 @@ char *asmSendInternalAuth(connection *conn) {
+     const char *internal_secret = clusterGetSecret(&len);
+     serverAssert(internal_secret != NULL);
+ 
+-    sds secret = sdsnewlen(internal_secret, len);
++    sds secret = sdsnewbuf(internal_secret, len);
+     char *err = sendCommand(conn, "AUTH", "internal connection", secret, NULL);
+     sdsfree(secret);
+     return err;
+@@ -1560,7 +1560,7 @@ void asmSyncWithSource(connection *conn) {
+     }
+ 
+     if (task->state == ASM_SEND_HANDSHAKE) {
+-        sds node_id = sdsnewlen(clusterNodeGetName(getMyClusterNode()), CLUSTER_NAMELEN);
++        sds node_id = sdsnewbuf(clusterNodeGetName(getMyClusterNode()), CLUSTER_NAMELEN);
+         err = sendCommand(conn, "CLUSTER", "SYNCSLOTS", "CONF", "NODE-ID", node_id, NULL);
+         sdsfree(node_id);
+         if (err) goto write_error;
+diff --git a/src/cluster_legacy.c b/src/cluster_legacy.c
+index d47a1b468..b4b1401bb 100644
+--- a/src/cluster_legacy.c
++++ b/src/cluster_legacy.c
+@@ -1134,7 +1134,7 @@ void clusterReset(int hard) {
+ 
+         /* To change the Node ID we need to remove the old name from the
+          * nodes table, change the ID, and re-add back with new name. */
+-        oldname = sdsnewlen(myself->name, CLUSTER_NAMELEN);
++        oldname = sdsnewbuf(myself->name, CLUSTER_NAMELEN);
+         dictDelete(server.cluster->nodes,oldname);
+         sdsfree(oldname);
+         getRandomHexChars(myself->name, CLUSTER_NAMELEN);
+@@ -1542,7 +1542,7 @@ void freeClusterNode(clusterNode *n) {
+     if (nodeIsSlave(n) && n->slaveof) clusterNodeRemoveSlave(n->slaveof,n);
+ 
+     /* Unlink from the set of nodes. */
+-    nodename = sdsnewlen(n->name, CLUSTER_NAMELEN);
++    nodename = sdsnewbuf(n->name, CLUSTER_NAMELEN);
+     serverAssert(dictDelete(server.cluster->nodes,nodename) == DICT_OK);
+     sdsfree(nodename);
+     sdsfree(n->hostname);
+@@ -1561,7 +1561,7 @@ void clusterAddNode(clusterNode *node) {
+     int retval;
+ 
+     retval = dictAdd(server.cluster->nodes,
+-            sdsnewlen(node->name,CLUSTER_NAMELEN), node);
++            sdsnewbuf(node->name,CLUSTER_NAMELEN), node);
+     serverAssert(retval == DICT_OK);
+     clusterNotifyTopologyChange(REDISMODULE_CLUSTER_TOPOLOGY_CHANGE_FLAG_NODE);
+ }
+@@ -1619,7 +1619,7 @@ void clusterDelNode(clusterNode *delnode) {
+ /* Node lookup by name */
+ clusterNode *clusterLookupNode(const char *name, int length) {
+     if (verifyClusterNodeId(name, length) != C_OK) return NULL;
+-    sds s = sdsnewlen(name, length);
++    sds s = sdsnewbuf(name, length);
+     dictEntry *de = dictFind(server.cluster->nodes, s);
+     sdsfree(s);
+     if (de == NULL) return NULL;
+@@ -1641,7 +1641,7 @@ const char *clusterGetSecret(size_t *len) {
+  * to this Redis process. Therefore, the caller must not
+  * release the list. */
+ list *clusterGetNodesInMyShard(clusterNode *node) {
+-    sds s = sdsnewlen(node->shard_id, CLUSTER_NAMELEN);
++    sds s = sdsnewbuf(node->shard_id, CLUSTER_NAMELEN);
+     dictEntry *de = dictFind(server.cluster->shards,s);
+     sdsfree(s);
+     return (de != NULL) ? dictGetVal(de) : NULL;
+@@ -1653,7 +1653,7 @@ list *clusterGetNodesInMyShard(clusterNode *node) {
+  * this function. */
+ void clusterRenameNode(clusterNode *node, char *newname) {
+     int retval;
+-    sds s = sdsnewlen(node->name, CLUSTER_NAMELEN);
++    sds s = sdsnewbuf(node->name, CLUSTER_NAMELEN);
+ 
+     serverLog(LL_DEBUG,"Renaming node %.40s into %.40s",
+         node->name, newname);
+@@ -1666,7 +1666,7 @@ void clusterRenameNode(clusterNode *node, char *newname) {
+ }
+ 
+ void clusterAddNodeToShard(const char *shard_id, clusterNode *node) {
+-    sds s = sdsnewlen(shard_id, CLUSTER_NAMELEN);
++    sds s = sdsnewbuf(shard_id, CLUSTER_NAMELEN);
+     dictEntry *de = dictFind(server.cluster->shards,s);
+     if (de == NULL) {
+         list *l = listCreate();
+@@ -1682,7 +1682,7 @@ void clusterAddNodeToShard(const char *shard_id, clusterNode *node) {
+ }
+ 
+ void clusterRemoveNodeFromShard(clusterNode *node) {
+-    sds s = sdsnewlen(node->shard_id, CLUSTER_NAMELEN);
++    sds s = sdsnewbuf(node->shard_id, CLUSTER_NAMELEN);
+     dictEntry *de = dictFind(server.cluster->shards, s);
+     if (de != NULL) {
+         list *l = dictGetVal(de);
+@@ -1881,7 +1881,7 @@ void clusterBlacklistCleanup(void) {
+ /* Cleanup the blacklist and add a new node ID to the black list. */
+ void clusterBlacklistAddNode(clusterNode *node) {
+     dictEntry *de;
+-    sds id = sdsnewlen(node->name,CLUSTER_NAMELEN);
++    sds id = sdsnewbuf(node->name,CLUSTER_NAMELEN);
+ 
+     clusterBlacklistCleanup();
+     if (dictAdd(server.cluster->nodes_black_list,id,NULL) == DICT_OK) {
+@@ -1898,7 +1898,7 @@ void clusterBlacklistAddNode(clusterNode *node) {
+  * You don't need to pass an sds string here, any pointer to 40 bytes
+  * will work. */
+ int clusterBlacklistExists(char *nodeid, size_t len) {
+-    sds id = sdsnewlen(nodeid,len);
++    sds id = sdsnewbuf(nodeid,len);
+     int retval;
+ 
+     clusterBlacklistCleanup();
+@@ -2740,7 +2740,7 @@ void clusterProcessPingExtensions(clusterMsg *hdr, clusterLink *link) {
+             clusterMsgPingExtForgottenNode *forgotten_node_ext = &(ext->ext[0].forgotten_node);
+             clusterNode *n = clusterLookupNode(forgotten_node_ext->name, CLUSTER_NAMELEN);
+             if (n && n != myself && !(nodeIsSlave(myself) && myself->slaveof == n)) {
+-                sds id = sdsnewlen(forgotten_node_ext->name, CLUSTER_NAMELEN);
++                sds id = sdsnewbuf(forgotten_node_ext->name, CLUSTER_NAMELEN);
+                 dictEntry *de = dictAddOrFind(server.cluster->nodes_black_list, id);
+                 if (dictGetKey(de) != id) sdsfree(id);
+                 uint64_t expire = server.unixtime + ntohu64(forgotten_node_ext->ttl);
+@@ -5723,7 +5723,7 @@ void addReplyClusterLinkDescription(client *c, clusterLink *link) {
+      * associated with nodes. The association is always bi-directional, so
+      * in addReplyClusterLinkDescription, link->node should never be NULL. */
+     serverAssert(link->node);
+-    sds node_name = sdsnewlen(link->node->name, CLUSTER_NAMELEN);
++    sds node_name = sdsnewbuf(link->node->name, CLUSTER_NAMELEN);
+     addReplyBulkCString(c, "node");
+     addReplyBulkCString(c, node_name);
+     sdsfree(node_name);
+diff --git a/src/config.c b/src/config.c
+index 488cc0f72..d4e8c3883 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -1220,7 +1220,7 @@ struct rewriteConfigState *rewriteConfigReadOldFile(char *path) {
+     } 
+ 
+     /* Load the file content */
+-    sds config = sdsnewlen(SDS_NOINIT,sb.st_size);
++    sds config = sdsnewbuf(SDS_NOINIT,sb.st_size);
+     if (fread(config,1,sb.st_size,fp) == 0) {
+         sdsfree(config);
+         rewriteConfigReleaseState(state);
+diff --git a/src/db.c b/src/db.c
+index 3aa72165e..e97b0b5b8 100644
+--- a/src/db.c
++++ b/src/db.c
+@@ -1751,7 +1751,7 @@ void scanCallback(void *privdata, const dictEntry *de, dictEntryLink plink) {
+         char buf[MAX_LONG_DOUBLE_CHARS];
+         int len = ld2string(buf, sizeof(buf), znode->score, LD_STR_AUTO);
+         key = sdsdup(keyStr);
+-        val = sdsnewlen(buf, len);
++        val = sdsnewbuf(buf, len);
+     } else {
+         serverPanic("Type not handled in SCAN callback.");
+     }
+diff --git a/src/debug.c b/src/debug.c
+index 24c8c7d9f..116170c89 100644
+--- a/src/debug.c
++++ b/src/debug.c
+@@ -990,7 +990,7 @@ NULL
+                 c->argv + 2, c->argc - 2);
+         addReply(c,shared.ok);
+     } else if (!strcasecmp(c->argv[1]->ptr,"error") && c->argc == 3) {
+-        sds errstr = sdsnewlen("-",1);
++        sds errstr = sdsnewbuf("-",1);
+ 
+         errstr = sdscatsds(errstr,c->argv[2]->ptr);
+         errstr = sdsmapchars(errstr,"\n\r","  ",2); /* no newlines in errors. */
+diff --git a/src/eval.c b/src/eval.c
+index 0edea5ddd..0b0638b00 100644
+--- a/src/eval.c
++++ b/src/eval.c
+@@ -335,7 +335,7 @@ int evalExtractShebangFlags(sds body, uint64_t *out_flags, ssize_t *out_shebang_
+             return C_ERR;
+         }
+         shebang_len = shebang_end - body;
+-        sds shebang = sdsnewlen(body, shebang_len);
++        sds shebang = sdsnewbuf(body, shebang_len);
+         sds *parts = sdssplitargs(shebang, &numparts);
+         sdsfree(shebang);
+         if (!parts || numparts == 0) {
+@@ -478,7 +478,7 @@ sds luaCreateFunction(client *c, robj *body, int evalsha) {
+     luaScript *l = zcalloc(sizeof(luaScript));
+     l->body = body;
+     l->flags = script_flags;
+-    sds sha = sdsnewlen(funcname+2,40);
++    sds sha = sdsnewbuf(funcname+2,40);
+     l->node = luaScriptsLRUAdd(c, sha, evalsha);
+     int retval = dictAdd(lctx.lua_scripts,sha,l);
+     serverAssertWithInfo(c ? c : lctx.lua_client,NULL,retval == DICT_OK);
+@@ -1074,7 +1074,7 @@ sds *ldbReplParseCommand(int *argcp, char** err) {
+         int slen = atoi(plen); /* Length of this arg. */
+         if (slen <= 0 || slen > 1024) goto protoerr;
+         if ((size_t)(p + slen + 2 - copy) > sdslen(copy) ) goto keep_reading;
+-        argv[argc++] = sdsnewlen(p,slen);
++        argv[argc++] = sdsnewbuf(p,slen);
+         p += slen; /* Skip the already parsed argument. */
+         if (p[0] != '\r' || p[1] != '\n') goto protoerr;
+         p += 2; /* Skip \r\n. */
+diff --git a/src/evict.c b/src/evict.c
+index 50037c689..8918966f0 100644
+--- a/src/evict.c
++++ b/src/evict.c
+@@ -117,7 +117,7 @@ void evictionPoolAlloc(void) {
+     for (j = 0; j < EVPOOL_SIZE; j++) {
+         ep[j].idle = 0;
+         ep[j].key = NULL;
+-        ep[j].cached = sdsnewlen(NULL,EVPOOL_CACHED_SDS_SIZE);
++        ep[j].cached = sdsnewbuf(NULL,EVPOOL_CACHED_SDS_SIZE);
+         ep[j].dbid = 0;
+     }
+     EvictionPoolLRU = ep;
+diff --git a/src/functions.c b/src/functions.c
+index b49ac97ba..747293c29 100644
+--- a/src/functions.c
++++ b/src/functions.c
+@@ -907,7 +907,7 @@ int functionExtractLibMetaData(sds payload, functionsLibMataData *md, sds *err)
+         return C_ERR;
+     }
+     size_t shebang_len = shebang_end - payload;
+-    sds shebang = sdsnewlen(payload, shebang_len);
++    sds shebang = sdsnewbuf(payload, shebang_len);
+     int numparts;
+     sds *parts = sdssplitargs(shebang, &numparts);
+     sdsfree(shebang);
+@@ -941,7 +941,7 @@ int functionExtractLibMetaData(sds payload, functionsLibMataData *md, sds *err)
+     sdsfreesplitres(parts, numparts);
+ 
+     md->name = name;
+-    md->code = sdsnewlen(shebang_end, sdslen(payload) - shebang_len);
++    md->code = sdsnewbuf(shebang_end, sdslen(payload) - shebang_len);
+     md->engine = engine;
+ 
+     return C_OK;
+diff --git a/src/geo.c b/src/geo.c
+index 978270bb6..e505c467f 100644
+--- a/src/geo.c
++++ b/src/geo.c
+@@ -289,7 +289,7 @@ int geoGetPointsInRange(robj *zobj, double min, double max, GeoShape *shape, geo
+             vstr = lpGetValue(eptr, &vlen, &vlong);
+             if (geoWithinShape(shape, score, xy, &distance) == C_OK) {
+                 /* Append the new element. */
+-                char *member = (vstr == NULL) ? sdsfromlonglong(vlong) : sdsnewlen(vstr, vlen);
++                char *member = (vstr == NULL) ? sdsfromlonglong(vlong) : sdsnewbuf(vstr, vlen);
+                 geoArrayAppend(ga, xy, distance, score, member);
+             }
+             if (ga->used && limit && ga->used >= limit) break;
+diff --git a/src/hyperloglog.c b/src/hyperloglog.c
+index d827091bd..4ea1cd5ba 100644
+--- a/src/hyperloglog.c
++++ b/src/hyperloglog.c
+@@ -622,7 +622,7 @@ int hllSparseToDense(robj *o) {
+     /* Create a string of the right size filled with zero bytes.
+      * Note that the cached cardinality is set to 0 as a side effect
+      * that is exactly the cardinality of an empty HLL. */
+-    dense = sdsnewlen(NULL,HLL_DENSE_SIZE);
++    dense = sdsnewbuf(NULL,HLL_DENSE_SIZE);
+     hdr = (struct hllhdr*) dense;
+     *hdr = *oldhdr; /* This will copy the magic and cached cardinality. */
+     hdr->encoding = HLL_DENSE;
+@@ -1586,7 +1586,7 @@ robj *createHLLObject(void) {
+     /* Populate the sparse representation with as many XZERO opcodes as
+      * needed to represent all the registers. */
+     aux = HLL_REGISTERS;
+-    s = sdsnewlen(NULL,sparselen);
++    s = sdsnewbuf(NULL,sparselen);
+     p = (uint8_t*)s + HLL_HDR_SIZE;
+     while(aux) {
+         int xzero = HLL_SPARSE_XZERO_MAX_LEN;
+@@ -1650,7 +1650,7 @@ void pfaddCommand(client *c) {
+ 
+     if (kv == NULL) {
+         /* Create the key with a string value of the exact length to
+-         * hold our HLL data structure. sdsnewlen() when NULL is passed
++         * hold our HLL data structure. sdsnewbuf() when NULL is passed
+          * is guaranteed to return bytes initialized to zero. */
+         robj *o = createHLLObject();
+         kv = dbAddByLink(c->db, c->argv[1], &o, &link);
+@@ -1823,7 +1823,7 @@ void pfmergeCommand(client *c) {
+     kvobj *kv = lookupKeyWriteWithLink(c->db,c->argv[1],&link);
+     if (kv == NULL) {
+         /* Create the key with a string value of the exact length to
+-         * hold our HLL data structure. sdsnewlen() when NULL is passed
++         * hold our HLL data structure. sdsnewbuf() when NULL is passed
+          * is guaranteed to return bytes initialized to zero. */
+         robj *o = createHLLObject();
+         kv = dbAddByLink(c->db, c->argv[1], &o, &link);
+@@ -1884,7 +1884,7 @@ void pfmergeCommand(client *c) {
+ #define HLL_TEST_CYCLES 1000
+ void pfselftestCommand(client *c) {
+     unsigned int j, i;
+-    sds bitcounters = sdsnewlen(NULL,HLL_DENSE_SIZE);
++    sds bitcounters = sdsnewbuf(NULL,HLL_DENSE_SIZE);
+     struct hllhdr *hdr = (struct hllhdr*) bitcounters, *hdr2;
+     robj *o = NULL;
+     uint8_t bytecounters[HLL_REGISTERS];
+diff --git a/src/listpack.c b/src/listpack.c
+index b4e3b17cc..4b172c727 100644
+--- a/src/listpack.c
++++ b/src/listpack.c
+@@ -3453,9 +3453,9 @@ int listpackTest(int argc, char *argv[], int flags) {
+ 
+                 /* Add to reference list */
+                 if (where == 0) {
+-                    listAddNodeHead(ref,sdsnewlen(buf, buflen));
++                    listAddNodeHead(ref,sdsnewbuf(buf, buflen));
+                 } else if (where == 1) {
+-                    listAddNodeTail(ref,sdsnewlen(buf, buflen));
++                    listAddNodeTail(ref,sdsnewbuf(buf, buflen));
+                 } else {
+                     assert(NULL);
+                 }
+diff --git a/src/module.c b/src/module.c
+index ff646d593..0c2d9adef 100644
+--- a/src/module.c
++++ b/src/module.c
+@@ -902,7 +902,7 @@ void moduleFreeContext(RedisModuleCtx *ctx) {
+ 
+ static CallReply *moduleParseReply(client *c, RedisModuleCtx *ctx) {
+     /* Convert the result of the Redis command into a module reply. */
+-    sds proto = sdsnewlen(c->buf,c->bufpos);
++    sds proto = sdsnewbuf(c->buf,c->bufpos);
+     c->bufpos = 0;
+     while(listLength(c->reply)) {
+         clientReplyBlock *o = listNodeValue(listFirst(c->reply));
+@@ -3031,7 +3031,7 @@ RedisModuleString *moduleAssertUnsharedString(RedisModuleString *str) {
+     if (str->encoding == OBJ_ENCODING_EMBSTR) {
+         /* Note: here we "leak" the additional allocation that was
+          * used in order to store the embedded string in the object. */
+-        str->ptr = sdsnewlen(str->ptr,sdslen(str->ptr));
++        str->ptr = sdsnewbuf(str->ptr,sdslen(str->ptr));
+         str->encoding = OBJ_ENCODING_RAW;
+     } else if (str->encoding == OBJ_ENCODING_INT) {
+         /* Convert the string from integer to raw encoding. */
+@@ -4783,7 +4783,7 @@ int RM_StringTruncate(RedisModuleKey *key, size_t newlen) {
+ 
+     if (key->kv == NULL) {
+         /* Empty key: create it with the new size. */
+-        robj *o = createObject(OBJ_STRING,sdsnewlen(NULL, newlen));
++        robj *o = createObject(OBJ_STRING,sdsnewbuf(NULL, newlen));
+         setKey(key->ctx->client, key->db, key->key, &o, SETKEY_NO_SIGNAL);
+         key->kv = o;
+     } else {
+@@ -11629,7 +11629,7 @@ RedisModuleServerInfoData *RM_GetServerInfo(RedisModuleCtx *ctx, const char *sec
+         if (!sep) continue;
+         unsigned char *key = (unsigned char*)line;
+         size_t keylen = (intptr_t)sep-(intptr_t)line;
+-        sds val = sdsnewlen(sep+1,sdslen(line)-((intptr_t)sep-(intptr_t)line)-1);
++        sds val = sdsnewbuf(sep+1,sdslen(line)-((intptr_t)sep-(intptr_t)line)-1);
+         if (!raxTryInsert(d->rax,key,keylen,val,NULL))
+             sdsfree(val);
+     }
+@@ -14968,7 +14968,7 @@ int RM_ConfigSetEnum(RedisModuleCtx *ctx, const char *name, RedisModuleString *v
+ 
+     size_t len;
+     const char *val = RM_StringPtrLen(value, &len);
+-    sds sds_val = sdsnewlen(val, len);
++    sds sds_val = sdsnewbuf(val, len);
+ 
+     int vals_cnt = 0;
+     sds *vals = sdssplitlen(val, sdslen(sds_val), " ", 1, &vals_cnt);
+diff --git a/src/networking.c b/src/networking.c
+index b9f427445..f53a6909a 100644
+--- a/src/networking.c
++++ b/src/networking.c
+@@ -674,7 +674,7 @@ void afterErrorReply(client *c, const char *s, size_t len, int flags) {
+             c->deferred_reply_errors = listCreate();
+             listSetFreeMethod(c->deferred_reply_errors, sdsfreegeneric);
+         }
+-        listAddNodeTail(c->deferred_reply_errors, sdsnewlen(s, len));
++        listAddNodeTail(c->deferred_reply_errors, sdsnewbuf(s, len));
+         return;
+     }
+ 
+@@ -3147,7 +3147,7 @@ int processInlineBuffer(client *c, pendingCommand *pcmd) {
+ 
+     /* Split the input buffer up to the \r\n */
+     querylen = newline-(c->querybuf+c->qb_pos);
+-    aux = sdsnewlen(c->querybuf+c->qb_pos,querylen);
++    aux = sdsnewbuf(c->querybuf+c->qb_pos,querylen);
+     argv = sdssplitargs(aux,&argc);
+     sdsfree(aux);
+     if (argv == NULL) {
+@@ -3454,9 +3454,9 @@ static int processMultibulkBuffer(client *c, pendingCommand *pcmd) {
+                 /* Assume that if we saw a fat argument we'll see another one likely...
+                  * But only if that fat argument is not too big compared to the memory limit. */
+                 if (!server.maxmemory || (size_t)c->bulklen < server.maxmemory / 32) {
+-                    c->querybuf = sdsnewlen(SDS_NOINIT,c->bulklen+2);
++                    c->querybuf = sdsnewbuf(SDS_NOINIT,c->bulklen+2);
+                 } else {
+-                    c->querybuf = sdsnewlen(SDS_NOINIT, PROTO_IOBUF_LEN);
++                    c->querybuf = sdsnewbuf(SDS_NOINIT, PROTO_IOBUF_LEN);
+                 }
+                 sdsclear(c->querybuf);
+                 querybuf_len = sdslen(c->querybuf); /* Update cached length */
+@@ -3946,12 +3946,12 @@ void readQueryFromClient(connection *conn) {
+             /* The reusable query buffer is already used by another client,
+              * switch to using the client's private query buffer. This only
+              * occurs when commands are executed nested via processEventsWhileBlocked(). */
+-            c->querybuf = sdsnewlen(NULL, PROTO_IOBUF_LEN);
++            c->querybuf = sdsnewbuf(NULL, PROTO_IOBUF_LEN);
+             sdsclear(c->querybuf);
+         } else {
+             /* Create the reusable query buffer if it doesn't exist. */
+             if (!thread_reusable_qb) {
+-                thread_reusable_qb = sdsnewlen(NULL, PROTO_IOBUF_LEN);
++                thread_reusable_qb = sdsnewbuf(NULL, PROTO_IOBUF_LEN);
+                 sdsclear(thread_reusable_qb);
+             }
+ 
+@@ -4235,7 +4235,7 @@ sds getAllClientsInfoString(int type) {
+     listNode *ln;
+     listIter li;
+     client *client;
+-    sds o = sdsnewlen(SDS_NOINIT,200*listLength(server.clients));
++    sds o = sdsnewbuf(SDS_NOINIT,200*listLength(server.clients));
+     sdsclear(o);
+ 
+     /* Pause all IO threads to access data of clients safely, and pausing the
+diff --git a/src/notify.c b/src/notify.c
+index 5c8b188fa..764a5f7aa 100644
+--- a/src/notify.c
++++ b/src/notify.c
+@@ -167,7 +167,7 @@ static void notifyKeyspaceEventImpl(int type, const char *event, robj *key, int
+ 
+     /* __keyspace@<db>__:<key> <event> notifications. */
+     if (server.notify_keyspace_events & NOTIFY_KEYSPACE) {
+-        chan = sdsnewlen("__keyspace@",11);
++        chan = sdsnewbuf("__keyspace@",11);
+         chan = sdscatlen(chan, buf, len);
+         chan = sdscatlen(chan, "__:", 3);
+         chan = sdscatsds(chan, key->ptr);
+@@ -178,7 +178,7 @@ static void notifyKeyspaceEventImpl(int type, const char *event, robj *key, int
+ 
+     /* __keyevent@<db>__:<event> <key> notifications. */
+     if (server.notify_keyspace_events & NOTIFY_KEYEVENT) {
+-        chan = sdsnewlen("__keyevent@",11);
++        chan = sdsnewbuf("__keyevent@",11);
+         chan = sdscatlen(chan, buf, len);
+         chan = sdscatlen(chan, "__:", 3);
+         chan = sdscatsds(chan, eventobj->ptr);
+@@ -193,7 +193,7 @@ static void notifyKeyspaceEventImpl(int type, const char *event, robj *key, int
+          * Skip if the event contains '|' to avoid parsing ambiguity since '|'
+          * is used as a separator between event and subkeys in the payload. */
+         if (server.notify_keyspace_events & NOTIFY_SUBKEYSPACE && !strchr(event, '|')) {
+-            chan = sdsnewlen("__subkeyspace@", 14);
++            chan = sdsnewbuf("__subkeyspace@", 14);
+             chan = sdscatlen(chan, buf, len);
+             chan = sdscatlen(chan, "__:", 3);
+             chan = sdscatsds(chan, key->ptr);
+@@ -211,7 +211,7 @@ static void notifyKeyspaceEventImpl(int type, const char *event, robj *key, int
+ 
+         /* __subkeyevent@<db>__:<event> <key_len>:<key>|<len>:<subkey>[,...] notifications. */
+         if (server.notify_keyspace_events & NOTIFY_SUBKEYEVENT) {
+-            chan = sdsnewlen("__subkeyevent@", 14);
++            chan = sdsnewbuf("__subkeyevent@", 14);
+             chan = sdscatlen(chan, buf, len);
+             chan = sdscatlen(chan, "__:", 3);
+             chan = sdscatsds(chan, eventobj->ptr);
+@@ -221,7 +221,7 @@ static void notifyKeyspaceEventImpl(int type, const char *event, robj *key, int
+             size_t keylen = sdslen(key->ptr);
+             char keylenbuf[32];
+             int keylenlen = ll2string(keylenbuf, sizeof(keylenbuf), keylen);
+-            sds payload = sdsnewlen(keylenbuf, keylenlen);
++            sds payload = sdsnewbuf(keylenbuf, keylenlen);
+             payload = sdscatlen(payload, ":", 1);
+             payload = sdscatsds(payload, key->ptr);
+             payload = sdscatlen(payload, "|", 1);
+@@ -239,7 +239,7 @@ static void notifyKeyspaceEventImpl(int type, const char *event, robj *key, int
+         {
+             for (int i = 0; i < count; i++) {
+                 serverAssert(sdsEncodedObject(subkeys[i]));
+-                chan = sdsnewlen("__subkeyspaceitem@", 18);
++                chan = sdsnewbuf("__subkeyspaceitem@", 18);
+                 chan = sdscatlen(chan, buf, len);
+                 chan = sdscatlen(chan, "__:", 3);
+                 chan = sdscatsds(chan, key->ptr);
+@@ -255,7 +255,7 @@ static void notifyKeyspaceEventImpl(int type, const char *event, robj *key, int
+          * Skip if the event contains '|' to avoid parsing ambiguity since '|'
+          * is used as a separator between event and key in the channel name. */
+         if (server.notify_keyspace_events & NOTIFY_SUBKEYSPACEEVENT && !strchr(event, '|')) {
+-            chan = sdsnewlen("__subkeyspaceevent@", 19);
++            chan = sdsnewbuf("__subkeyspaceevent@", 19);
+             chan = sdscatlen(chan, buf, len);
+             chan = sdscatlen(chan, "__:", 3);
+             chan = sdscatsds(chan, eventobj->ptr);
+diff --git a/src/object.c b/src/object.c
+index 2b57ccf93..a095e2884 100644
+--- a/src/object.c
++++ b/src/object.c
+@@ -149,7 +149,7 @@ robj *makeObjectShared(robj *o) {
+ /* Create a string object with encoding OBJ_ENCODING_RAW, that is a plain
+  * string object where o->ptr points to a proper sds string. */
+ robj *createRawStringObject(const char *ptr, size_t len) {
+-    return createObject(OBJ_STRING, sdsnewlen(ptr,len));
++    return createObject(OBJ_STRING, sdsnewbuf(ptr,len));
+ }
+ 
+ /* Creates a new embedded string object and copies the content of key, val and
+@@ -292,7 +292,7 @@ kvobj *kvobjSet(sds key, robj *val, uint32_t keyMetaBits) {
+         if (size <= CACHE_LINE_SIZE) {
+             kv = kvobjCreateEmbedString(val->ptr, len, key, keyMetaBits);
+         } else {
+-            kv = kvobjCreate(OBJ_STRING, key, sdsnewlen(val->ptr, len), keyMetaBits);
++            kv = kvobjCreate(OBJ_STRING, key, sdsnewbuf(val->ptr, len), keyMetaBits);
+         }
+     } else {
+         /* Create a new object with embedded key. Reuse ptr if possible. */
+diff --git a/src/rdb.c b/src/rdb.c
+index 8aa11ca11..bdd3ba41e 100644
+--- a/src/rdb.c
++++ b/src/rdb.c
+@@ -328,7 +328,7 @@ void *rdbLoadIntegerObject(rio *rdb, int enctype, int flags, size_t *lenptr, siz
+             p = zmalloc_usable(len, usable);
+         } else {
+             debugServerAssert(sdsFlag);
+-            p = sdsnewlen(SDS_NOINIT,len);
++            p = sdsnewbuf(SDS_NOINIT,len);
+             if (usable) *usable = sdsAllocSize(p);
+         } 
+         
+@@ -2392,7 +2392,7 @@ static int _ziplistPairsEntryConvertAndValidate(unsigned char *p, unsigned int h
+ 
+     /* Even records are field names, add to dict and check that's not a dup */
+     if (((data->count) & 1) == 0) {
+-        sds field = str? sdsnewlen(str, slen): sdsfromlonglong(vll);
++        sds field = str? sdsnewbuf(str, slen): sdsfromlonglong(vll);
+         if (dictAdd(data->fields, field, NULL) != DICT_OK) {
+             /* Duplicate, return an error */
+             sdsfree(field);
+@@ -2493,7 +2493,7 @@ static int _lpEntryValidation(unsigned char *p, unsigned int head_count, void *u
+         unsigned char buf[LP_INTBUF_SIZE];
+ 
+         str = lpGet(p, &slen, buf);
+-        sds field = sdsnewlen(str, slen);
++        sds field = sdsnewbuf(str, slen);
+         if (dictAdd(data->fields, field, NULL) != DICT_OK) {
+             /* Duplicate, return an error */
+             sdsfree(field);
+@@ -2814,7 +2814,7 @@ static int rdbLoadTemplateFields(rio *rdb, int deep, rdbTmplFields *out) {
+             unsigned int slen;
+             long long lval;
+             unsigned char *s = lpGetValue(p, &slen, &lval);
+-            fields[i] = s ? sdsnewlen(s, slen) : sdsfromlonglong(lval);
++            fields[i] = s ? sdsnewbuf(s, slen) : sdsfromlonglong(lval);
+             p = lpNext(blob, p);
+         }
+         if (i != count || p != NULL) {
+diff --git a/src/rio.c b/src/rio.c
+index 57750ffef..e4150bb1b 100644
+--- a/src/rio.c
++++ b/src/rio.c
+@@ -292,7 +292,7 @@ void rioInitWithConn(rio *r, connection *conn, size_t read_limit) {
+     r->io.conn.pos = 0;
+     r->io.conn.read_limit = read_limit;
+     r->io.conn.read_so_far = 0;
+-    r->io.conn.buf = sdsnewlen(NULL, PROTO_IOBUF_LEN);
++    r->io.conn.buf = sdsnewbuf(NULL, PROTO_IOBUF_LEN);
+     sdsclear(r->io.conn.buf);
+ }
+ 
+diff --git a/src/script_lua.c b/src/script_lua.c
+index f6b61952b..d39b2a434 100644
+--- a/src/script_lua.c
++++ b/src/script_lua.c
+@@ -658,7 +658,7 @@ static void luaReplyToRedisReply(client *c, client* script_client, lua_State *lu
+         lua_rawget(lua,-2);
+         t = lua_type(lua,-1);
+         if (t == LUA_TSTRING) {
+-            sds big_num = sdsnewlen(lua_tostring(lua,-1), lua_strlen(lua,-1));
++            sds big_num = sdsnewbuf(lua_tostring(lua,-1), lua_strlen(lua,-1));
+             sdsmapchars(big_num,"\r\n","  ",2);
+             addReplyBigNum(c,big_num,sdslen(big_num));
+             sdsfree(big_num);
+@@ -944,7 +944,7 @@ static int luaRedisGenericCommand(lua_State *lua, int raise_error) {
+         reply = c->buf;
+         c->bufpos = 0;
+     } else {
+-        reply = sdsnewlen(c->buf,c->bufpos);
++        reply = sdsnewbuf(c->buf,c->bufpos);
+         c->bufpos = 0;
+         while(listLength(c->reply)) {
+             clientReplyBlock *o = listNodeValue(listFirst(c->reply));
+@@ -1247,7 +1247,7 @@ sds luaGetStringSds(lua_State *lua, int index) {
+ 
+     size_t len;
+     const char *str = lua_tolstring(lua, index, &len);
+-    sds str_sds = sdsnewlen(str, len);
++    sds str_sds = sdsnewbuf(str, len);
+     return str_sds;
+ }
+ 
+diff --git a/src/sds.c b/src/sds.c
+index 718f7d3f0..2c4497d2e 100644
+--- a/src/sds.c
++++ b/src/sds.c
+@@ -90,7 +90,7 @@ static inline int adjustTypeIfNeeded(char *type, int *hdrlen, size_t bufsize) {
+  * The string is always null-terminated (all the sds strings are, always) so
+  * even if you create an sds string with:
+  *
+- * mystring = sdsnewlen("abc",3);
++ * mystring = sdsnewbuf("abc",3);
+  *
+  * You can print the string with printf() as there is an implicit \0 at the
+  * end of the string. However the string is binary safe and can contain
+@@ -192,7 +192,7 @@ sds sdsnewplacement(char *buf, size_t bufsize, char type, const char *init, size
+     return s;
+ }
+ 
+-sds sdsnewlen(const void *init, size_t initlen) {
++sds sdsnewbuf(const void *init, size_t initlen) {
+     return _sdsnewlen(init, initlen, 0);
+ }
+ 
+@@ -203,18 +203,18 @@ sds sdstrynewlen(const void *init, size_t initlen) {
+ /* Create an empty (zero length) sds string. Even in this case the string
+  * always has an implicit null term. */
+ sds sdsempty(void) {
+-    return sdsnewlen("",0);
++    return sdsnewbuf("",0);
+ }
+ 
+ /* Create a new sds string starting from a null terminated C string. */
+ sds sdsnew(const char *init) {
+     size_t initlen = (init == NULL) ? 0 : strlen(init);
+-    return sdsnewlen(init, initlen);
++    return sdsnewbuf(init, initlen);
+ }
+ 
+ /* Duplicate an sds string. */
+ sds sdsdup(const sds s) {
+-    return sdsnewlen(s, sdslen(s));
++    return sdsnewbuf(s, sdslen(s));
+ }
+ 
+ /* Free an sds string. No operation is performed if 's' is NULL. */
+@@ -585,7 +585,7 @@ sds sdsfromlonglong(long long value) {
+     char buf[LONG_STR_SIZE];
+     int len = ll2string(buf,sizeof(buf),value);
+ 
+-    return sdsnewlen(buf,len);
++    return sdsnewbuf(buf,len);
+ }
+ 
+ /* Like sdscatprintf() but gets va_list instead of being variadic. */
+@@ -929,7 +929,7 @@ sds *sdssplitlen(const char *s, ssize_t len, const char *sep, int seplen, int *c
+         }
+         /* search the separator */
+         if ((seplen == 1 && *(s+j) == sep[0]) || (memcmp(s+j,sep,seplen) == 0)) {
+-            tokens[elements] = sdsnewlen(s+start,j-start);
++            tokens[elements] = sdsnewbuf(s+start,j-start);
+             if (tokens[elements] == NULL) goto cleanup;
+             elements++;
+             start = j+seplen;
+@@ -937,7 +937,7 @@ sds *sdssplitlen(const char *s, ssize_t len, const char *sep, int seplen, int *c
+         }
+     }
+     /* Add the final element. We are sure there is room in the tokens array. */
+-    tokens[elements] = sdsnewlen(s+start,len-start);
++    tokens[elements] = sdsnewbuf(s+start,len-start);
+     if (tokens[elements] == NULL) goto cleanup;
+     elements++;
+     *count = elements;
+@@ -1269,7 +1269,7 @@ sds sdstemplate(const char *template, sdstemplate_callback_t cb_func, void *cb_a
+ 
+         /* Pass variable name to callback and obtain value. If callback failed,
+          * abort. */
+-        sds varname = sdsnewlen(sv, ev - sv);
++        sds varname = sdsnewbuf(sv, ev - sv);
+         sds value = cb_func(varname, cb_arg);
+         sdsfree(varname);
+         if (!value) goto error;
+@@ -1316,7 +1316,7 @@ int sdsTest(int argc, char **argv, int flags) {
+             sdslen(x) == 3 && memcmp(x,"foo\0",4) == 0);
+ 
+         sdsfree(x);
+-        x = sdsnewlen("foo",2);
++        x = sdsnewbuf("foo",2);
+         test_cond("Create a string with specified length",
+             sdslen(x) == 2 && memcmp(x,"fo\0",3) == 0);
+ 
+@@ -1455,7 +1455,7 @@ int sdsTest(int argc, char **argv, int flags) {
+ 
+         sdsfree(y);
+         sdsfree(x);
+-        x = sdsnewlen("\a\n\0foo\r",7);
++        x = sdsnewbuf("\a\n\0foo\r",7);
+         y = sdscatrepr(sdsempty(),x,sdslen(x));
+         test_cond("sdscatrepr(...data...)",
+             memcmp(y,"\"\\a\\n\\x00foo\\r\"",15) == 0);
+diff --git a/src/sds.h b/src/sds.h
+index 1537f5306..d356eaab0 100644
+--- a/src/sds.h
++++ b/src/sds.h
+@@ -258,7 +258,7 @@ static inline int sdsHdrSize(char type) {
+     return 0;
+ }
+ 
+-sds sdsnewlen(const void *init, size_t initlen);
++sds sdsnewbuf(const void *init, size_t initlen);
+ sds sdstrynewlen(const void *init, size_t initlen);
+ sds sdsnew(const char *init);
+ sds sdsnewplacement(char *buf, size_t bufsize, char type, const char *init, size_t initlen);
+diff --git a/src/sentinel.c b/src/sentinel.c
+index 372e4b640..a0a3f4be6 100644
+--- a/src/sentinel.c
++++ b/src/sentinel.c
+@@ -2538,7 +2538,7 @@ void sentinelRefreshInstanceInfo(sentinelRedisInstance *ri, const char *info) {
+         /* run_id:<40 hex chars>*/
+         if (sdslen(l) >= 47 && !memcmp(l,"run_id:",7)) {
+             if (ri->runid == NULL) {
+-                ri->runid = sdsnewlen(l+7,40);
++                ri->runid = sdsnewbuf(l+7,40);
+             } else {
+                 if (strncmp(ri->runid,l+7,40) != 0) {
+                     sentinelEvent(LL_NOTICE,"+reboot",ri,"%@");
+@@ -2549,7 +2549,7 @@ void sentinelRefreshInstanceInfo(sentinelRedisInstance *ri, const char *info) {
+                     }
+ 
+                     sdsfree(ri->runid);
+-                    ri->runid = sdsnewlen(l+7,40);
++                    ri->runid = sdsnewbuf(l+7,40);
+                 }
+             }
+         }
+diff --git a/src/slowlog.c b/src/slowlog.c
+index ed96a6af9..90e5df649 100644
+--- a/src/slowlog.c
++++ b/src/slowlog.c
+@@ -47,7 +47,7 @@ slowlogEntry *slowlogCreateEntry(client *c, robj **argv, int argc, long long dur
+                 sdsEncodedObject(argv[j]) &&
+                 sdslen(argv[j]->ptr) > server.slowlog_max_string_len)
+             {
+-                sds s = sdsnewlen(argv[j]->ptr, server.slowlog_max_string_len);
++                sds s = sdsnewbuf(argv[j]->ptr, server.slowlog_max_string_len);
+ 
+                 s = sdscatprintf(s,"... (%lu more bytes)",
+                     (unsigned long)
+diff --git a/src/t_hash.c b/src/t_hash.c
+index 09a463283..1348388f5 100644
+--- a/src/t_hash.c
++++ b/src/t_hash.c
+@@ -1445,7 +1445,7 @@ static void listpackExUpdateExpiry(robj *o, sds field,
+          * 'hash-max-listpack-value' config. It is unlikely, but it might be
+          * larger than sizeof(tmp). */
+         if (slen > sizeof(tmp))
+-            tmpval = sdsnewlen(valstr, slen);
++            tmpval = sdsnewbuf(valstr, slen);
+         else
+             memcpy(tmp, valstr, slen);
+     }
+@@ -2803,7 +2803,7 @@ sds hashTypeCurrentObjectNewSds(hashTypeIterator *hi, int what) {
+     long long vll;
+ 
+     hashTypeCurrentObject(hi,what,&vstr,&vlen,&vll, NULL);
+-    if (vstr) return sdsnewlen(vstr,vlen);
++    if (vstr) return sdsnewbuf(vstr,vlen);
+     return sdsfromlonglong(vll);
+ }
+ 
+@@ -2821,7 +2821,7 @@ Entry *hashTypeCurrentObjectNewEntry(hashTypeIterator *hi, size_t *usable) {
+         fieldLen = ll2string(fieldBuf, sizeof(fieldBuf), fieldLl);
+         fieldStr = (unsigned char *) fieldBuf;
+     }
+-    sds field = sdsnewlen(fieldStr, fieldLen);
++    sds field = sdsnewbuf(fieldStr, fieldLen);
+ 
+     /* Get value */
+     hashTypeCurrentObject(hi, OBJ_HASH_VALUE, &valueStr, &valueLen, &valueLl, NULL);
+@@ -2829,7 +2829,7 @@ Entry *hashTypeCurrentObjectNewEntry(hashTypeIterator *hi, size_t *usable) {
+         valueLen = ll2string(valueBuf, sizeof(valueBuf), valueLl);
+         valueStr = (unsigned char *) valueBuf;
+     }
+-    sds value = sdsnewlen(valueStr, valueLen);
++    sds value = sdsnewbuf(valueStr, valueLen);
+     int hasExpiry = (hi->expire_time != EB_EXPIRE_TIME_INVALID);
+ 
+     /* Create entry with field and value, using iterator's expire_time */
+@@ -2970,7 +2970,7 @@ static void hashTypeConvertTmplLpToArray(robj *o) {
+         long long vll;
+         unsigned char *vstr = lpGetValue(p, &vlen, &vll);
+         if (vstr)
+-            values[i] = sdsnewlen(vstr, vlen);
++            values[i] = sdsnewbuf(vstr, vlen);
+         else
+             values[i] = sdsfromlonglong(vll);
+         p = lpNext(lp, p);
+@@ -3441,7 +3441,7 @@ int hashTypeTryConvertToTemplate(robj *o,
+         sds *values = zmalloc(sizeof(sds) * num_fields);
+         for (size_t j = 0; j < num_fields; j++)
+             values[j] = pairs[j].vstr ?
+-                        sdsnewlen(pairs[j].vstr, pairs[j].vlen) :
++                        sdsnewbuf(pairs[j].vstr, pairs[j].vlen) :
+                         sdsfromlonglong(pairs[j].vll);
+         hashTemplateArray *hta = hashTemplateArrayCreate(tmpl, values, 1);
+         zfree(values);  /* array adopted the sds; free only the array */
+@@ -3525,8 +3525,8 @@ robj *hashTypeDup(kvobj *o, uint64_t *minHashExpire) {
+             hashTypeCurrentFromHashTable(&hi, OBJ_HASH_VALUE, &value, &valueLen, NULL);
+ 
+             /* Create new entry with field and value */
+-            sds newFieldSds = sdsnewlen(field, fieldLen);
+-            sds newValueSds = sdsnewlen(value, valueLen);
++            sds newFieldSds = sdsnewbuf(field, fieldLen);
++            sds newValueSds = sdsnewbuf(value, valueLen);
+             /* Create new entry with field and value, optional expiry. */
+             if (expireTime == EB_EXPIRE_TIME_INVALID) {
+                 newEntry = entryCreate(newFieldSds, newValueSds, 
+@@ -3583,7 +3583,7 @@ robj *hashTypeDup(kvobj *o, uint64_t *minHashExpire) {
+ 
+ /* Create a new sds string from the listpack entry. */
+ sds hashSdsFromListpackEntry(listpackEntry *e) {
+-    return e->sval ? sdsnewlen(e->sval, e->slen) : sdsfromlonglong(e->lval);
++    return e->sval ? sdsnewbuf(e->sval, e->slen) : sdsfromlonglong(e->lval);
+ }
+ 
+ /* Reply with bulk string from the listpack entry. */
+@@ -4841,7 +4841,7 @@ void hincrbyfloatCommand(client *c) {
+ 
+     char buf[MAX_LONG_DOUBLE_CHARS];
+     int len = ld2string(buf,sizeof(buf),value,LD_STR_HUMAN);
+-    new = sdsnewlen(buf,len);
++    new = sdsnewbuf(buf,len);
+     if (server.memory_tracking_enabled)
+         oldsize = kvobjAllocSize(o);
+ 
+diff --git a/src/t_set.c b/src/t_set.c
+index 658873868..a484beb77 100644
+--- a/src/t_set.c
++++ b/src/t_set.c
+@@ -141,7 +141,7 @@ int setTypeAddAux(robj *set, char *str, size_t len, int64_t llval, int str_is_sd
+     serverAssert(str);
+     if (set->encoding == OBJ_ENCODING_HT) {
+         /* Avoid duping the string if it is an sds string. */
+-        sds sdsval = str_is_sds ? (sds)str : sdsnewlen(str, len);
++        sds sdsval = str_is_sds ? (sds)str : sdsnewbuf(str, len);
+         dict *ht = set->ptr;
+         dictEntryLink bucket, link = dictFindLink(ht, sdsval, &bucket);
+         if (link == NULL) {
+@@ -177,7 +177,7 @@ int setTypeAddAux(robj *set, char *str, size_t len, int64_t llval, int str_is_sd
+             } else {
+                 /* Size limit is reached. Convert to hashtable and add. */
+                 setTypeConvertAndExpand(set, OBJ_ENCODING_HT, lpLength(lp) + 1, 1);
+-                sds newval = sdsnewlen(str,len);
++                sds newval = sdsnewbuf(str,len);
+                 serverAssert(dictAdd(set->ptr,newval,NULL) == DICT_OK);
+                 *htGetMetadataSize(set->ptr) += sdsAllocSize(newval);
+             }
+@@ -223,7 +223,7 @@ int setTypeAddAux(robj *set, char *str, size_t len, int64_t llval, int str_is_sd
+                                         intsetLen(set->ptr) + 1, 1);
+                 /* The set *was* an intset and this value is not integer
+                  * encodable, so dictAdd should always work. */
+-                sds newval = sdsnewlen(str,len);
++                sds newval = sdsnewbuf(str,len);
+                 serverAssert(dictAdd(set->ptr,newval,NULL) == DICT_OK);
+                 *htGetMetadataSize(set->ptr) += sdsAllocSize(newval);
+                 return 1;
+@@ -261,7 +261,7 @@ int setTypeRemoveAux(robj *setobj, char *str, size_t len, int64_t llval, int str
+     }
+ 
+     if (setobj->encoding == OBJ_ENCODING_HT) {
+-        sds sdsval = str_is_sds ? (sds)str : sdsnewlen(str, len);
++        sds sdsval = str_is_sds ? (sds)str : sdsnewbuf(str, len);
+         int deleted = (dictDelete(setobj->ptr, sdsval) == DICT_OK);
+         if (sdsval != str) sdsfree(sdsval); /* free temp copy */
+         return deleted;
+@@ -320,7 +320,7 @@ int setTypeIsMemberAux(robj *set, char *str, size_t len, int64_t llval, int str_
+     } else if (set->encoding == OBJ_ENCODING_HT && str_is_sds) {
+         return dictFind(set->ptr, (sds)str) != NULL;
+     } else if (set->encoding == OBJ_ENCODING_HT) {
+-        sds sdsval = sdsnewlen(str, len);
++        sds sdsval = sdsnewbuf(str, len);
+         int result = dictFind(set->ptr, sdsval) != NULL;
+         sdsfree(sdsval);
+         return result;
+@@ -412,7 +412,7 @@ sds setTypeNextObject(setTypeIterator *si) {
+     size_t len = 0;
+ 
+     if (setTypeNext(si, &str, &len, &intele) == -1) return NULL;
+-    if (str != NULL) return sdsnewlen(str, len);
++    if (str != NULL) return sdsnewbuf(str, len);
+     return sdsfromlonglong(intele);
+ }
+ 
+@@ -1273,7 +1273,7 @@ void srandmemberWithCountCommand(client *c) {
+             if (str == NULL) {
+                 retval = dictAdd(d,sdsfromlonglong(llele),NULL);
+             } else {
+-                retval = dictAdd(d, sdsnewlen(str, len), NULL);
++                retval = dictAdd(d, sdsnewbuf(str, len), NULL);
+             }
+             serverAssert(retval == DICT_OK);
+         }
+@@ -1305,7 +1305,7 @@ void srandmemberWithCountCommand(client *c) {
+             if (str == NULL) {
+                 sdsele = sdsfromlonglong(llele);
+             } else {
+-                sdsele = sdsnewlen(str, len);
++                sdsele = sdsnewbuf(str, len);
+             }
+             /* Try to add the object to the dictionary. If it already exists
+              * free it, otherwise increment the number of objects we have
+diff --git a/src/t_stream.c b/src/t_stream.c
+index d89ea9b0c..8f33959cf 100644
+--- a/src/t_stream.c
++++ b/src/t_stream.c
+@@ -1688,7 +1688,7 @@ void streamLastValidID(stream *s, streamID *maxid)
+ 
+ sds createStreamIDString(streamID *id) {
+     /* Optimization: pre-allocate a big enough buffer to avoid reallocs. */
+-    sds str = sdsnewlen(SDS_NOINIT, STREAM_ID_STR_LEN);
++    sds str = sdsnewbuf(SDS_NOINIT, STREAM_ID_STR_LEN);
+     sdssetlen(str, 0);
+     return sdscatfmt(str,"%U-%U", id->ms,id->seq);
+ }
+diff --git a/src/t_string.c b/src/t_string.c
+index 81ee63f96..cbab5b260 100644
+--- a/src/t_string.c
++++ b/src/t_string.c
+@@ -605,7 +605,7 @@ void setrangeCommand(client *c) {
+             return;
+ 
+         newLen = offset+value_len;
+-        robj *o = createObject(OBJ_STRING,sdsnewlen(NULL, newLen));
++        robj *o = createObject(OBJ_STRING,sdsnewbuf(NULL, newLen));
+         kv = dbAddByLink(c->db, c->argv[1], &o, &link);
+     } else {
+         /* Key exists, check type */
+@@ -1537,7 +1537,7 @@ void lcsCommand(client *c) {
+ 
+     /* Do we need to compute the actual LCS string? Allocate it in that case. */
+     int computelcs = getidx || !getlen;
+-    if (computelcs) result = sdsnewlen(SDS_NOINIT,idx);
++    if (computelcs) result = sdsnewbuf(SDS_NOINIT,idx);
+ 
+     /* Start with a deferred array if we have to emit the ranges. */
+     uint32_t arraylen = 0;  /* Number of ranges emitted in the array. */
+diff --git a/src/t_zset.c b/src/t_zset.c
+index ff61afdd3..4f568b37c 100644
+--- a/src/t_zset.c
++++ b/src/t_zset.c
+@@ -779,11 +779,11 @@ static int zslParseLexRangeItem(robj *item, sds *dest, int *ex) {
+         return C_OK;
+     case '(':
+         *ex = 1;
+-        *dest = sdsnewlen(c+1,sdslen(c)-1);
++        *dest = sdsnewbuf(c+1,sdslen(c)-1);
+         return C_OK;
+     case '[':
+         *ex = 0;
+-        *dest = sdsnewlen(c+1,sdslen(c)-1);
++        *dest = sdsnewbuf(c+1,sdslen(c)-1);
+         return C_OK;
+     default:
+         return C_ERR;
+@@ -978,7 +978,7 @@ sds lpGetObject(unsigned char *sptr) {
+     vstr = lpGetValue(sptr,&vlen,&vlong);
+ 
+     if (vstr) {
+-        return sdsnewlen((char*)vstr,vlen);
++        return sdsnewbuf((char*)vstr,vlen);
+     } else {
+         return sdsfromlonglong(vlong);
+     }
+@@ -1477,7 +1477,7 @@ void zsetConvertAndExpand(robj *zobj, int encoding, unsigned long cap) {
+             if (vstr == NULL)
+                 ele = sdsfromlonglong(vlong);
+             else
+-                ele = sdsnewlen((char*)vstr,vlen);
++                ele = sdsnewbuf((char*)vstr,vlen);
+ 
+             node = zslInsert(zs->zsl,score,ele);
+             serverAssert(dictAdd(zs->dict, node, NULL) == DICT_OK);
+@@ -1912,7 +1912,7 @@ robj *zsetDup(robj *o) {
+ 
+ /* Create a new sds string from the listpack entry. */
+ sds zsetSdsFromListpackEntry(listpackEntry *e) {
+-    return e->sval ? sdsnewlen(e->sval, e->slen) : sdsfromlonglong(e->lval);
++    return e->sval ? sdsnewbuf(e->sval, e->slen) : sdsfromlonglong(e->lval);
+ }
+ 
+ /* Reply with bulk string from the listpack entry. */
+@@ -2552,7 +2552,7 @@ int zuiLongLongFromValue(zsetopval *val) {
+ sds zuiSdsFromValue(zsetopval *val) {
+     if (val->ele == NULL) {
+         if (val->estr != NULL) {
+-            val->ele = sdsnewlen((char*)val->estr,val->elen);
++            val->ele = sdsnewbuf((char*)val->estr,val->elen);
+         } else {
+             val->ele = sdsfromlonglong(val->ell);
+         }
+@@ -2573,7 +2573,7 @@ sds zuiNewSdsFromValue(zsetopval *val) {
+     } else if (val->ele) {
+         return sdsdup(val->ele);
+     } else if (val->estr) {
+-        return sdsnewlen((char*)val->estr,val->elen);
++        return sdsnewbuf((char*)val->estr,val->elen);
+     } else {
+         return sdsfromlonglong(val->ell);
+     }
+@@ -3338,7 +3338,7 @@ static void zrangeResultEmitCBufferForStore(zrange_result_handler *handler,
+ {
+     double newscore;
+     int retflags = 0;
+-    sds ele = sdsnewlen(value, value_length_in_bytes);
++    sds ele = sdsnewbuf(value, value_length_in_bytes);
+     int retval = zsetAdd(handler->dstobj, score, ele, ZADD_IN_NONE, &retflags, &newscore);
+     sdsfree(ele);
+     serverAssert(retval);
+@@ -4304,7 +4304,7 @@ void genericZpopCommand(client *c, robj **keyv, int keyc, int where, int emitkey
+             if (vstr == NULL)
+                 ele = sdsfromlonglong(vlong);
+             else
+-                ele = sdsnewlen(vstr,vlen);
++                ele = sdsnewbuf(vstr,vlen);
+ 
+             /* Get the score. */
+             sptr = lpNext(zl,eptr);
+diff --git a/src/tls.c b/src/tls.c
+index e185f6720..625e15de2 100644
+--- a/src/tls.c
++++ b/src/tls.c
+@@ -1321,7 +1321,7 @@ static sds connTLSGetPeerCert(connection *conn_) {
+ 
+     const char *bio_ptr;
+     long long bio_len = BIO_get_mem_data(bio, &bio_ptr);
+-    sds cert_pem = sdsnewlen(bio_ptr, bio_len);
++    sds cert_pem = sdsnewbuf(bio_ptr, bio_len);
+     BIO_free(bio);
+     X509_free(cert);
+ 
+diff --git a/src/tracking.c b/src/tracking.c
+index aefc8c034..04f6545d8 100644
+--- a/src/tracking.c
++++ b/src/tracking.c
+@@ -102,7 +102,7 @@ int checkPrefixCollisionsOrReply(client *c, robj **prefixes, size_t numprefix) {
+                 if (stringCheckPrefix(ri.key,ri.key_len,
+                     prefixes[i]->ptr,sdslen(prefixes[i]->ptr))) 
+                 {
+-                    sds collision = sdsnewlen(ri.key,ri.key_len);
++                    sds collision = sdsnewbuf(ri.key,ri.key_len);
+                     addReplyErrorFormat(c,
+                         "Prefix '%s' overlaps with an existing prefix '%s'. "
+                         "Prefixes for a single client must not overlap.",
+diff --git a/src/util.c b/src/util.c
+index 3229b08bf..8e125da3f 100644
+--- a/src/util.c
++++ b/src/util.c
+@@ -1123,7 +1123,7 @@ sds getFilePath(char *path) {
+     if (pathIsBaseName(path)) return NULL;
+ 
+     char *pch = strrchr(path,'/');
+-    return sdsnewlen(path, pch - path);
++    return sdsnewbuf(path, pch - path);
+ }
+ 
+ int fileExist(char *filename) {
+diff --git a/src/ziplist.c b/src/ziplist.c
+index db582b3f7..cadd8950b 100644
+--- a/src/ziplist.c
++++ b/src/ziplist.c
+@@ -2396,9 +2396,9 @@ int ziplistTest(int argc, char **argv, int flags) {
+ 
+                 /* Add to reference list */
+                 if (where == ZIPLIST_HEAD) {
+-                    listAddNodeHead(ref,sdsnewlen(buf, buflen));
++                    listAddNodeHead(ref,sdsnewbuf(buf, buflen));
+                 } else if (where == ZIPLIST_TAIL) {
+-                    listAddNodeTail(ref,sdsnewlen(buf, buflen));
++                    listAddNodeTail(ref,sdsnewbuf(buf, buflen));
+                 } else {
+                     assert(NULL);
+                 }

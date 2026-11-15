@@ -1,0 +1,13 @@
+diff --git a/core/lib/Drupal/Component/Utility/NestedArray.php b/core/lib/Drupal/Component/Utility/NestedArray.php
+index 7f943fd9..de6ed1eb 100644
+--- a/core/lib/Drupal/Component/Utility/NestedArray.php
++++ b/core/lib/Drupal/Component/Utility/NestedArray.php
+@@ -7,7 +7,7 @@
+  *
+  * @ingroup utility
+  */
+-class NestedArray {
++class NestedValueArray {
+ 
+   /**
+    * Retrieves a value from a nested array with variable depth.

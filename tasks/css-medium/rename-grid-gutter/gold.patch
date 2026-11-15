@@ -1,0 +1,361 @@
+diff --git a/packages/grid/scss/_config.scss b/packages/grid/scss/_config.scss
+index ed3fe8f..25ada7d 100644
+--- a/packages/grid/scss/_config.scss
++++ b/packages/grid/scss/_config.scss
+@@ -24,13 +24,13 @@ $flex-grid-columns: 16 !default;
+ /// @type Number
+ /// @access public
+ /// @group @carbon/layout
+-$grid-gutter: convert.to-rem(32px) !default;
++$layout-gutter: convert.to-rem(32px) !default;
+ 
+ /// Carbon condensed gutter size in rem
+ /// @type Number
+ /// @access public
+ /// @group @carbon/layout
+-$grid-gutter-condensed: convert.to-rem(1px) !default;
++$layout-gutter-condensed: convert.to-rem(1px) !default;
+ 
+ // Initial map of our breakpoints and their values
+ /// @type Map
+diff --git a/packages/grid/scss/_css-grid.scss b/packages/grid/scss/_css-grid.scss
+index 8d9e183..03cc715 100644
+--- a/packages/grid/scss/_css-grid.scss
++++ b/packages/grid/scss/_css-grid.scss
+@@ -40,7 +40,7 @@
+   /// Properties, including the overall grid gutter, grid column count, and grid
+   /// margin
+   :root {
+-    --cds-grid-gutter: #{$grid-gutter};
++    --cds-grid-gutter: #{$layout-gutter};
+ 
+     // Iterate through the grid breakpoints and only emit the grid-columns and
+     // grid-margin CSS Custom Properties if they've changed from the previous
+@@ -144,9 +144,9 @@
+ 
+   // Condensed
+   .#{$prefix}--css-grid--condensed {
+-    --cds-grid-gutter: #{$grid-gutter-condensed};
+-    --cds-grid-column-hang: #{math.div($grid-gutter, 2) - math.div(
+-        $grid-gutter-condensed,
++    --cds-grid-gutter: #{$layout-gutter-condensed};
++    --cds-grid-column-hang: #{math.div($layout-gutter, 2) - math.div(
++        $layout-gutter-condensed,
+         2
+       )};
+   }
+@@ -197,23 +197,23 @@
+ 
+   // Support the gutter modes in subgrids
+   .#{$prefix}--subgrid--wide {
+-    --cds-grid-gutter-start: #{math.div($grid-gutter, 2)};
+-    --cds-grid-gutter-end: #{math.div($grid-gutter, 2)};
++    --cds-grid-gutter-start: #{math.div($layout-gutter, 2)};
++    --cds-grid-gutter-end: #{math.div($layout-gutter, 2)};
+     --cds-grid-column-hang: 0;
+   }
+ 
+   .#{$prefix}--subgrid--narrow {
+     --cds-grid-gutter-start: 0rem; /* stylelint-disable-line length-zero-no-unit */
+-    --cds-grid-gutter-end: #{math.div($grid-gutter, 2)};
+-    --cds-grid-column-hang: #{math.div($grid-gutter, 2)};
++    --cds-grid-gutter-end: #{math.div($layout-gutter, 2)};
++    --cds-grid-column-hang: #{math.div($layout-gutter, 2)};
+   }
+ 
+   .#{$prefix}--subgrid--condensed {
+-    --cds-grid-gutter: #{$grid-gutter-condensed};
+-    --cds-grid-gutter-start: #{math.div($grid-gutter-condensed, 2)};
+-    --cds-grid-gutter-end: #{math.div($grid-gutter-condensed, 2)};
+-    --cds-grid-column-hang: #{math.div($grid-gutter, 2) - math.div(
+-        $grid-gutter-condensed,
++    --cds-grid-gutter: #{$layout-gutter-condensed};
++    --cds-grid-gutter-start: #{math.div($layout-gutter-condensed, 2)};
++    --cds-grid-gutter-end: #{math.div($layout-gutter-condensed, 2)};
++    --cds-grid-column-hang: #{math.div($layout-gutter, 2) - math.div(
++        $layout-gutter-condensed,
+         2
+       )};
+   }
+@@ -225,16 +225,16 @@
+   // Add row gap support for CSS subgrids
+   // Row gap should match the total gutter (start + end margins)
+   .#{$prefix}--subgrid--with-row-gap {
+-    row-gap: #{$grid-gutter};
++    row-gap: #{$layout-gutter};
+   }
+ 
+   // Narrow mode has 0 + 1rem = 1rem total gutter
+   .#{$prefix}--subgrid--narrow.#{$prefix}--subgrid--with-row-gap {
+-    row-gap: #{math.div($grid-gutter, 2)};
++    row-gap: #{math.div($layout-gutter, 2)};
+   }
+ 
+   .#{$prefix}--subgrid--condensed.#{$prefix}--subgrid--with-row-gap {
+-    row-gap: #{$grid-gutter-condensed};
++    row-gap: #{$layout-gutter-condensed};
+   }
+ 
+   // -----------------------------------------------------------------------------
+diff --git a/packages/grid/scss/_flex-grid.scss b/packages/grid/scss/_flex-grid.scss
+index 556c0c5..a34e283 100644
+--- a/packages/grid/scss/_flex-grid.scss
++++ b/packages/grid/scss/_flex-grid.scss
+@@ -24,13 +24,13 @@
+ /// Used to initialize the default properties for a column class, most notably
+ /// for setting width and default gutters when a column's breakpoint has not been
+ /// hit yet.
+-/// @param {Number} $gutter [$grid-gutter] - The gutter for the grid system
+-/// @param {Number} $collapsed-gutter [$grid-gutter-condensed] - The condensed mode gutter
++/// @param {Number} $gutter [$layout-gutter] - The gutter for the grid system
++/// @param {Number} $collapsed-gutter [$layout-gutter-condensed] - The condensed mode gutter
+ /// @access private
+ /// @group @carbon/grid
+ @mixin -make-col-ready(
+-  $gutter: $grid-gutter,
+-  $condensed-gutter: $grid-gutter-condensed
++  $gutter: $layout-gutter,
++  $condensed-gutter: $layout-gutter-condensed
+ ) {
+   // Prevent columns from becoming too narrow when at smaller grid tiers by
+   // always setting `width: 100%;`. This works because we use `flex` values
+@@ -89,12 +89,12 @@
+ 
+ /// Output the CSS required for all the columns in a given grid system.
+ /// @param {Map} $breakpoints [$grid-breakpoints] - The breakpoints in the grid system
+-/// @param {Number} $gutter [$grid-gutter] - The gutter for the grid system
++/// @param {Number} $gutter [$layout-gutter] - The gutter for the grid system
+ /// @access private
+ /// @group @carbon/grid
+ @mixin -make-grid-columns(
+   $breakpoints: $grid-breakpoints,
+-  $gutter: $grid-gutter
++  $gutter: $layout-gutter
+ ) {
+   .#{$prefix}--col {
+     @include -make-col-ready($gutter);
+@@ -155,10 +155,10 @@
+ // -----------------------------------------------------------------------------
+ 
+ /// Define the properties for a selector assigned to a row in the grid system.
+-/// @param {Number} $gutter [$grid-gutter] - The gutter in the grid system
++/// @param {Number} $gutter [$layout-gutter] - The gutter in the grid system
+ /// @access private
+ /// @group @carbon/grid
+-@mixin -make-row($gutter: $grid-gutter) {
++@mixin -make-row($gutter: $layout-gutter) {
+   display: flex;
+   flex-wrap: wrap;
+   margin-inline: -1 * $gutter * 0.5;
+@@ -195,10 +195,10 @@
+ 
+ /// Add `hang--start` and `hang--end` classes for a given gutter. These classes are
+ /// used alongside `no-gutter--start` and `no-gutter--end` to "hang" type.
+-/// @param {Number} $gutter [$grid-gutter] - The gutter in the grid system
++/// @param {Number} $gutter [$layout-gutter] - The gutter in the grid system
+ /// @access private
+ /// @group @carbon/grid
+-@mixin -hang($gutter: $grid-gutter) {
++@mixin -hang($gutter: $layout-gutter) {
+   .#{$prefix}--hang--start {
+     padding-inline-start: $gutter * 0.5;
+   }
+@@ -230,12 +230,12 @@
+       $prev-margin: map.get($prev-breakpoint, margin);
+       @if $prev-margin != $margin {
+         @include breakpoint($name) {
+-          padding-inline: #{($grid-gutter * 0.5) + $margin};
++          padding-inline: #{($layout-gutter * 0.5) + $margin};
+         }
+       }
+     } @else {
+       @include breakpoint($name) {
+-        padding-inline: #{($grid-gutter * 0.5) + $margin};
++        padding-inline: #{($layout-gutter * 0.5) + $margin};
+       }
+     }
+   }
+@@ -286,14 +286,14 @@
+ 
+ /// Generate the CSS for a grid for the given breakpoints and gutters
+ /// @param {Map} $breakpoints [$grid-breakpoints] - The default breakpoints
+-/// @param {Number} $grid-gutter [$grid-gutter] - The default gutters
+-/// @param {Number} $condensed-gutter [$grid-gutter-condensed] - The condensed mode gutter
++/// @param {Number} $layout-gutter [$layout-gutter] - The default gutters
++/// @param {Number} $condensed-gutter [$layout-gutter-condensed] - The condensed mode gutter
+ /// @access public
+ /// @group @carbon/grid
+ @mixin flex-grid(
+   $breakpoints: $grid-breakpoints,
+-  $grid-gutter: $grid-gutter,
+-  $condensed-gutter: $grid-gutter-condensed
++  $layout-gutter: $layout-gutter,
++  $condensed-gutter: $layout-gutter-condensed
+ ) {
+   .#{$prefix}--grid {
+     @include -make-container($breakpoints);
+@@ -311,7 +311,7 @@
+ 
+   .#{$prefix}--row-padding [class*='#{$prefix}--col'],
+   .#{$prefix}--col-padding {
+-    padding-block: $grid-gutter * 0.5;
++    padding-block: $layout-gutter * 0.5;
+   }
+ 
+   .#{$prefix}--grid--condensed [class*='#{$prefix}--col'] {
+@@ -320,7 +320,7 @@
+ 
+   // Add row gap support for Flexbox Grid using gap and margin-block-end
+   .#{$prefix}--grid--with-row-gap {
+-    --cds-grid-row-gap: #{$grid-gutter};
++    --cds-grid-row-gap: #{$layout-gutter};
+   }
+ 
+   // Sets the gap between rows and wrapped columns
+@@ -336,7 +336,7 @@
+ 
+   // Narrow mode has 0 + 1rem = 1rem total gutter
+   .#{$prefix}--grid--with-row-gap.#{$prefix}--grid--narrow {
+-    --cds-grid-row-gap: calc(#{$grid-gutter} / 2);
++    --cds-grid-row-gap: calc(#{$layout-gutter} / 2);
+   }
+ 
+   // Remove margin from the last row
+@@ -344,7 +344,7 @@
+     margin-block-end: 0;
+   }
+ 
+-  @include -make-grid-columns($breakpoints, $grid-gutter);
++  @include -make-grid-columns($breakpoints, $layout-gutter);
+   @include -no-gutter();
+-  @include -hang($grid-gutter);
++  @include -hang($layout-gutter);
+ }
+diff --git a/packages/grid/scss/_mixins.scss b/packages/grid/scss/_mixins.scss
+index f97e4d6..3f5ef7b 100644
+--- a/packages/grid/scss/_mixins.scss
++++ b/packages/grid/scss/_mixins.scss
+@@ -19,13 +19,13 @@
+ /// Used to initialize the default properties for a column class, most notably
+ /// for setting width and default gutters when a column's breakpoint has not been
+ /// hit yet.
+-/// @param {Number} $gutter [$grid-gutter] - The gutter for the grid system
+-/// @param {Number} $collapsed-gutter [$grid-gutter--condensed] - The condensed mode gutter
++/// @param {Number} $gutter [$layout-gutter] - The gutter for the grid system
++/// @param {Number} $collapsed-gutter [$layout-gutter--condensed] - The condensed mode gutter
+ /// @access private
+ /// @group @carbon/grid
+ @mixin -make-col-ready(
+-  $gutter: $grid-gutter,
+-  $condensed-gutter: $grid-gutter--condensed
++  $gutter: $layout-gutter,
++  $condensed-gutter: $layout-gutter--condensed
+ ) {
+   // Prevent columns from becoming too narrow when at smaller grid tiers by
+   // always setting `width: 100%;`. This works because we use `flex` values
+@@ -84,12 +84,12 @@
+ 
+ /// Output the CSS required for all the columns in a given grid system.
+ /// @param {Map} $breakpoints [$grid-breakpoints] - The breakpoints in the grid system
+-/// @param {Number} $gutter [$grid-gutter] - The gutter for the grid system
++/// @param {Number} $gutter [$layout-gutter] - The gutter for the grid system
+ /// @access private
+ /// @group @carbon/grid
+ @mixin -make-grid-columns(
+   $breakpoints: $grid-breakpoints,
+-  $gutter: $grid-gutter
++  $gutter: $layout-gutter
+ ) {
+   .#{$prefix}--col {
+     @include -make-col-ready($gutter);
+@@ -150,10 +150,10 @@
+ // -----------------------------------------------------------------------------
+ 
+ /// Define the properties for a selector assigned to a row in the grid system.
+-/// @param {Number} $gutter [$grid-gutter] - The gutter in the grid system
++/// @param {Number} $gutter [$layout-gutter] - The gutter in the grid system
+ /// @access private
+ /// @group @carbon/grid
+-@mixin make-row($gutter: $grid-gutter) {
++@mixin make-row($gutter: $layout-gutter) {
+   display: flex;
+   flex-wrap: wrap;
+   margin-inline: -1 * $gutter * 0.5;
+@@ -190,10 +190,10 @@
+ 
+ /// Add `hang--start` and `hang--end` classes for a given gutter. These classes are
+ /// used alongside `no-gutter--start` and `no-gutter--end` to "hang" type.
+-/// @param {Number} $gutter [$grid-gutter] - The gutter in the grid system
++/// @param {Number} $gutter [$layout-gutter] - The gutter in the grid system
+ /// @access private
+ /// @group @carbon/grid
+-@mixin -hang($gutter: $grid-gutter) {
++@mixin -hang($gutter: $layout-gutter) {
+   .#{$prefix}--hang--start {
+     padding-inline-start: ($gutter * 0.5);
+   }
+@@ -225,12 +225,12 @@
+       $prev-margin: map.get($prev-breakpoint, margin);
+       @if $prev-margin != $margin {
+         @include breakpoint($name) {
+-          padding-inline: #{($grid-gutter * 0.5) + $margin};
++          padding-inline: #{($layout-gutter * 0.5) + $margin};
+         }
+       }
+     } @else {
+       @include breakpoint($name) {
+-        padding-inline: #{($grid-gutter * 0.5) + $margin};
++        padding-inline: #{($layout-gutter * 0.5) + $margin};
+       }
+     }
+   }
+@@ -260,14 +260,14 @@
+ 
+ /// Generate the CSS for a grid for the given breakpoints and gutters
+ /// @param {Map} $breakpoints [$grid-breakpoints] - The default breakpoints
+-/// @param {Number} $grid-gutter [$grid-gutter] - The default gutters
+-/// @param {Number} $condensed-gutter [$grid-gutter--condensed] - The condensed mode gutter
++/// @param {Number} $layout-gutter [$layout-gutter] - The default gutters
++/// @param {Number} $condensed-gutter [$layout-gutter--condensed] - The condensed mode gutter
+ /// @access public
+ /// @group @carbon/grid
+ @mixin grid(
+   $breakpoints: $grid-breakpoints,
+-  $grid-gutter: $grid-gutter,
+-  $condensed-gutter: $grid-gutter--condensed
++  $layout-gutter: $layout-gutter,
++  $condensed-gutter: $layout-gutter--condensed
+ ) {
+   .#{$prefix}--grid {
+     @include -make-container($breakpoints);
+@@ -285,14 +285,14 @@
+ 
+   .#{$prefix}--row-padding [class*='#{$prefix}--col'],
+   .#{$prefix}--col-padding {
+-    padding-block: $grid-gutter * 0.5;
++    padding-block: $layout-gutter * 0.5;
+   }
+ 
+   .#{$prefix}--grid--condensed [class*='#{$prefix}--col'] {
+     padding-block: $condensed-gutter * 0.5;
+   }
+ 
+-  @include -make-grid-columns($breakpoints, $grid-gutter);
++  @include -make-grid-columns($breakpoints, $layout-gutter);
+   @include -no-gutter();
+-  @include -hang($grid-gutter);
++  @include -hang($layout-gutter);
+ }
+diff --git a/packages/styles/scss/grid/_index.scss b/packages/styles/scss/grid/_index.scss
+index 23cf69d..3a2e2c1 100644
+--- a/packages/styles/scss/grid/_index.scss
++++ b/packages/styles/scss/grid/_index.scss
+@@ -6,7 +6,7 @@
+ //
+ 
+ @use '../config';
+-@forward '@carbon/grid' show $grid-gutter, $grid-gutter-condensed,
++@forward '@carbon/grid' show $layout-gutter, $layout-gutter-condensed,
+   $grid-breakpoints, flex-grid, css-grid;
+ @use '@carbon/grid';
+ 

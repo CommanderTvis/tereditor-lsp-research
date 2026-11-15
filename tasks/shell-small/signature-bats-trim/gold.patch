@@ -1,0 +1,80 @@
+diff --git a/lib/bats-core/common.bash b/lib/bats-core/common.bash
+index 2bd1a5b..3acf1e1 100644
+--- a/lib/bats-core/common.bash
++++ b/lib/bats-core/common.bash
+@@ -207,11 +207,11 @@ bats_any_in() { # <sorted-array> <sorted search values>
+   return 1
+ }
+ 
+-bats_trim() {                                            # <output-variable> <string>
+-  local -r bats_trim_ltrimmed=${2#"${2%%[![:space:]]*}"} # cut off leading whitespace
++bats_trim() {                                            # <string> <output-variable>
++  local -r bats_trim_ltrimmed=${1#"${1%%[![:space:]]*}"} # cut off leading whitespace
+   # shellcheck disable=SC2034 # used in eval!
+   local -r bats_trim_trimmed=${bats_trim_ltrimmed%"${bats_trim_ltrimmed##*[![:space:]]}"} # cut off trailing whitespace
+-  eval "$1=\$bats_trim_trimmed"
++  eval "$2=\$bats_trim_trimmed"
+ }
+ 
+ # a helper function to work around unbound variable errors with ${arr[@]} on Bash 3
+diff --git a/libexec/bats-core/bats-gather-tests b/libexec/bats-core/bats-gather-tests
+index 6a3d836..e819cd4 100755
+--- a/libexec/bats-core/bats-gather-tests
++++ b/libexec/bats-core/bats-gather-tests
+@@ -21,7 +21,7 @@ read_tags() {
+   read -ra tags <<<"$1" || true
+   if ((${#tags[@]} > 0)); then
+     for ((i = 0; i < ${#tags[@]}; ++i)); do
+-      bats_trim "tags[$i]" "${tags[$i]}"
++      bats_trim "${tags[$i]}" "tags[$i]"
+     done
+     bats_sort sorted_tags "${tags[@]}"
+     # shellcheck disable=SC2154
+@@ -144,7 +144,7 @@ function should_skip_because_of_filter_tags() {
+       IFS=, read -ra filter_tags <<<"$filter_tags" || true
+       for filter_tag in "${filter_tags[@]}"; do
+         if [[ $filter_tag == !* ]]; then
+-          bats_trim filter_tag "${filter_tag#!}"
++          bats_trim "${filter_tag#!}" filter_tag
+           negative_filter_tags+=("${filter_tag}")
+         else
+           positive_filter_tags+=("${filter_tag}")
+diff --git a/libexec/bats-core/bats-preprocess b/libexec/bats-core/bats-preprocess
+index f0cf4cb..6f2160e 100755
+--- a/libexec/bats-core/bats-preprocess
++++ b/libexec/bats-core/bats-preprocess
+@@ -49,7 +49,7 @@ extract_tags() { # <tag_type/return_var> <tags-string>
+     local -ri length=${#tags[@]}
+     for ((i = 0; i < length; ++i)); do
+       local element="tags[$i]"
+-      bats_trim "$element" "${!element}" 2>/dev/null # printf on bash 3 will complain but work anyways
++      bats_trim "${!element}" "$element" 2>/dev/null # printf on bash 3 will complain but work anyways
+       if [[ -z "${!element}" && -n "${CHECK_BATS_COMMENT_COMMANDS:-}" ]]; then
+         printf "%s:%d: Error: Invalid %s: '%s'. " "$test_file" "$line_number" "$tag_type" "$tags_string"
+         printf "Tags must not be empty. Please remove redundant commas!\n"
+diff --git a/test/common.bats b/test/common.bats
+index 547af86..ec4d684 100644
+--- a/test/common.bats
++++ b/test/common.bats
+@@ -180,17 +180,17 @@
+ 
+ @test bats_trim {
+   local empty already_trimmed trimmed whitespaces_within
+-  bats_trim empty ""
++  bats_trim "" empty
+   # shellcheck disable=SC2031
+   [ "${empty-NOTSET}" = "" ]
+ 
+-  bats_trim already_trimmed "abc"
++  bats_trim "abc" already_trimmed
+   [ "$already_trimmed" = abc ]
+ 
+-  bats_trim trimmed "  abc  "
++  bats_trim "  abc  " trimmed
+   [ "$trimmed" = abc ]
+ 
+-  bats_trim whitespaces_within "  a b  "
++  bats_trim "  a b  " whitespaces_within
+   [ "$whitespaces_within" = "a b" ]
+ }
+ 

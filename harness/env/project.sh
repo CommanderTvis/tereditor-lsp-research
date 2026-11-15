@@ -1,11 +1,16 @@
-# project.sh <project>: the project's snapshot (pinned commit, agent instruction files removed, one commit), the
-# server-side preparation (prepare.sh), and the grading dependencies (grade-setup.sh), each once.
+# project.sh <project> [commit...]: for the project's pinned commit and every base commit its tasks name (or the given
+# commits): the snapshot (agent instruction files removed, one commit), the server-side preparation (prepare.sh), and
+# the grading dependencies (grade-setup.sh), each once per commit.
 set -eu
 . "$STUDY_ROOT/harness/env/lib.sh"
-proj=$1; pd=$STUDY_ROOT/projects/$proj; st=$STUDY_STATE/projects/$proj
-toml() { sed -n "s/^$1[[:space:]]*=[[:space:]]*\"\{0,1\}\([^\"]*\)\"\{0,1\}[[:space:]]*\$/\1/p" "$pd/project.toml" | head -n1; }
-repo=$(toml repo); commit=$(toml commit)
-[ -n "$repo" ] && [ -n "$commit" ] || die "$pd/project.toml needs repo and commit"
+proj=$1; shift; pd=$STUDY_ROOT/projects/$proj
+repo=$(toml_val "$pd/project.toml" repo); pinned=$(project_commit "$proj")
+[ -n "$repo" ] && [ -n "$pinned" ] || die "$pd/project.toml needs repo and commit"
+if [ $# -eq 0 ]; then
+  set -- $( { echo "$pinned"; for t in "$STUDY_ROOT/tasks/$proj"/*/; do [ -f "$t/task.toml" ] && task_commit "$proj" "${t%/}"; done; } | sort -u)
+fi
+for commit in "$@"; do
+st=$(state_dir "$proj" "$commit")
 mkdir -p "$st"
 g() { git -c user.name=study -c user.email=study@localhost "$@"; }
 if [ ! -f "$st/.snapshot" ]; then
@@ -53,4 +58,5 @@ if [ ! -f "$st/.grade-ready" ]; then
   fi
   touch "$st/.grade-ready"
 fi
-log "project $proj ready"
+log "project $proj ready at $commit"
+done

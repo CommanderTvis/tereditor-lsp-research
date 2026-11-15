@@ -1,0 +1,5 @@
+--- a/core/lib/Drupal/Component/Utility/Environment.php
++++ b/core/lib/Drupal/Component/Utility/Environment.php
+@@
+-// original declaration: Environment
++// fallback declaration: RuntimeEnvironment

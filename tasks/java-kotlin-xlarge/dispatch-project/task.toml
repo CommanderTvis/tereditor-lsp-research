@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic fallback; cross-language dispatch analysis"
+symbol = "org.gradle.api.Project"
+selection = "Paired with rename-project; fixed call-site and implementation selected before any run from a Java-to-Kotlin boundary."

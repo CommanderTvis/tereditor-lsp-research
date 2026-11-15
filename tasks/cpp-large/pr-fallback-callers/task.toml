@@ -1,0 +1,7 @@
+type = "pr"
+pr = 0
+issue = 0
+base_commit = "1a2574ce1551d3de6e0b4a56756c0fdbc6659e4f"
+origin = "documented fallback PR: no qualifying offline testable candidate"
+fallback = true
+symbol = "serverLog"

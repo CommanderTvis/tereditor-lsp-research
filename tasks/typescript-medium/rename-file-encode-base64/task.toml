@@ -1,0 +1,5 @@
+type = "rename-file"
+origin = "synthetic, rename a module and update every import"
+from = "src/utils/encode.ts"
+to = "src/utils/base64.ts"
+selection = "Non-test source modules of src/ (index files, .d.ts and sandbox excluded) imported through a relative path by at least 5 other files of src/; 28 candidates, sorted by path, seeded shuffle awk srand(20261110), first taken. The new name is chosen by hand to describe the module (it holds the base64 and base64url codecs) and checked to be unused."

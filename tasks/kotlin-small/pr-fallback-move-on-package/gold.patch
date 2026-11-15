@@ -1,0 +1,65 @@
+diff --git a/kotlin-result-coroutines/src/commonTest/kotlin/com/github/michaelbull/result/coroutines/RunSuspendCatchingTest.kt b/kotlin-result-coroutines/src/commonTest/kotlin/com/github/michaelbull/result/coroutines/RunSuspendCatchingTest.kt
+index a5fdbf5..0cbb036 100644
+--- a/kotlin-result-coroutines/src/commonTest/kotlin/com/github/michaelbull/result/coroutines/RunSuspendCatchingTest.kt
++++ b/kotlin-result-coroutines/src/commonTest/kotlin/com/github/michaelbull/result/coroutines/RunSuspendCatchingTest.kt
+@@ -2,7 +2,7 @@ package com.github.michaelbull.result.coroutines
+ 
+ import com.github.michaelbull.result.Err
+ import com.github.michaelbull.result.Ok
+-import com.github.michaelbull.result.onOk
++import com.github.michaelbull.result.on.onOk
+ import kotlinx.coroutines.CoroutineName
+ import kotlinx.coroutines.cancel
+ import kotlinx.coroutines.delay
+diff --git a/kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Deprecated.kt b/kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Deprecated.kt
+index 26cc5c9..9c3c981 100644
+--- a/kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Deprecated.kt
++++ b/kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Deprecated.kt
+@@ -1,5 +1,7 @@
+ package com.github.michaelbull.result
+ 
++import com.github.michaelbull.result.on.onErr
++import com.github.michaelbull.result.on.onOk
+ import kotlin.contracts.InvocationKind
+ import kotlin.contracts.contract
+ 
+diff --git a/kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Iterable.kt b/kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Iterable.kt
+index ac60c3f..ba107af 100644
+--- a/kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Iterable.kt
++++ b/kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Iterable.kt
+@@ -1,5 +1,8 @@
+ package com.github.michaelbull.result
+ 
++import com.github.michaelbull.result.on.onErr
++import com.github.michaelbull.result.on.onOk
++
+ /**
+  * Returns `true` if each element [is ok][Result.isOk], `false` otherwise.
+  */
+diff --git a/kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/On.kt b/kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/on/On.kt
+similarity index 91%
+rename from kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/On.kt
+rename to kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/on/On.kt
+index acdb33e..a6cc498 100644
+--- a/kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/On.kt
++++ b/kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/on/On.kt
+@@ -1,5 +1,6 @@
+-package com.github.michaelbull.result
++package com.github.michaelbull.result.on
+ 
++import com.github.michaelbull.result.Result
+ import kotlin.contracts.InvocationKind
+ import kotlin.contracts.contract
+ 
+diff --git a/kotlin-result/src/commonTest/kotlin/com/github/michaelbull/result/OnTest.kt b/kotlin-result/src/commonTest/kotlin/com/github/michaelbull/result/OnTest.kt
+index b72ea25..30fbc43 100644
+--- a/kotlin-result/src/commonTest/kotlin/com/github/michaelbull/result/OnTest.kt
++++ b/kotlin-result/src/commonTest/kotlin/com/github/michaelbull/result/OnTest.kt
+@@ -1,5 +1,7 @@
+ package com.github.michaelbull.result
+ 
++import com.github.michaelbull.result.on.onErr
++import com.github.michaelbull.result.on.onOk
+ import kotlin.test.Test
+ import kotlin.test.assertEquals
+ 

@@ -1,0 +1,3 @@
+type = "callers"
+origin = "devrig call hierarchy; API impact analysis"
+selection = "non-public, non-synthetic, non-overloaded methods of src/main/java (constructors, lambdas and access$ methods excluded) reached from 3 to 15 public-API entry points in the bytecode call graph (callgraph.py --targets 3 15): CodeWriter.suggestedImports, JavaFile.emit, ParameterSpec.isValidParameterName, Util.immutableMultimap, Util.immutableSet, sorted; k = int(rand()*5)+1 = 4 with awk srand(20261110)"

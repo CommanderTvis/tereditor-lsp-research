@@ -1,0 +1,1 @@
+A maintenance issue reported that the project’s handling of getLongLongFromObjectOrReply was incomplete. Apply the upstream-quality fix and preserve all existing behavior. For this fallback task, write the affected source locations to ANSWER.txt, one per line.

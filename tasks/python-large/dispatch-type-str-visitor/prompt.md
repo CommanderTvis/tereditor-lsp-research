@@ -1,0 +1,1 @@
+At `mypy/types.py:323`, `Type.__str__` calls `self.accept(TypeStrVisitor(options=Options()))`. If `self` is a `LiteralType`, which fully qualified method handles this call? Write that single fully qualified name to `ANSWER.txt`.

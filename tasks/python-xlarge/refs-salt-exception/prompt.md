@@ -1,0 +1,1 @@
+Find every use of `salt.exceptions.SaltException` in Python source code in this repository. Include imports, subclasses, raises, catches, and constructor calls that resolve to this class. Exclude its definition, comments, docstrings, strings, and unrelated bindings. Write each location to `ANSWER.txt` as `relative/path.py:LINE`, one per line.

@@ -1,0 +1,10 @@
+[
+  {"name": "references at position (_time, used from hook files)",
+   "args": {"operation": "references", "path": "acme.sh", "line": 1931, "column": 0},
+   "expect": ["acme.sh:2129", "dnsapi/dns_azure.sh:129", "deploy/unifios.sh:235"]},
+  {"name": "references by name _clearaccountconf_mutable", "args": {"operation": "references", "query": "_clearaccountconf_mutable"},
+   "expect": ["dnsapi/dns_cf.sh:38", "dnsapi/dns_cf.sh:59"]},
+  {"name": "definition of _hmac by name", "args": {"operation": "definition", "query": "_hmac"},
+   "expect": ["acme.sh:1090"]},
+  {"name": "diagnostics on a hook file", "tool": "lsp_diagnostics", "args": {"paths": ["dnsapi/dns_cf.sh"]}, "expect": []}
+]

@@ -1,0 +1,8 @@
+type = "pr"
+selection = "Fallback slot selected in assignment order after no validated pre-2022 PR was available; subject is the first stable public symbol in the pinned snapshot matching the project probe surface."
+symbol = "Gson"
+path = "gson/src/main/java/com/google/gson/Gson.java"
+origin = "documented synthetic fallback PR; no qualifying/current-toolchain mined candidate was available"
+fallback_for = "move"
+pr = "fallback-java-medium-move-gsonbuilder"
+issue = "fallback-java-medium-move-gsonbuilder"

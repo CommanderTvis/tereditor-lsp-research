@@ -1,0 +1,6 @@
+type = "signature"
+origin = "synthetic, reorder parameters through an interface, its implementations and call sites"
+symbol = "QueryRunner.createCheckConstraint"
+change = "createCheckConstraint(table, checkConstraint) becomes createCheckConstraint(checkConstraint, table)"
+grade_timeout_s = 2400
+selection = "Methods of exported interfaces in packages/typeorm/src with at least 2 parameters, implemented by at least 3 classes that implement the interface (directly or through a base class), with at least 5 `.name(` call texts in at least 3 files of src and test (TypeScript compiler API scan, 31 candidates); restricted, after the first scan showed swaps that would change optional parameters or that the compiler could not check, to methods whose first two parameters are required and have disjoint declared types (no member of one union in the other), so that the build catches every call site left unchanged. Seeded shuffle awk srand(20261110) of the 19 candidates with required first parameters, first disjoint one taken (renameTable, dropColumn, dropColumns, dropUniqueConstraint skipped: their types share string). The change is fixed by rule: swap the first two parameters."

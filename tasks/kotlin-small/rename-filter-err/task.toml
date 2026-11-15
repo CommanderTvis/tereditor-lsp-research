@@ -1,0 +1,5 @@
+type = "rename"
+origin = "devrig safe rename; a same-named Flow extension in another module must be left alone"
+symbol = "com.github.michaelbull.result.filterErr (Iterable<Result<V, E>> receiver)"
+new_name = "collectErr"
+selection = "Names declared exactly once (fun/class/interface/object/val/var, top level or extension) in kotlin-result/src/commonMain, with at least 10 whole-word occurrences in at least 3 .kt/.kts files other than the declaring file, and declared at least once more elsewhere in the repository; sorted by name: allOk, filterErr (2 candidates); k = 1 + int(rand() * 2) after srand(20261110) = 2."

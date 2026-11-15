@@ -1,0 +1,13 @@
+tests/test_table.py::test_get_row_style
+tests/test_table.py::test_init_append_column
+tests/test_table.py::test_min_width
+tests/test_table.py::test_no_columns
+tests/test_table.py::test_not_renderable
+tests/test_table.py::test_render_table
+tests/test_table.py::test_rich_measure
+tests/test_table.py::test_table_show_header_false_substitution[box2-\u250c\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2510\n\u2502 1 \u2502 2 \u2502\n\u2502 3 \u2502 4 \u2502\n\u2514\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2518\n]
+tests/test_table.py::test_table_show_header_false_substitution[box3-    \u2577    \n  1 \u2502 2  \n  3 \u2502 4  \n    \u2575    \n]
+tests/test_table.py::test_table_show_header_false_substitution[box4-    \u2577    \n  1 \u2502 2  \n  3 \u2502 4  \n    \u2575    \n]
+tests/test_table.py::test_table_show_header_false_substitution[box5-+---+---+\n| 1 | 2 |\n| 3 | 4 |\n+---+---+\n]
+tests/test_table.py::test_table_show_header_false_substitution[None- 1  2 \n 3  4 \n]
+tests/test_table.py::test_vertical_align_top

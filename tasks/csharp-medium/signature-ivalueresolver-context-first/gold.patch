@@ -1,0 +1,290 @@
+diff --git a/src/AutoMapper.DI.Tests/Profiles.cs b/src/AutoMapper.DI.Tests/Profiles.cs
+index bd99494d..9e35aaa3 100644
+--- a/src/AutoMapper.DI.Tests/Profiles.cs
++++ b/src/AutoMapper.DI.Tests/Profiles.cs
+@@ -64,7 +64,7 @@ public DependencyResolver(ISomeService service)
+             _service = service;
+         }
+ 
+-        public int Resolve(object source, object destination, int destMember, ResolutionContext context)
++        public int Resolve(ResolutionContext context, object source, object destination, int destMember)
+         {
+             return _service.Modify(destMember);
+         }
+@@ -101,7 +101,7 @@ public void Process(object source, object destination, ResolutionContext context
+ 
+     internal class FooValueResolver: IValueResolver<object, object, object>
+     {
+-        public object Resolve(object source, object destination, object destMember, ResolutionContext context)
++        public object Resolve(ResolutionContext context, object source, object destination, object destMember)
+         {
+             return null;
+         }
+diff --git a/src/AutoMapper/Configuration/IMemberConfigurationExpression.cs b/src/AutoMapper/Configuration/IMemberConfigurationExpression.cs
+index 42506b93..1681e110 100644
+--- a/src/AutoMapper/Configuration/IMemberConfigurationExpression.cs
++++ b/src/AutoMapper/Configuration/IMemberConfigurationExpression.cs
+@@ -352,7 +352,7 @@ public interface IValueResolver<in TSource, in TDestination, TDestMember>
+     /// <param name="destMember">Destination member</param>
+     /// <param name="context">The context of the mapping</param>
+     /// <returns>Result, typically build from the source resolution result</returns>
+-    TDestMember Resolve(TSource source, TDestination destination, TDestMember destMember, ResolutionContext context);
++    TDestMember Resolve(ResolutionContext context, TSource source, TDestination destination, TDestMember destMember);
+ }
+ 
+ /// <summary>
+diff --git a/src/AutoMapper/Execution/TypeMapPlanBuilder.cs b/src/AutoMapper/Execution/TypeMapPlanBuilder.cs
+index a340fc41..d216a09a 100644
+--- a/src/AutoMapper/Execution/TypeMapPlanBuilder.cs
++++ b/src/AutoMapper/Execution/TypeMapPlanBuilder.cs
+@@ -763,10 +763,12 @@ public Expression GetExpression(IGlobalConfiguration configuration, MemberMap me
+             iValueResolver = iValueResolver.GetGenericTypeDefinition().MakeGenericType(typeArgs);
+         }
+ 
+-        var parameters = new[] { source, destination, sourceMember, destinationMember }.Where(p => p != null)
+-            .Zip(iValueResolver.GenericTypeArguments, ToType)
+-            .Append(ContextParameter)
+-            .ToArray();
++        var arguments = new[] { source, destination, sourceMember, destinationMember }.Where(p => p != null)
++            .Zip(iValueResolver.GenericTypeArguments, ToType);
++        // IValueResolver<,,>.Resolve takes the context first; IMemberValueResolver<,,,>.Resolve takes it last.
++        var parameters = (iValueResolver.GetGenericTypeDefinition() == typeof(IValueResolver<,,>)
++            ? arguments.Prepend(ContextParameter)
++            : arguments.Append(ContextParameter)).ToArray();
+         return Call(ToType(resolverInstance, iValueResolver), "Resolve", parameters);
+     }
+ 
+diff --git a/src/TestApp/Program.cs b/src/TestApp/Program.cs
+index 90211c2d..108b1905 100644
+--- a/src/TestApp/Program.cs
++++ b/src/TestApp/Program.cs
+@@ -68,7 +68,7 @@ public DependencyResolver(ISomeService service)
+         _service = service;
+     }
+ 
+-    public int Resolve(object source, object destination, int destMember, ResolutionContext context)
++    public int Resolve(ResolutionContext context, object source, object destination, int destMember)
+     {
+         return _service.Modify(destMember);
+     }
+diff --git a/src/UnitTests/AttributeBasedMaps.cs b/src/UnitTests/AttributeBasedMaps.cs
+index 1b42aec6..c090a5d7 100644
+--- a/src/UnitTests/AttributeBasedMaps.cs
++++ b/src/UnitTests/AttributeBasedMaps.cs
+@@ -310,7 +310,7 @@ public class Dest
+ 
+             public class MyValueResolver : IValueResolver<Source, Dest, int>
+             {
+-                public int Resolve(Source source, Dest destination, int destMember, ResolutionContext context)
++                public int Resolve(ResolutionContext context, Source source, Dest destination, int destMember)
+                 {
+                     return source.Value + 5;
+                 }
+diff --git a/src/UnitTests/Bug/InitializeNRE.cs b/src/UnitTests/Bug/InitializeNRE.cs
+index 45d8453a..56024dda 100644
+--- a/src/UnitTests/Bug/InitializeNRE.cs
++++ b/src/UnitTests/Bug/InitializeNRE.cs
+@@ -8,7 +8,7 @@ public interface IRes : IValueResolver<Source, Destination, int>
+ 
+     public class Res : IRes
+     {
+-        public int Resolve(Source source, Destination destination, int destMember, ResolutionContext context)
++        public int Resolve(ResolutionContext context, Source source, Destination destination, int destMember)
+         {
+             return 1000;
+         }
+diff --git a/src/UnitTests/Bug/ParentChildResolversBug.cs b/src/UnitTests/Bug/ParentChildResolversBug.cs
+index d2937673..0c5fb70f 100644
+--- a/src/UnitTests/Bug/ParentChildResolversBug.cs
++++ b/src/UnitTests/Bug/ParentChildResolversBug.cs
+@@ -46,7 +46,7 @@ public string fieldCode
+ 
+         public class ParentResolver : IValueResolver<Source, ParentDest, ParentDestEnum?>
+         {
+-            public ParentDestEnum? Resolve(Source source, ParentDest dest, ParentDestEnum? destMember, ResolutionContext context)
++            public ParentDestEnum? Resolve(ResolutionContext context, Source source, ParentDest dest, ParentDestEnum? destMember)
+             {
+                 switch (source.fieldCode)
+                 {
+@@ -60,7 +60,7 @@ public class ParentResolver : IValueResolver<Source, ParentDest, ParentDestEnum?
+ 
+         public class Resolver : IValueResolver<Source, ParentDest, DestEnum?>
+         {
+-            public DestEnum? Resolve(Source source, ParentDest dest, DestEnum? destMember, ResolutionContext context)
++            public DestEnum? Resolve(ResolutionContext context, Source source, ParentDest dest, DestEnum? destMember)
+             {
+                 switch (source.fieldCode)
+                 {
+diff --git a/src/UnitTests/ConfigurationValidation.cs b/src/UnitTests/ConfigurationValidation.cs
+index 09cd6250..8e4198e9 100644
+--- a/src/UnitTests/ConfigurationValidation.cs
++++ b/src/UnitTests/ConfigurationValidation.cs
+@@ -841,7 +841,7 @@ public class When_configuring_a_resolver : AutoMapperSpecBase
+     });
+     public class DetailsValueResolver : IValueResolver<Query, Command, List<KeyValuePair<string, string>>>
+     {
+-        public List<KeyValuePair<string, string>> Resolve(Query source, Command destination, List<KeyValuePair<string, string>> destMember, ResolutionContext context)
++        public List<KeyValuePair<string, string>> Resolve(ResolutionContext context, Query source, Command destination, List<KeyValuePair<string, string>> destMember)
+         {
+             return source.Details
+                 .Select(d => new KeyValuePair<string, string>(d.ToString(), d.ToString()))
+diff --git a/src/UnitTests/CustomMapping.cs b/src/UnitTests/CustomMapping.cs
+index c559a4d8..1e227ebe 100644
+--- a/src/UnitTests/CustomMapping.cs
++++ b/src/UnitTests/CustomMapping.cs
+@@ -13,12 +13,12 @@ public class Destination
+ 
+     public class MyTestResolver : IValueResolver<Source1, Destination, string>, IValueResolver<Source2, Destination, string>
+     {
+-        public string Resolve(Source1 source, Destination destination, string destMember, ResolutionContext context)
++        public string Resolve(ResolutionContext context, Source1 source, Destination destination, string destMember)
+         {
+             return "source1";
+         }
+ 
+-        public string Resolve(Source2 source, Destination destination, string destMember, ResolutionContext context)
++        public string Resolve(ResolutionContext context, Source2 source, Destination destination, string destMember)
+         {
+             return "source2";
+         }
+@@ -319,7 +319,7 @@ class Destination
+ 
+     class Resolver : IValueResolver<Source, Destination, Guid>
+     {
+-        public Guid Resolve(Source model, Destination d, Guid dest, ResolutionContext context)
++        public Guid Resolve(ResolutionContext context, Source model, Destination d, Guid dest)
+         {
+             return _guid;
+         }
+@@ -527,7 +527,7 @@ public class ModelDto
+ 
+     public class CustomResolver : IValueResolver<ModelObject, ModelDto, int>
+     {
+-        public int Resolve(ModelObject source, ModelDto d, int dest, ResolutionContext context)
++        public int Resolve(ResolutionContext context, ModelObject source, ModelDto d, int dest)
+         {
+             return source.Value + 1;
+         }
+@@ -535,7 +535,7 @@ public int Resolve(ModelObject source, ModelDto d, int dest, ResolutionContext c
+ 
+     public class CustomResolver2 : IValueResolver<ModelObject, ModelDto, int>
+     {
+-        public int Resolve(ModelObject source, ModelDto d, int dest, ResolutionContext context)
++        public int Resolve(ResolutionContext context, ModelObject source, ModelDto d, int dest)
+         {
+             return source.Value2fff + 2;
+         }
+diff --git a/src/UnitTests/Enumerations.cs b/src/UnitTests/Enumerations.cs
+index 1d8b75a8..395f80e1 100644
+--- a/src/UnitTests/Enumerations.cs
++++ b/src/UnitTests/Enumerations.cs
+@@ -405,7 +405,7 @@ public class OrderDtoWithOwnNullableStatus
+ 
+     public class DtoStatusValueResolver : IValueResolver<Order, object, StatusForDto>
+     {
+-        public StatusForDto Resolve(Order source, object d, StatusForDto dest, ResolutionContext context)
++        public StatusForDto Resolve(ResolutionContext context, Order source, object d, StatusForDto dest)
+         {
+             return context.Mapper.Map<StatusForDto>(source.Status);
+         }
+diff --git a/src/UnitTests/ForAllMaps.cs b/src/UnitTests/ForAllMaps.cs
+index 7fb84283..8d6f49fd 100644
+--- a/src/UnitTests/ForAllMaps.cs
++++ b/src/UnitTests/ForAllMaps.cs
+@@ -44,7 +44,7 @@ class Destination2
+ 
+     public class MinusOneResolver : IValueResolver<object, object, object>
+     {
+-        public object Resolve(object source, object dest, object destMember, ResolutionContext context)
++        public object Resolve(ResolutionContext context, object source, object dest, object destMember)
+         {
+             return -1;
+         }
+diff --git a/src/UnitTests/IMappingExpression/IncludeMembers.cs b/src/UnitTests/IMappingExpression/IncludeMembers.cs
+index d01f080d..9fecfe57 100644
+--- a/src/UnitTests/IMappingExpression/IncludeMembers.cs
++++ b/src/UnitTests/IMappingExpression/IncludeMembers.cs
+@@ -439,12 +439,12 @@ public void Should_flatten()
+ 
+     private class DescriptionResolver : IValueResolver<InnerSource, Destination, string>
+     {
+-        public string Resolve(InnerSource source, Destination destination, string destMember, ResolutionContext context) => source.Description1;
++        public string Resolve(ResolutionContext context, InnerSource source, Destination destination, string destMember) => source.Description1;
+     }
+ 
+     private class TitleResolver : IValueResolver<OtherInnerSource, Destination, string>
+     {
+-        public string Resolve(OtherInnerSource source, Destination destination, string destMember, ResolutionContext context) => source.Title1;
++        public string Resolve(ResolutionContext context, OtherInnerSource source, Destination destination, string destMember) => source.Title1;
+     }
+ }
+ 
+diff --git a/src/UnitTests/OpenGenerics.cs b/src/UnitTests/OpenGenerics.cs
+index 13003ce9..a2b9e1e1 100644
+--- a/src/UnitTests/OpenGenerics.cs
++++ b/src/UnitTests/OpenGenerics.cs
+@@ -200,7 +200,7 @@ class Destination
+         cfg.CreateMap(typeof(Source<>), typeof(Destination)).ForMember("Value", o => o.MapFrom(typeof(ValueResolver<>))));
+     class ValueResolver<T> : IValueResolver<Source<T>, Destination, object>
+     {
+-        public object Resolve(Source<T> source, Destination destination, object destMember, ResolutionContext context) => int.MaxValue;
++        public object Resolve(ResolutionContext context, Source<T> source, Destination destination, object destMember) => int.MaxValue;
+     }
+     [Fact]
+     public void Should_map_ok() => Map<Destination>(new Source<object>()).Value.ShouldBe(int.MaxValue.ToString());
+@@ -248,28 +248,28 @@ class Destination<T>
+     });
+     private class KeyResolver<TKey> : IValueResolver<KeyValuePair<TKey, int>, Destination, string>
+     {
+-        public string Resolve(KeyValuePair<TKey, int> source, Destination destination, string destMember, ResolutionContext context) => source.Key.ToString();
++        public string Resolve(ResolutionContext context, KeyValuePair<TKey, int> source, Destination destination, string destMember) => source.Key.ToString();
+     }
+     private class ValueResolver<TKey, TValue> : IValueResolver<KeyValuePair<TKey, TValue>, Destination, string>
+     {
+-        public string Resolve(KeyValuePair<TKey, TValue> source, Destination destination, string destMember, ResolutionContext context) => source.Value.ToString();
++        public string Resolve(ResolutionContext context, KeyValuePair<TKey, TValue> source, Destination destination, string destMember) => source.Value.ToString();
+     }
+     private class KeyResolver<TKeySource, TValueSource, TKeyDestination>
+         : IValueResolver<KeyValuePair<TKeySource, TValueSource>, Destination<TKeyDestination, string>, string>
+     {
+-        public string Resolve(KeyValuePair<TKeySource, TValueSource> source, Destination<TKeyDestination, string> destination, string destMember, ResolutionContext context)
++        public string Resolve(ResolutionContext context, KeyValuePair<TKeySource, TValueSource> source, Destination<TKeyDestination, string> destination, string destMember)
+             => source.Key.ToString();
+     }
+     private class ValueResolver<TKeySource, TValueSource, TKeyDestination, TValueDestination>
+         : IValueResolver<KeyValuePair<TKeySource, TValueSource>, Destination<TKeyDestination, TValueDestination>, string>
+     {
+-        public string Resolve(KeyValuePair<TKeySource, TValueSource> source, Destination<TKeyDestination, TValueDestination> destination, string destMember, ResolutionContext context)
++        public string Resolve(ResolutionContext context, KeyValuePair<TKeySource, TValueSource> source, Destination<TKeyDestination, TValueDestination> destination, string destMember)
+             => source.Value.ToString();
+     }
+     private class ValuesResolver<TDestination>
+         : IValueResolver<Source, Destination<TDestination>, IEnumerable<TDestination>>
+     {
+-        public IEnumerable<TDestination> Resolve(Source source, Destination<TDestination> destination, IEnumerable<TDestination> destMember, ResolutionContext context)
++        public IEnumerable<TDestination> Resolve(ResolutionContext context, Source source, Destination<TDestination> destination, IEnumerable<TDestination> destMember)
+         {
+             foreach (var item in source.MyValues)
+             {
+@@ -280,7 +280,7 @@ public IEnumerable<TDestination> Resolve(Source source, Destination<TDestination
+     private class ValuesResolver<TSource, TDestination>
+         : IValueResolver<Source<TSource>, Destination<TDestination>, IEnumerable<TDestination>>
+     {
+-        public IEnumerable<TDestination> Resolve(Source<TSource> source, Destination<TDestination> destination, IEnumerable<TDestination> destMember, ResolutionContext context)
++        public IEnumerable<TDestination> Resolve(ResolutionContext context, Source<TSource> source, Destination<TDestination> destination, IEnumerable<TDestination> destMember)
+         {
+             foreach (var item in source.MyValues)
+             {
+diff --git a/src/UnitTests/ReverseMapping.cs b/src/UnitTests/ReverseMapping.cs
+index 5ef53f8e..ca2c31f7 100644
+--- a/src/UnitTests/ReverseMapping.cs
++++ b/src/UnitTests/ReverseMapping.cs
+@@ -82,7 +82,7 @@ public class Destination
+ 
+     public class CustomResolver : IValueResolver<Source, Destination, int>
+     {
+-        public int Resolve(Source source, Destination destination, int member, ResolutionContext context)
++        public int Resolve(ResolutionContext context, Source source, Destination destination, int member)
+         {
+             return Int32.MaxValue;
+         }

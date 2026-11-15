@@ -1,0 +1,4 @@
+type = "callers"
+origin = "synthetic fallback: exhaustive source-location answer"
+symbol = "GetSupportedImageOutputFormats"
+selection = "Fallback deterministic scan of all tracked C# files at pinned commit; seed = 20261110."

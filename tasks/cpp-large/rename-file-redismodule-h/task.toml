@@ -1,0 +1,5 @@
+type = "rename-file"
+origin = "devrig safe rename (file)"
+file = "src/redismodule.h -> src/redis_module_api.h"
+selection = "tracked headers under src/ (not src/modules/) included by name (#include \"...name\" or <...name>) from at least 5 other tracked .c/.h files under src/, tests/modules/ and modules/: 29 candidates sorted by path; index awk 'BEGIN{srand(20261110); print int(rand()*29)+1}' = 22 (src/redismodule.h, 59 including files)"
+grade_timeout_s = 2400

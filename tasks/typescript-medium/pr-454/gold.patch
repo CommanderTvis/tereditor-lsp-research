@@ -1,0 +1,112 @@
+diff --git a/deno_dist/utils/body.ts b/deno_dist/utils/body.ts
+index 1cdc74f5..ab0a5b61 100644
+--- a/deno_dist/utils/body.ts
++++ b/deno_dist/utils/body.ts
+@@ -1,4 +1,4 @@
+-export type Body = string | object | Record<string, string | File>
++export type Body = string | object | Record<string, string | File> | ArrayBuffer
+ 
+ export const parseBody = async (r: Request | Response): Promise<Body> => {
+   const contentType = r.headers.get('Content-Type') || ''
+@@ -22,5 +22,6 @@ export const parseBody = async (r: Request | Response): Promise<Body> => {
+     return data
+   }
+ 
+-  return r.arrayBuffer()
++  const arrayBuffer = await r.arrayBuffer()
++  return arrayBuffer
+ }
+diff --git a/deno_dist/utils/crypto.ts b/deno_dist/utils/crypto.ts
+index 72b3d137..506eac9a 100644
+--- a/deno_dist/utils/crypto.ts
++++ b/deno_dist/utils/crypto.ts
+@@ -3,7 +3,7 @@ type Algorithm = {
+   alias: string
+ }
+ 
+-type Data = string | object | boolean
++type Data = string | boolean | number | object | ArrayBufferView | ArrayBuffer
+ 
+ export const sha256 = async (data: Data) => {
+   const algorithm: Algorithm = { name: 'SHA-256', alias: 'sha256' }
+@@ -24,12 +24,23 @@ export const md5 = async (data: Data) => {
+ }
+ 
+ export const createHash = async (data: Data, algorithm: Algorithm): Promise<string | null> => {
++  let sourceBuffer: ArrayBufferView | ArrayBuffer
++
++  if (ArrayBuffer.isView(data) || data instanceof ArrayBuffer) {
++    sourceBuffer = data
++  } else {
++    if (typeof data === 'object') {
++      data = JSON.stringify(data)
++    }
++    sourceBuffer = new TextEncoder().encode(String(data))
++  }
++
+   if (crypto && crypto.subtle) {
+     const buffer = await crypto.subtle.digest(
+       {
+         name: algorithm.name,
+       },
+-      new TextEncoder().encode(String(data))
++      sourceBuffer
+     )
+     const hash = Array.prototype.map
+       .call(new Uint8Array(buffer), (x) => ('00' + x.toString(16)).slice(-2))
+diff --git a/src/utils/body.ts b/src/utils/body.ts
+index 1cdc74f5..ab0a5b61 100644
+--- a/src/utils/body.ts
++++ b/src/utils/body.ts
+@@ -1,4 +1,4 @@
+-export type Body = string | object | Record<string, string | File>
++export type Body = string | object | Record<string, string | File> | ArrayBuffer
+ 
+ export const parseBody = async (r: Request | Response): Promise<Body> => {
+   const contentType = r.headers.get('Content-Type') || ''
+@@ -22,5 +22,6 @@ export const parseBody = async (r: Request | Response): Promise<Body> => {
+     return data
+   }
+ 
+-  return r.arrayBuffer()
++  const arrayBuffer = await r.arrayBuffer()
++  return arrayBuffer
+ }
+diff --git a/src/utils/crypto.ts b/src/utils/crypto.ts
+index 72b3d137..506eac9a 100644
+--- a/src/utils/crypto.ts
++++ b/src/utils/crypto.ts
+@@ -3,7 +3,7 @@ type Algorithm = {
+   alias: string
+ }
+ 
+-type Data = string | object | boolean
++type Data = string | boolean | number | object | ArrayBufferView | ArrayBuffer
+ 
+ export const sha256 = async (data: Data) => {
+   const algorithm: Algorithm = { name: 'SHA-256', alias: 'sha256' }
+@@ -24,12 +24,23 @@ export const md5 = async (data: Data) => {
+ }
+ 
+ export const createHash = async (data: Data, algorithm: Algorithm): Promise<string | null> => {
++  let sourceBuffer: ArrayBufferView | ArrayBuffer
++
++  if (ArrayBuffer.isView(data) || data instanceof ArrayBuffer) {
++    sourceBuffer = data
++  } else {
++    if (typeof data === 'object') {
++      data = JSON.stringify(data)
++    }
++    sourceBuffer = new TextEncoder().encode(String(data))
++  }
++
+   if (crypto && crypto.subtle) {
+     const buffer = await crypto.subtle.digest(
+       {
+         name: algorithm.name,
+       },
+-      new TextEncoder().encode(String(data))
++      sourceBuffer
+     )
+     const hash = Array.prototype.map
+       .call(new Uint8Array(buffer), (x) => ('00' + x.toString(16)).slice(-2))

@@ -1,0 +1,1 @@
+Update the Ktor codebase to complete the requested `rename-file` refactoring for `PipelineCall` at `ktor-server/ktor-server-core/common/src/io/ktor/server/application/PipelineCall.kt`. Update all affected source references and keep the build passing.

@@ -1,0 +1,10 @@
+[
+  {"name": "references at position (Iterable.allOk, cross-file)", "args": {"operation": "references", "path": "kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Iterable.kt", "line": 5, "column": 41},
+   "expect": ["kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Zip.kt:151", "kotlin-result/src/commonTest/kotlin/com/github/michaelbull/result/IterableTest.kt:20"]},
+  {"name": "references by name allOk", "args": {"operation": "references", "query": "allOk", "path": "kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Iterable.kt"},
+   "expect": ["kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Zip.kt:151"]},
+  {"name": "definition of Ok from a test", "args": {"operation": "definition", "path": "kotlin-result/src/commonTest/kotlin/com/github/michaelbull/result/IterableTest.kt", "line": 16, "column": 16},
+   "expect": ["kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Result.kt:11"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Iterable.kt"]}, "expect": []},
+  {"name": "status", "tool": "lsp_status", "args": {"operation": "servers"}, "expect": []}
+]

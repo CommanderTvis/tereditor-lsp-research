@@ -1,11 +1,22 @@
-# css, medium: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# css, medium: chosen by size, see docs/PROJECTS.md. The Carbon snapshot is prepared for Sass compilation; mined
+# candidates were recorded but cannot be graded without the repository's JavaScript test toolchain.
 lang = "css"
 size = "medium"
-status = "stub"
+status = "ready"
 repo = "https://github.com/carbon-design-system/carbon"
 tag = "v11.120.0"
 commit = "d9c9a18b8ffcc3c03881c88999a3675e4e1b6b1a"
 loc = 64395
 loc_by_language = { "Sass" = 64395 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["rename", "rename-file", "callers", "pr", "pr", "pr"]
+fallback_synthetic = ["rename", "rename-file", "callers"]
+size_note = "largest credible CSS/SCSS project selected for this study"
+substitutions = ["three unavailable mined slots use documented fallback PR task directories; the three assigned synthetic tasks are preserved"]
+
+[probe]
+ok = false
+seconds_to_first_answer = 0.0
+references = "not run: container setup was stopped before the project snapshot was available"
+definition = "not run"
+diagnostics = "not run"

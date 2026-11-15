@@ -1,0 +1,421 @@
+diff --git a/mypy/applytype.py b/mypy/applytype.py
+index fbc93492f..24c0c133e 100644
+--- a/mypy/applytype.py
++++ b/mypy/applytype.py
+@@ -7,7 +7,7 @@ from mypy.erasetype import erase_typevars
+ from mypy.expandtype import expand_type
+ from mypy.nodes import Context, TypeInfo
+ from mypy.type_visitor import TypeTranslator
+-from mypy.typeops import get_all_type_vars
++from mypy.type_operations import get_all_type_vars
+ from mypy.types import (
+     AnyType,
+     CallableType,
+diff --git a/mypy/binder.py b/mypy/binder.py
+index fb35d96b7..e2ae09521 100644
+--- a/mypy/binder.py
++++ b/mypy/binder.py
+@@ -19,7 +19,7 @@ from mypy.nodes import (
+ )
+ from mypy.options import Options
+ from mypy.subtypes import is_same_type, is_subtype
+-from mypy.typeops import make_simplified_union
++from mypy.type_operations import make_simplified_union
+ from mypy.types import (
+     AnyType,
+     Instance,
+diff --git a/mypy/checker.py b/mypy/checker.py
+index f03d06d96..f49aea517 100644
+--- a/mypy/checker.py
++++ b/mypy/checker.py
+@@ -235,7 +235,7 @@ from mypy.subtypes import (
+ from mypy.traverser import TraverserVisitor, all_return_statements, has_return_statement
+ from mypy.treetransform import TransformVisitor
+ from mypy.typeanal import check_for_explicit_any, has_any_from_unimported_type, make_optional_type
+-from mypy.typeops import (
++from mypy.type_operations import (
+     bind_self,
+     can_have_shared_disjoint_base,
+     coerce_to_literal,
+diff --git a/mypy/checkexpr.py b/mypy/checkexpr.py
+index 6cdd64e84..abcda215e 100644
+--- a/mypy/checkexpr.py
++++ b/mypy/checkexpr.py
+@@ -145,7 +145,7 @@ from mypy.typeanal import (
+     set_any_tvars,
+     validate_instance,
+ )
+-from mypy.typeops import (
++from mypy.type_operations import (
+     callable_type,
+     custom_special_method,
+     erase_to_union_or_bound,
+diff --git a/mypy/checkmember.py b/mypy/checkmember.py
+index 3ba99d8e8..381ddb832 100644
+--- a/mypy/checkmember.py
++++ b/mypy/checkmember.py
+@@ -43,7 +43,7 @@ from mypy.nodes import (
+ )
+ from mypy.plugin import AttributeContext
+ from mypy.subtypes import is_subtype
+-from mypy.typeops import (
++from mypy.type_operations import (
+     bind_self,
+     erase_to_bound,
+     freeze_all_type_vars,
+diff --git a/mypy/checkpattern.py b/mypy/checkpattern.py
+index 81904bc24..dc918e9d9 100644
+--- a/mypy/checkpattern.py
++++ b/mypy/checkpattern.py
+@@ -29,7 +29,7 @@ from mypy.patterns import (
+ )
+ from mypy.plugin import Plugin
+ from mypy.subtypes import is_subtype
+-from mypy.typeops import (
++from mypy.type_operations import (
+     coerce_to_literal,
+     make_simplified_union,
+     try_getting_str_literals_from_type,
+diff --git a/mypy/checkstrformat.py b/mypy/checkstrformat.py
+index aba49d71b..933e5b1e7 100644
+--- a/mypy/checkstrformat.py
++++ b/mypy/checkstrformat.py
+@@ -46,7 +46,7 @@ from mypy.nodes import (
+ )
+ from mypy.parse import parse
+ from mypy.subtypes import is_subtype
+-from mypy.typeops import custom_special_method
++from mypy.type_operations import custom_special_method
+ from mypy.types import (
+     AnyType,
+     Instance,
+diff --git a/mypy/constraints.py b/mypy/constraints.py
+index 52bbd0ed0..086bd8fe9 100644
+--- a/mypy/constraints.py
++++ b/mypy/constraints.py
+@@ -6,7 +6,7 @@ from collections.abc import Iterable, Sequence
+ from typing import TYPE_CHECKING, Final, TypeGuard, cast
+ 
+ import mypy.subtypes
+-import mypy.typeops
++import mypy.type_operations
+ from mypy.argmap import ArgTypeExpander
+ from mypy.erasetype import erase_typevars
+ from mypy.expandtype import expand_type_by_instance
+diff --git a/mypy/erasetype.py b/mypy/erasetype.py
+index cb8d66f29..a4e197414 100644
+--- a/mypy/erasetype.py
++++ b/mypy/erasetype.py
+@@ -129,7 +129,7 @@ class EraseTypeVisitor(TypeVisitor[ProperType]):
+ 
+     def visit_union_type(self, t: UnionType) -> ProperType:
+         erased_items = [erase_type(item) for item in t.items]
+-        from mypy.typeops import make_simplified_union
++        from mypy.type_operations import make_simplified_union
+ 
+         return make_simplified_union(erased_items)
+ 
+@@ -277,7 +277,7 @@ class LastKnownValueEraser(TypeTranslator):
+                         if len(types) == 1:
+                             merged.append(item)
+                         else:
+-                            from mypy.typeops import make_simplified_union
++                            from mypy.type_operations import make_simplified_union
+ 
+                             merged.append(make_simplified_union(types))
+                             del instances_by_name[item.type.fullname]
+diff --git a/mypy/inspections.py b/mypy/inspections.py
+index 6e2018262..5ef3105c2 100644
+--- a/mypy/inspections.py
++++ b/mypy/inspections.py
+@@ -24,7 +24,7 @@ from mypy.nodes import (
+ )
+ from mypy.server.update import FineGrainedBuildManager
+ from mypy.traverser import ExtendedTraverserVisitor
+-from mypy.typeops import tuple_fallback
++from mypy.type_operations import tuple_fallback
+ from mypy.types import (
+     FunctionLike,
+     Instance,
+diff --git a/mypy/join.py b/mypy/join.py
+index c609b303b..2b4f28a11 100644
+--- a/mypy/join.py
++++ b/mypy/join.py
+@@ -5,7 +5,7 @@ from __future__ import annotations
+ from collections.abc import Sequence
+ from typing import overload
+ 
+-import mypy.typeops
++import mypy.type_operations
+ from mypy.expandtype import expand_type
+ from mypy.maptype import map_instance_to_supertype
+ from mypy.nodes import CONTRAVARIANT, COVARIANT, INVARIANT, VARIANCE_NOT_READY, TypeInfo
+diff --git a/mypy/maptype.py b/mypy/maptype.py
+index d9bb6da80..b6219c0e6 100644
+--- a/mypy/maptype.py
++++ b/mypy/maptype.py
+@@ -87,7 +87,7 @@ def map_instance_to_direct_supertypes(instance: Instance, supertype: TypeInfo) -
+                         tuple_type = expand_type_by_instance(instance.type.tuple_type, instance)
+                         if isinstance(tuple_type, TupleType):
+                             # Make the import here to avoid cyclic imports.
+-                            import mypy.typeops
++                            import mypy.type_operations
+ 
+                             result.append(mypy.typeops.tuple_fallback(tuple_type))
+                             continue
+diff --git a/mypy/meet.py b/mypy/meet.py
+index bfc6d88a1..6ba5faf0c 100644
+--- a/mypy/meet.py
++++ b/mypy/meet.py
+@@ -15,7 +15,7 @@ from mypy.subtypes import (
+     is_same_type,
+     is_subtype,
+ )
+-from mypy.typeops import is_recursive_pair, make_simplified_union, tuple_fallback
++from mypy.type_operations import is_recursive_pair, make_simplified_union, tuple_fallback
+ from mypy.types import (
+     MYPYC_NATIVE_INT_NAMES,
+     TUPLE_LIKE_INSTANCE_NAMES,
+diff --git a/mypy/messages.py b/mypy/messages.py
+index b58c9e7ac..c03e7613c 100644
+--- a/mypy/messages.py
++++ b/mypy/messages.py
+@@ -19,7 +19,7 @@ from contextlib import contextmanager
+ from textwrap import dedent
+ from typing import Any, Final, cast
+ 
+-import mypy.typeops
++import mypy.type_operations
+ from mypy import errorcodes as codes, message_registry
+ from mypy.erasetype import erase_type
+ from mypy.errorcodes import ErrorCode
+@@ -72,7 +72,7 @@ from mypy.subtypes import (
+     is_same_type,
+     is_subtype,
+ )
+-from mypy.typeops import separate_union_literals
++from mypy.type_operations import separate_union_literals
+ from mypy.types import (
+     AnyType,
+     CallableType,
+diff --git a/mypy/plugins/attrs.py b/mypy/plugins/attrs.py
+index 1593c73cd..ad12de2e0 100644
+--- a/mypy/plugins/attrs.py
++++ b/mypy/plugins/attrs.py
+@@ -56,7 +56,7 @@ from mypy.plugins.common import (
+ )
+ from mypy.server.trigger import make_wildcard_trigger
+ from mypy.state import state
+-from mypy.typeops import (
++from mypy.type_operations import (
+     get_type_vars,
+     make_simplified_union,
+     map_type_from_supertype,
+diff --git a/mypy/plugins/common.py b/mypy/plugins/common.py
+index 16ccdb418..78f5af070 100644
+--- a/mypy/plugins/common.py
++++ b/mypy/plugins/common.py
+@@ -32,7 +32,7 @@ from mypy.semanal_shared import (
+     require_bool_literal_argument,
+     set_callable_name,
+ )
+-from mypy.typeops import try_getting_str_literals as try_getting_str_literals
++from mypy.type_operations import try_getting_str_literals as try_getting_str_literals
+ from mypy.types import (
+     AnyType,
+     CallableType,
+diff --git a/mypy/plugins/ctypes.py b/mypy/plugins/ctypes.py
+index b6dbec13c..06f6841cc 100644
+--- a/mypy/plugins/ctypes.py
++++ b/mypy/plugins/ctypes.py
+@@ -8,7 +8,7 @@ from mypy import nodes
+ from mypy.maptype import map_instance_to_supertype
+ from mypy.messages import format_type
+ from mypy.subtypes import is_subtype
+-from mypy.typeops import make_simplified_union
++from mypy.type_operations import make_simplified_union
+ from mypy.types import (
+     AnyType,
+     CallableType,
+diff --git a/mypy/plugins/dataclasses.py b/mypy/plugins/dataclasses.py
+index a511e714a..02a62f96e 100644
+--- a/mypy/plugins/dataclasses.py
++++ b/mypy/plugins/dataclasses.py
+@@ -54,7 +54,7 @@ from mypy.plugins.common import (
+ from mypy.semanal_shared import find_dataclass_transform_spec, require_bool_literal_argument
+ from mypy.server.trigger import make_wildcard_trigger
+ from mypy.state import state
+-from mypy.typeops import map_type_from_supertype, try_getting_literals_from_type
++from mypy.type_operations import map_type_from_supertype, try_getting_literals_from_type
+ from mypy.types import (
+     AnyType,
+     CallableType,
+diff --git a/mypy/plugins/default.py b/mypy/plugins/default.py
+index 67352a05e..f137637a6 100644
+--- a/mypy/plugins/default.py
++++ b/mypy/plugins/default.py
+@@ -62,7 +62,7 @@ from mypy.plugins.singledispatch import (
+     singledispatch_register_callback,
+ )
+ from mypy.subtypes import is_subtype
+-from mypy.typeops import is_literal_type_like, make_simplified_union
++from mypy.type_operations import is_literal_type_like, make_simplified_union
+ from mypy.types import (
+     TPDICT_FB_NAMES,
+     AnyType,
+diff --git a/mypy/plugins/enums.py b/mypy/plugins/enums.py
+index 387fdb869..e90cbc95d 100644
+--- a/mypy/plugins/enums.py
++++ b/mypy/plugins/enums.py
+@@ -20,7 +20,7 @@ import mypy.plugin  # To avoid circular imports.
+ from mypy.checker_shared import TypeCheckerSharedApi
+ from mypy.nodes import TypeInfo, Var
+ from mypy.subtypes import is_equivalent
+-from mypy.typeops import fixup_partial_type, make_simplified_union
++from mypy.type_operations import fixup_partial_type, make_simplified_union
+ from mypy.types import (
+     ELLIPSIS_TYPE_NAMES,
+     CallableType,
+diff --git a/mypy/plugins/functools.py b/mypy/plugins/functools.py
+index a53048927..3871ed3c0 100644
+--- a/mypy/plugins/functools.py
++++ b/mypy/plugins/functools.py
+@@ -20,7 +20,7 @@ from mypy.nodes import (
+     Var,
+ )
+ from mypy.plugins.common import add_method_to_class
+-from mypy.typeops import get_all_type_vars
++from mypy.type_operations import get_all_type_vars
+ from mypy.types import (
+     AnyType,
+     CallableType,
+diff --git a/mypy/refinfo.py b/mypy/refinfo.py
+index a5b92832b..23da79c6c 100644
+--- a/mypy/refinfo.py
++++ b/mypy/refinfo.py
+@@ -14,7 +14,7 @@ from mypy.nodes import (
+     TypeInfo,
+ )
+ from mypy.traverser import TraverserVisitor
+-from mypy.typeops import tuple_fallback
++from mypy.type_operations import tuple_fallback
+ from mypy.types import (
+     FunctionLike,
+     Instance,
+diff --git a/mypy/semanal.py b/mypy/semanal.py
+index 22f645d93..b650f7130 100644
+--- a/mypy/semanal.py
++++ b/mypy/semanal.py
+@@ -257,7 +257,7 @@ from mypy.typeanal import (
+     type_constructors,
+     validate_instance,
+ )
+-from mypy.typeops import function_type, get_type_vars, try_getting_str_literals_from_type
++from mypy.type_operations import function_type, get_type_vars, try_getting_str_literals_from_type
+ from mypy.types import (
+     ANNOTATED_TYPE_NAMES,
+     ASSERT_TYPE_NAMES,
+diff --git a/mypy/semanal_infer.py b/mypy/semanal_infer.py
+index abe9bf18c..37cfb3e1e 100644
+--- a/mypy/semanal_infer.py
++++ b/mypy/semanal_infer.py
+@@ -4,7 +4,7 @@ from __future__ import annotations
+ 
+ from mypy.nodes import ARG_POS, CallExpr, Decorator, Expression, FuncDef, RefExpr, Var
+ from mypy.semanal_shared import SemanticAnalyzerInterface, set_callable_name
+-from mypy.typeops import function_type
++from mypy.type_operations import function_type
+ from mypy.types import (
+     AnyType,
+     CallableType,
+diff --git a/mypy/semanal_shared.py b/mypy/semanal_shared.py
+index f4ec7eb2c..08bf6d9db 100644
+--- a/mypy/semanal_shared.py
++++ b/mypy/semanal_shared.py
+@@ -30,7 +30,7 @@ from mypy.nodes import (
+ from mypy.plugin import SemanticAnalyzerPluginInterface
+ from mypy.tvar_scope import TypeVarLikeScope
+ from mypy.type_visitor import ANY_STRATEGY, BoolTypeQuery
+-from mypy.typeops import make_simplified_union
++from mypy.type_operations import make_simplified_union
+ from mypy.types import (
+     TPDICT_FB_NAMES,
+     AnyType,
+diff --git a/mypy/server/deps.py b/mypy/server/deps.py
+index 1de2d2384..92aa062e4 100644
+--- a/mypy/server/deps.py
++++ b/mypy/server/deps.py
+@@ -143,7 +143,7 @@ from mypy.options import Options
+ from mypy.scope import Scope
+ from mypy.server.trigger import make_trigger, make_wildcard_trigger
+ from mypy.traverser import TraverserVisitor
+-from mypy.typeops import bind_self
++from mypy.type_operations import bind_self
+ from mypy.types import (
+     AnyType,
+     CallableType,
+diff --git a/mypy/solve.py b/mypy/solve.py
+index 4a5eec47c..bdf328cb9 100644
+--- a/mypy/solve.py
++++ b/mypy/solve.py
+@@ -12,7 +12,7 @@ from mypy.graph_utils import prepare_sccs, strongly_connected_components, topsor
+ from mypy.join import join_type_list
+ from mypy.meet import meet_type_list, meet_types
+ from mypy.subtypes import is_subtype
+-from mypy.typeops import get_all_type_vars
++from mypy.type_operations import get_all_type_vars
+ from mypy.types import (
+     AnyType,
+     Instance,
+diff --git a/mypy/subtypes.py b/mypy/subtypes.py
+index b774aa4e8..52d5c0870 100644
+--- a/mypy/subtypes.py
++++ b/mypy/subtypes.py
+@@ -6,7 +6,7 @@ from typing import Any, Final, TypeAlias as _TypeAlias, TypeVar, cast
+ 
+ import mypy.applytype
+ import mypy.constraints
+-import mypy.typeops
++import mypy.type_operations
+ from mypy.checker_state import checker_state
+ from mypy.erasetype import erase_type
+ from mypy.expandtype import (
+@@ -1636,7 +1636,7 @@ def find_node_type(
+     """Find type of a variable or method 'node' (maybe also a decorated method).
+     Apply type arguments from 'itype', and bind 'self' to 'subtype'.
+     """
+-    from mypy.typeops import bind_self
++    from mypy.type_operations import bind_self
+ 
+     if isinstance(node, FuncBase):
+         typ: Type | None = mypy.typeops.function_type(
+diff --git a/mypy/suggestions.py b/mypy/suggestions.py
+index 39a220e34..9f737ceef 100644
+--- a/mypy/suggestions.py
++++ b/mypy/suggestions.py
+@@ -60,7 +60,7 @@ from mypy.plugin import FunctionContext, MethodContext, Plugin
+ from mypy.server.update import FineGrainedBuildManager
+ from mypy.state import state
+ from mypy.traverser import TraverserVisitor
+-from mypy.typeops import bind_self, make_simplified_union
++from mypy.type_operations import bind_self, make_simplified_union
+ from mypy.types import (
+     AnyType,
+     CallableType,
+diff --git a/mypy/test/testtypes.py b/mypy/test/testtypes.py
+index b287e82b3..751741dbf 100644
+--- a/mypy/test/testtypes.py
++++ b/mypy/test/testtypes.py
+@@ -31,7 +31,7 @@ from mypy.state import state
+ from mypy.subtypes import is_more_precise, is_proper_subtype, is_same_type, is_subtype
+ from mypy.test.helpers import Suite, assert_equal, assert_type, skip
+ from mypy.test.typefixture import InterfaceTypeFixture, TypeFixture
+-from mypy.typeops import false_only, make_simplified_union, true_only
++from mypy.type_operations import false_only, make_simplified_union, true_only
+ from mypy.types import (
+     LITERAL_TYPE,
+     AnyType,
+diff --git a/mypy/typeops.py b/mypy/type_operations.py
+similarity index 100%
+rename from mypy/typeops.py
+rename to mypy/type_operations.py

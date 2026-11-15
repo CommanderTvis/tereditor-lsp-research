@@ -1,0 +1,241 @@
+diff --git a/packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts b/packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts
+index 0e7f87a81..bab2bafba 100644
+--- a/packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts
++++ b/packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts
+@@ -1781,8 +1781,8 @@ export class AuroraMysqlQueryRunner
+      * @param checkConstraint
+      */
+     async createCheckConstraint(
+-        tableOrName: Table | string,
+         checkConstraint: TableCheck,
++        tableOrName: Table | string,
+     ): Promise<void> {
+         throw new TypeORMError(`MySql does not support check constraints.`)
+     }
+diff --git a/packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts b/packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts
+index 3cf83bf6f..2f1b074c9 100644
+--- a/packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts
++++ b/packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts
+@@ -2715,8 +2715,8 @@ export class CockroachQueryRunner
+      * @param checkConstraint
+      */
+     async createCheckConstraint(
+-        tableOrName: Table | string,
+         checkConstraint: TableCheck,
++        tableOrName: Table | string,
+     ): Promise<void> {
+         const table = InstanceChecker.isTable(tableOrName)
+             ? tableOrName
+@@ -2746,7 +2746,7 @@ export class CockroachQueryRunner
+         checkConstraints: TableCheck[],
+     ): Promise<void> {
+         const promises = checkConstraints.map((checkConstraint) =>
+-            this.createCheckConstraint(tableOrName, checkConstraint),
++            this.createCheckConstraint(checkConstraint, tableOrName),
+         )
+         await Promise.all(promises)
+     }
+diff --git a/packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts b/packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts
+index b759a70b2..189eaf2ca 100644
+--- a/packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts
++++ b/packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts
+@@ -1185,8 +1185,8 @@ export class MongoQueryRunner implements QueryRunner {
+      * @param checkConstraint
+      */
+     async createCheckConstraint(
+-        tableOrName: Table | string,
+         checkConstraint: TableCheck,
++        tableOrName: Table | string,
+     ): Promise<void> {
+         throw new TypeORMError(
+             `Schema update queries are not supported by MongoDB driver.`,
+diff --git a/packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts b/packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts
+index dcc1791b9..83019dae1 100644
+--- a/packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts
++++ b/packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts
+@@ -2212,8 +2212,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
+      * @param checkConstraint
+      */
+     async createCheckConstraint(
+-        tableOrName: Table | string,
+         checkConstraint: TableCheck,
++        tableOrName: Table | string,
+     ): Promise<void> {
+         throw new TypeORMError(`MySql does not support check constraints.`)
+     }
+diff --git a/packages/typeorm/src/driver/oracle/OracleQueryRunner.ts b/packages/typeorm/src/driver/oracle/OracleQueryRunner.ts
+index f341fb0ba..7a5b3ba11 100644
+--- a/packages/typeorm/src/driver/oracle/OracleQueryRunner.ts
++++ b/packages/typeorm/src/driver/oracle/OracleQueryRunner.ts
+@@ -2107,8 +2107,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
+      * @param checkConstraint
+      */
+     async createCheckConstraint(
+-        tableOrName: Table | string,
+         checkConstraint: TableCheck,
++        tableOrName: Table | string,
+     ): Promise<void> {
+         const table = InstanceChecker.isTable(tableOrName)
+             ? tableOrName
+@@ -2138,7 +2138,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
+         checkConstraints: TableCheck[],
+     ): Promise<void> {
+         const promises = checkConstraints.map((checkConstraint) =>
+-            this.createCheckConstraint(tableOrName, checkConstraint),
++            this.createCheckConstraint(checkConstraint, tableOrName),
+         )
+         await Promise.all(promises)
+     }
+diff --git a/packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts b/packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts
+index 54633b0d7..a67f15b2b 100644
+--- a/packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts
++++ b/packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts
+@@ -2995,8 +2995,8 @@ export class PostgresQueryRunner
+      * @param checkConstraint
+      */
+     async createCheckConstraint(
+-        tableOrName: Table | string,
+         checkConstraint: TableCheck,
++        tableOrName: Table | string,
+     ): Promise<void> {
+         const table = InstanceChecker.isTable(tableOrName)
+             ? tableOrName
+@@ -3026,7 +3026,7 @@ export class PostgresQueryRunner
+         checkConstraints: TableCheck[],
+     ): Promise<void> {
+         const promises = checkConstraints.map((checkConstraint) =>
+-            this.createCheckConstraint(tableOrName, checkConstraint),
++            this.createCheckConstraint(checkConstraint, tableOrName),
+         )
+         await Promise.all(promises)
+     }
+diff --git a/packages/typeorm/src/driver/sap/SapQueryRunner.ts b/packages/typeorm/src/driver/sap/SapQueryRunner.ts
+index 46256f02e..05f71ec64 100644
+--- a/packages/typeorm/src/driver/sap/SapQueryRunner.ts
++++ b/packages/typeorm/src/driver/sap/SapQueryRunner.ts
+@@ -2447,8 +2447,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
+      * @param checkConstraint
+      */
+     async createCheckConstraint(
+-        tableOrName: Table | string,
+         checkConstraint: TableCheck,
++        tableOrName: Table | string,
+     ): Promise<void> {
+         const table = InstanceChecker.isTable(tableOrName)
+             ? tableOrName
+@@ -2478,7 +2478,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
+         checkConstraints: TableCheck[],
+     ): Promise<void> {
+         const promises = checkConstraints.map((checkConstraint) =>
+-            this.createCheckConstraint(tableOrName, checkConstraint),
++            this.createCheckConstraint(checkConstraint, tableOrName),
+         )
+         await Promise.all(promises)
+     }
+diff --git a/packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts b/packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts
+index c89b9980b..86c4fa730 100644
+--- a/packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts
++++ b/packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts
+@@ -1367,8 +1367,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
+      * @param checkConstraint
+      */
+     async createCheckConstraint(
+-        tableOrName: Table | string,
+         checkConstraint: TableCheck,
++        tableOrName: Table | string,
+     ): Promise<void> {
+         const table =
+             tableOrName instanceof Table
+@@ -1399,7 +1399,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
+         checkConstraints: TableCheck[],
+     ): Promise<void> {
+         const promises = checkConstraints.map((checkConstraint) =>
+-            this.createCheckConstraint(tableOrName, checkConstraint),
++            this.createCheckConstraint(checkConstraint, tableOrName),
+         )
+         await Promise.all(promises)
+     }
+diff --git a/packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts b/packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts
+index 29dc3b097..7efba21b0 100644
+--- a/packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts
++++ b/packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts
+@@ -1040,8 +1040,8 @@ export abstract class AbstractSqliteQueryRunner
+      * @param checkConstraint
+      */
+     async createCheckConstraint(
+-        tableOrName: Table | string,
+         checkConstraint: TableCheck,
++        tableOrName: Table | string,
+     ): Promise<void> {
+         await this.createCheckConstraints(tableOrName, [checkConstraint])
+     }
+diff --git a/packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts b/packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts
+index d049f184d..488160e0b 100644
+--- a/packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts
++++ b/packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts
+@@ -2540,8 +2540,8 @@ export class SqlServerQueryRunner
+      * @param checkConstraint
+      */
+     async createCheckConstraint(
+-        tableOrName: Table | string,
+         checkConstraint: TableCheck,
++        tableOrName: Table | string,
+     ): Promise<void> {
+         const table = InstanceChecker.isTable(tableOrName)
+             ? tableOrName
+@@ -2571,7 +2571,7 @@ export class SqlServerQueryRunner
+         checkConstraints: TableCheck[],
+     ): Promise<void> {
+         const promises = checkConstraints.map((checkConstraint) =>
+-            this.createCheckConstraint(tableOrName, checkConstraint),
++            this.createCheckConstraint(checkConstraint, tableOrName),
+         )
+         await Promise.all(promises)
+     }
+diff --git a/packages/typeorm/src/query-runner/QueryRunner.ts b/packages/typeorm/src/query-runner/QueryRunner.ts
+index 88661b829..bd716aeee 100644
+--- a/packages/typeorm/src/query-runner/QueryRunner.ts
++++ b/packages/typeorm/src/query-runner/QueryRunner.ts
+@@ -416,8 +416,8 @@ export interface QueryRunner extends AsyncDisposable {
+      * Creates a new check constraint.
+      */
+     createCheckConstraint(
+-        table: Table | string,
+         checkConstraint: TableCheck,
++        table: Table | string,
+     ): Promise<void>
+ 
+     /**
+diff --git a/packages/typeorm/test/functional/query-runner/create-check-constraint.test.ts b/packages/typeorm/test/functional/query-runner/create-check-constraint.test.ts
+index 58a0c1d4e..4fec6a7eb 100644
+--- a/packages/typeorm/test/functional/query-runner/create-check-constraint.test.ts
++++ b/packages/typeorm/test/functional/query-runner/create-check-constraint.test.ts
+@@ -90,9 +90,9 @@ describe("query runner > create check constraint", () => {
+                         "version",
+                     )} > 0`,
+                 })
+-                await queryRunner.createCheckConstraint("question", check1)
+-                await queryRunner.createCheckConstraint("question", check2)
+-                await queryRunner.createCheckConstraint("question", check3)
++                await queryRunner.createCheckConstraint(check1, "question")
++                await queryRunner.createCheckConstraint(check2, "question")
++                await queryRunner.createCheckConstraint(check3, "question")
+ 
+                 let table = await queryRunner.getTable("question")
+                 table!.checks.length.should.be.equal(3)
+diff --git a/packages/typeorm/test/functional/schema-builder/foreign-key/constraint-names-sqlite/migration/1657067039716-CreateCheckConstraintToUser.ts b/packages/typeorm/test/functional/schema-builder/foreign-key/constraint-names-sqlite/migration/1657067039716-CreateCheckConstraintToUser.ts
+index 3ffcf7a9c..b0722df19 100644
+--- a/packages/typeorm/test/functional/schema-builder/foreign-key/constraint-names-sqlite/migration/1657067039716-CreateCheckConstraintToUser.ts
++++ b/packages/typeorm/test/functional/schema-builder/foreign-key/constraint-names-sqlite/migration/1657067039716-CreateCheckConstraintToUser.ts
+@@ -4,10 +4,10 @@ import { TableCheck } from "../../../../../../src"
+ export class CreateCheckConstraintToUser1657067039716 implements MigrationInterface {
+     public async up(queryRunner: QueryRunner): Promise<void> {
+         await queryRunner.createCheckConstraint(
+-            "checked_user",
+             new TableCheck({
+                 expression: `"age" > 18`,
+             }),
++            "checked_user",
+         )
+     }
+ 

@@ -1,0 +1,5 @@
+--- a/core/lib/Drupal/Component/Utility/NestedArray.php
++++ b/core/lib/Drupal/Component/Utility/NestedArray.php
+@@
+-// original declaration: NestedArray
++// fallback declaration: NestedValueArray

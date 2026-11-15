@@ -1,0 +1,4 @@
+type = "inspect"
+origin = "devrig inspections; overload and receiver-type resolution"
+defect = "calls a @Deprecated method of gson/src/main/java"
+selection = "true pool: files of gson/src/{main,test}/java that get new javac errors when every @Deprecated method (not constructor) of gson/src/main/java is renamed (derive-oracle.sh), minus the 9 declaring files: 11 files; decoy pool: other files of gson/src/{main,test}/java, minus the declaring files, containing a whole-word excluder|setLenient|setDateFormat|getAsCharacter|parse|isAssignableFrom: 36 files; 5 from each pool by the seeded shuffle awk srand(20261110), rand() per line, sorted ascending; candidates listed in path order"

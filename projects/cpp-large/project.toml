@@ -1,11 +1,13 @@
-# cpp, large: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# cpp, large: chosen by size, see docs/PROJECTS.md. The project snapshot and task graders are present, but completion
+# is blocked on the local Apple container runtime (storage-device bootstrap failure; see tasks/cpp-large/pr-log.md).
 lang = "cpp"
 size = "large"
-status = "stub"
+status = "blocked"
 repo = "https://github.com/redis/redis"
 tag = "8.10.3"
 commit = "1a2574ce1551d3de6e0b4a56756c0fdbc6659e4f"
 loc = 260738
 loc_by_language = { "C" = 225475, "C++" = 402, "C Header" = 34856, "C++ Header" = 5 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["rename", "rename-file", "inspect", "pr", "pr", "pr"]
+substitutions = ["three unavailable mined slots use documented fallback PR task directories; the assigned synthetic tasks are preserved"]

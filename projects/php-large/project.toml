@@ -1,11 +1,12 @@
-# php, large: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# PHP, large: Laravel framework. Mined work is replaced by documented synthetic fallbacks because no PR was
+# build-validated in the bounded curation run.
 lang = "php"
 size = "large"
-status = "stub"
+status = "curated"
 repo = "https://github.com/laravel/framework"
 tag = "v13.42.0"
 commit = "f5c01f6b63803f16f38ebb31622c4fea412bd022"
 loc = 368967
 loc_by_language = { "PHP" = 368967 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["move", "signature", "impls", "pr", "pr", "pr"]

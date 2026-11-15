@@ -1,0 +1,142 @@
+diff --git a/jsr.json b/jsr.json
+index 8faa57f8..83543681 100644
+--- a/jsr.json
++++ b/jsr.json
+@@ -87,7 +87,7 @@
+     "./utils/concurrent": "./src/utils/concurrent.ts",
+     "./utils/cookie": "./src/utils/cookie.ts",
+     "./utils/crypto": "./src/utils/crypto.ts",
+-    "./utils/encode": "./src/utils/encode.ts",
++    "./utils/base64": "./src/utils/base64.ts",
+     "./utils/filepath": "./src/utils/filepath.ts",
+     "./utils/handler": "./src/utils/handler.ts",
+     "./utils/headers": "./src/utils/headers.ts",
+diff --git a/src/adapter/aws-lambda/handler.ts b/src/adapter/aws-lambda/handler.ts
+index 104cac4b..1b57a84e 100644
+--- a/src/adapter/aws-lambda/handler.ts
++++ b/src/adapter/aws-lambda/handler.ts
+@@ -1,7 +1,7 @@
+ import { pipeline } from 'node:stream/promises'
+ import type { Hono } from '../../hono'
+ import type { Env, Schema } from '../../types'
+-import { decodeBase64, encodeBase64 } from '../../utils/encode'
++import { decodeBase64, encodeBase64 } from '../../utils/base64'
+ import type {
+   ALBRequestContext,
+   ApiGatewayRequestContext,
+diff --git a/src/adapter/lambda-edge/handler.test.ts b/src/adapter/lambda-edge/handler.test.ts
+index 41d96ec6..cec2ff43 100644
+--- a/src/adapter/lambda-edge/handler.test.ts
++++ b/src/adapter/lambda-edge/handler.test.ts
+@@ -2,7 +2,7 @@ import { describe } from 'vitest'
+ import { setCookie } from '../../helper/cookie'
+ import { Hono } from '../../hono'
+ import { bodyLimit } from '../../middleware/body-limit'
+-import { decodeBase64, encodeBase64 } from '../../utils/encode'
++import { decodeBase64, encodeBase64 } from '../../utils/base64'
+ import type { Callback, CloudFrontEdgeEvent, CloudFrontRequest } from './handler'
+ import { createBody, handle, isContentTypeBinary } from './handler'
+ 
+diff --git a/src/adapter/lambda-edge/handler.ts b/src/adapter/lambda-edge/handler.ts
+index 4a905db7..3ad6bbde 100644
+--- a/src/adapter/lambda-edge/handler.ts
++++ b/src/adapter/lambda-edge/handler.ts
+@@ -1,6 +1,6 @@
+ import crypto from 'node:crypto'
+ import type { Hono } from '../../hono'
+-import { decodeBase64, encodeBase64 } from '../../utils/encode'
++import { decodeBase64, encodeBase64 } from '../../utils/base64'
+ 
+ // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+ // @ts-ignore
+diff --git a/src/middleware/jwk/index.test.ts b/src/middleware/jwk/index.test.ts
+index bfbe1bcc..e64d9607 100644
+--- a/src/middleware/jwk/index.test.ts
++++ b/src/middleware/jwk/index.test.ts
+@@ -4,7 +4,7 @@ import { jwk } from '.'
+ import { setSignedCookie } from '../../helper/cookie'
+ import { Hono } from '../../hono'
+ import { HTTPException } from '../../http-exception'
+-import { encodeBase64Url } from '../../utils/encode'
++import { encodeBase64Url } from '../../utils/base64'
+ import { Jwt } from '../../utils/jwt'
+ import type { HonoJsonWebKey } from '../../utils/jwt/jws'
+ import { signing } from '../../utils/jwt/jws'
+diff --git a/src/middleware/secure-headers/secure-headers.ts b/src/middleware/secure-headers/secure-headers.ts
+index 55c76c21..27a958dc 100644
+--- a/src/middleware/secure-headers/secure-headers.ts
++++ b/src/middleware/secure-headers/secure-headers.ts
+@@ -5,7 +5,7 @@
+ 
+ import type { Context } from '../../context'
+ import type { MiddlewareHandler } from '../../types'
+-import { encodeBase64 } from '../../utils/encode'
++import { encodeBase64 } from '../../utils/base64'
+ import type { PermissionsPolicyDirective } from './permissions-policy'
+ 
+ export type SecureHeadersVariables = {
+diff --git a/src/utils/encode.test.ts b/src/utils/base64.test.ts
+similarity index 97%
+rename from src/utils/encode.test.ts
+rename to src/utils/base64.test.ts
+index 5cccf249..daf24110 100644
+--- a/src/utils/encode.test.ts
++++ b/src/utils/base64.test.ts
+@@ -1,4 +1,4 @@
+-import { decodeBase64Url, encodeBase64Url } from './encode'
++import { decodeBase64Url, encodeBase64Url } from './base64'
+ 
+ const toURLBase64 = (base64String: string): string =>
+   base64String.replace(/\+|\//g, (m) => ({ '+': '-', '/': '_' })[m] ?? m)
+diff --git a/src/utils/encode.ts b/src/utils/base64.ts
+similarity index 100%
+rename from src/utils/encode.ts
+rename to src/utils/base64.ts
+diff --git a/src/utils/basic-auth.ts b/src/utils/basic-auth.ts
+index a2efa881..81cd93b6 100644
+--- a/src/utils/basic-auth.ts
++++ b/src/utils/basic-auth.ts
+@@ -1,4 +1,4 @@
+-import { decodeBase64 } from './encode'
++import { decodeBase64 } from './base64'
+ 
+ const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
+ const USER_PASS_REGEXP = /^([^:]*):(.*)$/
+diff --git a/src/utils/jwt/jws.ts b/src/utils/jwt/jws.ts
+index 390278ca..db31d9b3 100644
+--- a/src/utils/jwt/jws.ts
++++ b/src/utils/jwt/jws.ts
+@@ -5,7 +5,7 @@
+  */
+ 
+ import { getRuntimeKey } from '../../helper/adapter'
+-import { decodeBase64 } from '../encode'
++import { decodeBase64 } from '../base64'
+ import type { SignatureAlgorithm } from './jwa'
+ import { CryptoKeyUsage, JwtAlgorithmNotImplemented } from './types'
+ import { utf8Encoder } from './utf8'
+diff --git a/src/utils/jwt/jwt.test.ts b/src/utils/jwt/jwt.test.ts
+index 2c1da3dd..9571eb34 100644
+--- a/src/utils/jwt/jwt.test.ts
++++ b/src/utils/jwt/jwt.test.ts
+@@ -1,6 +1,6 @@
+ /* eslint-disable @typescript-eslint/ban-ts-comment */
+ import { vi } from 'vitest'
+-import { encodeBase64, encodeBase64Url } from '../encode'
++import { encodeBase64, encodeBase64Url } from '../base64'
+ import { AlgorithmTypes } from './jwa'
+ import type { HonoJsonWebKey } from './jws'
+ import { signing } from './jws'
+diff --git a/src/utils/jwt/jwt.ts b/src/utils/jwt/jwt.ts
+index 5c4db043..d67f6467 100644
+--- a/src/utils/jwt/jwt.ts
++++ b/src/utils/jwt/jwt.ts
+@@ -4,7 +4,7 @@
+  * https://datatracker.ietf.org/doc/html/rfc7519
+  */
+ 
+-import { decodeBase64Url, encodeBase64Url } from '../../utils/encode'
++import { decodeBase64Url, encodeBase64Url } from '../../utils/base64'
+ import { AlgorithmTypes } from './jwa'
+ import type { AsymmetricAlgorithm, SignatureAlgorithm, SymmetricAlgorithm } from './jwa'
+ import { signing, verifying } from './jws'

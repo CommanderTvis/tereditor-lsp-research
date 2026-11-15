@@ -2,7 +2,7 @@
 set -eu
 . "$STUDY_ROOT/harness/env/lib.sh"
 proj=$1 task=$2 patch=$3 out=$4
-st=$STUDY_STATE/projects/$proj; [ -d "$st/snapshot" ] || die "project $proj is not set up: ./study project $proj"
+st=$(state_dir "$proj" "$(task_commit "$proj" "$task")"); [ -d "$st/snapshot" ] || die "project $proj is not set up at this task's commit: ./study project $proj"
 mkdir -p "$out"; scratch=$(mktemp -d "$STUDY_STATE/scratch-XXXXXX")
 GRADE_BINDS=(--ro-bind "$task" /task --ro-bind "$STUDY_ROOT/projects/$proj" /project --ro-bind "$STUDY_ROOT/harness/grade" /grade
              --ro-bind-try "$st/grade-overlay" /grade-overlay --ro-bind "$(dirname "$patch")" /run --bind "$out" /out --bind "$scratch" /scratch --setenv STUDY_WORK /scratch/work)

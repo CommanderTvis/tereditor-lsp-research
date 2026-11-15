@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic, dynamic visitor dispatch"
+symbol = "mypy.types.Type.__str__ at mypy/types.py:323 for a LiteralType receiver"
+selection = "Visitor calls in the pinned mypy snapshot whose receiver's concrete type selects a distinct visit_* implementation; the Type.__str__ call at types.py:323 with LiteralType was selected by seeded shuffle Random(20261110)."

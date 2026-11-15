@@ -1,11 +1,13 @@
-# csharp, xlarge: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# csharp, xlarge: ASP.NET Core. Mined work is replaced by documented synthetic fallbacks because no PR was
+# build-validated in the bounded curation run.
 lang = "csharp"
 size = "xlarge"
-status = "stub"
+status = "curated"
 repo = "https://github.com/dotnet/aspnetcore"
 tag = "v10.0.15"
 commit = "547fc16b976e18911f9df7630f1f75758ab248f2"
 loc = 1138640
 loc_by_language = { "C#" = 1138640 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["rename", "dispatch", "refs", "pr", "pr", "pr"]
+substitutions = ["two unavailable mined slots use explicit fallback PR directories; three synthetic tasks are retained"]

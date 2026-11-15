@@ -52,29 +52,100 @@ time. Two to four tasks per `xlarge` project are enough. Record the language ser
 
 ## Task types
 
-Every type has a deterministic grader. No LLM judge is used anywhere.
+Every task has a deterministic grader; no LLM judge is used anywhere. Half the tasks are synthetic, generated from
+the pinned snapshot; half are mined from the project's own merged pull requests.
 
-| Id | Type | Origin | Agent output | Grader |
+| Id | Kind | Type | Agent output | Grader |
 | --- | --- | --- | --- | --- |
-| `refs` | Find all usages of a symbol | devrig find-usages; Barber retrieval | `ANSWER.txt` | set precision, recall, F1 against `oracle.txt`; success = F1 = 1 |
-| `impls` | Type hierarchy: all transitive implementations / subclasses | devrig type hierarchy | `ANSWER.txt` | as `refs` |
-| `dispatch` | Which definition runs for a call through indirection (factory, interface, override) | Barber dispatch ladder | `ANSWER.txt` | exact match |
-| `callers` | Call reachability: which entry points transitively reach a function | devrig call hierarchy | `ANSWER.txt` | as `refs` |
-| `inspect` | Which of K candidate files contain a defect class (half true, half decoys) | devrig inspections | `ANSWER.txt` | as `refs`, oracle from the compiler or a linter |
-| `rename` | Rename a widely used symbol everywhere | devrig safe rename | the edit | build + project tests + hidden check that the old name is gone from the API |
-| `signature` | Add a parameter through overrides and call sites | devrig change signature | the edit | build + hidden tests |
-| `compile` | The build is broken in N places by an API change; fix it | checker-detectable defects (Barber) | the edit | build (and tests) pass |
-| `bugfix` | A seeded semantic bug, described by symptom; fix it | Barber held-out tests; SWE-bench style | the edit | hidden tests pass, visible tests still pass |
+| `rename` | synthetic refactoring | Rename a widely used symbol everywhere | the edit | build and tests pass; the old name is gone and the new one exists (hidden check) |
+| `rename-file` | synthetic refactoring | Rename a source file or module, updating every import and reference | the edit | build and tests pass; old path gone, new path present |
+| `move` | synthetic refactoring | Move a file or class into another package, namespace or module, updating every reference | the edit | build and tests pass; declared in the new place only |
+| `signature` | synthetic refactoring | Add, remove or reorder a parameter through overrides and call sites | the edit | build and hidden tests pass |
+| `refs` | synthetic navigation | Find all usages of a symbol | `ANSWER.txt` | exact set match (precision, recall and F1 reported) |
+| `impls` | synthetic navigation | All transitive implementations or subclasses of a type | `ANSWER.txt` | as `refs` |
+| `dispatch` | synthetic navigation | Which definition runs for a call through indirection | `ANSWER.txt` | exact match |
+| `callers` | synthetic navigation | Which entry points transitively reach a function | `ANSWER.txt` | as `refs` |
+| `inspect` | synthetic navigation | Which of K candidate files contain a defect class (half true, half decoys) | `ANSWER.txt` | as `refs`, oracle from the compiler or a linter |
+| `pr` | mined | Resolve the issue a merged pull request resolved, from the issue text | the edit | the pull request's tests: the ones it made pass (fail to pass) now pass, the rest still pass |
 
-Task counts are balanced in the design rather than reweighted afterwards (docs/research/task-type-weighting.md):
+Counts per project (provisional; the calibration pilot fixes repetitions under the budget, docs/ANALYSIS_PLAN.md):
 
-- Small, medium and large projects: 6 tasks each, `refs`, `rename`, `compile`, `bugfix`, plus 2 of `impls`,
-  `dispatch`, `callers`, `inspect`, `signature` on a fixed rotation across projects, so each of the five appears
-  equally often; the rotation is balanced separately within the JVM projects (Kotlin, Java, mixed), whose arms differ.
-- Xlarge projects: 3 tasks each, `refs`, `compile` and one rotating answer type (`impls`, `dispatch`, `callers`,
-  `inspect`).
-- At most 186 tasks in all. A type the language cannot express (Shell and CSS have no `impls` or `signature`) is
-  replaced by the next type in the rotation, and `project.toml` says which.
+- Small, medium and large projects: 6 tasks, 3 synthetic (2 refactorings rotating through `rename`, `rename-file`,
+  `move`, `signature`, and 1 navigation question rotating through `refs`, `impls`, `dispatch`, `callers`, `inspect`)
+  and 3 `pr`.
+- Xlarge projects: 6 tasks, 3 synthetic and 3 `pr`. Resource limits can prevent validating a project's snapshot, but
+  they do not reduce its task set; such projects record the limitation and use documented fallback tasks.
+- Rotations are fixed across projects so each type appears equally often, and balanced separately within the JVM
+  projects (Kotlin, Java, mixed), whose arms differ. A type a language cannot express (Shell and CSS have no
+  `impls`, `move` between packages or `signature`) is replaced by the next type in its rotation, and `project.toml`
+  says which. A project without enough qualifying pull requests fills its `pr` places with synthetic tasks, recorded
+  the same way.
+
+The assignment, fixed before any task is written (the rotations above, applied in the order of docs/PROJECTS.md;
+210 task slots: 105 synthetic and 105 mined or documented fallback slots):
+
+| Project | Synthetic | Mined (`pr`) |
+| --- | --- | --- |
+| `python-small` | `rename`, `rename-file`, `refs` | 3 |
+| `python-medium` | `move`, `signature`, `impls` | 3 |
+| `python-large` | `rename`, `rename-file`, `dispatch` | 3 |
+| `python-xlarge` | `dispatch`, `rename-file`, `refs` | 3 |
+| `typescript-small` | `move`, `signature`, `callers` | 3 |
+| `typescript-medium` | `rename`, `rename-file`, `inspect` | 3 |
+| `typescript-large` | `move`, `signature`, `refs` | 3 |
+| `typescript-xlarge` | `impls`, `dispatch`, `callers` | 3 |
+| `csharp-small` | `rename`, `rename-file`, `impls` | 3 |
+| `csharp-medium` | `move`, `signature`, `dispatch` | 3 |
+| `csharp-large` | `rename`, `rename-file`, `callers` | 3 |
+| `csharp-xlarge` | `refs`, `rename`, `dispatch` | 3 |
+| `php-small` | `move`, `signature`, `inspect` | 3 |
+| `php-medium` | `rename`, `rename-file`, `refs` | 3 |
+| `php-large` | `move`, `signature`, `impls` | 3 |
+| `php-xlarge` | `inspect`, `refs`, `callers` | 3 |
+| `cpp-small` | `rename`, `rename-file`, `dispatch` | 3 |
+| `cpp-medium` | `move`, `signature`, `callers` | 3 |
+| `cpp-large` | `rename`, `rename-file`, `inspect` | 3 |
+| `cpp-xlarge` | `dispatch`, `inspect`, `refs` | 3 |
+| `shell-small` | `move`, `signature`, `refs` | 3 |
+| `shell-medium` | `rename`, `rename-file`, `impls` | 3 |
+| `css-small` | `move`, `signature`, `dispatch` | 3 |
+| `css-medium` | `rename`, `rename-file`, `callers` | 3 |
+| `kotlin-small` | `rename`, `rename-file`, `refs` | 3 |
+| `kotlin-medium` | `move`, `signature`, `impls` | 3 |
+| `kotlin-large` | `rename`, `rename-file`, `dispatch` | 3 |
+| `kotlin-xlarge` | `refs`, `rename`, `rename` | 3 |
+| `java-small` | `move`, `signature`, `callers` | 3 |
+| `java-medium` | `rename`, `rename-file`, `inspect` | 3 |
+| `java-large` | `move`, `signature`, `refs` | 3 |
+| `java-xlarge` | `rename`, `impls`, `rename` | 3 |
+| `java-kotlin-medium` | `rename`, `rename-file`, `impls` | 3 |
+| `java-kotlin-large` | `move`, `signature`, `dispatch` | 3 |
+| `java-kotlin-xlarge` | `rename`, `dispatch`, `refs` | 3 |
+
+Synthetic tasks are generated by scripts with a fixed seed, sampling candidates by rules fixed in advance (for
+example, a symbol with at least N references in M files, whose name also occurs for other symbols); reference
+solutions come from a refactoring tool that is not one of the tested language servers, or from a compiler-checked
+script.
+
+## Mined pull requests
+
+Selected as SWE-bench selects them, with the study's own cutoff:
+
+- Merged into the default branch before 2022-11-30 (the release of ChatGPT), so the reference solution was written
+  before AI coding assistants were common. Authors that are bots are excluded.
+- Resolves an issue the pull request links (closing keywords), whose title and body become the prompt, unedited
+  except for removing links to the fix itself.
+- Changes non-test source files in the project's language, and adds or changes tests.
+- Fail to pass: at least one test fails at the pull request's base commit and passes with the merged change. Pass to
+  pass: the other tests of the affected modules pass before and after.
+- Builds and runs those tests with the study's current toolchains (`grade-<group>`); pull requests that need an older
+  toolchain are skipped, a bias toward the later part of the pre-cutoff history that the report states.
+- The task's starting point is the pull request's base commit (`base_commit` in `task.toml`), not the project's
+  pinned commit; the task records the merge date and the code lines at its base commit.
+- Hidden tests are the pull request's test changes; `gold.patch` is its non-test change.
+
+Pre-2022 pull requests of well-known projects are in the models' training data. Each task's merge date is recorded
+so the analysis can check whether success depends on it.
 
 ## Answers
 

@@ -1,0 +1,9 @@
+[
+  {"name": "references EasyHandle::createResponse (cross-file)", "args": {"operation": "references", "query": "createResponse", "path": "src/Handler/EasyHandle.php"},
+   "expect": ["src/Handler/CurlFactory.php:3089", "tests/Handler/EasyHandleTest.php:46"]},
+  {"name": "definition of CurlFactory by name", "args": {"operation": "definition", "query": "CurlFactory"},
+   "expect": ["src/Handler/CurlFactory.php:39"]},
+  {"name": "definition of CurlFactory from its use in CurlHandler (cross-file, by position)", "args": {"operation": "definition", "path": "src/Handler/CurlHandler.php", "line": 72, "column": 18},
+   "expect": ["src/Handler/CurlFactory.php:39"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["src/Handler/EasyHandle.php"]}, "expect": []}
+]

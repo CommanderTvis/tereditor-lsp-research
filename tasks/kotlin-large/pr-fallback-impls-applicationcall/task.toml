@@ -1,0 +1,8 @@
+type = "pr"
+selection = "Fallback slot selected in assignment order after no validated pre-2022 PR was available; first stable public symbol in the pinned snapshot."
+symbol = "ApplicationCall"
+path = "ktor-server/ktor-server-core/common/src/io/ktor/server/application/PipelineCall.kt"
+origin = "documented synthetic fallback PR; no qualifying/current-toolchain mined candidate was available"
+fallback_for = "impls"
+pr = "fallback-kotlin-large-impls-applicationcall"
+issue = "fallback-kotlin-large-impls-applicationcall"

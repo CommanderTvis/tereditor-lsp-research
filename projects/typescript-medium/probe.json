@@ -1,0 +1,9 @@
+[
+  {"name": "references encodeBase64Url (cross-file)", "args": {"operation": "references", "query": "encodeBase64Url", "path": "src/utils/encode.ts"},
+   "expect": ["src/utils/jwt/jwt.ts:32", "src/utils/jwt/jwt.ts:33"]},
+  {"name": "definition of HonoRequest from another module", "args": {"operation": "definition", "query": "HonoRequest"},
+   "expect": ["src/request.ts:34"]},
+  {"name": "definition of TrieRouter", "args": {"operation": "definition", "query": "TrieRouter"},
+   "expect": ["src/router/trie-router/router.ts:5"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["src/utils/encode.ts"]}, "expect": []}
+]

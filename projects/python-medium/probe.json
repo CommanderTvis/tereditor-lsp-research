@@ -1,0 +1,7 @@
+[
+  {"name": "references measure_renderables (cross-file)", "args": {"operation": "references", "query": "measure_renderables", "path": "rich/measure.py"},
+   "expect": ["tests/test_measure.py:24", "rich/panel.py:287", "tests/test_console.py:667"]},
+  {"name": "definition of Segment from another module", "args": {"operation": "definition", "query": "Segment"},
+   "expect": ["rich/segment.py:61"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["rich/measure.py"]}, "expect": []}
+]

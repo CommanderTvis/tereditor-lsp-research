@@ -1,0 +1,6 @@
+rich/highlighter.py:80
+rich/highlighter.py:106
+rich/highlighter.py:143
+rich/traceback.py:258
+examples/log.py:12
+examples/highlighter.py:10

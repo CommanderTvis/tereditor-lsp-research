@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic, superclass dispatch"
+symbol = "salt/client/ssh/state.py:87 super()._gather_pillar"
+selection = "Calls through super() in non-test salt Python sources where the immediate base defines the named method; this SSHState call was selected by seeded shuffle Random(20261110)."

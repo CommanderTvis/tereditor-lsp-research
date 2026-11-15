@@ -1,0 +1,4 @@
+type = "signature"
+origin = "synthetic: reorder a mixin's parameters through every call site (devrig change signature)"
+symbol = "focusOutline (src/support/mixins/misc.scss)"
+selection = "Candidates: mixins with at least 2 parameters, included at least 3 times in at least 2 files other than the defining one (src/**/*.scss); 3 candidates (focusBoxShadowInset, focusOutline, focusOutlineOnEmphasis), sorted, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk). First: focusOutlineOnEmphasis, already the subject of this project's move task, so skipped; second taken: focusOutline. Change: swap the first two parameters."

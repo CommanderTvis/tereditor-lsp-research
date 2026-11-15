@@ -1,0 +1,4 @@
+type = "refs"
+origin = "synthetic fallback: exhaustive cross-file C reference task"
+symbol = "RelationBuildDesc"
+selection = "Xlarge fallback selected from the pinned PostgreSQL snapshot because the image cannot validate mined PR tests; all tracked whole-word call sites were enumerated deterministically and the declaration/definition checked manually."

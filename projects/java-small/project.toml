@@ -1,11 +1,12 @@
-# java, small: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# java, small: chosen by size, see docs/PROJECTS.md. Curated: tasks, prepare.sh, Dockerfile.grade, check.sh and
 # probe.json are still to be written (docs/CURATION.md).
 lang = "java"
 size = "small"
-status = "stub"
+status = "curated"
 repo = "https://github.com/square/javapoet"
 tag = "javapoet-1.13.0"
 commit = "714e05ca60179285746604452324262b126dcb2d"
 loc = 9621
 loc_by_language = { "Java" = 9621 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["move", "signature", "callers", "pr", "pr", "pr"]

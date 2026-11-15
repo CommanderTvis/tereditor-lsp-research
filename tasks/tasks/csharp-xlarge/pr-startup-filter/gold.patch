@@ -1,0 +1,13 @@
+diff --git a/src/Hosting/Abstractions/src/IStartupFilter.cs b/src/Hosting/Abstractions/src/IStartupFilter.cs
+index 11275d47..eb5b0393 100644
+--- a/src/Hosting/Abstractions/src/IStartupFilter.cs
++++ b/src/Hosting/Abstractions/src/IStartupFilter.cs
+@@ -11,7 +11,7 @@ namespace Microsoft.AspNetCore.Hosting;
+ /// end of the pipeline without having to make the app author explicitly
+ /// register middleware.
+ /// </summary>
+-public interface IStartupFilter
++public interface IStartupFilter2
+ {
+     /// <summary>
+     /// Extends the provided <paramref name="next"/> and returns an <see cref="Action"/> of the same type.

@@ -1,0 +1,8 @@
+type = "pr"
+pr = 734
+issue = 77
+base_commit = "1225800fdbd05d6a2b069fc1e4949f6461a7236b"
+head_commit = "c3417f4c5c5640467325993f71a1496109af77bc"
+merged_at = "2020-01-06T19:01:52Z"
+fail_to_pass = ["JavaFileTest.alwaysQualifySimple", "JavaFileTest.alwaysQualifySupersedesJavaLangImports", "JavaFileTest.avoidClashesWithNestedClasses_viaClass", "JavaFileTest.avoidClashesWithNestedClasses_viaTypeElement", "JavaFileTest.avoidClashesWithNestedClasses_viaSuperinterfaceType", "JavaFileTest.avoidClashes_parentChild_superclass_type", "JavaFileTest.avoidClashes_parentChild_superclass_typeMirror", "JavaFileTest.avoidClashes_parentChild_superinterface_type", "JavaFileTest.avoidClashes_parentChild_superinterface_typeMirror", "JavaFileTest.avoidClashes_mapEntry"]
+pass_to_pass = "every other test of the module (check.sh)"

@@ -1,0 +1,110 @@
+diff --git a/toolz/__init__.py b/toolz/__init__.py
+index f94d389..c05520f 100644
+--- a/toolz/__init__.py
++++ b/toolz/__init__.py
+@@ -1,4 +1,4 @@
+-from .itertoolz import *
++from .sequences import *
+ 
+ from .functoolz import *
+ 
+diff --git a/toolz/dicttoolz.py b/toolz/dicttoolz.py
+index 457bc26..2d41f86 100644
+--- a/toolz/dicttoolz.py
++++ b/toolz/dicttoolz.py
+@@ -328,7 +328,7 @@ def get_in(keys, coll, default=None, no_default=False):
+     KeyError: 'y'
+ 
+     See Also:
+-        itertoolz.get
++        sequences.get
+         operator.getitem
+     """
+     try:
+diff --git a/toolz/recipes.py b/toolz/recipes.py
+index 89de88d..0b8dcba 100644
+--- a/toolz/recipes.py
++++ b/toolz/recipes.py
+@@ -1,5 +1,5 @@
+ import itertools
+-from .itertoolz import frequencies, pluck, getter
++from .sequences import frequencies, pluck, getter
+ 
+ 
+ __all__ = ('countby', 'partitionby')
+diff --git a/toolz/sandbox/core.py b/toolz/sandbox/core.py
+index 5a5e66b..da72c9a 100644
+--- a/toolz/sandbox/core.py
++++ b/toolz/sandbox/core.py
+@@ -1,4 +1,4 @@
+-from toolz.itertoolz import getter, cons, pluck
++from toolz.sequences import getter, cons, pluck
+ from itertools import tee, starmap
+ 
+ 
+diff --git a/toolz/sandbox/parallel.py b/toolz/sandbox/parallel.py
+index e47a124..a0a99d3 100644
+--- a/toolz/sandbox/parallel.py
++++ b/toolz/sandbox/parallel.py
+@@ -1,5 +1,5 @@
+ import functools
+-from toolz.itertoolz import partition_all
++from toolz.sequences import partition_all
+ from toolz.utils import no_default
+ 
+ 
+diff --git a/toolz/itertoolz.py b/toolz/sequences.py
+similarity index 99%
+rename from toolz/itertoolz.py
+rename to toolz/sequences.py
+index 05c36cc..42a2b15 100644
+--- a/toolz/itertoolz.py
++++ b/toolz/sequences.py
+@@ -772,7 +772,7 @@ def count(seq):
+ def pluck(ind, seqs, default=no_default):
+     """ plucks an element or several elements from each item in a sequence.
+ 
+-    ``pluck`` maps ``itertoolz.get`` over a sequence and returns one or more
++    ``pluck`` maps ``sequences.get`` over a sequence and returns one or more
+     elements of each item in the sequence.
+ 
+     This is equivalent to running `map(curried.get(ind), seqs)`
+diff --git a/toolz/tests/test_curried.py b/toolz/tests/test_curried.py
+index 32c4be5..8ea724d 100644
+--- a/toolz/tests/test_curried.py
++++ b/toolz/tests/test_curried.py
+@@ -12,7 +12,7 @@ def test_take():
+ 
+ 
+ def test_first():
+-    assert first is toolz.itertoolz.first
++    assert first is toolz.sequences.first
+ 
+ 
+ def test_merge():
+diff --git a/toolz/tests/test_inspect_args.py b/toolz/tests/test_inspect_args.py
+index d011ecb..2d43f87 100644
+--- a/toolz/tests/test_inspect_args.py
++++ b/toolz/tests/test_inspect_args.py
+@@ -386,7 +386,7 @@ def test_introspect_curry_py3():
+ 
+ def test_introspect_builtin_modules():
+     mods = [builtins, functools, itertools, operator, toolz,
+-            toolz.functoolz, toolz.itertoolz, toolz.dicttoolz, toolz.recipes]
++            toolz.functoolz, toolz.sequences, toolz.dicttoolz, toolz.recipes]
+ 
+     denylist = set()
+ 
+diff --git a/toolz/tests/test_itertoolz.py b/toolz/tests/test_itertoolz.py
+index d20da2b..8890c3c 100644
+--- a/toolz/tests/test_itertoolz.py
++++ b/toolz/tests/test_itertoolz.py
+@@ -4,7 +4,7 @@ from toolz.utils import raises
+ from functools import partial
+ from random import Random
+ from pickle import dumps, loads
+-from toolz.itertoolz import (remove, groupby, merge_sorted,
++from toolz.sequences import (remove, groupby, merge_sorted,
+                              concat, concatv, interleave, unique,
+                              isiterable, getter,
+                              mapcat, isdistinct, first, second,

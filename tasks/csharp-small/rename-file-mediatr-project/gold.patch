@@ -1,0 +1,212 @@
+diff --git a/Build.ps1 b/Build.ps1
+index ef1f2b1..ff84b4c 100644
+--- a/Build.ps1
++++ b/Build.ps1
+@@ -32,5 +32,5 @@ exec { & dotnet build -c Release }
+ 
+ exec { & dotnet test -c Release --no-build -l trx --verbosity=normal }
+ 
+-exec { & dotnet pack .\src\MediatR\MediatR.csproj -c Release -o $artifacts --no-build }
++exec { & dotnet pack .\src\MediatR.Core\MediatR.Core.csproj -c Release -o $artifacts --no-build }
+ 
+diff --git a/MediatR.sln b/MediatR.sln
+index 59e4298..324ea17 100644
+--- a/MediatR.sln
++++ b/MediatR.sln
+@@ -7,7 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6267E2ED-942
+ EndProject
+ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{962C5ACA-AB2B-4E9B-9EBB-7E7EE28CDBB1}"
+ EndProject
+-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediatR", "src\MediatR\MediatR.csproj", "{12DA3F16-060B-467A-993F-2DF25EE6E6A8}"
++Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediatR.Core", "src\MediatR.Core\MediatR.Core.csproj", "{12DA3F16-060B-467A-993F-2DF25EE6E6A8}"
+ EndProject
+ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediatR.Tests", "test\MediatR.Tests\MediatR.Tests.csproj", "{4FB0CFC4-90E3-467F-9704-6FBF637F9B4B}"
+ EndProject
+diff --git a/samples/MediatR.Examples.PublishStrategies/MediatR.Examples.PublishStrategies.csproj b/samples/MediatR.Examples.PublishStrategies/MediatR.Examples.PublishStrategies.csproj
+index 4e3cf95..7335298 100644
+--- a/samples/MediatR.Examples.PublishStrategies/MediatR.Examples.PublishStrategies.csproj
++++ b/samples/MediatR.Examples.PublishStrategies/MediatR.Examples.PublishStrategies.csproj
+@@ -10,7 +10,7 @@
+   </ItemGroup>
+ 
+   <ItemGroup>
+-    <ProjectReference Include="..\..\src\MediatR\MediatR.csproj" />
++    <ProjectReference Include="..\..\src\MediatR.Core\MediatR.Core.csproj" />
+     <ProjectReference Include="..\MediatR.Examples\MediatR.Examples.csproj" />
+   </ItemGroup>
+ 
+diff --git a/samples/MediatR.Examples/MediatR.Examples.csproj b/samples/MediatR.Examples/MediatR.Examples.csproj
+index 9876cfb..5f9f3f4 100644
+--- a/samples/MediatR.Examples/MediatR.Examples.csproj
++++ b/samples/MediatR.Examples/MediatR.Examples.csproj
+@@ -5,7 +5,7 @@
+   </PropertyGroup>
+ 
+   <ItemGroup>
+-    <ProjectReference Include="..\..\src\MediatR\MediatR.csproj" />
++    <ProjectReference Include="..\..\src\MediatR.Core\MediatR.Core.csproj" />
+   </ItemGroup>
+ 
+ </Project>
+diff --git a/src/MediatR/Entities/OpenBehavior.cs b/src/MediatR.Core/Entities/OpenBehavior.cs
+similarity index 100%
+rename from src/MediatR/Entities/OpenBehavior.cs
+rename to src/MediatR.Core/Entities/OpenBehavior.cs
+diff --git a/src/MediatR/IMediator.cs b/src/MediatR.Core/IMediator.cs
+similarity index 100%
+rename from src/MediatR/IMediator.cs
+rename to src/MediatR.Core/IMediator.cs
+diff --git a/src/MediatR/INotificationHandler.cs b/src/MediatR.Core/INotificationHandler.cs
+similarity index 100%
+rename from src/MediatR/INotificationHandler.cs
+rename to src/MediatR.Core/INotificationHandler.cs
+diff --git a/src/MediatR/INotificationPublisher.cs b/src/MediatR.Core/INotificationPublisher.cs
+similarity index 100%
+rename from src/MediatR/INotificationPublisher.cs
+rename to src/MediatR.Core/INotificationPublisher.cs
+diff --git a/src/MediatR/IPipelineBehavior.cs b/src/MediatR.Core/IPipelineBehavior.cs
+similarity index 100%
+rename from src/MediatR/IPipelineBehavior.cs
+rename to src/MediatR.Core/IPipelineBehavior.cs
+diff --git a/src/MediatR/IPublisher.cs b/src/MediatR.Core/IPublisher.cs
+similarity index 100%
+rename from src/MediatR/IPublisher.cs
+rename to src/MediatR.Core/IPublisher.cs
+diff --git a/src/MediatR/IRequestHandler.cs b/src/MediatR.Core/IRequestHandler.cs
+similarity index 100%
+rename from src/MediatR/IRequestHandler.cs
+rename to src/MediatR.Core/IRequestHandler.cs
+diff --git a/src/MediatR/ISender.cs b/src/MediatR.Core/ISender.cs
+similarity index 100%
+rename from src/MediatR/ISender.cs
+rename to src/MediatR.Core/ISender.cs
+diff --git a/src/MediatR/IStreamPipelineBehavior.cs b/src/MediatR.Core/IStreamPipelineBehavior.cs
+similarity index 100%
+rename from src/MediatR/IStreamPipelineBehavior.cs
+rename to src/MediatR.Core/IStreamPipelineBehavior.cs
+diff --git a/src/MediatR/IStreamRequestHandler.cs b/src/MediatR.Core/IStreamRequestHandler.cs
+similarity index 100%
+rename from src/MediatR/IStreamRequestHandler.cs
+rename to src/MediatR.Core/IStreamRequestHandler.cs
+diff --git a/src/MediatR/Internal/HandlersOrderer.cs b/src/MediatR.Core/Internal/HandlersOrderer.cs
+similarity index 100%
+rename from src/MediatR/Internal/HandlersOrderer.cs
+rename to src/MediatR.Core/Internal/HandlersOrderer.cs
+diff --git a/src/MediatR/Internal/ObjectDetails.cs b/src/MediatR.Core/Internal/ObjectDetails.cs
+similarity index 100%
+rename from src/MediatR/Internal/ObjectDetails.cs
+rename to src/MediatR.Core/Internal/ObjectDetails.cs
+diff --git a/src/MediatR/MediatR.csproj b/src/MediatR.Core/MediatR.Core.csproj
+similarity index 100%
+rename from src/MediatR/MediatR.csproj
+rename to src/MediatR.Core/MediatR.Core.csproj
+diff --git a/src/MediatR/Mediator.cs b/src/MediatR.Core/Mediator.cs
+similarity index 100%
+rename from src/MediatR/Mediator.cs
+rename to src/MediatR.Core/Mediator.cs
+diff --git a/src/MediatR/MicrosoftExtensionsDI/MediatrServiceConfiguration.cs b/src/MediatR.Core/MicrosoftExtensionsDI/MediatrServiceConfiguration.cs
+similarity index 100%
+rename from src/MediatR/MicrosoftExtensionsDI/MediatrServiceConfiguration.cs
+rename to src/MediatR.Core/MicrosoftExtensionsDI/MediatrServiceConfiguration.cs
+diff --git a/src/MediatR/MicrosoftExtensionsDI/RequestExceptionActionProcessorStrategy.cs b/src/MediatR.Core/MicrosoftExtensionsDI/RequestExceptionActionProcessorStrategy.cs
+similarity index 100%
+rename from src/MediatR/MicrosoftExtensionsDI/RequestExceptionActionProcessorStrategy.cs
+rename to src/MediatR.Core/MicrosoftExtensionsDI/RequestExceptionActionProcessorStrategy.cs
+diff --git a/src/MediatR/MicrosoftExtensionsDI/ServiceCollectionExtensions.cs b/src/MediatR.Core/MicrosoftExtensionsDI/ServiceCollectionExtensions.cs
+similarity index 100%
+rename from src/MediatR/MicrosoftExtensionsDI/ServiceCollectionExtensions.cs
+rename to src/MediatR.Core/MicrosoftExtensionsDI/ServiceCollectionExtensions.cs
+diff --git a/src/MediatR/NotificationHandlerExecutor.cs b/src/MediatR.Core/NotificationHandlerExecutor.cs
+similarity index 100%
+rename from src/MediatR/NotificationHandlerExecutor.cs
+rename to src/MediatR.Core/NotificationHandlerExecutor.cs
+diff --git a/src/MediatR/NotificationPublishers/ForeachAwaitPublisher.cs b/src/MediatR.Core/NotificationPublishers/ForeachAwaitPublisher.cs
+similarity index 100%
+rename from src/MediatR/NotificationPublishers/ForeachAwaitPublisher.cs
+rename to src/MediatR.Core/NotificationPublishers/ForeachAwaitPublisher.cs
+diff --git a/src/MediatR/NotificationPublishers/TaskWhenAllPublisher.cs b/src/MediatR.Core/NotificationPublishers/TaskWhenAllPublisher.cs
+similarity index 100%
+rename from src/MediatR/NotificationPublishers/TaskWhenAllPublisher.cs
+rename to src/MediatR.Core/NotificationPublishers/TaskWhenAllPublisher.cs
+diff --git a/src/MediatR/Pipeline/IRequestExceptionAction.cs b/src/MediatR.Core/Pipeline/IRequestExceptionAction.cs
+similarity index 100%
+rename from src/MediatR/Pipeline/IRequestExceptionAction.cs
+rename to src/MediatR.Core/Pipeline/IRequestExceptionAction.cs
+diff --git a/src/MediatR/Pipeline/IRequestExceptionHandler.cs b/src/MediatR.Core/Pipeline/IRequestExceptionHandler.cs
+similarity index 100%
+rename from src/MediatR/Pipeline/IRequestExceptionHandler.cs
+rename to src/MediatR.Core/Pipeline/IRequestExceptionHandler.cs
+diff --git a/src/MediatR/Pipeline/IRequestPostProcessor.cs b/src/MediatR.Core/Pipeline/IRequestPostProcessor.cs
+similarity index 100%
+rename from src/MediatR/Pipeline/IRequestPostProcessor.cs
+rename to src/MediatR.Core/Pipeline/IRequestPostProcessor.cs
+diff --git a/src/MediatR/Pipeline/IRequestPreProcessor.cs b/src/MediatR.Core/Pipeline/IRequestPreProcessor.cs
+similarity index 100%
+rename from src/MediatR/Pipeline/IRequestPreProcessor.cs
+rename to src/MediatR.Core/Pipeline/IRequestPreProcessor.cs
+diff --git a/src/MediatR/Pipeline/RequestExceptionActionProcessorBehavior.cs b/src/MediatR.Core/Pipeline/RequestExceptionActionProcessorBehavior.cs
+similarity index 100%
+rename from src/MediatR/Pipeline/RequestExceptionActionProcessorBehavior.cs
+rename to src/MediatR.Core/Pipeline/RequestExceptionActionProcessorBehavior.cs
+diff --git a/src/MediatR/Pipeline/RequestExceptionHandlerState.cs b/src/MediatR.Core/Pipeline/RequestExceptionHandlerState.cs
+similarity index 100%
+rename from src/MediatR/Pipeline/RequestExceptionHandlerState.cs
+rename to src/MediatR.Core/Pipeline/RequestExceptionHandlerState.cs
+diff --git a/src/MediatR/Pipeline/RequestExceptionProcessorBehavior.cs b/src/MediatR.Core/Pipeline/RequestExceptionProcessorBehavior.cs
+similarity index 100%
+rename from src/MediatR/Pipeline/RequestExceptionProcessorBehavior.cs
+rename to src/MediatR.Core/Pipeline/RequestExceptionProcessorBehavior.cs
+diff --git a/src/MediatR/Pipeline/RequestPostProcessorBehavior.cs b/src/MediatR.Core/Pipeline/RequestPostProcessorBehavior.cs
+similarity index 100%
+rename from src/MediatR/Pipeline/RequestPostProcessorBehavior.cs
+rename to src/MediatR.Core/Pipeline/RequestPostProcessorBehavior.cs
+diff --git a/src/MediatR/Pipeline/RequestPreProcessorBehavior.cs b/src/MediatR.Core/Pipeline/RequestPreProcessorBehavior.cs
+similarity index 100%
+rename from src/MediatR/Pipeline/RequestPreProcessorBehavior.cs
+rename to src/MediatR.Core/Pipeline/RequestPreProcessorBehavior.cs
+diff --git a/src/MediatR/Registration/ServiceRegistrar.cs b/src/MediatR.Core/Registration/ServiceRegistrar.cs
+similarity index 100%
+rename from src/MediatR/Registration/ServiceRegistrar.cs
+rename to src/MediatR.Core/Registration/ServiceRegistrar.cs
+diff --git a/src/MediatR/TypeForwardings.cs b/src/MediatR.Core/TypeForwardings.cs
+similarity index 100%
+rename from src/MediatR/TypeForwardings.cs
+rename to src/MediatR.Core/TypeForwardings.cs
+diff --git a/src/MediatR/Wrappers/NotificationHandlerWrapper.cs b/src/MediatR.Core/Wrappers/NotificationHandlerWrapper.cs
+similarity index 100%
+rename from src/MediatR/Wrappers/NotificationHandlerWrapper.cs
+rename to src/MediatR.Core/Wrappers/NotificationHandlerWrapper.cs
+diff --git a/src/MediatR/Wrappers/RequestHandlerWrapper.cs b/src/MediatR.Core/Wrappers/RequestHandlerWrapper.cs
+similarity index 100%
+rename from src/MediatR/Wrappers/RequestHandlerWrapper.cs
+rename to src/MediatR.Core/Wrappers/RequestHandlerWrapper.cs
+diff --git a/src/MediatR/Wrappers/StreamRequestHandlerWrapper.cs b/src/MediatR.Core/Wrappers/StreamRequestHandlerWrapper.cs
+similarity index 100%
+rename from src/MediatR/Wrappers/StreamRequestHandlerWrapper.cs
+rename to src/MediatR.Core/Wrappers/StreamRequestHandlerWrapper.cs
+diff --git a/test/MediatR.Benchmarks/MediatR.Benchmarks.csproj b/test/MediatR.Benchmarks/MediatR.Benchmarks.csproj
+index 1d88a19..806188a 100644
+--- a/test/MediatR.Benchmarks/MediatR.Benchmarks.csproj
++++ b/test/MediatR.Benchmarks/MediatR.Benchmarks.csproj
+@@ -17,6 +17,6 @@
+     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+   </ItemGroup>
+   <ItemGroup>
+-    <ProjectReference Include="..\..\src\MediatR\MediatR.csproj" />
++    <ProjectReference Include="..\..\src\MediatR.Core\MediatR.Core.csproj" />
+   </ItemGroup>
+ </Project>
+\ No newline at end of file
+diff --git a/test/MediatR.Tests/MediatR.Tests.csproj b/test/MediatR.Tests/MediatR.Tests.csproj
+index cff87cc..a1b8db2 100644
+--- a/test/MediatR.Tests/MediatR.Tests.csproj
++++ b/test/MediatR.Tests/MediatR.Tests.csproj
+@@ -6,7 +6,7 @@
+   </PropertyGroup>
+ 
+   <ItemGroup>
+-    <ProjectReference Include="..\..\src\MediatR\MediatR.csproj" />
++    <ProjectReference Include="..\..\src\MediatR.Core\MediatR.Core.csproj" />
+   </ItemGroup>
+ 
+   <ItemGroup>

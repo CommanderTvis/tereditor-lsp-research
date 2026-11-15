@@ -1,0 +1,4 @@
+type = "signature"
+origin = "devrig change signature; parameter removed through overrides and call sites"
+grade_timeout_s = 2400
+selection = "public or protected instance methods declared without @Override in exactly one src/main/java type, with 2 to 6 @Override declarations of the same name in src/main/java and 5 to 40 textual call sites under src (tools: java_cands.py signature): 103 candidates; first of the seeded shuffle awk srand(20261110), rand() per line, sorted ascending; the change (drop the unused typeInfo parameter) chosen by hand"

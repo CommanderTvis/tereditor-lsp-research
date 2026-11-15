@@ -1,0 +1,1 @@
+Find every Kotlin source use of `org.jetbrains.kotlin.name.Name` in the pinned repository, excluding its declaration, comments, strings, generated code, and imports that do not reference the type. Write one `relative/path.kt:LINE` per line to `ANSWER.txt`.

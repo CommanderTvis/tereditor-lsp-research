@@ -1,0 +1,5 @@
+--- a/src/Illuminate/Support/MessageBag.php
++++ b/src/Illuminate/Support/MessageBag.php
+@@
+-// original declaration: MessageBag
++// fallback declaration: ValidationMessageBag

@@ -1,0 +1,4 @@
+type = "move"
+origin = "devrig move class"
+symbol = "rich.console.Group -> rich.group.Group"
+selection = "top-level classes of non-test rich/ modules that define at least 2 top-level classes, imported by name (from <module> import Name, absolute or relative) in 5 to 15 other .py files (python3 select.py <snapshot> rich, an ast walk); sorted by path:line, 15 candidates: Align, ColorSystem, Color, ConsoleRenderable, Group, ReprHighlighter, Live, Pretty, TextColumn, BarColumn, Progress, ControlType, Syntax, Span, Theme; index random.Random(20261110).randrange(15) = 4 (CPython 3.12). Destination rule: a new module named after the class in snake case."

@@ -9,7 +9,7 @@
 set -euo pipefail
 . "$STUDY_ROOT/harness/env/lib.sh"
 proj=$1 mode=${2:-enforced} out=$3 probe=$4; POLL_S=${POLL_S:-180}
-snap=$STUDY_STATE/projects/$proj/snapshot; [ -d "$snap" ] || die "project $proj is not set up: ./study project $proj"
+snap=$(state_dir "$proj" "$(project_commit "$proj")")/snapshot; [ -d "$snap" ] || die "project $proj is not set up: ./study project $proj"
 w=$(mktemp -d "$STUDY_STATE/probe-XXXXXX"); mkdir -p "$w/sock" "$w/lsplog" "$w/lic" "$out"
 cp -a "$snap" "$w/ws"
 if [ -n "${STUDY_LICENSE_ZIP_B64:-}" ]; then printf '%s' "$STUDY_LICENSE_ZIP_B64" | base64 -d > "$w/lic/${STUDY_LICENSE_NAME:-license.zip}"; fi

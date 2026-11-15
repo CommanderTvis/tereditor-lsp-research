@@ -1,0 +1,17 @@
+fmt::format_system_error
+fmt::report_system_error
+fmt::vsystem_error
+fmt::vformat
+fmt::vprint
+fmt::vprintln
+fmt::vprint_buffered
+fmt::report_error
+fmt::assert_fail
+fmt::system_category
+fmt::buffered_file::~?buffered_file
+fmt::buffered_file::close
+fmt::buffered_file::descriptor
+fmt::file::[~A-Za-z_0-9]+
+fmt::pipe::pipe
+fmt::ostream::~?ostream
+fmt::ostream::grow

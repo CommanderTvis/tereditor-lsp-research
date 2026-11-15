@@ -1,0 +1,7 @@
+[
+  {"name": "references ErrorIDToName (cross-file)", "args": {"operation": "references", "query": "ErrorIDToName", "path": "tinyxml2.h"},
+   "expect": ["xmltest.cpp:67", "xmltest.cpp:2382", "tinyxml2.cpp:2509"]},
+  {"name": "definition of LoadFile(const char*) from the header", "args": {"operation": "definition", "path": "tinyxml2.h", "line": 1759, "column": 13},
+   "expect": ["tinyxml2.cpp:2344"]},
+  {"name": "diagnostics tinyxml2.cpp", "tool": "lsp_diagnostics", "args": {"paths": ["tinyxml2.cpp"]}, "expect": []}
+]

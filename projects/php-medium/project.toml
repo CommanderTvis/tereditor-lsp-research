@@ -1,11 +1,13 @@
-# php, medium: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# PHP, medium: guzzle, the HTTP client. Handlers behind interfaces (curl, multi-curl, stream, mock), middleware built
+# from closures, PSR-7/17/18 types from vendor packages, and very large test files.
 lang = "php"
 size = "medium"
-status = "stub"
 repo = "https://github.com/guzzle/guzzle"
 tag = "8.3.1"
 commit = "7d9b1f430bb65ac664e120af227bf9a795ad6333"
 loc = 47450
 loc_by_language = { "PHP" = 47450 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+stripped = ["AGENTS.md", "CLAUDE.md"]
+task_types = ["rename", "rename-file", "refs", "pr", "pr", "pr"]
+grading_note = "No node.js in the grading toolchain: check.sh replaces guzzle's node.js test server with offline-bootstrap.php (about 600 of 3,300 tests skipped) and excludes 6 tests by name; the mined tasks run their own test file without the server."

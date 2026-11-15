@@ -1,0 +1,4 @@
+type = "rename-file"
+origin = "synthetic fallback: rename a source file and its declared type"
+subject = "MediaBrowser.Providers/Books/ComicImageProvider.cs -> ComicBookImageProvider.cs"
+selection = "Fallback selected deterministically from the pinned snapshot because mined candidates were unavailable or unvalidated; seed = 20261110. The substitution is recorded in project.toml."

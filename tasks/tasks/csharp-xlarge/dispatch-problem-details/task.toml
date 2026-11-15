@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic fallback: exhaustive source oracle"
+symbol = "IProblemDetailsService"
+selection = "Deterministic whole-tree candidate scan at pinned commit; seed = 20261110."

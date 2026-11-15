@@ -1,0 +1,5 @@
+type = "move"
+origin = "synthetic: move an interface to another namespace (docs/TASKS.md)"
+symbol = "Illuminate\\Contracts\\Translation\\Loader"
+target = "Illuminate\\Contracts\\Loader"
+selection = "Every class, interface, trait or enum declared under src/ whose short name occurs as a whole word in at least 5 other .php files under src/ and tests/ (rg -lw; large projects: at least 5 files, docs/CURATION.md), sorted by fully qualified name: 727 candidates. Seeded shuffle awk 'BEGIN{srand(20261110)}' (macOS awk 20200816, printf %.12f rand(), sort -n), first item. Target rule, fixed before the draw and the same as php-small: the type moves one namespace level up (its file one directory up)."

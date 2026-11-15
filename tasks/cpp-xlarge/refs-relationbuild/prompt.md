@@ -1,0 +1,1 @@
+Find every PostgreSQL C source location that refers to `RelationBuildDesc`, including its declaration, definition, and calls. Exclude comments and strings. Write one `relative/path:line` per line to `ANSWER.txt`.

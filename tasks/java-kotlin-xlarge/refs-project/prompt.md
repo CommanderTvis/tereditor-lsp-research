@@ -1,0 +1,1 @@
+Find every Java and Kotlin source use of org.gradle.api.Project, excluding its declaration, comments, strings, generated code, and unrelated same-named types. Write one relative/path:line per line to ANSWER.txt.

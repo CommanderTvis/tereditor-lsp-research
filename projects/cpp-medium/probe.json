@@ -1,0 +1,7 @@
+[
+  {"name": "references format_system_error (cross-file)", "args": {"operation": "references", "query": "format_system_error", "path": "include/fmt/format.h"},
+   "expect": ["test/format-test.cc:268", "include/fmt/format-inl.h:1453"]},
+  {"name": "definition of format_system_error from its declaration", "args": {"operation": "definition", "path": "include/fmt/format.h", "line": 4312, "column": 13},
+   "expect": ["include/fmt/format-inl.h:1440"]},
+  {"name": "diagnostics src/format.cc", "tool": "lsp_diagnostics", "args": {"paths": ["src/format.cc"]}, "expect": []}
+]

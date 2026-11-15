@@ -1,0 +1,280 @@
+diff --git a/mypy/build.py b/mypy/build.py
+index 4398b0281..d786922a4 100644
+--- a/mypy/build.py
++++ b/mypy/build.py
+@@ -1311,8 +1311,11 @@ def validate_meta(meta: Optional[CacheMeta], id: str, path: Optional[str],
+     assert path is not None, "Internal error: meta was provided without a path"
+     if not manager.options.skip_cache_mtime_checks:
+         # Check data_json; assume if its mtime matches it's good.
+-        # TODO: stat() errors
+-        data_mtime = manager.getmtime(meta.data_json)
++        try:
++            data_mtime = manager.getmtime(meta.data_json)
++        except OSError:
++            manager.log('Metadata abandoned for {}: failed to stat data_json'.format(id))
++            return None
+         if data_mtime != meta.data_mtime:
+             manager.log('Metadata abandoned for {}: data cache is modified'.format(id))
+             return None
+@@ -1508,9 +1511,6 @@ def write_cache(id: str, path: str, tree: MypyFile,
+     # Write data cache file, if applicable
+     # Note that for Bazel we don't record the data file's mtime.
+     if old_interface_hash == interface_hash:
+-        # If the interface is unchanged, the cached data is guaranteed
+-        # to be equivalent, and we only need to update the metadata.
+-        data_mtime = manager.getmtime(data_json)
+         manager.trace("Interface for {} is unchanged".format(id))
+     else:
+         manager.trace("Interface for {} has changed".format(id))
+@@ -1527,7 +1527,12 @@ def write_cache(id: str, path: str, tree: MypyFile,
+             # Both have the effect of slowing down the next run a
+             # little bit due to an out-of-date cache file.
+             return interface_hash, None
++
++    try:
+         data_mtime = manager.getmtime(data_json)
++    except OSError:
++        manager.log("Error in os.stat({!r}), skipping cache write".format(data_json))
++        return interface_hash, None
+ 
+     mtime = 0 if bazel else int(st.st_mtime)
+     size = st.st_size
+diff --git a/mypy/checker.py b/mypy/checker.py
+index 5a1d8c676..5bc7809eb 100644
+--- a/mypy/checker.py
++++ b/mypy/checker.py
+@@ -50,6 +50,7 @@ from mypy.checkmember import (
+     type_object_type,
+     analyze_decorator_or_funcbase_access,
+ )
++from mypy.semanal_enum import ENUM_BASES, ENUM_SPECIAL_PROPS
+ from mypy.typeops import (
+     map_type_from_supertype, bind_self, erase_to_bound, make_simplified_union,
+     erase_def_to_union_or_bound, erase_to_union_or_bound, coerce_to_literal,
+@@ -404,8 +405,8 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
+         self.deferred_nodes.append(DeferredNode(node, enclosing_class))
+ 
+     def handle_cannot_determine_type(self, name: str, context: Context) -> None:
+-        node = self.scope.top_function()
+-        if self.pass_num < self.last_pass and isinstance(node, (FuncDef, LambdaExpr)):
++        node = self.scope.top_non_lambda_function()
++        if self.pass_num < self.last_pass and isinstance(node, FuncDef):
+             # Don't report an error yet. Just defer. Note that we don't defer
+             # lambdas because they are coupled to the surrounding function
+             # through the binder and the inferred type of the lambda, so it
+@@ -2522,13 +2523,14 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
+             self.msg.cant_override_final(node.name, base.name, node)
+             return False
+         if node.is_final:
++            if base.fullname in ENUM_BASES and node.name in ENUM_SPECIAL_PROPS:
++                return True
+             self.check_if_final_var_override_writable(node.name, base_node, node)
+         return True
+ 
+     def check_if_final_var_override_writable(self,
+                                              name: str,
+-                                             base_node:
+-                                             Optional[Node],
++                                             base_node: Optional[Node],
+                                              ctx: Context) -> None:
+         """Check that a final variable doesn't override writeable attribute.
+ 
+@@ -4375,7 +4377,8 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
+         If either of the values in the tuple is None, then that particular
+         branch can never occur.
+ 
+-        Guaranteed to not return None, None. (But may return {}, {})
++        May return {}, {}.
++        Can return None, None in situations involving NoReturn.
+         """
+         if_map, else_map = self.find_isinstance_check_helper(node)
+         new_if_map = self.propagate_up_typemap_info(self.type_map, if_map)
+diff --git a/mypy/checkexpr.py b/mypy/checkexpr.py
+index c58707519..93df9c612 100644
+--- a/mypy/checkexpr.py
++++ b/mypy/checkexpr.py
+@@ -14,6 +14,7 @@ from mypy.typeanal import (
+     has_any_from_unimported_type, check_for_explicit_any, set_any_tvars, expand_type_alias,
+     make_optional_type,
+ )
++from mypy.semanal_enum import ENUM_BASES
+ from mypy.types import (
+     Type, AnyType, CallableType, Overloaded, NoneType, TypeVarType,
+     TupleType, TypedDictType, Instance, ErasedType, UnionType,
+@@ -1000,9 +1001,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
+         ret_type = get_proper_type(callee.ret_type)
+         if callee.is_type_obj() and isinstance(ret_type, Instance):
+             callable_name = ret_type.type.fullname
+-        if (isinstance(callable_node, RefExpr)
+-            and callable_node.fullname in ('enum.Enum', 'enum.IntEnum',
+-                                           'enum.Flag', 'enum.IntFlag')):
++        if isinstance(callable_node, RefExpr) and callable_node.fullname in ENUM_BASES:
+             # An Enum() call that failed SemanticAnalyzerPass2.check_enum_call().
+             return callee.ret_type, callee
+ 
+@@ -2862,13 +2861,16 @@ class ExpressionChecker(ExpressionVisitor[Type]):
+         with (self.msg.disable_errors() if right_map is None else nullcontext()):
+             right_type = self.analyze_cond_branch(right_map, e.right, expanded_left_type)
+ 
++        if left_map is None and right_map is None:
++            return UninhabitedType()
++
+         if right_map is None:
+             # The boolean expression is statically known to be the left value
+-            assert left_map is not None  # find_isinstance_check guarantees this
++            assert left_map is not None
+             return left_type
+         if left_map is None:
+             # The boolean expression is statically known to be the right value
+-            assert right_map is not None  # find_isinstance_check guarantees this
++            assert right_map is not None
+             return right_type
+ 
+         if e.op == 'and':
+@@ -3925,13 +3927,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
+     def analyze_cond_branch(self, map: Optional[Dict[Expression, Type]],
+                             node: Expression, context: Optional[Type],
+                             allow_none_return: bool = False) -> Type:
+-        # We need to be have the correct amount of binder frames.
+-        # Sometimes it can be missing for unreachable parts.
+-        with (
+-            self.chk.binder.frame_context(can_skip=True, fall_through=0)
+-            if len(self.chk.binder.frames) > 1
+-            else self.chk.binder.top_frame_context()
+-        ):
++        with self.chk.binder.frame_context(can_skip=True, fall_through=0):
+             if map is None:
+                 # We still need to type check node, in case we want to
+                 # process it for isinstance checks later
+diff --git a/mypy/messages.py b/mypy/messages.py
+index 72f53e1cf..da284cc88 100644
+--- a/mypy/messages.py
++++ b/mypy/messages.py
+@@ -2124,11 +2124,6 @@ def find_defining_module(modules: Dict[str, MypyFile], typ: CallableType) -> Opt
+     return None
+ 
+ 
+-def temp_message_builder() -> MessageBuilder:
+-    """Return a message builder usable for throwaway errors (which may not format properly)."""
+-    return MessageBuilder(Errors(), {})
+-
+-
+ # For hard-coding suggested missing member alternatives.
+ COMMON_MISTAKES: Final[Dict[str, Sequence[str]]] = {
+     'add': ('append', 'extend'),
+diff --git a/mypy/plugins/enums.py b/mypy/plugins/enums.py
+index 53241304c..ea9a02f5b 100644
+--- a/mypy/plugins/enums.py
++++ b/mypy/plugins/enums.py
+@@ -18,15 +18,13 @@ from mypy.types import Type, Instance, LiteralType, CallableType, ProperType, ge
+ from mypy.typeops import make_simplified_union
+ from mypy.nodes import TypeInfo
+ from mypy.subtypes import is_equivalent
++from mypy.semanal_enum import ENUM_BASES
+ 
+-# Note: 'enum.EnumMeta' is deliberately excluded from this list. Classes that directly use
+-# enum.EnumMeta do not necessarily automatically have the 'name' and 'value' attributes.
+-ENUM_PREFIXES: Final = {"enum.Enum", "enum.IntEnum", "enum.Flag", "enum.IntFlag"}
+-ENUM_NAME_ACCESS: Final = {"{}.name".format(prefix) for prefix in ENUM_PREFIXES} | {
+-    "{}._name_".format(prefix) for prefix in ENUM_PREFIXES
++ENUM_NAME_ACCESS: Final = {"{}.name".format(prefix) for prefix in ENUM_BASES} | {
++    "{}._name_".format(prefix) for prefix in ENUM_BASES
+ }
+-ENUM_VALUE_ACCESS: Final = {"{}.value".format(prefix) for prefix in ENUM_PREFIXES} | {
+-    "{}._value_".format(prefix) for prefix in ENUM_PREFIXES
++ENUM_VALUE_ACCESS: Final = {"{}.value".format(prefix) for prefix in ENUM_BASES} | {
++    "{}._value_".format(prefix) for prefix in ENUM_BASES
+ }
+ 
+ 
+diff --git a/mypy/semanal.py b/mypy/semanal.py
+index fe3151ce6..9a5076beb 100644
+--- a/mypy/semanal.py
++++ b/mypy/semanal.py
+@@ -116,7 +116,7 @@ from mypy.semanal_shared import (
+ )
+ from mypy.semanal_namedtuple import NamedTupleAnalyzer
+ from mypy.semanal_typeddict import TypedDictAnalyzer
+-from mypy.semanal_enum import EnumCallAnalyzer
++from mypy.semanal_enum import EnumCallAnalyzer, ENUM_BASES
+ from mypy.semanal_newtype import NewTypeAnalyzer
+ from mypy.reachability import (
+     infer_reachability_of_if_statement, infer_condition_value, ALWAYS_FALSE, ALWAYS_TRUE,
+@@ -1554,8 +1554,7 @@ class SemanticAnalyzer(NodeVisitor[None],
+                     self.fail('Cannot subclass "NewType"', defn)
+                 if (
+                     base.type.is_enum
+-                    and base.type.fullname not in (
+-                        'enum.Enum', 'enum.IntEnum', 'enum.Flag', 'enum.IntFlag')
++                    and base.type.fullname not in ENUM_BASES
+                     and base.type.names
+                     and any(not isinstance(n.node, (FuncBase, Decorator))
+                             for n in base.type.names.values())
+@@ -4612,7 +4611,11 @@ class SemanticAnalyzer(NodeVisitor[None],
+         names = self.current_symbol_table(escape_comprehensions=escape_comprehensions)
+         existing = names.get(name)
+         if isinstance(symbol.node, PlaceholderNode) and can_defer:
+-            self.defer(context)
++            if context is not None:
++                self.process_placeholder(name, 'name', context)
++            else:
++                # see note in docstring describing None contexts
++                self.defer()
+         if (existing is not None
+                 and context is not None
+                 and not is_valid_replacement(existing, symbol)):
+diff --git a/mypy/semanal_enum.py b/mypy/semanal_enum.py
+index 07e8e048d..5682f6629 100644
+--- a/mypy/semanal_enum.py
++++ b/mypy/semanal_enum.py
+@@ -4,6 +4,7 @@ This is conceptually part of mypy.semanal (semantic analyzer pass 2).
+ """
+ 
+ from typing import List, Tuple, Optional, Union, cast
++from typing_extensions import Final
+ 
+ from mypy.nodes import (
+     Expression, Context, TypeInfo, AssignmentStmt, NameExpr, CallExpr, RefExpr, StrExpr,
+@@ -13,6 +14,15 @@ from mypy.nodes import (
+ from mypy.semanal_shared import SemanticAnalyzerInterface
+ from mypy.options import Options
+ 
++# Note: 'enum.EnumMeta' is deliberately excluded from this list. Classes that directly use
++# enum.EnumMeta do not necessarily automatically have the 'name' and 'value' attributes.
++ENUM_BASES: Final = frozenset((
++    'enum.Enum', 'enum.IntEnum', 'enum.Flag', 'enum.IntFlag',
++))
++ENUM_SPECIAL_PROPS: Final = frozenset((
++    'name', 'value', '_name_', '_value_', '_order_', '__order__',
++))
++
+ 
+ class EnumCallAnalyzer:
+     def __init__(self, options: Options, api: SemanticAnalyzerInterface) -> None:
+@@ -62,7 +72,7 @@ class EnumCallAnalyzer:
+         if not isinstance(callee, RefExpr):
+             return None
+         fullname = callee.fullname
+-        if fullname not in ('enum.Enum', 'enum.IntEnum', 'enum.Flag', 'enum.IntFlag'):
++        if fullname not in ENUM_BASES:
+             return None
+         items, values, ok = self.parse_enum_call_args(call, fullname.split('.')[-1])
+         if not ok:
+diff --git a/mypy/server/deps.py b/mypy/server/deps.py
+index acec79c10..cee12c9f8 100644
+--- a/mypy/server/deps.py
++++ b/mypy/server/deps.py
+@@ -481,8 +481,11 @@ class DependencyVisitor(TraverserVisitor):
+             return UninhabitedType()
+         lvalue_type = get_proper_type(self.type_map[lvalue])
+         if isinstance(lvalue_type, PartialType):
+-            if isinstance(lvalue.node, Var) and lvalue.node.type:
+-                lvalue_type = get_proper_type(lvalue.node.type)
++            if isinstance(lvalue.node, Var):
++                if lvalue.node.type:
++                    lvalue_type = get_proper_type(lvalue.node.type)
++                else:
++                    lvalue_type = UninhabitedType()
+             else:
+                 # Probably a secondary, non-definition assignment that doesn't
+                 # result in a non-partial type. We won't be able to infer any

@@ -1,0 +1,1 @@
+`SSHState` directly subclasses `salt.state.State`, and the base class defines `_gather_pillar`; Python's `super()` therefore resolves to `salt.state.State._gather_pillar`. Derived from the pinned source, not a language server.

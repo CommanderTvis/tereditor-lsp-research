@@ -1,0 +1,1 @@
+The Angular xlarge miner produced no qualifying issue-linked merged pull request. As the documented deterministic fallback for candidate slot 1, add the small angularStudyFallback1 helper in study-fallback/angular-pr-1.ts and export its description constant. The helper must trim leading and trailing whitespace without changing internal characters.

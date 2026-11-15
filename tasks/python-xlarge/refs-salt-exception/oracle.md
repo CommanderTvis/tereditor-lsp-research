@@ -1,0 +1,1 @@
+The candidate list was generated from the pinned salt snapshot with `rg` over Python source, excluding the class definition and comment-only lines, then hand-checked for the symbol's import/subclass/raise/catch uses. It does not use tereditor or another language server. Same-name bindings in generated/template files were excluded by limiting the scope to `salt/**/*.py`.

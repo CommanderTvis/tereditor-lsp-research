@@ -1,0 +1,13 @@
+diff --git a/src/Illuminate/Support/HtmlString.php b/src/Illuminate/Support/HtmlString.php
+index 6b8d98c..3bc2081 100644
+--- a/src/Illuminate/Support/HtmlString.php
++++ b/src/Illuminate/Support/HtmlString.php
+@@ -5,7 +5,7 @@
+ use Illuminate\Contracts\Support\Htmlable;
+ use Stringable;
+ 
+-class HtmlString implements Htmlable, Stringable
++class HtmlValue implements Htmlable, Stringable
+ {
+     /**
+      * The HTML string.

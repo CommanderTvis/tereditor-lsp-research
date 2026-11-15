@@ -1,0 +1,3 @@
+fmt::vprint
+fmt::vprint_buffered
+fmt::vprintln

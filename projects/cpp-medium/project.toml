@@ -1,11 +1,27 @@
-# cpp, medium: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# C++, medium: {fmt}, a formatting library. Header-heavy template code (include/fmt), a small compiled part
+# (src/format.cc, src/os.cc), googletest suites under test/ with bundled googletest.
 lang = "cpp"
 size = "medium"
-status = "stub"
+status = "ready"
 repo = "https://github.com/fmtlib/fmt"
 tag = "12.2.1"
 commit = "208219daff58f2a7438f6931cc2ddc358acf33ef"
 loc = 47341
 loc_by_language = { "C" = 83, "C++" = 20340, "C Header" = 26918 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+stripped = []
+task_types = ["move", "signature", "callers", "pr", "pr", "pr"]
+# clangd's compile_commands.json is written by prepare.sh with jq (no compiler in the server sandbox).
+# Mined candidates: harness/gen/mine-prs.sh finds none, because it requires baseRefName to equal today's default
+# branch (main), while every pre-2022 pull request was merged into master (renamed since);
+# tasks/cpp-medium/pr-candidates.jsonl was produced by a copy of the script that also accepts master when the default
+# branch is main (see tasks/cpp-medium/pr-log.md).
+
+[probe]
+# ./study probe cpp-medium (enforced), tereditor c6b343bd, clangd 23.1.5, 2026-11-14.
+ok = true
+seconds_to_first_answer = 0.14
+seconds_to_complete_references = 5.2
+references = "complete after one retry (5 s, background index): format_system_error from include/fmt/format.h finds its definition and uses in format-inl.h and test/format-test.cc"
+definition = "complete: the declaration in include/fmt/format.h resolves to include/fmt/format-inl.h:1440"
+diagnostics = "wrong: src/format.cc reports \"In included file: 'algorithm' file not found\", then std::locale unknown: the server sandbox has no C or C++ standard library headers"

@@ -1,0 +1,6 @@
+type = "signature"
+origin = "devrig change signature; same-named method of a sibling interface (IMemberValueResolver.Resolve) must not change; reflection-built call"
+symbol = "AutoMapper.IValueResolver`3.Resolve"
+change = "move the last parameter (ResolutionContext context) to the first position"
+selection = "methods with at least 2 parameters of interfaces declared in the AutoMapper assembly that at least 5 classes in at least 2 projects implement (compiled metadata); sorted by full name; 8 candidates (ICondition`3.Evaluate, IMappingAction`2.Process, IMemberValueResolver`4.Resolve, ITypeConverter`2.Convert, IValueConverter`2.Convert, IValueResolver`3.Resolve, IObjectMapper.MapExpression, IProjectionMapper.Project); index int(rand()*8)+1 after srand(20261110) = 6. The change was fixed before the draw: move the last parameter to the first position"
+gold = "scripted: every 4-parameter Resolve declaration ending in a ResolutionContext parameter reordered (25 implementations and the interface), and ClassValueResolver.GetExpression prepends the context argument for IValueResolver<,,>; compiled and tested"

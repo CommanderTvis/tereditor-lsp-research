@@ -24,8 +24,8 @@ A cloud environment with network access **Full**: no repository, no environment 
 2. Attach JetBrains' offline activation code to the first message: the zip from "Download a code for offline
    activation", or the `... - for 2018.2 or later.txt` file inside it. It is required.
 3. To resume a lost run, also attach the latest `study-<date>.bundle` the previous session sent.
-4. The prompt "Run the study per docs/CLOUD_RUN.md in https://github.com/CommanderTvis/tereditor-lsp-research" is
-   the owner's go for the confirmatory run, within the budget below.
+4. The message in `docs/CLOUD_PROMPT.md` starts the session; it is the owner's go for the confirmatory run, within
+   the budget below.
 
 Status: the environments and sandboxes run end to end on Apple `container`, and a cloud smoke on the native backend
 passed; the full runbook has not run yet.

@@ -1,0 +1,139 @@
+diff --git a/docs/code-block-format-strings.md b/docs/code-block-format-strings.md
+index 86547b11..ea691e40 100644
+--- a/docs/code-block-format-strings.md
++++ b/docs/code-block-format-strings.md
+@@ -32,5 +32,5 @@ with a map containing all argument keys in the format string. Argument names use
+ val map = LinkedHashMap<String, Any>()
+ map += "food" to "tacos"
+ map += "count" to 3
+-CodeBlock.builder().addNamed("I ate %count:L %food:L", map)
++CodeBlock.builder().addNamed(map, "I ate %count:L %food:L")
+ ```
+diff --git a/kotlinpoet/api/kotlinpoet.api b/kotlinpoet/api/kotlinpoet.api
+index 5c23352d..c67e70a0 100644
+--- a/kotlinpoet/api/kotlinpoet.api
++++ b/kotlinpoet/api/kotlinpoet.api
+@@ -124,7 +124,7 @@ public final class com/squareup/kotlinpoet/CodeBlock$Builder {
+ 	public final fun add (Lcom/squareup/kotlinpoet/CodeBlock;)Lcom/squareup/kotlinpoet/CodeBlock$Builder;
+ 	public final fun add (Ljava/lang/String;[Ljava/lang/Object;)Lcom/squareup/kotlinpoet/CodeBlock$Builder;
+ 	public final fun addComment (Ljava/lang/String;[Ljava/lang/Object;)Lcom/squareup/kotlinpoet/CodeBlock$Builder;
+-	public final fun addNamed (Ljava/lang/String;Ljava/util/Map;)Lcom/squareup/kotlinpoet/CodeBlock$Builder;
++	public final fun addNamed (Ljava/util/Map;Ljava/lang/String;)Lcom/squareup/kotlinpoet/CodeBlock$Builder;
+ 	public final fun addStatement (Ljava/lang/String;[Ljava/lang/Object;)Lcom/squareup/kotlinpoet/CodeBlock$Builder;
+ 	public final fun beginControlFlow (Ljava/lang/String;[Ljava/lang/Object;)Lcom/squareup/kotlinpoet/CodeBlock$Builder;
+ 	public final fun build ()Lcom/squareup/kotlinpoet/CodeBlock;
+diff --git a/kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt b/kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt
+index 366612d3..4036d458 100644
+--- a/kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt
++++ b/kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt
+@@ -319,7 +319,7 @@ private constructor(internal val formatParts: List<String>, internal val args: L
+      * format string containing `%clazz:T` and include the key `clazz` with value
+      * `java.lang.Integer.class` in the argument map.
+      */
+-    public fun addNamed(format: String, arguments: Map<String, *>): Builder = apply {
++    public fun addNamed(arguments: Map<String, *>, format: String): Builder = apply {
+       var p = 0
+ 
+       for (argument in arguments.keys) {
+diff --git a/kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FileSpec.kt b/kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FileSpec.kt
+index e8bc9276..bce9a557 100644
+--- a/kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FileSpec.kt
++++ b/kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FileSpec.kt
+@@ -472,7 +472,7 @@ private constructor(builder: Builder, private val tagMap: TagMap = builder.build
+ 
+     override fun addNamedCode(format: String, args: Map<String, *>): Builder = apply {
+       check(isScript) { "addNamedCode() is only allowed in script files" }
+-      body.addNamed(format, args)
++      body.addNamed(args, format)
+     }
+ 
+     override fun addCode(codeBlock: CodeBlock): Builder = apply {
+diff --git a/kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FunSpec.kt b/kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FunSpec.kt
+index 8931a599..aa53dcfc 100644
+--- a/kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FunSpec.kt
++++ b/kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FunSpec.kt
+@@ -521,7 +521,7 @@ private constructor(
+     }
+ 
+     override fun addNamedCode(format: String, args: Map<String, *>): Builder = apply {
+-      body.addNamed(format, args)
++      body.addNamed(args, format)
+     }
+ 
+     override fun addCode(codeBlock: CodeBlock): Builder = apply { body.add(codeBlock) }
+diff --git a/kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/CodeBlockTest.kt b/kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/CodeBlockTest.kt
+index dc2f5df7..f99649e8 100644
+--- a/kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/CodeBlockTest.kt
++++ b/kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/CodeBlockTest.kt
+@@ -136,7 +136,7 @@ class CodeBlockTest {
+   fun simpleNamedArgument() {
+     val map = LinkedHashMap<String, Any>()
+     map["text"] = "taco"
+-    val block = CodeBlock.builder().addNamed("%text:S", map).build()
++    val block = CodeBlock.builder().addNamed(map, "%text:S").build()
+     assertThat(block.toString()).isEqualTo("\"taco\"")
+   }
+ 
+@@ -146,7 +146,7 @@ class CodeBlockTest {
+     map["text"] = "tacos"
+     val block =
+       CodeBlock.builder()
+-        .addNamed("\"I like \" + %text:S + \". Do you like \" + %text:S + \"?\"", map)
++        .addNamed(map, "\"I like \" + %text:S + \". Do you like \" + %text:S + \"?\"")
+         .build()
+     assertThat(block.toString())
+       .isEqualTo("\"I like \" + \"tacos\" + \". Do you like \" + \"tacos\" + \"?\"")
+@@ -156,7 +156,7 @@ class CodeBlockTest {
+   fun namedAndNoArgFormat() {
+     val map = LinkedHashMap<String, Any>()
+     map["text"] = "tacos"
+-    val block = CodeBlock.builder().addNamed("⇥\n%text:L for\n⇤%%3.50", map).build()
++    val block = CodeBlock.builder().addNamed(map, "⇥\n%text:L for\n⇤%%3.50").build()
+     assertThat(block.toString()).isEqualTo("\n  tacos for\n%3.50")
+   }
+ 
+@@ -164,7 +164,7 @@ class CodeBlockTest {
+   fun missingNamedArgument() {
+     assertFailure {
+         val map = LinkedHashMap<String, Any>()
+-        CodeBlock.builder().addNamed("%text:S", map).build()
++        CodeBlock.builder().addNamed(map, "%text:S").build()
+       }
+       .isInstanceOf<IllegalArgumentException>()
+       .hasMessage("Missing named argument for %text")
+@@ -175,7 +175,7 @@ class CodeBlockTest {
+     assertFailure {
+         val map = LinkedHashMap<String, Any>()
+         map["Text"] = "tacos"
+-        CodeBlock.builder().addNamed("%Text:S", map).build()
++        CodeBlock.builder().addNamed(map, "%Text:S").build()
+       }
+       .isInstanceOf<IllegalArgumentException>()
+       .hasMessage("argument 'Text' must start with a lowercase character")
+@@ -188,7 +188,7 @@ class CodeBlockTest {
+     map["text"] = "tacos"
+ 
+     val block =
+-      CodeBlock.builder().addNamed("%pipe:T.out.println(\"Let's eat some %text:L\");", map).build()
++      CodeBlock.builder().addNamed(map, "%pipe:T.out.println(\"Let's eat some %text:L\");").build()
+ 
+     assertThat(block.toString())
+       .isEqualTo("java.lang.System.out.println(\"Let's eat some tacos\");")
+@@ -198,7 +198,7 @@ class CodeBlockTest {
+   fun namedNewline() {
+     val map = LinkedHashMap<String, Any>()
+     map["clazz"] = java.lang.Integer::class
+-    val block = CodeBlock.builder().addNamed("%clazz:T\n", map).build()
++    val block = CodeBlock.builder().addNamed(map, "%clazz:T\n").build()
+     assertThat(block.toString()).isEqualTo("kotlin.Int\n")
+   }
+ 
+@@ -206,7 +206,7 @@ class CodeBlockTest {
+   fun danglingNamed() {
+     val map = LinkedHashMap<String, Any>()
+     map["clazz"] = Int::class
+-    assertFailure { CodeBlock.builder().addNamed("%clazz:T%", map).build() }
++    assertFailure { CodeBlock.builder().addNamed(map, "%clazz:T%").build() }
+       .isInstanceOf<IllegalArgumentException>()
+       .hasMessage("dangling % at end")
+   }

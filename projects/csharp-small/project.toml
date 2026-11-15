@@ -2,11 +2,15 @@
 # pipeline behaviors, open-generic registration, many same-named handler classes across tests and samples.
 lang = "csharp"
 size = "small"
+status = "curated"
 repo = "https://github.com/LuckyPennySoftware/MediatR"
 commit = "8a64581e2570e7410c5f44835d9ea112beccbe6b"
 tag = "v12.5.0"
 loc = 7582
 stripped = []
-task_types = ["refs", "dispatch", "rename", "compile", "bugfix"]
 loc_by_language = { "C#" = 7582 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+# Assigned (docs/TASKS.md): rename, rename-file, impls + 3 pr. Only 2 mined pull requests validate (tasks/csharp-small/
+# pr-log.md); the third place is the next refactoring type in the rotation, move.
+task_types = ["rename", "rename-file", "impls", "pr", "pr", "pr"]
+substitutions = ["the third mined slot uses explicit task `pr-fallback-3`; no synthetic task was relabelled"]

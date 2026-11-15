@@ -1,0 +1,5 @@
+src/lolwut8.c
+src/module.c
+src/redis-check-aof.c
+src/sentinel.c
+src/t_hash.c

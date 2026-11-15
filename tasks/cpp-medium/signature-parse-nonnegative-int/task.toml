@@ -1,0 +1,5 @@
+type = "signature"
+origin = "devrig change signature (reorder parameters)"
+symbol = "fmt::detail::parse_nonnegative_int(begin, end, error_value) -> (end, begin, error_value)"
+selection = "free functions and function templates of namespace fmt and fmt::detail in include/fmt (clang++ -Xclang -ast-dump=json of a TU including every public header) whose name has a single signature, with at least 2 parameters of which the first two have different types, and whose calls NAME( occur in at least 3 tracked files with at least 8 occurrences under include/, src/, test/ (grep -E, test/gtest excluded): 8 candidates sorted by name; transformation fixed in advance: swap the first two parameters; index awk 'BEGIN{srand(20261110); print int(rand()*8)+1}' = 6 (output_file(cstring_view, T... params)) cannot take the transformation (a parameter pack cannot precede a parameter), so the next index, 7, was taken: parse_nonnegative_int"
+grade_timeout_s = 2400

@@ -54,10 +54,12 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
   is decoded into a uid-1000-only directory.
 - The JVM image adds a pinned JDK 21 and Apache Maven 3.9.11 under `/cache`: IntelliJ's Maven import runs `mvn` from
   PATH, and without it answers never left the current file.
-- Task counts are balanced in the design, not reweighted afterwards: small to large projects get 6 tasks (refs,
-  rename, compile, bugfix, plus 2 of impls/dispatch/callers/inspect/signature on a fixed rotation, balanced separately
-  within the JVM projects); xlarge projects get 3 (refs, compile, one rotating answer type); at most 186 tasks
-  (docs/TASKS.md, docs/research/task-type-weighting.md).
+- Tasks: half synthetic (refactorings: rename, rename file, move to another package or module, change signature;
+  plus navigation questions), half mined pull requests selected as SWE-bench selects them, merged before 2022-11-30
+  (pre-AI era), runnable with the current toolchains. Provisional count: 6 per small to large project (3 + 3), 3 per
+  xlarge; the calibration pilot fixes repetitions to fit USD 2,000 (docs/TASKS.md, docs/ANALYSIS_PLAN.md).
+- Effort: every model at Claude Code's default, `medium` for Haiku, Sonnet and Opus 5.5; nothing in the harness sets
+  an effort level (docs/DESIGN.md). Success is averaged arithmetically, cost and time geometrically (ratios).
 - Oracles never come from a language server: compiler mutation (rename the declaration, compile, collect errors),
   another analyser, or hand-classified exhaustive candidate lists. Every task must pass `./study validate`.
 - The analysis is pre-registered in `docs/ANALYSIS_PLAN.md` (14 primary tests, Holm; mixed models, task-clustered
@@ -78,15 +80,15 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
 
 - `study`: the driver (POSIX sh; images, project, probe, validate, plan, run, grade, analyze).
 - `nix/flake.nix`: every environment (docs/NIX.md). `harness/env/`: the scripts every command runs in it.
-  `harness/server/`: what runs inside the language server's sandbox. tereditor comes from its published image,
-  pinned by digest in `harness/tereditor.env`.
+  `harness/server/`: what runs inside the language server's sandbox. tereditor comes from a dated release
+  archive, pinned by sha256 in `harness/tereditor.env`.
 - `harness/arms/<arm>/`: `mcp.json` and the workspace overlay. `harness/grade/grade.sh`, `harness/bin/probe-inside.sh`.
 - `projects/<lang>-<size>/`, `tasks/<lang>-<size>/<task>/`: see `docs/TASKS.md`. Most projects are stubs
   (`status = "stub"` in `project.toml`); done so far: python-small (4 tasks), java-medium (2), csharp-small
   (2, not validated).
 - `analysis/`: planner, extraction, report. `results/<plan>/`: plan, runs.csv, report (raw runs are git-ignored).
 - Upstream checkout (read-only from this repo): `~/TereditorProjects/tereditor`, remote
-  `github.com/CommanderTvis/tereditor` (formerly `CommanderTvis/sharprail`); image `ghcr.io/commandertvis/tereditor`.
+  `github.com/CommanderTvis/tereditor` (formerly `CommanderTvis/sharprail`); headless archives on its nightly releases.
 - Local secrets live git-ignored in the repository root: `study.env` (`CLAUDE_CODE_OAUTH_TOKEN=` or
   `ANTHROPIC_API_KEY=`), `license.zip`/`license.txt`, `deploy_key`. Nothing goes into `~`.
 
@@ -97,8 +99,8 @@ The study runs in ONE Claude Code cloud session, unattended, following `docs/CLO
 before the confirmatory run, and at the end `REPORT.md`, signed with the date. The session needs no GitHub account and
 no environment configuration beyond Full network access: it clones this public repository, uses its own login, and
 sends its work to the owner as downloads (a git bundle of its branch after every project, then the report and a
-results tarball). The owner attaches the JetBrains activation code (zip or txt) to the first message. Starting that
-session with "Run the study per docs/CLOUD_RUN.md" is the owner's go for the confirmatory run. Local runs on this Mac
+results tarball). The owner attaches the JetBrains activation code (zip or txt) to the first message. The canonical
+starting message is `docs/CLOUD_PROMPT.md`; starting a session with it is the owner's go for the confirmatory run. Local runs on this Mac
 are for development.
 
 ## Working here

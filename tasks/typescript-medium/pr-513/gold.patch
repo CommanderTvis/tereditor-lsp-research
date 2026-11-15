@@ -1,0 +1,74 @@
+diff --git a/deno_dist/middleware/basic-auth/index.ts b/deno_dist/middleware/basic-auth/index.ts
+index 8f302c30..eca1ca5a 100644
+--- a/deno_dist/middleware/basic-auth/index.ts
++++ b/deno_dist/middleware/basic-auth/index.ts
+@@ -49,7 +49,6 @@ export const basicAuth = (
+           options.hashFunction
+         )
+         if (usernameEqual && passwordEqual) {
+-          // Authorized OK
+           await next()
+           return
+         }
+@@ -61,5 +60,6 @@ export const basicAuth = (
+         'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
+       },
+     })
++    await next()
+   }
+ }
+diff --git a/deno_dist/middleware/bearer-auth/index.ts b/deno_dist/middleware/bearer-auth/index.ts
+index b8d03523..26d4fef9 100644
+--- a/deno_dist/middleware/bearer-auth/index.ts
++++ b/deno_dist/middleware/bearer-auth/index.ts
+@@ -55,12 +55,9 @@ export const bearerAuth = (options: {
+               'WWW-Authenticate': `${options.prefix} error="invalid_token"`,
+             },
+           })
+-        } else {
+-          // Authorize OK
+-          await next()
+-          return
+         }
+       }
+     }
++    await next()
+   }
+ }
+diff --git a/src/middleware/basic-auth/index.ts b/src/middleware/basic-auth/index.ts
+index e4b6ff04..0f3e08e9 100644
+--- a/src/middleware/basic-auth/index.ts
++++ b/src/middleware/basic-auth/index.ts
+@@ -49,7 +49,6 @@ export const basicAuth = (
+           options.hashFunction
+         )
+         if (usernameEqual && passwordEqual) {
+-          // Authorized OK
+           await next()
+           return
+         }
+@@ -61,5 +60,6 @@ export const basicAuth = (
+         'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
+       },
+     })
++    await next()
+   }
+ }
+diff --git a/src/middleware/bearer-auth/index.ts b/src/middleware/bearer-auth/index.ts
+index e8e80f7f..efb8f032 100644
+--- a/src/middleware/bearer-auth/index.ts
++++ b/src/middleware/bearer-auth/index.ts
+@@ -55,12 +55,9 @@ export const bearerAuth = (options: {
+               'WWW-Authenticate': `${options.prefix} error="invalid_token"`,
+             },
+           })
+-        } else {
+-          // Authorize OK
+-          await next()
+-          return
+         }
+       }
+     }
++    await next()
+   }
+ }

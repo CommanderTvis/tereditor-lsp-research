@@ -1,0 +1,4 @@
+type = "move"
+origin = "move a class file into another package; same-package callers had no imports, and an internal extension (List<ParameterSpec>.emit) moves with it"
+moved = "kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/ParameterSpec.kt -> .../kotlinpoet/parameterspec/ParameterSpec.kt (package com.squareup.kotlinpoet.parameterspec)"
+selection = "Files of kotlinpoet's commonMain and jvmMain in the root package, except files with expect/actual declarations and files declaring a sealed type or a subtype of the sealed TypeName (Kotlin keeps a sealed hierarchy in one package), whose public top-level names occur (whole word, comment lines excluded) in at least 5 other .kt/.java files; sorted (C locale): 16 candidates (Annotatable ... TypeSpec); k = 1 + int(rand() * 16) after srand(20261110) = 12: ParameterSpec.kt; the target package is the root package plus the lower-cased file name."

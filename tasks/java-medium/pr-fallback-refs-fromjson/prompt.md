@@ -1,0 +1,1 @@
+Issue: the java-medium snapshot needs the `refs` maintenance change represented by this fallback PR. Apply the requested change across production sources and tests, preserving existing behavior and keeping the affected module buildable. This is a documented synthetic fallback occupying a mined-PR slot; do not infer a real upstream PR.

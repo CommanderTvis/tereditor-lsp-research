@@ -1,0 +1,5 @@
+type = "rename"
+origin = "synthetic: rename an interface method, its implementations (including anonymous classes in tests) and call sites, among other methods of the same name (docs/TASKS.md)"
+symbol = "GuzzleHttp\\Handler\\CurlFactoryInterface::create"
+new_name = "createEasyHandle"
+selection = "Every method declared in an interface under src/ whose name is declared ('function name(') in at least 3 files under src/ and called ('->name(') at least 10 times under src/ and tests/ (medium projects: at least 10 locations, docs/CURATION.md), sorted Interface::method: 5 candidates. Seeded shuffle awk 'BEGIN{srand(20261110)}' (macOS awk 20200816, printf %.12f rand(), sort -n), first item."

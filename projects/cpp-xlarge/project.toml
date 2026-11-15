@@ -1,11 +1,15 @@
-# cpp, xlarge: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# cpp, xlarge: chosen by size, see docs/PROJECTS.md. PostgreSQL is intentionally skipped: the xlarge snapshot cannot
+# be set up or graded on this machine within the available container storage/time budget.
 lang = "cpp"
 size = "xlarge"
-status = "stub"
+status = "skipped"
 repo = "https://github.com/postgres/postgres"
 tag = "REL_18_7"
 commit = "f5c41f6681c910b3f69951bf6fb97c6d74605d25"
 loc = 1082184
 loc_by_language = { "C" = 965144, "C++" = 915, "C Header" = 116125 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+skip_reason = "Apple container bootstrap failed with VZErrorDomain Code 2 (invalid storage device attachment) before project setup; no bounded build/probe or task validation was possible."
+task_types = ["refs", "inspect", "dispatch", "pr", "pr", "pr"]
+fallback_synthetic = ["refs", "inspect", "dispatch"]
+substitutions = ["three unavailable mined slots use documented fallback PR task directories; the xlarge project remains skipped for execution because PostgreSQL cannot be set up on this host"]

@@ -1,0 +1,4 @@
+type = "callers"
+origin = "synthetic fallback: exhaustive Sass source-location answer"
+symbol = "grid-gutter"
+selection = "Fallback deterministic scan of all tracked Sass/CSS files at pinned commit; seed = 20261110."

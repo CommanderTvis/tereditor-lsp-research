@@ -1,0 +1,4 @@
+type = "refs"
+origin = "synthetic fallback: xlarge balancing task"
+symbol = "IHttpContextAccessor"
+selection = "Selected deterministically from the pinned snapshot with seed 20261110; this is a synthetic slot."

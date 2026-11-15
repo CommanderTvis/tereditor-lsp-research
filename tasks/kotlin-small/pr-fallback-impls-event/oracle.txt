@@ -1,0 +1,4 @@
+com.github.michaelbull.result.example.model.domain.Created
+com.github.michaelbull.result.example.model.domain.EmailAddressChanged
+com.github.michaelbull.result.example.model.domain.FirstNameChanged
+com.github.michaelbull.result.example.model.domain.LastNameChanged

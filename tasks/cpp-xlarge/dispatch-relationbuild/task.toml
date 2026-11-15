@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic fallback: C definition resolution"
+symbol = "RelationBuildDesc"
+selection = "Xlarge fallback companion task; the call in the relcache path resolves to the single static definition in src/backend/utils/cache/relcache.c."

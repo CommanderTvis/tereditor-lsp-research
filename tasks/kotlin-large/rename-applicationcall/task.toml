@@ -1,0 +1,5 @@
+type = "rename"
+origin = "synthetic task; fixed seeded selection"
+selection = "First qualifying stable public symbol in the pinned snapshot after the pre-registered rotation; no post-run selection."
+symbol = "PipelineCall"
+path = "ktor-server/ktor-server-core/common/src/io/ktor/server/application/PipelineCall.kt"

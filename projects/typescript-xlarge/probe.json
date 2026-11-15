@@ -1,0 +1,9 @@
+[
+  {"name": "references TypeVisitor (cross-package)", "args": {"operation": "references", "query": "TypeVisitor", "path": "packages/compiler/src/output/output_ast.ts"},
+   "expect": ["packages/compiler/src/output/abstract_emitter.ts:238", "packages/compiler-cli/src/ngtsc/translator/src/translator.ts:86"]},
+  {"name": "definition of AbstractJsEmitterVisitor", "args": {"operation": "definition", "query": "AbstractJsEmitterVisitor"},
+   "expect": ["packages/compiler/src/output/abstract_js_emitter.ts:27"]},
+  {"name": "implementation of TypeVisitor", "args": {"operation": "implementation", "query": "TypeVisitor", "path": "packages/compiler/src/output/output_ast.ts"},
+   "expect": ["packages/compiler/src/output/abstract_emitter.ts:237"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["packages/compiler/src/output/abstract_js_emitter.ts"]}, "expect": []}
+]

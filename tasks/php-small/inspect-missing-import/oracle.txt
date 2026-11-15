@@ -1,0 +1,3 @@
+src/ContainerAwareTrait.php
+src/Definition/Definition.php
+src/Event/OnDefineEvent.php

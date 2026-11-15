@@ -1,0 +1,3 @@
+type = "signature"
+origin = "devrig change signature; parameter added through an override hierarchy"
+selection = "instance methods declared in a src/main/java type and overridden (@Override) in at least 2 other src/main/java types, excluding methods of JDK interfaces and Object (toString, hashCode, equals, append, visit*, defaultAction, compareTo, openInputStream, getCharContent, getLastModified): annotated, emit, withoutAnnotations, sorted; k = int(rand()*3)+1 = 3 with awk srand(20261110); the parameter and its meaning chosen by hand"

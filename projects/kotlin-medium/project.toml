@@ -1,11 +1,13 @@
-# kotlin, medium: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# kotlin, medium: chosen by size, see docs/PROJECTS.md. Curated: tasks, prepare.sh, Dockerfile.grade, check.sh and
 # probe.json are still to be written (docs/CURATION.md).
 lang = "kotlin"
 size = "medium"
-status = "stub"
+status = "curated"
 repo = "https://github.com/square/kotlinpoet"
 tag = "2.4.0"
 commit = "97e504bbcece8100b653c5d7d7cd1bba0a55b0b3"
 loc = 32758
 loc_by_language = { "Kotlin" = 32758 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["move", "signature", "impls", "rename", "rename-file", "dispatch"]
+pr_fallback = "No qualifying/current-toolchain PRs; three assigned pr slots are synthetic fallbacks (see tasks/kotlin-medium/pr-log.md)."

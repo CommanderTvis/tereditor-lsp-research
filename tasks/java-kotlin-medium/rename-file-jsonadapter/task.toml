@@ -1,0 +1,5 @@
+type = "rename-file"
+origin = "synthetic task; fixed seeded selection"
+selection = "First qualifying stable public symbol in the pinned snapshot after the pre-registered rotation; no post-run selection."
+symbol = "JsonAdapter"
+path = "moshi/src/main/java/com/squareup/moshi/JsonAdapter.java"

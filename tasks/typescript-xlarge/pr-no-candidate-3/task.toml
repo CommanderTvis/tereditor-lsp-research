@@ -1,0 +1,7 @@
+type = "pr"
+fallback_for = "pr"
+source_candidate = "tasks/typescript-xlarge/pr-candidates.jsonl (empty); tasks/typescript-xlarge/pr-log.md"
+pr_slot = 3
+issue = 0
+merged_at = ""
+gold_from = "documented synthetic fallback patch; no qualifying Angular candidate existed"

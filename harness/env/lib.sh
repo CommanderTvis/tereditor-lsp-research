@@ -12,6 +12,13 @@ TEREDITOR_COMMIT=$(sed -n 's/^TEREDITOR_COMMIT=//p' "$STUDY_ROOT/harness/teredit
 TEREDITOR_DIR="$STUDY_STATE/tereditor/$TEREDITOR_COMMIT-$(uname -m)"
 CACHE="$STUDY_STATE/cache"
 mkdir -p "$CACHE/home" "$CACHE/managed" "$CACHE/state"
+# The commit a task starts from: its task.toml's base_commit (a mined pull request), else the project's pinned commit;
+# and the state directory of a project at a commit (snapshot, grading home and overlay, setup markers).
+toml_val() { sed -n "s/^$2[[:space:]]*=[[:space:]]*\"\{0,1\}\([^\"]*\)\"\{0,1\}[[:space:]]*\$/\1/p" "$1" 2>/dev/null | head -n1; }
+project_commit() { toml_val "$STUDY_ROOT/projects/$1/project.toml" commit; }
+task_commit() { local c; c=$(toml_val "$2/task.toml" base_commit); [ -n "$c" ] && echo "$c" || project_commit "$1"; }
+state_dir() { echo "$STUDY_STATE/projects/$1/$2"; }
+
 # Extra environment (NAME=value) and binds a caller adds to a sandbox.
 SERVER_ENV=(); AGENT_ENV=(); GRADE_BINDS=()
 

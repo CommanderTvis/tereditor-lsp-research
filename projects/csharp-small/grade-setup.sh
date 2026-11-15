@@ -1,5 +1,5 @@
 #!/bin/sh
-# Dependencies for grading, resolved once with network (packages into ~/.nuget, build outputs kept as the overlay).
+# Dependencies for grading, resolved once with network: packages into ~/.nuget/packages (the grading home); obj/ and
+# bin/ are git-ignored and kept as the overlay copied into every grading work tree.
 set -e
-dotnet restore MediatR.sln
-dotnet build MediatR.sln --no-restore -v q -nologo
+sh /project/check.sh build

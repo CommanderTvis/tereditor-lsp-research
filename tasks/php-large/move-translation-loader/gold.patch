@@ -1,0 +1,107 @@
+diff --git a/src/Illuminate/Contracts/Translation/Loader.php b/src/Illuminate/Contracts/Loader.php
+similarity index 94%
+rename from src/Illuminate/Contracts/Translation/Loader.php
+rename to src/Illuminate/Contracts/Loader.php
+index 6f43109e87..1255f7944f 100755
+--- a/src/Illuminate/Contracts/Translation/Loader.php
++++ b/src/Illuminate/Contracts/Loader.php
+@@ -1,6 +1,6 @@
+ <?php
+ 
+-namespace Illuminate\Contracts\Translation;
++namespace Illuminate\Contracts;
+ 
+ interface Loader
+ {
+diff --git a/src/Illuminate/Support/Facades/Lang.php b/src/Illuminate/Support/Facades/Lang.php
+index 7b8f3ec5dc..c7261de5ff 100755
+--- a/src/Illuminate/Support/Facades/Lang.php
++++ b/src/Illuminate/Support/Facades/Lang.php
+@@ -19,7 +19,7 @@
+  * @method static void determineLocalesUsing(callable $callback)
+  * @method static \Illuminate\Translation\MessageSelector getSelector()
+  * @method static void setSelector(\Illuminate\Translation\MessageSelector $selector)
+- * @method static \Illuminate\Contracts\Translation\Loader getLoader()
++ * @method static \Illuminate\Contracts\Loader getLoader()
+  * @method static string locale()
+  * @method static string getLocale()
+  * @method static void setLocale(string $locale)
+diff --git a/src/Illuminate/Translation/ArrayLoader.php b/src/Illuminate/Translation/ArrayLoader.php
+index 4426809205..daba6e5bdd 100644
+--- a/src/Illuminate/Translation/ArrayLoader.php
++++ b/src/Illuminate/Translation/ArrayLoader.php
+@@ -2,7 +2,7 @@
+ 
+ namespace Illuminate\Translation;
+ 
+-use Illuminate\Contracts\Translation\Loader;
++use Illuminate\Contracts\Loader;
+ 
+ class ArrayLoader implements Loader
+ {
+diff --git a/src/Illuminate/Translation/FileLoader.php b/src/Illuminate/Translation/FileLoader.php
+index a3d5009f1c..9f8b23deb6 100755
+--- a/src/Illuminate/Translation/FileLoader.php
++++ b/src/Illuminate/Translation/FileLoader.php
+@@ -2,7 +2,7 @@
+ 
+ namespace Illuminate\Translation;
+ 
+-use Illuminate\Contracts\Translation\Loader;
++use Illuminate\Contracts\Loader;
+ use Illuminate\Filesystem\Filesystem;
+ use Illuminate\Support\Collection;
+ use RuntimeException;
+diff --git a/src/Illuminate/Translation/Translator.php b/src/Illuminate/Translation/Translator.php
+index 00785097dd..72e764f869 100755
+--- a/src/Illuminate/Translation/Translator.php
++++ b/src/Illuminate/Translation/Translator.php
+@@ -3,7 +3,7 @@
+ namespace Illuminate\Translation;
+ 
+ use Closure;
+-use Illuminate\Contracts\Translation\Loader;
++use Illuminate\Contracts\Loader;
+ use Illuminate\Contracts\Translation\Translator as TranslatorContract;
+ use Illuminate\Support\Arr;
+ use Illuminate\Support\NamespacedItemResolver;
+@@ -21,7 +21,7 @@ class Translator extends NamespacedItemResolver implements TranslatorContract
+     /**
+      * The loader implementation.
+      *
+-     * @var \Illuminate\Contracts\Translation\Loader
++     * @var \Illuminate\Contracts\Loader
+      */
+     protected $loader;
+ 
+@@ -84,7 +84,7 @@ class Translator extends NamespacedItemResolver implements TranslatorContract
+     /**
+      * Create a new translator instance.
+      *
+-     * @param  \Illuminate\Contracts\Translation\Loader  $loader
++     * @param  \Illuminate\Contracts\Loader  $loader
+      * @param  string  $locale
+      */
+     public function __construct(Loader $loader, $locale)
+@@ -538,7 +538,7 @@ public function setSelector(MessageSelector $selector)
+     /**
+      * Get the language line loader implementation.
+      *
+-     * @return \Illuminate\Contracts\Translation\Loader
++     * @return \Illuminate\Contracts\Loader
+      */
+     public function getLoader()
+     {
+diff --git a/tests/Translation/TranslationTranslatorTest.php b/tests/Translation/TranslationTranslatorTest.php
+index a47a62949c..98c6dd60f2 100755
+--- a/tests/Translation/TranslationTranslatorTest.php
++++ b/tests/Translation/TranslationTranslatorTest.php
+@@ -2,7 +2,7 @@
+ 
+ namespace Illuminate\Tests\Translation;
+ 
+-use Illuminate\Contracts\Translation\Loader;
++use Illuminate\Contracts\Loader;
+ use Illuminate\Support\Carbon;
+ use Illuminate\Support\Collection;
+ use Illuminate\Tests\Translation\Fixtures\Enums\Bar;

@@ -1,11 +1,19 @@
-# typescript, xlarge: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# TypeScript, xlarge: angular. A Bazel monorepo of about 30 pnpm workspace packages (compiler, compiler-cli, core,
+# forms, router ...), visitor hierarchies across packages, namespace imports (`import * as o`), many same-named
+# classes in different packages.
 lang = "typescript"
 size = "xlarge"
-status = "stub"
 repo = "https://github.com/angular/angular"
 tag = "v22.2.6"
 commit = "dda2d41d948380d63619d597c9815db0aa77fd1d"
 loc = 775624
 loc_by_language = { "TypeScript" = 769362, "TypeScript Typings" = 6262 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+stripped = ["AGENTS.md", ".vscode/", ".claude/ and other agent or editor instruction files where present (harness/env/project.sh)"]
+task_types = ["impls", "dispatch", "callers", "pr", "pr", "pr"]
+# Assigned: impls + 2 pr. No pull request qualifies or can be graded (tasks/typescript-xlarge/pr-log.md), so both pr
+# places are filled with the next navigation types in the rotation, dispatch and callers.
+pr_shortfall = 0
+pr_replaced_by = []
+# Built and tested upstream with Bazel only; the grading toolchain has no Bazel, so the project has answer tasks only
+# and check.sh does nothing.

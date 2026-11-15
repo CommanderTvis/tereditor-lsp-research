@@ -22,9 +22,9 @@ The agent closure contains claude, git, rg and jq and none of python3, perl, nod
 bun, curl, wget. Closure sizes (aarch64): agent 528 MB, server-fhs about 300 MB, jvm-tools 636 MB, grading from
 206 MB (shell) to 2.2 GB (jvm); closures share store paths, so a group needs a few GB.
 
-tereditor is taken from its published headless image, pinned by digest in `harness/tereditor.env`:
-`harness/env/fetch-tereditor.sh` downloads the image's layers from the registry, checks each against its digest and
-keeps `/opt/tereditor`; no Docker is involved.
+tereditor is the headless host archive of a dated nightly release, pinned in `harness/tereditor.env`:
+`harness/env/fetch-tereditor.sh` downloads the file for the machine's architecture, checks its sha256 and unpacks it
+as `/opt/tereditor`.
 
 ## Sandboxes
 

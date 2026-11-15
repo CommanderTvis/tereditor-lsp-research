@@ -1,0 +1,11 @@
+type = "pr"
+origin = "mined: guzzle/guzzle#2845 (issue #1477), docs/TASKS.md \"Mined pull requests\""
+pr = 2845
+issue = 1477
+base_commit = "c1fd316f0a0f3325ed1e7cdbe61030418b868f9f"
+merge_commit = "cc80b002a0c550d242e20ed28ef52b35e237e0c9"
+merged_at = "2022-03-13T16:15:43Z"
+fail_to_pass = ["GuzzleHttp\\Tests\\RedirectMiddlewareTest::testRemoveCurlAuthorizationOptionsOnRedirect"]
+pass_to_pass = "the other tests of tests/RedirectMiddlewareTest.php"
+loc_base = 9071
+loc_base_method = "scc 3.5.0 PHP code lines at base_commit, as docs/PROJECTS.md"

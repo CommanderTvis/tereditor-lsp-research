@@ -1,11 +1,12 @@
-# python, medium: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# Python, medium: rich, terminal rendering. Renderables reached through protocols (__rich_console__), a class hierarchy
+# of Markdown elements and progress columns, many lazily imported modules.
 lang = "python"
 size = "medium"
-status = "stub"
 repo = "https://github.com/Textualize/rich"
 tag = "v15.0.0"
 commit = "6ac483cbea39cab124dfd3483bba70ffafb71050"
 loc = 44961
 loc_by_language = { "Python" = 44961 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+stripped = []
+task_types = ["move", "signature", "impls", "pr", "pr", "pr"]

@@ -1,0 +1,154 @@
+diff --git a/src/main/java/com/squareup/javapoet/ArrayTypeName.java b/src/main/java/com/squareup/javapoet/ArrayTypeName.java
+index 219c3f3..a63424b 100644
+--- a/src/main/java/com/squareup/javapoet/ArrayTypeName.java
++++ b/src/main/java/com/squareup/javapoet/ArrayTypeName.java
+@@ -43,8 +43,8 @@ public final class ArrayTypeName extends TypeName {
+     return new ArrayTypeName(componentType, concatAnnotations(annotations));
+   }
+ 
+-  @Override public TypeName withoutAnnotations() {
+-    return new ArrayTypeName(componentType);
++  @Override public TypeName withoutAnnotations(boolean deep) {
++    return new ArrayTypeName(deep ? componentType.withoutAnnotations(true) : componentType);
+   }
+ 
+   @Override CodeWriter emit(CodeWriter out) throws IOException {
+diff --git a/src/main/java/com/squareup/javapoet/ClassName.java b/src/main/java/com/squareup/javapoet/ClassName.java
+index 4bef49d..e54cb77 100644
+--- a/src/main/java/com/squareup/javapoet/ClassName.java
++++ b/src/main/java/com/squareup/javapoet/ClassName.java
+@@ -70,10 +70,10 @@ public final class ClassName extends TypeName implements Comparable<ClassName> {
+         concatAnnotations(annotations));
+   }
+ 
+-  @Override public ClassName withoutAnnotations() {
++  @Override public ClassName withoutAnnotations(boolean deep) {
+     if (!isAnnotated()) return this;
+     ClassName resultEnclosingClassName = enclosingClassName != null
+-        ? enclosingClassName.withoutAnnotations()
++        ? enclosingClassName.withoutAnnotations(deep)
+         : null;
+     return new ClassName(packageName, resultEnclosingClassName, simpleName);
+   }
+diff --git a/src/main/java/com/squareup/javapoet/JavaFile.java b/src/main/java/com/squareup/javapoet/JavaFile.java
+index da3dd86..001b214 100644
+--- a/src/main/java/com/squareup/javapoet/JavaFile.java
++++ b/src/main/java/com/squareup/javapoet/JavaFile.java
+@@ -206,7 +206,7 @@ public final class JavaFile {
+           && !alwaysQualify.contains(className.simpleName)) {
+         continue;
+       }
+-      codeWriter.emit("import $L;\n", className.withoutAnnotations());
++      codeWriter.emit("import $L;\n", className.withoutAnnotations(false));
+       importedTypesCount++;
+     }
+ 
+diff --git a/src/main/java/com/squareup/javapoet/ParameterizedTypeName.java b/src/main/java/com/squareup/javapoet/ParameterizedTypeName.java
+index 3a8bf62..83d921d 100644
+--- a/src/main/java/com/squareup/javapoet/ParameterizedTypeName.java
++++ b/src/main/java/com/squareup/javapoet/ParameterizedTypeName.java
+@@ -59,9 +59,12 @@ public final class ParameterizedTypeName extends TypeName {
+   }
+ 
+   @Override
+-  public TypeName withoutAnnotations() {
+-    return new ParameterizedTypeName(
+-        enclosingType, rawType.withoutAnnotations(), typeArguments, new ArrayList<>());
++  public TypeName withoutAnnotations(boolean deep) {
++    ParameterizedTypeName resultEnclosingType = deep && enclosingType != null
++        ? (ParameterizedTypeName) enclosingType.withoutAnnotations(true)
++        : enclosingType;
++    return new ParameterizedTypeName(resultEnclosingType, rawType.withoutAnnotations(deep),
++        withoutAnnotations(typeArguments, deep), new ArrayList<>());
+   }
+ 
+   @Override CodeWriter emit(CodeWriter out) throws IOException {
+diff --git a/src/main/java/com/squareup/javapoet/TypeName.java b/src/main/java/com/squareup/javapoet/TypeName.java
+index c0986bb..ee04bba 100644
+--- a/src/main/java/com/squareup/javapoet/TypeName.java
++++ b/src/main/java/com/squareup/javapoet/TypeName.java
+@@ -117,10 +117,25 @@ public class TypeName {
+     return new TypeName(keyword, concatAnnotations(annotations));
+   }
+ 
+-  public TypeName withoutAnnotations() {
++  /**
++   * Returns this type without its type annotations. If {@code deep} is true, the annotations of
++   * the types it is made of are removed too, recursively: array component types, type arguments,
++   * wildcard bounds and enclosing types (not the declared bounds of a type variable). Otherwise
++   * those are kept.
++   */
++  public TypeName withoutAnnotations(boolean deep) {
+     return new TypeName(keyword);
+   }
+ 
++  static List<TypeName> withoutAnnotations(List<TypeName> types, boolean deep) {
++    if (!deep) return types;
++    List<TypeName> result = new ArrayList<>();
++    for (TypeName type : types) {
++      result.add(type.withoutAnnotations(true));
++    }
++    return result;
++  }
++
+   protected final List<AnnotationSpec> concatAnnotations(List<AnnotationSpec> annotations) {
+     List<AnnotationSpec> allAnnotations = new ArrayList<>(this.annotations);
+     allAnnotations.addAll(annotations);
+diff --git a/src/main/java/com/squareup/javapoet/TypeVariableName.java b/src/main/java/com/squareup/javapoet/TypeVariableName.java
+index 54c2fa5..2550f29 100644
+--- a/src/main/java/com/squareup/javapoet/TypeVariableName.java
++++ b/src/main/java/com/squareup/javapoet/TypeVariableName.java
+@@ -53,7 +53,7 @@ public final class TypeVariableName extends TypeName {
+     return new TypeVariableName(name, bounds, annotations);
+   }
+ 
+-  @Override public TypeName withoutAnnotations() {
++  @Override public TypeName withoutAnnotations(boolean deep) {
+     return new TypeVariableName(name, bounds);
+   }
+ 
+diff --git a/src/main/java/com/squareup/javapoet/WildcardTypeName.java b/src/main/java/com/squareup/javapoet/WildcardTypeName.java
+index 17cb73f..213c44e 100644
+--- a/src/main/java/com/squareup/javapoet/WildcardTypeName.java
++++ b/src/main/java/com/squareup/javapoet/WildcardTypeName.java
+@@ -57,8 +57,9 @@ public final class WildcardTypeName extends TypeName {
+     return new WildcardTypeName(upperBounds, lowerBounds, concatAnnotations(annotations));
+   }
+ 
+-  @Override public TypeName withoutAnnotations() {
+-    return new WildcardTypeName(upperBounds, lowerBounds);
++  @Override public TypeName withoutAnnotations(boolean deep) {
++    return new WildcardTypeName(
++        withoutAnnotations(upperBounds, deep), withoutAnnotations(lowerBounds, deep));
+   }
+ 
+   @Override CodeWriter emit(CodeWriter out) throws IOException {
+diff --git a/src/test/java/com/squareup/javapoet/AnnotatedTypeNameTest.java b/src/test/java/com/squareup/javapoet/AnnotatedTypeNameTest.java
+index 42734ff..de6fd54 100644
+--- a/src/test/java/com/squareup/javapoet/AnnotatedTypeNameTest.java
++++ b/src/test/java/com/squareup/javapoet/AnnotatedTypeNameTest.java
+@@ -143,21 +143,21 @@ public class AnnotatedTypeNameTest {
+     TypeName type = ((ClassName) TypeName.get(Map.class).annotated(TYPE_USE_ANNOTATION))
+         .nestedClass("Entry").annotated(TYPE_USE_ANNOTATION);
+     assertThat(type.isAnnotated()).isTrue();
+-    assertThat(type.withoutAnnotations()).isEqualTo(TypeName.get(Map.Entry.class));
++    assertThat(type.withoutAnnotations(false)).isEqualTo(TypeName.get(Map.Entry.class));
+   }
+ 
+   @Test public void withoutAnnotationsOnAnnotatedEnclosingType() {
+     TypeName type = ((ClassName) TypeName.get(Map.class).annotated(TYPE_USE_ANNOTATION))
+         .nestedClass("Entry");
+     assertThat(type.isAnnotated()).isTrue();
+-    assertThat(type.withoutAnnotations()).isEqualTo(TypeName.get(Map.Entry.class));
++    assertThat(type.withoutAnnotations(false)).isEqualTo(TypeName.get(Map.Entry.class));
+   }
+ 
+   @Test public void withoutAnnotationsOnAnnotatedNestedType() {
+     TypeName type = ((ClassName) TypeName.get(Map.class))
+         .nestedClass("Entry").annotated(TYPE_USE_ANNOTATION);
+     assertThat(type.isAnnotated()).isTrue();
+-    assertThat(type.withoutAnnotations()).isEqualTo(TypeName.get(Map.Entry.class));
++    assertThat(type.withoutAnnotations(false)).isEqualTo(TypeName.get(Map.Entry.class));
+   }
+ 
+   // https://github.com/square/javapoet/issues/614

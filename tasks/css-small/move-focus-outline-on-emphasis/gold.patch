@@ -1,0 +1,41 @@
+diff --git a/src/support/index.scss b/src/support/index.scss
+index f90a8c0..ef6fb68 100644
+--- a/src/support/index.scss
++++ b/src/support/index.scss
+@@ -8,3 +8,4 @@
+ @import './mixins/typography.scss';
+ @import './mixins/layout.scss';
+ @import './mixins/misc.scss';
++@import './mixins/focus-outline-on-emphasis.scss';
+diff --git a/src/support/mixins/focus-outline-on-emphasis.scss b/src/support/mixins/focus-outline-on-emphasis.scss
+new file mode 100644
+index 0000000..4d96b15
+--- /dev/null
++++ b/src/support/mixins/focus-outline-on-emphasis.scss
+@@ -0,0 +1,7 @@
++// outline with fg box-shadow for buttons
++@mixin focusOutlineOnEmphasis($outlineOffset: -2px, $outlineColor: var(--focus-outlineColor, var(--color-accent-fg))) {
++  outline: 2px solid $outlineColor;
++  outline-offset: $outlineOffset;
++  // stylelint-disable-next-line primer/box-shadow
++  box-shadow: inset 0 0 0 3px var(--fgColor-onEmphasis, var(--color-fg-on-emphasis));
++}
+diff --git a/src/support/mixins/misc.scss b/src/support/mixins/misc.scss
+index 983af36..9c822c9 100644
+--- a/src/support/mixins/misc.scss
++++ b/src/support/mixins/misc.scss
+@@ -56,14 +56,6 @@
+   box-shadow: none;
+ }
+ 
+-// outline with fg box-shadow for buttons
+-@mixin focusOutlineOnEmphasis($outlineOffset: -2px, $outlineColor: var(--focus-outlineColor, var(--color-accent-fg))) {
+-  outline: 2px solid $outlineColor;
+-  outline-offset: $outlineOffset;
+-  // stylelint-disable-next-line primer/box-shadow
+-  box-shadow: inset 0 0 0 3px var(--fgColor-onEmphasis, var(--color-fg-on-emphasis));
+-}
+-
+ // if min-width is undefined, return only min-height
+ @mixin minTouchTarget($min-height: 32px, $min-width: '') {
+   position: absolute;

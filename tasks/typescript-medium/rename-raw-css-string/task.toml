@@ -1,0 +1,5 @@
+type = "rename"
+origin = "synthetic, rename a re-exported, aliased and shadowed symbol"
+symbol = "rawCssString"
+new_name = "rawCss"
+selection = "Exported declarations (function, const, let, class, type, interface, enum) of non-test files in src/ whose name is declared at least twice in src/ (any declaration keyword, so the name collides) and occurs as a word at least 11 times in src/, in at least 5 files other than the declaring one; 69 candidates, sorted by name, seeded shuffle awk srand(20261110), first taken. The new name is chosen by hand to describe the same thing and checked to be unused."

@@ -1,9 +1,16 @@
 # PHP, small: league/container, a PSR-11 dependency injection container. Interfaces with several implementations,
-# traits mixed into many classes, and short method names (get, has, add, process) shared by unrelated classes.
+# traits mixed into many classes, and short method names (get, has, add, inflect, getId) shared by unrelated classes.
 lang = "php"
 size = "small"
 repo = "https://github.com/thephpleague/container"
+tag = "5.2.0"
 commit = "58accbc032f0090a9bd08326f93062c5a658b2c5"
 loc = 3800
 loc_by_language = { "PHP" = 3800 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+stripped = []
+# Assigned (docs/TASKS.md): move, signature, inspect + 3 pr. No mined pull request runs on PHP 8.4
+# (tasks/php-small/pr-log.md), so the 3 pr places are filled with the next types of the rotation.
+task_types = ["move", "signature", "inspect", "pr", "pr", "pr"]
+substitutions = ["all three unavailable mined slots use explicit `pr-fallback-*` tasks; the three original synthetic tasks are preserved"]
+pr_fill = "rename, rename-file, refs: all 4 mined candidates need PHPUnit 4 or 6 and PHP 5/7 (tasks/php-small/pr-log.md)"

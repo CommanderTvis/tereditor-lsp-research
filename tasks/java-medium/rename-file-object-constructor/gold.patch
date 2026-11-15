@@ -1,0 +1,288 @@
+diff --git a/gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java b/gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java
+index 843451e8..17c2c0d5 100644
+--- a/gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java
++++ b/gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java
+@@ -89,7 +89,7 @@ public final class ConstructorConstructor {
+   }
+ 
+   /** Calls {@link #get(TypeToken, boolean)}, and allows usage of JDK Unsafe. */
+-  public <T> ObjectConstructor<T> get(TypeToken<T> typeToken) {
++  public <T> ObjectFactory<T> get(TypeToken<T> typeToken) {
+     return get(typeToken, true);
+   }
+ 
+@@ -100,7 +100,7 @@ public final class ConstructorConstructor {
+    * @param allowUnsafe whether to allow usage of JDK Unsafe; has no effect if {@link #useJdkUnsafe}
+    *     is false
+    */
+-  public <T> ObjectConstructor<T> get(TypeToken<T> typeToken, boolean allowUnsafe) {
++  public <T> ObjectFactory<T> get(TypeToken<T> typeToken, boolean allowUnsafe) {
+     Type type = typeToken.getType();
+     Class<? super T> rawType = typeToken.getRawType();
+ 
+@@ -122,19 +122,19 @@ public final class ConstructorConstructor {
+     // First consider special constructors before checking for no-args constructors
+     // below to avoid matching internal no-args constructors which might be added in
+     // future JDK versions
+-    ObjectConstructor<T> specialConstructor = newSpecialCollectionConstructor(type, rawType);
++    ObjectFactory<T> specialConstructor = newSpecialCollectionConstructor(type, rawType);
+     if (specialConstructor != null) {
+       return specialConstructor;
+     }
+ 
+     FilterResult filterResult =
+         ReflectionAccessFilterHelper.getFilterResult(reflectionFilters, rawType);
+-    ObjectConstructor<T> defaultConstructor = newDefaultConstructor(rawType, filterResult);
++    ObjectFactory<T> defaultConstructor = newDefaultConstructor(rawType, filterResult);
+     if (defaultConstructor != null) {
+       return defaultConstructor;
+     }
+ 
+-    ObjectConstructor<T> defaultImplementation = newDefaultImplementationConstructor(rawType);
++    ObjectFactory<T> defaultImplementation = newDefaultImplementationConstructor(rawType);
+     if (defaultImplementation != null) {
+       return defaultImplementation;
+     }
+@@ -174,7 +174,7 @@ public final class ConstructorConstructor {
+    * Creates constructors for special JDK collection types which do not have a public no-args
+    * constructor.
+    */
+-  private static <T> ObjectConstructor<T> newSpecialCollectionConstructor(
++  private static <T> ObjectFactory<T> newSpecialCollectionConstructor(
+       Type type, Class<? super T> rawType) {
+     if (EnumSet.class.isAssignableFrom(rawType)) {
+       return () -> {
+@@ -214,7 +214,7 @@ public final class ConstructorConstructor {
+     return null;
+   }
+ 
+-  private static <T> ObjectConstructor<T> newDefaultConstructor(
++  private static <T> ObjectFactory<T> newDefaultConstructor(
+       Class<? super T> rawType, FilterResult filterResult) {
+     // Cannot invoke constructor of abstract class
+     if (Modifier.isAbstract(rawType.getModifiers())) {
+@@ -285,7 +285,7 @@ public final class ConstructorConstructor {
+   }
+ 
+   /** Constructors for common interface types like Map and List and their subtypes. */
+-  private static <T> ObjectConstructor<T> newDefaultImplementationConstructor(
++  private static <T> ObjectFactory<T> newDefaultImplementationConstructor(
+       Class<? super T> rawType) {
+ 
+     /*
+@@ -298,13 +298,13 @@ public final class ConstructorConstructor {
+ 
+     if (Collection.class.isAssignableFrom(rawType)) {
+       @SuppressWarnings("unchecked")
+-      ObjectConstructor<T> constructor = (ObjectConstructor<T>) newCollectionConstructor(rawType);
++      ObjectFactory<T> constructor = (ObjectFactory<T>) newCollectionConstructor(rawType);
+       return constructor;
+     }
+ 
+     if (Map.class.isAssignableFrom(rawType)) {
+       @SuppressWarnings("unchecked")
+-      ObjectConstructor<T> constructor = (ObjectConstructor<T>) newMapConstructor(rawType);
++      ObjectFactory<T> constructor = (ObjectFactory<T>) newMapConstructor(rawType);
+       return constructor;
+     }
+ 
+@@ -312,7 +312,7 @@ public final class ConstructorConstructor {
+     return null;
+   }
+ 
+-  private static ObjectConstructor<? extends Collection<?>> newCollectionConstructor(
++  private static ObjectFactory<? extends Collection<?>> newCollectionConstructor(
+       Class<?> rawType) {
+ 
+     // First try List implementation
+@@ -336,7 +336,7 @@ public final class ConstructorConstructor {
+     return null;
+   }
+ 
+-  private static ObjectConstructor<? extends Map<?, Object>> newMapConstructor(Class<?> rawType) {
++  private static ObjectFactory<? extends Map<?, Object>> newMapConstructor(Class<?> rawType) {
+     // First try Map implementation
+     if (rawType.isAssignableFrom(LinkedHashMap.class)) {
+       return LinkedHashMap::new;
+@@ -358,7 +358,7 @@ public final class ConstructorConstructor {
+     return null;
+   }
+ 
+-  private <T> ObjectConstructor<T> newUnsafeAllocator(Class<? super T> rawType) {
++  private <T> ObjectFactory<T> newUnsafeAllocator(Class<? super T> rawType) {
+     if (useJdkUnsafe) {
+       return () -> {
+         try {
+@@ -400,15 +400,15 @@ public final class ConstructorConstructor {
+   }
+ 
+   /**
+-   * {@link ObjectConstructor} which always throws an exception.
++   * {@link ObjectFactory} which always throws an exception.
+    *
+    * <p>This keeps backward compatibility, compared to using a {@code null} {@code
+-   * ObjectConstructor}, which would then choose another way of creating the object. And it supports
++   * ObjectFactory}, which would then choose another way of creating the object. And it supports
+    * types which are only serialized but not deserialized (compared to directly throwing an
+-   * exception when the {@code ObjectConstructor} is requested), e.g. when the runtime type of an
++   * exception when the {@code ObjectFactory} is requested), e.g. when the runtime type of an
+    * object is inaccessible, but the compile-time type is accessible.
+    */
+-  private static final class ThrowingObjectConstructor<T> implements ObjectConstructor<T> {
++  private static final class ThrowingObjectConstructor<T> implements ObjectFactory<T> {
+     private final String exceptionMessage;
+ 
+     ThrowingObjectConstructor(String exceptionMessage) {
+@@ -425,7 +425,7 @@ public final class ConstructorConstructor {
+     }
+   }
+ 
+-  private static final class InstanceCreatorConstructor<T> implements ObjectConstructor<T> {
++  private static final class InstanceCreatorConstructor<T> implements ObjectFactory<T> {
+     private final InstanceCreator<T> instanceCreator;
+     private final Type type;
+ 
+diff --git a/gson/src/main/java/com/google/gson/internal/ObjectConstructor.java b/gson/src/main/java/com/google/gson/internal/ObjectFactory.java
+similarity index 96%
+rename from gson/src/main/java/com/google/gson/internal/ObjectConstructor.java
+rename to gson/src/main/java/com/google/gson/internal/ObjectFactory.java
+index c112e58b..69ed00d5 100644
+--- a/gson/src/main/java/com/google/gson/internal/ObjectConstructor.java
++++ b/gson/src/main/java/com/google/gson/internal/ObjectFactory.java
+@@ -24,7 +24,7 @@ package com.google.gson.internal;
+  * @author Inderjeet Singh
+  * @author Joel Leitch
+  */
+-public interface ObjectConstructor<T> {
++public interface ObjectFactory<T> {
+ 
+   /** Returns a new instance. */
+   T construct();
+diff --git a/gson/src/main/java/com/google/gson/internal/bind/CollectionTypeAdapterFactory.java b/gson/src/main/java/com/google/gson/internal/bind/CollectionTypeAdapterFactory.java
+index 7dd48a3e..18c933b9 100644
+--- a/gson/src/main/java/com/google/gson/internal/bind/CollectionTypeAdapterFactory.java
++++ b/gson/src/main/java/com/google/gson/internal/bind/CollectionTypeAdapterFactory.java
+@@ -21,7 +21,7 @@ import com.google.gson.TypeAdapter;
+ import com.google.gson.TypeAdapterFactory;
+ import com.google.gson.internal.ConstructorConstructor;
+ import com.google.gson.internal.GsonTypes;
+-import com.google.gson.internal.ObjectConstructor;
++import com.google.gson.internal.ObjectFactory;
+ import com.google.gson.reflect.TypeToken;
+ import com.google.gson.stream.JsonReader;
+ import com.google.gson.stream.JsonToken;
+@@ -54,7 +54,7 @@ public final class CollectionTypeAdapterFactory implements TypeAdapterFactory {
+     // Don't allow Unsafe usage to create instance; instances might be in broken state and calling
+     // Collection methods could lead to confusing exceptions
+     boolean allowUnsafe = false;
+-    ObjectConstructor<T> constructor = constructorConstructor.get(typeToken, allowUnsafe);
++    ObjectFactory<T> constructor = constructorConstructor.get(typeToken, allowUnsafe);
+ 
+     @SuppressWarnings({"unchecked", "rawtypes"}) // create() doesn't define a type parameter
+     TypeAdapter<T> result = new Adapter(wrappedTypeAdapter, constructor);
+@@ -63,10 +63,10 @@ public final class CollectionTypeAdapterFactory implements TypeAdapterFactory {
+ 
+   private static final class Adapter<E> extends TypeAdapter<Collection<E>> {
+     private final TypeAdapter<E> elementTypeAdapter;
+-    private final ObjectConstructor<? extends Collection<E>> constructor;
++    private final ObjectFactory<? extends Collection<E>> constructor;
+ 
+     Adapter(
+-        TypeAdapter<E> elementTypeAdapter, ObjectConstructor<? extends Collection<E>> constructor) {
++        TypeAdapter<E> elementTypeAdapter, ObjectFactory<? extends Collection<E>> constructor) {
+       this.elementTypeAdapter = elementTypeAdapter;
+       this.constructor = constructor;
+     }
+diff --git a/gson/src/main/java/com/google/gson/internal/bind/MapTypeAdapterFactory.java b/gson/src/main/java/com/google/gson/internal/bind/MapTypeAdapterFactory.java
+index 5fd00cfb..913f1864 100644
+--- a/gson/src/main/java/com/google/gson/internal/bind/MapTypeAdapterFactory.java
++++ b/gson/src/main/java/com/google/gson/internal/bind/MapTypeAdapterFactory.java
+@@ -25,7 +25,7 @@ import com.google.gson.TypeAdapterFactory;
+ import com.google.gson.internal.ConstructorConstructor;
+ import com.google.gson.internal.GsonTypes;
+ import com.google.gson.internal.JsonReaderInternalAccess;
+-import com.google.gson.internal.ObjectConstructor;
++import com.google.gson.internal.ObjectFactory;
+ import com.google.gson.internal.Streams;
+ import com.google.gson.reflect.TypeToken;
+ import com.google.gson.stream.JsonReader;
+@@ -143,7 +143,7 @@ public final class MapTypeAdapterFactory implements TypeAdapterFactory {
+     // Don't allow Unsafe usage to create instance; instances might be in broken state and calling
+     // Map methods could lead to confusing exceptions
+     boolean allowUnsafe = false;
+-    ObjectConstructor<T> constructor = constructorConstructor.get(typeToken, allowUnsafe);
++    ObjectFactory<T> constructor = constructorConstructor.get(typeToken, allowUnsafe);
+ 
+     @SuppressWarnings({"unchecked", "rawtypes"})
+     // we don't define a type parameter for the key or value types
+@@ -161,12 +161,12 @@ public final class MapTypeAdapterFactory implements TypeAdapterFactory {
+   private final class Adapter<K, V> extends TypeAdapter<Map<K, V>> {
+     private final TypeAdapter<K> keyTypeAdapter;
+     private final TypeAdapter<V> valueTypeAdapter;
+-    private final ObjectConstructor<? extends Map<K, V>> constructor;
++    private final ObjectFactory<? extends Map<K, V>> constructor;
+ 
+     Adapter(
+         TypeAdapter<K> keyTypeAdapter,
+         TypeAdapter<V> valueTypeAdapter,
+-        ObjectConstructor<? extends Map<K, V>> constructor) {
++        ObjectFactory<? extends Map<K, V>> constructor) {
+       this.keyTypeAdapter = keyTypeAdapter;
+       this.valueTypeAdapter = valueTypeAdapter;
+       this.constructor = constructor;
+diff --git a/gson/src/main/java/com/google/gson/internal/bind/ReflectiveTypeAdapterFactory.java b/gson/src/main/java/com/google/gson/internal/bind/ReflectiveTypeAdapterFactory.java
+index ed6cff80..d3dc02c5 100644
+--- a/gson/src/main/java/com/google/gson/internal/bind/ReflectiveTypeAdapterFactory.java
++++ b/gson/src/main/java/com/google/gson/internal/bind/ReflectiveTypeAdapterFactory.java
+@@ -30,7 +30,7 @@ import com.google.gson.annotations.SerializedName;
+ import com.google.gson.internal.ConstructorConstructor;
+ import com.google.gson.internal.Excluder;
+ import com.google.gson.internal.GsonTypes;
+-import com.google.gson.internal.ObjectConstructor;
++import com.google.gson.internal.ObjectFactory;
+ import com.google.gson.internal.Primitives;
+ import com.google.gson.internal.ReflectionAccessFilterHelper;
+ import com.google.gson.internal.TroubleshootingGuide;
+@@ -160,7 +160,7 @@ public final class ReflectiveTypeAdapterFactory implements TypeAdapterFactory {
+       return adapter;
+     }
+ 
+-    ObjectConstructor<T> constructor = constructorConstructor.get(type, true);
++    ObjectFactory<T> constructor = constructorConstructor.get(type, true);
+     return new FieldReflectionAdapter<>(
+         constructor, getBoundFields(gson, type, raw, blockInaccessible, false));
+   }
+@@ -565,9 +565,9 @@ public final class ReflectiveTypeAdapterFactory implements TypeAdapterFactory {
+   }
+ 
+   private static final class FieldReflectionAdapter<T> extends Adapter<T, T> {
+-    private final ObjectConstructor<T> constructor;
++    private final ObjectFactory<T> constructor;
+ 
+-    FieldReflectionAdapter(ObjectConstructor<T> constructor, FieldsData fieldsData) {
++    FieldReflectionAdapter(ObjectFactory<T> constructor, FieldsData fieldsData) {
+       super(fieldsData);
+       this.constructor = constructor;
+     }
+diff --git a/gson/src/test/java/com/google/gson/internal/ConstructorConstructorTest.java b/gson/src/test/java/com/google/gson/internal/ConstructorConstructorTest.java
+index 10fcc88e..f432365b 100644
+--- a/gson/src/test/java/com/google/gson/internal/ConstructorConstructorTest.java
++++ b/gson/src/test/java/com/google/gson/internal/ConstructorConstructorTest.java
+@@ -54,7 +54,7 @@ public class ConstructorConstructorTest {
+    */
+   @Test
+   public void testGet_AbstractClassNoArgConstructor() {
+-    ObjectConstructor<AbstractClass> constructor =
++    ObjectFactory<AbstractClass> constructor =
+         constructorConstructor.get(TypeToken.get(AbstractClass.class));
+     var e = assertThrows(RuntimeException.class, () -> constructor.construct());
+     assertThat(e)
+@@ -68,7 +68,7 @@ public class ConstructorConstructorTest {
+ 
+   @Test
+   public void testGet_Interface() {
+-    ObjectConstructor<Interface> constructor =
++    ObjectFactory<Interface> constructor =
+         constructorConstructor.get(TypeToken.get(Interface.class));
+     var e = assertThrows(RuntimeException.class, () -> constructor.construct());
+     assertThat(e)

@@ -1,0 +1,4 @@
+type = "impls"
+origin = "synthetic fallback: exhaustive source oracle"
+symbol = "implements Stringable"
+selection = "Deterministic whole-tree candidate scan at pinned commit; seed = 20261110."

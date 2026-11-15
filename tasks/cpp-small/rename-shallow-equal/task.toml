@@ -1,0 +1,4 @@
+type = "rename"
+origin = "devrig safe rename (virtual member function with its overrides)"
+symbol = "tinyxml2::XMLNode::ShallowEqual -> IsShallowEqual"
+selection = "member function names declared in at least two classes of namespace tinyxml2 in tinyxml2.h (clang++ -Xclang -ast-dump=json tinyxml2.h, CXXMethodDecl that are not implicit and not operators: 29 names), with whole-word occurrences in both tinyxml2.cpp and xmltest.cpp and at least 10 in the two together (grep -ow): 15 candidates, sorted by name; index awk 'BEGIN{srand(20261110); print int(rand()*15)+1}' = 12 (ShallowEqual); the function is renamed in the first class declaring it in tinyxml2.h (XMLNode) with its overloads and overrides"

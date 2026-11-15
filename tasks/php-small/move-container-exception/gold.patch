@@ -1,0 +1,105 @@
+diff --git a/src/Argument/ArgumentResolverTrait.php b/src/Argument/ArgumentResolverTrait.php
+index 069d21e..0f73ba0 100644
+--- a/src/Argument/ArgumentResolverTrait.php
++++ b/src/Argument/ArgumentResolverTrait.php
+@@ -5,7 +5,7 @@ declare(strict_types=1);
+ namespace League\Container\Argument;
+ 
+ use League\Container\DefinitionContainerInterface;
+-use League\Container\Exception\ContainerException;
++use League\Container\ContainerException;
+ use League\Container\Exception\NotFoundException;
+ use League\Container\ReflectionContainer;
+ use Psr\Container\ContainerExceptionInterface;
+diff --git a/src/Container.php b/src/Container.php
+index 2e28657..69a75ee 100644
+--- a/src/Container.php
++++ b/src/Container.php
+@@ -14,7 +14,6 @@ use League\Container\Event\EventDispatcher;
+ use League\Container\Event\EventFilter;
+ use League\Container\Event\OnDefineEvent;
+ use League\Container\Event\ServiceResolvedEvent;
+-use League\Container\Exception\ContainerException;
+ use League\Container\Exception\NotFoundException;
+ use League\Container\Inflector\InflectorAggregate;
+ use League\Container\Inflector\InflectorAggregateInterface;
+diff --git a/src/ContainerAwareTrait.php b/src/ContainerAwareTrait.php
+index d4e7711..8454e04 100644
+--- a/src/ContainerAwareTrait.php
++++ b/src/ContainerAwareTrait.php
+@@ -5,7 +5,6 @@ declare(strict_types=1);
+ namespace League\Container;
+ 
+ use BadMethodCallException;
+-use League\Container\Exception\ContainerException;
+ 
+ trait ContainerAwareTrait
+ {
+diff --git a/src/Exception/ContainerException.php b/src/ContainerException.php
+similarity index 83%
+rename from src/Exception/ContainerException.php
+rename to src/ContainerException.php
+index 747ec6d..799deb2 100644
+--- a/src/Exception/ContainerException.php
++++ b/src/ContainerException.php
+@@ -2,7 +2,7 @@
+ 
+ declare(strict_types=1);
+ 
+-namespace League\Container\Exception;
++namespace League\Container;
+ 
+ use Psr\Container\ContainerExceptionInterface;
+ use RuntimeException;
+diff --git a/src/Definition/Definition.php b/src/Definition/Definition.php
+index 9014e95..b17f274 100644
+--- a/src/Definition/Definition.php
++++ b/src/Definition/Definition.php
+@@ -9,7 +9,7 @@ use League\Container\Argument\ArgumentResolverInterface;
+ use League\Container\Argument\ArgumentResolverTrait;
+ use League\Container\Argument\LiteralArgumentInterface;
+ use League\Container\ContainerAwareTrait;
+-use League\Container\Exception\ContainerException;
++use League\Container\ContainerException;
+ use Psr\Container\ContainerExceptionInterface;
+ use Psr\Container\ContainerInterface;
+ use Psr\Container\NotFoundExceptionInterface;
+diff --git a/src/ServiceProvider/ServiceProviderAggregate.php b/src/ServiceProvider/ServiceProviderAggregate.php
+index aedb5e2..12dd4cd 100644
+--- a/src/ServiceProvider/ServiceProviderAggregate.php
++++ b/src/ServiceProvider/ServiceProviderAggregate.php
+@@ -6,7 +6,7 @@ namespace League\Container\ServiceProvider;
+ 
+ use Generator;
+ use League\Container\ContainerAwareTrait;
+-use League\Container\Exception\ContainerException;
++use League\Container\ContainerException;
+ 
+ class ServiceProviderAggregate implements ServiceProviderAggregateInterface
+ {
+diff --git a/tests/ContainerTest.php b/tests/ContainerTest.php
+index 14df793..b83cca7 100644
+--- a/tests/ContainerTest.php
++++ b/tests/ContainerTest.php
+@@ -7,7 +7,7 @@ namespace League\Container\Test;
+ use BadMethodCallException;
+ use League\Container\Container;
+ use League\Container\ContainerAwareTrait;
+-use League\Container\Exception\ContainerException;
++use League\Container\ContainerException;
+ use League\Container\Exception\NotFoundException;
+ use League\Container\ReflectionContainer;
+ use League\Container\ServiceProvider\AbstractServiceProvider;
+diff --git a/tests/ServiceProvider/ServiceProviderAggregateTest.php b/tests/ServiceProvider/ServiceProviderAggregateTest.php
+index 34d21ba..3657605 100644
+--- a/tests/ServiceProvider/ServiceProviderAggregateTest.php
++++ b/tests/ServiceProvider/ServiceProviderAggregateTest.php
+@@ -6,7 +6,7 @@ namespace League\Container\Test\ServiceProvider;
+ 
+ use Exception;
+ use League\Container\Container;
+-use League\Container\Exception\ContainerException;
++use League\Container\ContainerException;
+ use League\Container\ServiceProvider\AbstractServiceProvider;
+ use League\Container\ServiceProvider\BootableServiceProviderInterface;
+ use League\Container\ServiceProvider\ServiceProviderAggregate;

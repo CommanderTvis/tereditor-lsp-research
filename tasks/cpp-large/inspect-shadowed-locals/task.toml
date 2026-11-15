@@ -1,0 +1,4 @@
+type = "inspect"
+origin = "defect-class triage (compiler warning class -Wshadow, local shadowing)"
+defect = "a declaration in an inner block shadows a local variable or parameter of an enclosing scope (clang: declaration shadows a local variable)"
+selection = "defect class fixed in advance (clang -Wshadow, local shadowing); candidate files: the C sources of redis-server (REDIS_SERVER_OBJ, 116 files); positives: files with a report located in the file and not in a macro expansion (27); decoys: files with no report (88); 5 of each by the seeded shuffle awk 'BEGIN{srand(20261110)} {printf \"%.12f\\t%s\\n\", rand(), $0}' | sort -k1,1n | head -5 over each sorted pool (derive-oracle.sh)"

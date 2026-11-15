@@ -1,0 +1,5 @@
+type = "signature"
+origin = "synthetic, reorder parameters through every call site"
+symbol = "pick"
+change = "pick(struct, keys) becomes pick(keys, struct)"
+selection = "Exported, non-overloaded top-level functions of src/**/*.ts (index.ts excluded) with at least 2 parameters whose first two declared types differ and at least 3 call sites in src/ and test/; 18 candidates (assert create define defaulted coerce deprecated is mask max min omit pattern pick record refine run size validate), sorted by name, seeded shuffle awk srand(20261110), first taken. The change is fixed by rule: swap the first two parameters."

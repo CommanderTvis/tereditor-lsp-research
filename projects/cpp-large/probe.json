@@ -1,0 +1,7 @@
+[
+  {"name": "references createStringObject (cross-file)", "args": {"operation": "references", "query": "createStringObject", "path": "src/object.h"},
+   "expect": ["src/t_string.c:1439", "src/t_string.c:1440"]},
+  {"name": "definition of createStringObject from its declaration", "args": {"operation": "definition", "path": "src/object.h", "line": 140, "column": 6},
+   "expect": ["src/object.c:338"]},
+  {"name": "diagnostics src/object.c", "tool": "lsp_diagnostics", "args": {"paths": ["src/object.c"]}, "expect": []}
+]

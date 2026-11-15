@@ -1,0 +1,4 @@
+type = "inspect"
+origin = "synthetic fallback: C source-file triage"
+defect = "a candidate source file contains an unresolved RelationBuildDesc reference"
+selection = "Xlarge fallback selected from the pinned PostgreSQL snapshot; candidate files were the tracked C/C++ files under src/ containing the symbol, with positives determined by exhaustive source enumeration."

@@ -7,3 +7,7 @@ commit = "f6fbaf0299c48eea9e656e03e2ffe7ac755e8823"
 loc = 63057
 loc_by_language = { "TypeScript" = 63009, "TypeScript Typings" = 48 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+stripped = []
+task_types = ["rename", "rename-file", "inspect", "pr", "pr", "pr"]
+# The mined pull requests are from 2022, when hono had about 7 to 8 thousand TypeScript lines (loc_at_base in each
+# task.toml): their starting trees are in the small band, not the medium one.

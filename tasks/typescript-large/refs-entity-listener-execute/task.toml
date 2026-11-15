@@ -1,0 +1,4 @@
+type = "refs"
+origin = "synthetic, find usages of a method whose name many classes share"
+symbol = "EntityListenerMetadata.execute"
+selection = "Methods declared at class-member indentation in packages/typeorm/src (index.ts excluded) whose name is declared as a method at least twice in src and occurs as `.name` at least 10 times in at least 5 files of src and test; 1039 (name, file) pairs, sorted, seeded shuffle awk srand(20261110); the first pair in that order whose compiler mutation (rename the declaration, tsc --noEmit) yields only missing-property errors (so the method neither implements an interface member nor overrides or is overridden) and between 10 and 80 of them. Skipped in order: MysqlQueryRunner.createDatabase, AuroraMysqlQueryRunner.createTable, PostgresQueryRunner.createDatabase (implement QueryRunner), SapQueryRunner.escapeComment (6 references)."

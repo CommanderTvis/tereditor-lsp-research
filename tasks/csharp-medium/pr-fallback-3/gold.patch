@@ -1,0 +1,5 @@
+--- a/FALLBACK/compatibility API.txt
++++ b/FALLBACK/compatibility API.txt
+@@ -1 +1 @@
+-legacy behavior
++corrected behavior

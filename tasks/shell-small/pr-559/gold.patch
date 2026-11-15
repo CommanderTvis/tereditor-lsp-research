@@ -1,0 +1,38 @@
+diff --git a/docs/CHANGELOG.md b/docs/CHANGELOG.md
+index 386bf0f..d77dd82 100644
+--- a/docs/CHANGELOG.md
++++ b/docs/CHANGELOG.md
+@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog][kac] and this project adheres to
+ 
+ * unbound variable errors in formatters when using `SHELLOPTS=nounset` (`-u`) (#558)
+ * don't require `flock` *and* `shlock` for parallel mode test (#554)
++* print name of failing test when using TAP13 with timing information (#559, #555)
+ 
+ ## [1.6.0] - 2022-02-24
+ 
+diff --git a/libexec/bats-core/bats-format-tap13 b/libexec/bats-core/bats-format-tap13
+index 41aa969..1f95a7a 100755
+--- a/libexec/bats-core/bats-format-tap13
++++ b/libexec/bats-core/bats-format-tap13
+@@ -64,10 +64,10 @@ while IFS= read -r line; do
+   'not ok '*)
+     close_previous_yaml_block
+     number_of_printed_log_lines_for_this_test_so_far=0
+-    timing_expr="not ok [0-9]+ (.)+ in ([0-9])+ms$"
++    timing_expr="(not ok [0-9]+ .+) in ([0-9])+ms$"
+     if [[ -n "${BATS_ENABLE_TIMING-}" ]]; then
+       if [[ "$line" =~ $timing_expr ]]; then
+-        printf "%s\n" "${BATS_REMATCH[1]}"
++        printf "%s\n" "${BASH_REMATCH[1]}"
+         add_yaml_entry "duration_ms" "${BASH_REMATCH[2]}"
+       else
+         echo "Could not match failure line to timing regex: $line" >&2
+@@ -82,7 +82,7 @@ while IFS= read -r line; do
+       add_yaml_entry "message" "|" # use a multiline string for this entry
+     fi
+     ((++number_of_printed_log_lines_for_this_test_so_far))
+-    printf "    %s\n" "$(echo "\"${line}\"" | cut -b 3-)"
++    printf "    %s\n" "${line:2}"
+     ;;
+   'suite '*) ;;
+   esac

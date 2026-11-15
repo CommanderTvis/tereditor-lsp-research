@@ -1,0 +1,37 @@
+diff --git a/docs/CHANGELOG.md b/docs/CHANGELOG.md
+index 91afc9a..203fb73 100644
+--- a/docs/CHANGELOG.md
++++ b/docs/CHANGELOG.md
+@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog][kac] and this project adheres to
+ * allow `--gather-test-outputs-in <directory>` to work with existing, empty
+   directories (#603)
+   * also add `--clean-and-gather-test-outpust-in <directory>` for improved UX
++* double slashes in paths derived from TMPDIR on MacOS (#607)
+ 
+ #### Documentation
+ 
+diff --git a/libexec/bats-core/bats b/libexec/bats-core/bats
+index 309b3dd..13fc2ae 100755
+--- a/libexec/bats-core/bats
++++ b/libexec/bats-core/bats
+@@ -94,6 +94,7 @@ export BATS_TEST_FILTER=
+ export PATH="$BATS_LIBEXEC:$PATH"
+ export BATS_ROOT_PID=$$
+ export BATS_TMPDIR="${TMPDIR:-/tmp}"
++BATS_TMPDIR=${BATS_TMPDIR%/} # chop off trailing / to avoid duplication
+ export BATS_RUN_TMPDIR=
+ export BATS_GUARANTEED_MINIMUM_VERSION=0.0.0
+ 
+diff --git a/libexec/bats-core/bats-exec-test b/libexec/bats-core/bats-exec-test
+index 241a5cf..0483916 100755
+--- a/libexec/bats-core/bats-exec-test
++++ b/libexec/bats-core/bats-exec-test
+@@ -70,7 +70,7 @@ elif [[ ! -f "$BATS_TEST_FILENAME" ]]; then
+ fi
+ 
+ bats_create_test_tmpdirs() {
+-  local tests_tmpdir="${BATS_RUN_TMPDIR}/test/"
++  local tests_tmpdir="${BATS_RUN_TMPDIR}/test"
+   if ! mkdir -p "$tests_tmpdir"; then
+     printf 'Failed to create: %s\n' "$tests_tmpdir" >&2
+     exit 1

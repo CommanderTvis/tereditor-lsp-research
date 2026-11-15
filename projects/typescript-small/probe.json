@@ -1,0 +1,7 @@
+[
+  {"name": "references toFailures (cross-file)", "args": {"operation": "references", "query": "toFailures", "path": "src/utils.ts"},
+   "expect": ["src/struct.ts:47", "src/structs/refinements.ts:156"]},
+  {"name": "definition of Struct from another module", "args": {"operation": "definition", "query": "Struct"},
+   "expect": ["src/struct.ts:10"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["src/error.ts"]}, "expect": []}
+]

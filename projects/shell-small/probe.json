@@ -1,0 +1,10 @@
+[
+  {"name": "references at position (bats_print_stack_trace, called from extensionless libexec scripts)",
+   "args": {"operation": "references", "path": "lib/bats-core/tracing.bash", "line": 43, "column": 0},
+   "expect": ["lib/bats-core/warnings.bash:20", "libexec/bats-core/bats-exec-test:166", "libexec/bats-core/bats-exec-file:169"]},
+  {"name": "references by name bats_version_lt", "args": {"operation": "references", "query": "bats_version_lt"},
+   "expect": ["lib/bats-core/warnings.bash:31", "lib/bats-core/common.bash:58", "test/common.bats:3"]},
+  {"name": "definition of bats_binary_search by name", "args": {"operation": "definition", "query": "bats_binary_search"},
+   "expect": ["lib/bats-core/common.bash:84"]},
+  {"name": "diagnostics on a library file", "tool": "lsp_diagnostics", "args": {"paths": ["lib/bats-core/common.bash"]}, "expect": []}
+]

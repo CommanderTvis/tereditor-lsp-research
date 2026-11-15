@@ -1,0 +1,7 @@
+type = "move"
+origin = "synthetic, move a declaration into another module"
+symbol = "isUint8Array"
+from = "packages/typeorm/src/util/Uint8ArrayUtils.ts"
+to = "packages/typeorm/src/util/guards/isUint8Array.ts"
+grade_timeout_s = 2400
+selection = "Exported top-level functions, classes and consts of packages/typeorm/src files that declare at least 2 distinct exported names (index.ts excluded), imported by name from their declaring module in at least 5 other files of src and test; 5 candidates (camelCase, EventListenerTypes, IsolationLevels, isUint8Array, PrimaryColumn), sorted, seeded shuffle awk srand(20261110), first taken. Destination chosen by hand: a new module of its own in a new directory for type guards."

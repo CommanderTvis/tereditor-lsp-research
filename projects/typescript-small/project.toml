@@ -8,3 +8,8 @@ commit = "d31f007fbe39d304b68e25604b12d452869a5264"
 loc = 4603
 loc_by_language = { "TypeScript" = 4603 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+stripped = []
+task_types = ["move", "signature", "callers", "pr", "pr", "pr"]
+# Upstream git-ignores package-lock.json; the lockfile next to this file (npm, generated once from package.json at the
+# pinned commit) fixes the grading dependencies. The mined pull requests' base commits (2021-2022) use yarn.lock,
+# imported by pnpm (grade-setup.sh), and mocha instead of vitest (check.sh).

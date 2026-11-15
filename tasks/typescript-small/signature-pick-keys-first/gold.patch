@@ -1,0 +1,177 @@
+diff --git a/src/structs/utilities.ts b/src/structs/utilities.ts
+index 3720572..7a7451c 100644
+--- a/src/structs/utilities.ts
++++ b/src/structs/utilities.ts
+@@ -219,8 +219,8 @@ export function partial<S extends ObjectSchema>(
+  */
+ 
+ export function pick<S extends ObjectSchema, K extends keyof S>(
+-  struct: Struct<ObjectType<S>, S>,
+-  keys: K[]
++  keys: K[],
++  struct: Struct<ObjectType<S>, S>
+ ): Struct<ObjectType<Pick<S, K>>, Pick<S, K>> {
+   const { schema } = struct
+   const subschema: any = {}
+diff --git a/test/typings/pick.ts b/test/typings/pick.ts
+index a3ab2c1..99585ec 100644
+--- a/test/typings/pick.ts
++++ b/test/typings/pick.ts
+@@ -4,6 +4,6 @@ import { test } from '..'
+ test<{
+   b: string
+ }>((x) => {
+-  assert(x, pick(object({ a: number(), b: string() }), ['b']))
++  assert(x, pick(['b'], object({ a: number(), b: string() })))
+   return x
+ })
+diff --git a/test/validation/pick/invalid-element-nested.ts b/test/validation/pick/invalid-element-nested.ts
+index 86396d1..d8947a5 100644
+--- a/test/validation/pick/invalid-element-nested.ts
++++ b/test/validation/pick/invalid-element-nested.ts
+@@ -1,11 +1,11 @@
+ import { pick, object, array, string } from '../../../src'
+ 
+ export const Struct = pick(
++  ['emails'],
+   object({
+     name: string(),
+     emails: array(string()),
+-  }),
+-  ['emails']
++  })
+ )
+ 
+ export const data = {
+diff --git a/test/validation/pick/invalid-property-nested.ts b/test/validation/pick/invalid-property-nested.ts
+index 17400b4..ff9f1fa 100644
+--- a/test/validation/pick/invalid-property-nested.ts
++++ b/test/validation/pick/invalid-property-nested.ts
+@@ -1,14 +1,14 @@
+ import { pick, object, string } from '../../../src'
+ 
+ export const Struct = pick(
++  ['address'],
+   object({
+     name: string(),
+     address: object({
+       street: string(),
+       city: string(),
+     }),
+-  }),
+-  ['address']
++  })
+ )
+ 
+ export const data = {
+diff --git a/test/validation/pick/invalid-property-unknown.ts b/test/validation/pick/invalid-property-unknown.ts
+index 173a7f3..306930f 100644
+--- a/test/validation/pick/invalid-property-unknown.ts
++++ b/test/validation/pick/invalid-property-unknown.ts
+@@ -1,11 +1,11 @@
+ import { pick, object, string, number } from '../../../src'
+ 
+ export const Struct = pick(
++  ['name'],
+   object({
+     name: string(),
+     age: number(),
+-  }),
+-  ['name']
++  })
+ )
+ 
+ export const data = {
+diff --git a/test/validation/pick/invalid-property.ts b/test/validation/pick/invalid-property.ts
+index 0999bc1..43c9ab0 100644
+--- a/test/validation/pick/invalid-property.ts
++++ b/test/validation/pick/invalid-property.ts
+@@ -1,11 +1,11 @@
+ import { pick, object, string, number } from '../../../src'
+ 
+ export const Struct = pick(
++  ['age'],
+   object({
+     name: string(),
+     age: number(),
+-  }),
+-  ['age']
++  })
+ )
+ 
+ export const data = {
+diff --git a/test/validation/pick/invalid.ts b/test/validation/pick/invalid.ts
+index 7376027..d41d583 100644
+--- a/test/validation/pick/invalid.ts
++++ b/test/validation/pick/invalid.ts
+@@ -1,11 +1,11 @@
+ import { pick, object, string, number } from '../../../src'
+ 
+ export const Struct = pick(
++  ['name'],
+   object({
+     name: string(),
+     age: number(),
+-  }),
+-  ['name']
++  })
+ )
+ 
+ export const data = 'invalid'
+diff --git a/test/validation/pick/valid-nested.ts b/test/validation/pick/valid-nested.ts
+index 08874b8..a33112e 100644
+--- a/test/validation/pick/valid-nested.ts
++++ b/test/validation/pick/valid-nested.ts
+@@ -1,14 +1,14 @@
+ import { pick, object, string } from '../../../src'
+ 
+ export const Struct = pick(
++  ['address'],
+   object({
+     name: string(),
+     address: object({
+       street: string(),
+       city: string(),
+     }),
+-  }),
+-  ['address']
++  })
+ )
+ 
+ export const data = {
+diff --git a/test/validation/pick/valid-type.ts b/test/validation/pick/valid-type.ts
+index 28f1a33..0f23b0d 100644
+--- a/test/validation/pick/valid-type.ts
++++ b/test/validation/pick/valid-type.ts
+@@ -1,11 +1,11 @@
+ import { number, pick, string, type } from '../../../src'
+ 
+ export const Struct = pick(
++  ['name'],
+   type({
+     name: string(),
+     age: number(),
+-  }),
+-  ['name']
++  })
+ )
+ 
+ export const data = {
+diff --git a/test/validation/pick/valid.ts b/test/validation/pick/valid.ts
+index 64c5a83..6169e47 100644
+--- a/test/validation/pick/valid.ts
++++ b/test/validation/pick/valid.ts
+@@ -1,11 +1,11 @@
+ import { pick, object, string, number } from '../../../src'
+ 
+ export const Struct = pick(
++  ['name'],
+   object({
+     name: string(),
+     age: number(),
+-  }),
+-  ['name']
++  })
+ )
+ 
+ export const data = {

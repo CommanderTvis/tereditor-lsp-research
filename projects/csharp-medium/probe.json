@@ -1,0 +1,9 @@
+[
+  {"name": "references PascalCaseNamingConvention (cross-project)", "args": {"operation": "references", "query": "PascalCaseNamingConvention", "path": "src/AutoMapper/Configuration/INamingConvention.cs"},
+   "expect": ["src/AutoMapper/ProfileMap.cs:34", "src/UnitTests/ReverseMapping.cs:232", "src/UnitTests/Bug/NamingConventions.cs:135"]},
+  {"name": "references ToStringDictionaryMapper (cross-file)", "args": {"operation": "references", "query": "ToStringDictionaryMapper", "path": "src/AutoMapper/Mappers/ToStringDictionaryMapper.cs"},
+   "expect": ["src/AutoMapper/Mappers/MapperRegistry.cs:24"]},
+  {"name": "definition of MapperRegistry", "args": {"operation": "definition", "query": "MapperRegistry"},
+   "expect": ["src/AutoMapper/Mappers/MapperRegistry.cs:3"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["src/AutoMapper/Mappers/KeyValueMapper.cs"]}, "expect": []}
+]

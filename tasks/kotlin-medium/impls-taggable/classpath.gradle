@@ -1,0 +1,8 @@
+// Oracle helper: prints each module's JVM test runtime classpath (which includes its main and test classes).
+allprojects {
+  tasks.register("studyClasspath") {
+    def cfgName = ["jvmTestRuntimeClasspath", "testRuntimeClasspath"].find { project.configurations.findByName(it) != null }
+    def files = cfgName == null ? null : project.configurations.getByName(cfgName)
+    doLast { if (files != null) println("STUDY_CP=" + files.files.join(File.pathSeparator)) }
+  }
+}

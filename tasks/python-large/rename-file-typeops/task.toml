@@ -1,0 +1,5 @@
+type = "rename-file"
+origin = "synthetic, rename a heavily imported module"
+from = "mypy/typeops.py"
+to = "mypy/type_operations.py"
+selection = "Non-test mypy modules imported by path from at least 20 other Python files; sorted by path, typeops selected by seeded shuffle Random(20261110). The destination expands the module name in snake case."

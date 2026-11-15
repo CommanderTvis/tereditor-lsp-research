@@ -2,10 +2,12 @@
 # probe.json are still to be written (docs/CURATION.md).
 lang = "csharp"
 size = "medium"
-status = "stub"
-repo = "https://github.com/AutoMapper/AutoMapper"
+status = "curated"
+repo = "https://github.com/LuckyPennySoftware/AutoMapper"
 tag = "v16.3.0"
 commit = "9c31182a3eb99d5191ccc71ee90105846830917f"
 loc = 56611
 loc_by_language = { "C#" = 56611 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["move", "signature", "dispatch", "pr", "pr", "pr"]
+substitutions = ["all three mined slots use explicit `pr-fallback-*` tasks after the candidate pool failed validation; the three original synthetic tasks are preserved"]

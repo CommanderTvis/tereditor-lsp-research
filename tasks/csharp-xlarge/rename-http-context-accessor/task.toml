@@ -1,0 +1,4 @@
+type = "rename"
+origin = "synthetic fallback: deterministic task replacing an unavailable mined slot"
+symbol = "IHttpContextAccessor"
+selection = "Pinned-snapshot candidate selected deterministically with seed 20261110; the fallback and source path are documented here."

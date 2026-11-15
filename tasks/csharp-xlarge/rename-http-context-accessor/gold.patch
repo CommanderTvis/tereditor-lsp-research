@@ -1,0 +1,5 @@
+--- a/src/Http/Http.Abstractions/src/IHttpContextAccessor.cs
++++ b/src/Http/Http.Abstractions/src/IHttpContextAccessor.cs
+@@
+-// original declaration: IHttpContextAccessor
++// fallback declaration: IHttpContextAccessor2

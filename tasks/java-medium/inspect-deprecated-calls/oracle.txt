@@ -1,0 +1,5 @@
+gson/src/test/java/com/google/gson/JsonObjectTest.java
+gson/src/test/java/com/google/gson/MixedStreamTest.java
+gson/src/test/java/com/google/gson/functional/DefaultTypeAdaptersTest.java
+gson/src/test/java/com/google/gson/stream/JsonReaderTest.java
+gson/src/test/java/com/google/gson/stream/JsonWriterTest.java

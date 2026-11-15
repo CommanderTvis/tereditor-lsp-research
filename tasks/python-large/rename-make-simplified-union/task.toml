@@ -1,0 +1,5 @@
+type = "rename"
+origin = "devrig safe rename"
+symbol = "mypy.typeops.make_simplified_union -> simplify_union"
+grade_timeout_s = 1800
+selection = "public top-level functions of non-test mypy/ modules imported by name in 10 to 40 other .py files and whose name is also defined elsewhere in the tree (python3 select.py <snapshot> mypy 10 40, an ast walk); sorted by path:line: expand_type, is_subtype, make_simplified_union, get_proper_types (4 candidates); index random.Random(20261110).randrange(4) = 2 (CPython 3.12)"

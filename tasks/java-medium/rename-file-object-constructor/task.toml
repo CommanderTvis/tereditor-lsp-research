@@ -1,0 +1,3 @@
+type = "rename-file"
+origin = "devrig safe rename; file rename"
+selection = "main-source files of gson/src/main/java (package-info excluded) declaring a top-level type whose simple name occurs as a whole word in at least 5 other .java files under gson/src and is a proper substring of another type name declared there; 38 candidates sorted by path; k = int(rand()*38)+1 = 29 with awk srand(20261110); new name chosen by hand"

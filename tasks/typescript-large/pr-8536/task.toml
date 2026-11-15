@@ -1,0 +1,11 @@
+type = "pr"
+origin = "mined pull request"
+pr = 8536
+issue = 6941
+base_commit = "26581d0264268045496b43f7a0f338eb9f2b70cc"
+pr_head = "c8fce065f14f0e03045f2683427e7a9392930ef3"
+merge_base = "26581d0264268045496b43f7a0f338eb9f2b70cc"
+merged_at = "2022-01-31T09:25:59Z"
+merge_commit = "3a694dd3e99699e7284709c53967a5dfcb1e1806"
+loc_at_base = 120880
+loc_at_base_method = "non-blank, non-comment-only lines of the .ts/.tsx files at base_commit (git show | grep), an approximation of the scc count"

@@ -1,0 +1,4 @@
+type = "inspect"
+origin = "synthetic, compiler-detectable defect class"
+defect = "TS4111: property access from an index signature (noPropertyAccessFromIndexSignature)"
+selection = "Defect class: a stricter tsc option whose diagnostics name between 5 and 20 non-test files of src/. Of noImplicitOverride, noUnusedLocals, noUnusedParameters, noFallthroughCasesInSwitch (0 files each), noImplicitReturns (12), noPropertyAccessFromIndexSignature (12), noUncheckedIndexedAccess (41), exactOptionalPropertyTypes (34), noPropertyAccessFromIndexSignature was chosen by judgement over noImplicitReturns because its answer depends on types declared in other files. K = 10: 5 true files by seeded shuffle awk srand(20261110) of the 12 non-test files with the error; 5 decoys by the same shuffle of the 40 non-test src .ts/.tsx files without it that mention an index signature ([key: string] or Record<string,)."

@@ -1,0 +1,1 @@
+Rename the compiler type `org.jetbrains.kotlin.name.Name` to `CompilerName` throughout the Kotlin repository. Update declarations, imports, type references, and generated-source inputs while preserving public behavior. Do not rename unrelated local variables or comments.

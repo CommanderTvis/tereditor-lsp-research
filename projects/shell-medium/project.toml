@@ -1,11 +1,22 @@
-# shell, medium: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# shell, medium: chosen by size, see docs/PROJECTS.md. acme.sh has no offline project test suite; grading parses all
+# scripts and exercises the command dispatcher and task-specific checks.
 lang = "shell"
 size = "medium"
-status = "stub"
+status = "curated"
 repo = "https://github.com/acmesh-official/acme.sh"
 tag = "3.1.6"
 commit = "807da6498377ee5e0cf43a78091f46f12dc59a89"
 loc = 52686
 loc_by_language = { "Shell" = 52686 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["rename", "rename-file", "impls", "pr", "pr", "pr"]
+fallback_synthetic = ["rename", "rename-file", "dispatch"]
+substitutions = ["the unavailable impls slot uses the documented dispatch synthetic replacement; three unavailable mined slots use documented fallback PR task directories"]
+size_note = "largest credible shell project in the study; no larger shell repository was practical to grade"
+
+[probe]
+ok = true
+seconds_to_first_answer = 0.13
+references = "recorded in probe.json; acme.sh helper references resolve across sourced dnsapi hooks"
+definition = "recorded in probe.json; _getIdType resolves in acme.sh"
+diagnostics = "clean for acme.sh"

@@ -1,0 +1,156 @@
+diff --git a/src/main/java/tools/jackson/databind/AnnotationIntrospector.java b/src/main/java/tools/jackson/databind/AnnotationIntrospector.java
+index 0f65044a5..c059aa31d 100644
+--- a/src/main/java/tools/jackson/databind/AnnotationIntrospector.java
++++ b/src/main/java/tools/jackson/databind/AnnotationIntrospector.java
+@@ -460,7 +460,6 @@ public abstract class AnnotationIntrospector
+      *
+      * @param config Effective mapper configuration in use
+      * @param ac Class for which type info was resolved
+-     * @param typeInfo Polymorphic type info introspected (usually via {@link #findPolymorphicTypeInfo})
+      * @param assumedBaseType Base type assumed before calling this method (and used
+      *    unless we can detect true base type)
+      *
+@@ -469,7 +468,7 @@ public abstract class AnnotationIntrospector
+      * @since 3.2
+      */
+     public JavaType findPolymorphicBaseType(MapperConfig<?> config,
+-            AnnotatedClass ac, JsonTypeInfo.Value typeInfo, JavaType assumedBaseType) {
++            AnnotatedClass ac, JavaType assumedBaseType) {
+         return null;
+     }
+ 
+diff --git a/src/main/java/tools/jackson/databind/introspect/AnnotationIntrospectorPair.java b/src/main/java/tools/jackson/databind/introspect/AnnotationIntrospectorPair.java
+index 482be2a3d..ed3701935 100644
+--- a/src/main/java/tools/jackson/databind/introspect/AnnotationIntrospectorPair.java
++++ b/src/main/java/tools/jackson/databind/introspect/AnnotationIntrospectorPair.java
+@@ -203,10 +203,10 @@ public class AnnotationIntrospectorPair
+ 
+     @Override // @since 3.2
+     public JavaType findPolymorphicBaseType(MapperConfig<?> config,
+-            AnnotatedClass ac, JsonTypeInfo.Value typeInfo, JavaType assumedBaseType) {
+-        JavaType t = _primary.findPolymorphicBaseType(config, ac, typeInfo, assumedBaseType);
++            AnnotatedClass ac, JavaType assumedBaseType) {
++        JavaType t = _primary.findPolymorphicBaseType(config, ac, assumedBaseType);
+         if (t == null) {
+-            t = _secondary.findPolymorphicBaseType(config, ac, typeInfo, assumedBaseType);
++            t = _secondary.findPolymorphicBaseType(config, ac, assumedBaseType);
+         }
+         return t;
+     }
+diff --git a/src/main/java/tools/jackson/databind/introspect/JacksonAnnotationIntrospector.java b/src/main/java/tools/jackson/databind/introspect/JacksonAnnotationIntrospector.java
+index 51de21c99..c50be3a43 100644
+--- a/src/main/java/tools/jackson/databind/introspect/JacksonAnnotationIntrospector.java
++++ b/src/main/java/tools/jackson/databind/introspect/JacksonAnnotationIntrospector.java
+@@ -645,7 +645,7 @@ public class JacksonAnnotationIntrospector
+ 
+     @Override
+     public JavaType findPolymorphicBaseType(MapperConfig<?> config,
+-            AnnotatedClass ac, JsonTypeInfo.Value typeInfo, JavaType assumedBaseType) {
++            AnnotatedClass ac, JavaType assumedBaseType) {
+         for (JavaType type : ac.getSuperTypes()) {
+             // 23-Mar-2026, tatu: Unusual in that we do not (and can not) use
+             //   `_findAnnotation()` and must resort to direct lookup. This
+diff --git a/src/main/java/tools/jackson/databind/jsontype/TypeResolverProvider.java b/src/main/java/tools/jackson/databind/jsontype/TypeResolverProvider.java
+index da3041a76..d5fdd97fa 100644
+--- a/src/main/java/tools/jackson/databind/jsontype/TypeResolverProvider.java
++++ b/src/main/java/tools/jackson/databind/jsontype/TypeResolverProvider.java
+@@ -312,7 +312,7 @@ Use one of the other inclusion mechanisms (such as `As.PROPERTY` or `As.WRAPPER_
+                     typeInfo = typeInfo.withInclusionType(JsonTypeInfo.As.PROPERTY);
+                 }
+ 
+-                detectedBaseType = ai.findPolymorphicBaseType(config, annotatedClass, typeInfo, baseType);
++                detectedBaseType = ai.findPolymorphicBaseType(config, annotatedClass, baseType);
+             } else {
+             	// when method/field annotated, declared type MUST be intended base type
+             	detectedBaseType = null;
+diff --git a/src/test/java/tools/jackson/databind/introspect/IntrospectorPairTest.java b/src/test/java/tools/jackson/databind/introspect/IntrospectorPairTest.java
+index 882c2045b..dbd459807 100644
+--- a/src/test/java/tools/jackson/databind/introspect/IntrospectorPairTest.java
++++ b/src/test/java/tools/jackson/databind/introspect/IntrospectorPairTest.java
+@@ -181,7 +181,7 @@ public class IntrospectorPairTest extends DatabindTestUtil
+ 
+         @Override
+         public JavaType findPolymorphicBaseType(MapperConfig<?> config,
+-                AnnotatedClass ac, JsonTypeInfo.Value typeInfo, JavaType assumedBaseType) {
++                AnnotatedClass ac, JavaType assumedBaseType) {
+             return (JavaType) values.get("findPolymorphicBaseType");
+         }
+ 
+@@ -923,23 +923,23 @@ public class IntrospectorPairTest extends DatabindTestUtil
+ 
+         // Both null -> null
+         assertNull(new AnnotationIntrospectorPair(NO_ANNOTATIONS, NO_ANNOTATIONS)
+-                .findPolymorphicBaseType(null, null, null, null));
++                .findPolymorphicBaseType(null, null, null));
+ 
+         // Primary wins when both return non-null
+         assertSame(stringType,
+                 new AnnotationIntrospectorPair(intr1, intr2)
+-                        .findPolymorphicBaseType(null, null, null, null));
++                        .findPolymorphicBaseType(null, null, null));
+         assertSame(intType,
+                 new AnnotationIntrospectorPair(intr2, intr1)
+-                        .findPolymorphicBaseType(null, null, null, null));
++                        .findPolymorphicBaseType(null, null, null));
+ 
+         // Falls back to secondary when primary returns null
+         assertSame(intType,
+                 new AnnotationIntrospectorPair(NO_ANNOTATIONS, intr2)
+-                        .findPolymorphicBaseType(null, null, null, null));
++                        .findPolymorphicBaseType(null, null, null));
+         assertSame(stringType,
+                 new AnnotationIntrospectorPair(intr1, NO_ANNOTATIONS)
+-                        .findPolymorphicBaseType(null, null, null, null));
++                        .findPolymorphicBaseType(null, null, null));
+     }
+ 
+     @Test
+diff --git a/src/test/java/tools/jackson/databind/introspect/JacksonAnnotationIntrospectorTest.java b/src/test/java/tools/jackson/databind/introspect/JacksonAnnotationIntrospectorTest.java
+index b2b0b5596..6cdb9e749 100644
+--- a/src/test/java/tools/jackson/databind/introspect/JacksonAnnotationIntrospectorTest.java
++++ b/src/test/java/tools/jackson/databind/introspect/JacksonAnnotationIntrospectorTest.java
+@@ -215,7 +215,7 @@ public class JacksonAnnotationIntrospectorTest
+         // For a direct subclass of an annotated base, should find the base type
+         JavaType subType = mapper.constructType(AnnotatedSub.class);
+         AnnotatedClass ac = AnnotatedClassResolver.resolve(config, subType, config);
+-        JavaType result = intr.findPolymorphicBaseType(config, ac, null, subType);
++        JavaType result = intr.findPolymorphicBaseType(config, ac, subType);
+         assertNotNull(result);
+         assertEquals(AnnotatedBase.class, result.getRawClass());
+     }
+@@ -230,7 +230,7 @@ public class JacksonAnnotationIntrospectorTest
+         // For a sub-sub-class, should still find the annotated ancestor
+         JavaType subSubType = mapper.constructType(AnnotatedSubSub.class);
+         AnnotatedClass ac = AnnotatedClassResolver.resolve(config, subSubType, config);
+-        JavaType result = intr.findPolymorphicBaseType(config, ac, null, subSubType);
++        JavaType result = intr.findPolymorphicBaseType(config, ac, subSubType);
+         assertNotNull(result);
+         // Should find first annotated supertype (AnnotatedBase)
+         assertEquals(AnnotatedBase.class, result.getRawClass());
+@@ -246,7 +246,7 @@ public class JacksonAnnotationIntrospectorTest
+         // No @JsonTypeInfo anywhere in the hierarchy -> null
+         JavaType type = mapper.constructType(UnannotatedSub.class);
+         AnnotatedClass ac = AnnotatedClassResolver.resolve(config, type, config);
+-        JavaType result = intr.findPolymorphicBaseType(config, ac, null, type);
++        JavaType result = intr.findPolymorphicBaseType(config, ac, type);
+         assertNull(result);
+     }
+ 
+@@ -260,7 +260,7 @@ public class JacksonAnnotationIntrospectorTest
+         // Class implementing an annotated interface -> should find the interface
+         JavaType implType = mapper.constructType(ImplOfAnnotatedIface.class);
+         AnnotatedClass ac = AnnotatedClassResolver.resolve(config, implType, config);
+-        JavaType result = intr.findPolymorphicBaseType(config, ac, null, implType);
++        JavaType result = intr.findPolymorphicBaseType(config, ac, implType);
+         assertNotNull(result);
+         assertEquals(AnnotatedIface.class, result.getRawClass());
+     }
+@@ -275,7 +275,7 @@ public class JacksonAnnotationIntrospectorTest
+         // The annotated class itself has no supertypes with @JsonTypeInfo -> null
+         JavaType baseType = mapper.constructType(AnnotatedBase.class);
+         AnnotatedClass ac = AnnotatedClassResolver.resolve(config, baseType, config);
+-        JavaType result = intr.findPolymorphicBaseType(config, ac, null, baseType);
++        JavaType result = intr.findPolymorphicBaseType(config, ac, baseType);
+         assertNull(result);
+     }
+ 

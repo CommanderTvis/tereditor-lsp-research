@@ -7,3 +7,6 @@ commit = "fcd416909db2bea96eb916bcfb2d0a83cb9b86c3"
 loc = 38889
 loc_by_language = { "Java" = 38889 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+status = "curated"
+task_types = ["rename", "rename-file", "inspect", "move", "signature", "refs"]
+pr_fallback = "Assigned PR slots filled by documented synthetic fallback task directories; full project validation remains pending."

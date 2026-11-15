@@ -1,0 +1,1077 @@
+diff --git a/mypy/binder.py b/mypy/binder.py
+index fb35d96b7..6818cbefe 100644
+--- a/mypy/binder.py
++++ b/mypy/binder.py
+@@ -19,7 +19,7 @@ from mypy.nodes import (
+ )
+ from mypy.options import Options
+ from mypy.subtypes import is_same_type, is_subtype
+-from mypy.typeops import make_simplified_union
++from mypy.typeops import simplify_union
+ from mypy.types import (
+     AnyType,
+     Instance,
+@@ -366,7 +366,7 @@ class ConditionalTypeBinder:
+                     # interfere with our (hacky) TypeGuard support.
+                     type = possible_types[0]
+                 else:
+-                    type = make_simplified_union(possible_types)
++                    type = simplify_union(possible_types)
+                     # Legacy guard for corner case when the original type is TypeVarType.
+                     if isinstance(declaration_type, TypeVarType) and not is_subtype(
+                         type, declaration_type
+diff --git a/mypy/checker.py b/mypy/checker.py
+index f03d06d96..f0198d120 100644
+--- a/mypy/checker.py
++++ b/mypy/checker.py
+@@ -249,7 +249,7 @@ from mypy.typeops import (
+     is_literal_type_like,
+     is_singleton_equality_type,
+     is_singleton_identity_type,
+-    make_simplified_union,
++    simplify_union,
+     true_only,
+     try_expanding_sum_type_to_union,
+     try_getting_int_literals_from_type,
+@@ -1005,7 +1005,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+             if isinstance(inner_call, FunctionLike):
+                 outer_type = inner_call
+         elif isinstance(inner_type, UnionType):
+-            union_type = make_simplified_union(inner_type.items)
++            union_type = simplify_union(inner_type.items)
+             if isinstance(union_type, UnionType):
+                 items = []
+                 for item in union_type.items:
+@@ -1234,7 +1234,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+         if isinstance(return_type, AnyType):
+             return AnyType(TypeOfAny.from_another_any, source_any=return_type)
+         elif isinstance(return_type, UnionType):
+-            return make_simplified_union(
++            return simplify_union(
+                 [self.get_generator_yield_type(item, is_coroutine) for item in return_type.items]
+             )
+         elif not self.is_generator_return_type(
+@@ -1268,7 +1268,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+         if isinstance(return_type, AnyType):
+             return AnyType(TypeOfAny.from_another_any, source_any=return_type)
+         elif isinstance(return_type, UnionType):
+-            return make_simplified_union(
++            return simplify_union(
+                 [self.get_generator_receive_type(item, is_coroutine) for item in return_type.items]
+             )
+         elif not self.is_generator_return_type(
+@@ -1311,7 +1311,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+         if isinstance(return_type, AnyType):
+             return AnyType(TypeOfAny.from_another_any, source_any=return_type)
+         elif isinstance(return_type, UnionType):
+-            return make_simplified_union(
++            return simplify_union(
+                 [self.get_generator_return_type(item, is_coroutine) for item in return_type.items]
+             )
+         elif not self.is_generator_return_type(return_type, is_coroutine):
+@@ -2602,7 +2602,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+             raw_items = [self.get_op_other_domain(it) for it in tp.items]
+             items = [it for it in raw_items if it]
+             if items:
+-                return make_simplified_union(items)
++                return simplify_union(items)
+             return None
+         else:
+             assert False, "Need to check all FunctionLike subtypes here"
+@@ -3501,7 +3501,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+                             if not self.current_node_deferred:
+                                 # Partial type can't be final, so strip any literal values.
+                                 rvalue_type = remove_instance_last_known_values(rvalue_type)
+-                                inferred_type = make_simplified_union([rvalue_type, NoneType()])
++                                inferred_type = simplify_union([rvalue_type, NoneType()])
+                                 self.set_inferred_type(var, lvalue, inferred_type)
+                             else:
+                                 var.type = None
+@@ -4352,7 +4352,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+                     # We can access _type_maps directly since temporary type maps are
+                     # only created within expressions.
+                     t.append(self._type_maps[-1].pop(lv, AnyType(TypeOfAny.special_form)))
+-        union_types = tuple(make_simplified_union(col) for col in transposed)
++        union_types = tuple(simplify_union(col) for col in transposed)
+         for expr, items in assignments.items():
+             # Bind a union of types collected in 'assignments' to every expression.
+             if isinstance(expr, StarExpr):
+@@ -4368,8 +4368,8 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+             types, declared_types = zip(*clean_items)
+             self.binder.assign_type(
+                 expr,
+-                make_simplified_union(list(types)),
+-                make_simplified_union(list(declared_types)),
++                simplify_union(list(types)),
++                simplify_union(list(declared_types)),
+             )
+         for union, lv in zip(union_types, self.flatten_lvalues(lvalues)):
+             # Properly store the inferred types.
+@@ -5052,7 +5052,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+                     and not is_proper_subtype(new_inferred, inferred.type)
+                     and self.can_widen_in_scope(lvalue, inferred.type)
+                 ):
+-                    lvalue_type = make_simplified_union([inferred.type, new_inferred])
++                    lvalue_type = simplify_union([inferred.type, new_inferred])
+                     # Widen the type to the union of original and new type.
+                     if not inferred.is_index_var:
+                         # Skip index variables as they are reset on each loop.
+@@ -5670,7 +5670,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+                 else:
+                     new_all_types.append(typ)
+             return self.wrap_exception_group(new_all_types)
+-        return make_simplified_union(all_types)
++        return simplify_union(all_types)
+ 
+     def default_exception_type(self, is_star: bool) -> Type:
+         """Exception type to return in case of a previous type error."""
+@@ -5681,7 +5681,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+ 
+     def wrap_exception_group(self, types: Sequence[Type]) -> Type:
+         """Transform except* variable type into an appropriate exception group."""
+-        arg = make_simplified_union(types)
++        arg = simplify_union(types)
+         if is_subtype(arg, self.named_type("builtins.Exception")):
+             base = "builtins.ExceptionGroup"
+         else:
+@@ -5692,13 +5692,13 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+         """Helper for check_except_handler_test to retrieve handler types."""
+         typ = get_proper_type(typ)
+         if isinstance(typ, TupleType):
+-            merged_type = make_simplified_union(typ.items)
++            merged_type = simplify_union(typ.items)
+             if isinstance(merged_type, UnionType):
+                 return merged_type.relevant_items()
+             return [merged_type]
+         elif is_named_instance(typ, "builtins.tuple"):
+             # variadic tuple
+-            merged_type = make_simplified_union((typ.args[0],))
++            merged_type = simplify_union((typ.args[0],))
+             if isinstance(merged_type, UnionType):
+                 return merged_type.relevant_items()
+             return [merged_type]
+@@ -7142,10 +7142,10 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+                         from_equality=True,
+                     )
+                     if ambiguous_expr_type is not None:
+-                        if_type = make_simplified_union(
++                        if_type = simplify_union(
+                             [if_type or narrowable_expr_type, ambiguous_expr_type]
+                         )
+-                        else_type = make_simplified_union(
++                        else_type = simplify_union(
+                             [else_type or narrowable_expr_type, ambiguous_expr_type]
+                         )
+ 
+@@ -7248,8 +7248,8 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+                             from_equality=True,
+                         )
+                         if ambiguous_expr_type is not None:
+-                            if_type = make_simplified_union([if_type, ambiguous_expr_type])
+-                            else_type = make_simplified_union([else_type, ambiguous_expr_type])
++                            if_type = simplify_union([if_type, ambiguous_expr_type])
++                            else_type = simplify_union([else_type, ambiguous_expr_type])
+ 
+                     if_map, else_map = conditional_types_to_typemaps(
+                         operands[i], if_type, else_type
+@@ -7421,7 +7421,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+                             member_types = [new_parent_type.items[key] for key in str_literals]
+                         except KeyError:
+                             return None
+-                        return make_simplified_union(member_types)
++                        return simplify_union(member_types)
+ 
+                 else:
+                     int_literals = try_getting_int_literals_from_type(index_type)
+@@ -7436,7 +7436,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+                                     ]
+                                 except IndexError:
+                                     return None
+-                                return make_simplified_union(member_types)
++                                return simplify_union(member_types)
+                             if (
+                                 isinstance(new_parent_type, Instance)
+                                 and new_parent_type.type.fullname
+@@ -7484,7 +7484,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+                 return output
+ 
+             expr = parent_expr
+-            expr_type = output[parent_expr] = make_simplified_union(new_parent_types)
++            expr_type = output[parent_expr] = simplify_union(new_parent_types)
+ 
+     def _propagate_walrus_assignments(
+         self, expr: Expression, type_map: dict[Expression, Type]
+@@ -7674,8 +7674,8 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+                 no_types.append(nt)
+             yes_types += other_types
+             no_types += other_types
+-            yes_type = make_simplified_union(yes_types)
+-            no_type = make_simplified_union(no_types)
++            yes_type = simplify_union(yes_types)
++            no_type = simplify_union(no_types)
+             return yes_type, no_type
+         else:
+             assert False, "Unsupported type for len narrowing"
+@@ -8365,7 +8365,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+                 for types, reason in errors:
+                     self.msg.impossible_intersection(types, reason, ctx)
+             return UninhabitedType(), expr_type
+-        new_yes_type = make_simplified_union(out)
++        new_yes_type = simplify_union(out)
+         return new_yes_type, expr_type
+ 
+     def is_writable_attribute(self, node: Node) -> bool:
+@@ -8424,7 +8424,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+ 
+         if isinstance(typ, UnionType):
+             type_ranges = [self.get_type_range_of_type(item) for item in typ.items]
+-            item = make_simplified_union([t.item for t in type_ranges if t is not None])
++            item = simplify_union([t.item for t in type_ranges if t is not None])
+             return TypeRange(item, is_upper_bound=True)
+         if isinstance(typ, FunctionLike) and typ.is_type_obj():
+             # If a type is generic, `isinstance` can only narrow its variables to Any.
+@@ -8531,7 +8531,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+             )
+         if isinstance(typ, UnionType):
+             with_attr, without_attr = self.partition_union_by_attr(typ, name)
+-            return make_simplified_union(
++            return simplify_union(
+                 with_attr + [self.add_any_attribute_to_type(typ, name) for typ in without_attr]
+             )
+         return orig_typ
+@@ -8554,7 +8554,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi, SplittingVisitor):
+         if isinstance(source_type, UnionType):
+             _, without_attr = self.partition_union_by_attr(source_type, name)
+             yes_map = {expr: self.add_any_attribute_to_type(source_type, name)}
+-            return yes_map, {expr: make_simplified_union(without_attr)}
++            return yes_map, {expr: simplify_union(without_attr)}
+ 
+         type_with_attr = self.add_any_attribute_to_type(source_type, name)
+         if type_with_attr != source_type:
+@@ -8847,11 +8847,11 @@ def conditional_types(
+             yes_items.append(yes_type)
+             no_items.append(no_type)
+ 
+-        proposed_type = make_simplified_union(yes_items)
+-        remaining_type = make_simplified_union(no_items)
++        proposed_type = simplify_union(yes_items)
++        remaining_type = simplify_union(no_items)
+         return proposed_type, remaining_type
+ 
+-    proposed_type = make_simplified_union([type_range.item for type_range in proposed_type_ranges])
++    proposed_type = simplify_union([type_range.item for type_range in proposed_type_ranges])
+     items = proposed_type.items if isinstance(proposed_type, UnionType) else [proposed_type]
+     for i in range(len(items)):
+         item = get_proper_type(items[i])
+@@ -9016,7 +9016,7 @@ def builtin_item_type(tp: Type) -> Type | None:
+             else:
+                 normalized_items.append(it)
+         if all(not isinstance(it, AnyType) for it in get_proper_types(normalized_items)):
+-            return make_simplified_union(normalized_items)  # this type is not externally visible
++            return simplify_union(normalized_items)  # this type is not externally visible
+     elif isinstance(tp, TypedDictType):
+         # TypedDict always has non-optional string keys. Find the key type from the Mapping
+         # base class.
+@@ -9096,7 +9096,7 @@ def or_conditional_maps(m1: TypeMap, m2: TypeMap, *, coalesce_any: bool = False)
+                 if coalesce_any and isinstance(get_proper_type(m1[n1]), AnyType):
+                     result[n1] = m1[n1]
+                 else:
+-                    result[n1] = make_simplified_union([m1[n1], m2[n2]])
++                    result[n1] = simplify_union([m1[n1], m2[n2]])
+     return result
+ 
+ 
+diff --git a/mypy/checkexpr.py b/mypy/checkexpr.py
+index 6cdd64e84..a6f7ff256 100644
+--- a/mypy/checkexpr.py
++++ b/mypy/checkexpr.py
+@@ -155,7 +155,7 @@ from mypy.typeops import (
+     get_all_type_vars,
+     get_type_vars,
+     is_literal_type_like,
+-    make_simplified_union,
++    simplify_union,
+     true_only,
+     try_expanding_sum_type_to_union,
+     try_getting_str_literals,
+@@ -642,7 +642,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+             self.check_str_format_call(e)
+         ret_type = get_proper_type(ret_type)
+         if isinstance(ret_type, UnionType):
+-            ret_type = make_simplified_union(ret_type.items)
++            ret_type = simplify_union(ret_type.items)
+         if isinstance(ret_type, UninhabitedType) and not ret_type.ambiguous:
+             self.chk.binder.unreachable()
+         # Warn on calls to functions that always return None. The check
+@@ -1543,7 +1543,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+             res.append(
+                 self.check_call_expr_with_callee_type(narrowed, e, callable_name, item_object_type)
+             )
+-        return make_simplified_union(res)
++        return simplify_union(res)
+ 
+     def check_call(
+         self,
+@@ -2892,7 +2892,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+                     # Union[int -> int, str -> str](Union[int, str]) is invalid and
+                     # we don't want to introduce internal inconsistencies.
+                     unioned_result = (
+-                        make_simplified_union(returns, context.line, context.column),
++                        simplify_union(returns, context.line, context.column),
+                         self.combine_function_signatures(get_proper_types(inferred_types)),
+                     )
+ 
+@@ -3319,7 +3319,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+         # the exact same signature. The only exception is if one arg is optional and
+         # the other is positional (and expect a positional arg).
+         callables, variables = merge_typevars_in_callables_by_name(callables)
+-        union_return = make_simplified_union([c.ret_type for c in callables])
++        union_return = simplify_union([c.ret_type for c in callables])
+         any = AnyType(TypeOfAny.special_form)
+         return callables[0].copy_modified(
+             arg_types=[any, any],
+@@ -3428,7 +3428,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+                 for subtype in callee.relevant_items()
+             ]
+ 
+-        return (make_simplified_union([res[0] for res in results]), callee)
++        return (simplify_union([res[0] for res in results]), callee)
+ 
+     def visit_member_expr(self, e: MemberExpr, is_lvalue: bool = False) -> Type:
+         """Visit member expression (of form e.id)."""
+@@ -4059,7 +4059,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+                 )
+             res.append(item)
+             meth_res.append(meth_item)
+-        return make_simplified_union(res), make_simplified_union(meth_res)
++        return simplify_union(res), simplify_union(meth_res)
+ 
+     def check_method_call(
+         self,
+@@ -4315,8 +4315,8 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+                     all_inferred.append(inferred)
+ 
+             if not local_errors.has_new_errors():
+-                results_final = make_simplified_union(all_results)
+-                inferred_final = make_simplified_union(all_inferred)
++                results_final = simplify_union(all_results)
++                inferred_final = simplify_union(all_inferred)
+                 return results_final, inferred_final
+ 
+             # Step 2: If that fails, we try again but also destructure the right argument.
+@@ -4374,7 +4374,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+             # See the comment in 'check_overload_call' for more details on why
+             # we call 'combine_function_signature' instead of just unioning the inferred
+             # callable types.
+-            results_final = make_simplified_union(all_results)
++            results_final = simplify_union(all_results)
+             inferred_final = self.combine_function_signatures(get_proper_types(all_inferred))
+             return results_final, inferred_final
+         else:
+@@ -4460,7 +4460,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+             # The left operand is always the result
+             return left_type
+         else:
+-            return make_simplified_union([restricted_left_type, right_type])
++            return simplify_union([restricted_left_type, right_type])
+ 
+     def check_list_multiply(self, e: OpExpr) -> Type:
+         """Type check an expression of form '[...] * e'.
+@@ -4556,7 +4556,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+         if isinstance(left_type, UnionType):
+             original_type = original_type or left_type
+             # Don't combine literal types, since we may need them for type narrowing.
+-            return make_simplified_union(
++            return simplify_union(
+                 [
+                     self.visit_index_with_type(typ, e, original_type)
+                     for typ in left_type.relevant_items()
+@@ -4582,7 +4582,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+                             min_len = self.min_tuple_length(left_type)
+                             self.chk.note(f"Variadic tuple can have length {min_len}", e)
+                         return AnyType(TypeOfAny.from_error)
+-                return make_simplified_union(out)
++                return simplify_union(out)
+             else:
+                 return self.nonliteral_tuple_index_helper(left_type, index)
+         elif isinstance(left_type, TypedDictType):
+@@ -4720,7 +4720,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+                 self.chk.fail(message_registry.AMBIGUOUS_SLICE_OF_VARIADIC_TUPLE, slic)
+                 return AnyType(TypeOfAny.from_error)
+             items.append(item)
+-        return make_simplified_union(items)
++        return simplify_union(items)
+ 
+     def try_getting_int_literals(self, index: Expression) -> list[int] | None:
+         """If the given expression or type corresponds to an int literal
+@@ -4785,7 +4785,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+                     raise NotImplementedError
+             else:
+                 items.append(item)
+-        return make_simplified_union(items)
++        return simplify_union(items)
+ 
+     def visit_typeddict_index_expr(
+         self, td_type: TypedDictType, index: Expression, setitem: bool = False
+@@ -4822,7 +4822,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+                 return AnyType(TypeOfAny.from_error), set()
+             else:
+                 value_types.append(value_type)
+-        return make_simplified_union(value_types), set(key_names)
++        return simplify_union(value_types), set(key_names)
+ 
+     def visit_enum_index_expr(
+         self, enum_type: TypeInfo, index: Expression, context: Context
+@@ -6107,7 +6107,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+             elif has_ambiguous_uninhabited_component(ctx_else_type):
+                 ctx = ctx_if_type
+             else:
+-                ctx = make_simplified_union([ctx_if_type, ctx_else_type])
++                ctx = simplify_union([ctx_if_type, ctx_else_type])
+ 
+         if_type = self.analyze_cond_branch(
+             if_map, e.if_expr, context=ctx, allow_none_return=allow_none_return
+@@ -6116,7 +6116,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+             else_map, e.else_expr, context=ctx, allow_none_return=allow_none_return
+         )
+ 
+-        res: Type = make_simplified_union([if_type, else_type])
++        res: Type = simplify_union([if_type, else_type])
+         if has_uninhabited_component(res) and not isinstance(
+             get_proper_type(self.type_context[-1]), UnionType
+         ):
+@@ -6157,7 +6157,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+         if self.type_context and self.type_context[-1] is not None:
+             ctx_items.append(self.type_context[-1])
+         if ctx_items:
+-            return make_simplified_union(ctx_items)
++            return simplify_union(ctx_items)
+         return None
+ 
+     #
+diff --git a/mypy/checkmember.py b/mypy/checkmember.py
+index 3ba99d8e8..214931c57 100644
+--- a/mypy/checkmember.py
++++ b/mypy/checkmember.py
+@@ -48,7 +48,7 @@ from mypy.typeops import (
+     erase_to_bound,
+     freeze_all_type_vars,
+     get_all_type_vars,
+-    make_simplified_union,
++    simplify_union,
+     supported_self_type,
+     tuple_fallback,
+ )
+@@ -266,7 +266,7 @@ def _analyze_member_access(
+     elif isinstance(typ, TypeVarLikeType):
+         if isinstance(typ, TypeVarType) and typ.values:
+             return _analyze_member_access(
+-                name, make_simplified_union(typ.values), mx, override_info
++                name, simplify_union(typ.values), mx, override_info
+             )
+         return _analyze_member_access(name, typ.upper_bound, mx, override_info)
+     elif isinstance(typ, DeletedType):
+@@ -501,7 +501,7 @@ def analyze_union_member_access(name: str, typ: UnionType, mx: MemberContext) ->
+             # Self types should be bound to every individual item of a union.
+             item_mx = mx.copy_modified(self_type=subtype)
+             results.append(_analyze_member_access(name, subtype, item_mx))
+-    return make_simplified_union(results)
++    return simplify_union(results)
+ 
+ 
+ def analyze_none_member_access(name: str, typ: NoneType, mx: MemberContext) -> Type:
+@@ -676,7 +676,7 @@ def analyze_descriptor_access(descriptor_type: Type, mx: MemberContext) -> Type:
+ 
+     if isinstance(descriptor_type, UnionType):
+         # Map the access over union types
+-        return make_simplified_union(
++        return simplify_union(
+             [analyze_descriptor_access(typ, mx) for typ in descriptor_type.items]
+         )
+     elif not isinstance(descriptor_type, Instance):
+diff --git a/mypy/checkpattern.py b/mypy/checkpattern.py
+index 81904bc24..ffd145191 100644
+--- a/mypy/checkpattern.py
++++ b/mypy/checkpattern.py
+@@ -31,7 +31,7 @@ from mypy.plugin import Plugin
+ from mypy.subtypes import is_subtype
+ from mypy.typeops import (
+     coerce_to_literal,
+-    make_simplified_union,
++    simplify_union,
+     try_getting_str_literals_from_type,
+     tuple_fallback,
+ )
+@@ -194,11 +194,11 @@ class PatternChecker(PatternVisitor[PatternType]):
+         for capture_list in capture_types.values():
+             typ = UninhabitedType()
+             for _, other in capture_list:
+-                typ = make_simplified_union([typ, other])
++                typ = simplify_union([typ, other])
+ 
+             captures[capture_list[0][0]] = typ
+ 
+-        union_type = make_simplified_union(types)
++        union_type = simplify_union(types)
+         return PatternType(union_type, current_type, captures)
+ 
+     def visit_value_pattern(self, o: ValuePattern) -> PatternType:
+@@ -283,9 +283,9 @@ class PatternChecker(PatternVisitor[PatternType]):
+                         captures_list[expr].append(typ)
+ 
+             return PatternType(
+-                make_simplified_union(match_types),
+-                make_simplified_union(rest_types),
+-                {expr: make_simplified_union(types) for expr, types in captures_list.items()},
++                simplify_union(match_types),
++                simplify_union(rest_types),
++                {expr: simplify_union(types) for expr, types in captures_list.items()},
+             )
+ 
+         #
+@@ -438,13 +438,13 @@ class PatternChecker(PatternVisitor[PatternType]):
+                     new_middle.append(unpacked.args[0])
+                 else:
+                     new_middle.append(m)
+-            return list(prefix) + [make_simplified_union(new_middle)] + list(suffix)
++            return list(prefix) + [simplify_union(new_middle)] + list(suffix)
+         else:
+             if star_pos is None:
+                 return types
+             new_types = types[:star_pos]
+             star_length = len(types) - num_required_patterns
+-            new_types.append(make_simplified_union(types[star_pos : star_pos + star_length]))
++            new_types.append(simplify_union(types[star_pos : star_pos + star_length]))
+             new_types += types[star_pos + star_length :]
+             return new_types
+ 
+@@ -603,7 +603,7 @@ class PatternChecker(PatternVisitor[PatternType]):
+                 if not is_uninhabited(pattern_type.type):
+                     return PatternType(
+                         pattern_type.type,
+-                        make_simplified_union([rest_type, pattern_type.rest_type]),
++                        simplify_union([rest_type, pattern_type.rest_type]),
+                         pattern_type.captures,
+                     )
+                 captures = pattern_type.captures
+@@ -830,7 +830,7 @@ class PatternChecker(PatternVisitor[PatternType]):
+                 for item in proper_type.items
+                 if self.can_match_sequence(get_proper_type(item))
+             ]
+-            return make_simplified_union(types)
++            return simplify_union(types)
+         sequence = self.chk.named_generic_type("typing.Sequence", [inner_type])
+         if is_subtype(outer_type, self.chk.named_type("typing.Sequence")):
+             if isinstance(proper_type, TupleType):
+diff --git a/mypy/constraints.py b/mypy/constraints.py
+index 52bbd0ed0..4ad89e2d0 100644
+--- a/mypy/constraints.py
++++ b/mypy/constraints.py
+@@ -335,9 +335,9 @@ def _infer_constraints(
+     # We however keep any ErasedType items, so that the caller will see it when using
+     # checkexpr.has_erased_component().
+     if not type_state.keep_unions and isinstance(template, UnionType):
+-        template = mypy.typeops.make_simplified_union(template.items, keep_erased=True)
++        template = mypy.typeops.simplify_union(template.items, keep_erased=True)
+     if not type_state.keep_unions and isinstance(actual, UnionType):
+-        actual = mypy.typeops.make_simplified_union(actual.items, keep_erased=True)
++        actual = mypy.typeops.simplify_union(actual.items, keep_erased=True)
+ 
+     # Ignore Any types from the type suggestion engine to avoid them
+     # causing us to infer Any in situations where a better job could
+diff --git a/mypy/erasetype.py b/mypy/erasetype.py
+index cb8d66f29..ce96fa2c9 100644
+--- a/mypy/erasetype.py
++++ b/mypy/erasetype.py
+@@ -129,9 +129,9 @@ class EraseTypeVisitor(TypeVisitor[ProperType]):
+ 
+     def visit_union_type(self, t: UnionType) -> ProperType:
+         erased_items = [erase_type(item) for item in t.items]
+-        from mypy.typeops import make_simplified_union
++        from mypy.typeops import simplify_union
+ 
+-        return make_simplified_union(erased_items)
++        return simplify_union(erased_items)
+ 
+     def visit_type_type(self, t: TypeType) -> ProperType:
+         return TypeType.make_normalized(
+@@ -256,7 +256,7 @@ class LastKnownValueEraser(TypeTranslator):
+     def visit_union_type(self, t: UnionType) -> Type:
+         new = cast(UnionType, super().visit_union_type(t))
+         # Erasure can result in many duplicate items; merge them.
+-        # Call make_simplified_union only on lists of instance types
++        # Call simplify_union only on lists of instance types
+         # that all have the same fullname, to avoid simplifying too
+         # much.
+         instances = [item for item in new.items if isinstance(get_proper_type(item), Instance)]
+@@ -277,9 +277,9 @@ class LastKnownValueEraser(TypeTranslator):
+                         if len(types) == 1:
+                             merged.append(item)
+                         else:
+-                            from mypy.typeops import make_simplified_union
++                            from mypy.typeops import simplify_union
+ 
+-                            merged.append(make_simplified_union(types))
++                            merged.append(simplify_union(types))
+                             del instances_by_name[item.type.fullname]
+                 else:
+                     merged.append(orig_item)
+diff --git a/mypy/expandtype.py b/mypy/expandtype.py
+index fd507216a..b439ddfee 100644
+--- a/mypy/expandtype.py
++++ b/mypy/expandtype.py
+@@ -575,7 +575,7 @@ class ExpandTypeVisitor(TrivialSyntheticTypeTranslator):
+ 
+         expanded = self.expand_types(t.items)
+         # After substituting for type variables in t.items, some resulting types
+-        # might be subtypes of others, however calling  make_simplified_union()
++        # might be subtypes of others, however calling  simplify_union()
+         # can cause recursion, so we just remove strict duplicates.
+         simplified = UnionType.make_union(
+             remove_trivial(flatten_nested_unions(expanded)), t.line, t.column
+diff --git a/mypy/join.py b/mypy/join.py
+index c609b303b..8d8853259 100644
+--- a/mypy/join.py
++++ b/mypy/join.py
+@@ -272,7 +272,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
+         if is_proper_subtype(self.s, t):
+             return t
+         else:
+-            return mypy.typeops.make_simplified_union([self.s, t])
++            return mypy.typeops.simplify_union([self.s, t])
+ 
+     def visit_any(self, t: AnyType) -> ProperType:
+         return t
+@@ -284,7 +284,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
+             elif isinstance(self.s, (UnboundType, AnyType)):
+                 return AnyType(TypeOfAny.special_form)
+             else:
+-                return mypy.typeops.make_simplified_union([self.s, t])
++                return mypy.typeops.simplify_union([self.s, t])
+         else:
+             return self.s
+ 
+@@ -676,7 +676,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
+             if t == self.s:
+                 return t
+             if self.s.fallback.type.is_enum and t.fallback.type.is_enum:
+-                return mypy.typeops.make_simplified_union([self.s, t])
++                return mypy.typeops.simplify_union([self.s, t])
+             return join_types(self.s.fallback, t.fallback)
+         elif isinstance(self.s, Instance) and self.s.last_known_value == t:
+             return t
+diff --git a/mypy/meet.py b/mypy/meet.py
+index bfc6d88a1..494df454d 100644
+--- a/mypy/meet.py
++++ b/mypy/meet.py
+@@ -15,7 +15,7 @@ from mypy.subtypes import (
+     is_same_type,
+     is_subtype,
+ )
+-from mypy.typeops import is_recursive_pair, make_simplified_union, tuple_fallback
++from mypy.typeops import is_recursive_pair, simplify_union, tuple_fallback
+ from mypy.types import (
+     MYPYC_NATIVE_INT_NAMES,
+     TUPLE_LIKE_INSTANCE_NAMES,
+@@ -137,7 +137,7 @@ def narrow_declared_type(declared: Type, narrowed: Type) -> Type:
+             narrowed_items = narrowed.relevant_items()
+         else:
+             narrowed_items = [narrowed]
+-        return make_simplified_union(
++        return simplify_union(
+             [
+                 narrow_declared_type(d, n)
+                 for d in declared_items
+@@ -161,7 +161,7 @@ def narrow_declared_type(declared: Type, narrowed: Type) -> Type:
+         # Quick check before reaching `is_overlapping_types`. If it's enum/literal overlap,
+         # avoid full expansion and make it faster.
+         assert isinstance(narrowed, UnionType)
+-        return make_simplified_union(
++        return simplify_union(
+             [narrow_declared_type(declared, x) for x in narrowed.relevant_items()]
+         )
+     elif (
+@@ -189,7 +189,7 @@ def narrow_declared_type(declared: Type, narrowed: Type) -> Type:
+         else:
+             return NoneType()
+     elif isinstance(narrowed, UnionType):
+-        return make_simplified_union(
++        return simplify_union(
+             [narrow_declared_type(declared, x) for x in narrowed.relevant_items()]
+         )
+     elif isinstance(narrowed, AnyType):
+@@ -806,7 +806,7 @@ class TypeMeetVisitor(TypeVisitor[ProperType]):
+                     meets.append(meet_types(x, y))
+         else:
+             meets = [meet_types(x, self.s) for x in t.items]
+-        return make_simplified_union(meets)
++        return simplify_union(meets)
+ 
+     def visit_none_type(self, t: NoneType) -> ProperType:
+         if state.strict_optional:
+diff --git a/mypy/messages.py b/mypy/messages.py
+index b58c9e7ac..7a67124aa 100644
+--- a/mypy/messages.py
++++ b/mypy/messages.py
+@@ -2594,13 +2594,13 @@ class MessageBuilder:
+             self.fail(*error_info[:2], code=error_info[2])
+         for nonoverlaps, kind, context in iter_errors.yield_nonoverlapping_types():
+             self.dangerous_comparison(
+-                mypy.typeops.make_simplified_union(nonoverlaps[0]),
+-                mypy.typeops.make_simplified_union(nonoverlaps[1]),
++                mypy.typeops.simplify_union(nonoverlaps[0]),
++                mypy.typeops.simplify_union(nonoverlaps[1]),
+                 kind,
+                 context,
+             )
+         for types, context in iter_errors.yield_revealed_type_infos():
+-            self.reveal_type(mypy.typeops.make_simplified_union(types), context)
++            self.reveal_type(mypy.typeops.simplify_union(types), context)
+ 
+ 
+ def quote_type_string(type_string: str) -> str:
+diff --git a/mypy/plugins/attrs.py b/mypy/plugins/attrs.py
+index 1593c73cd..a2af0b806 100644
+--- a/mypy/plugins/attrs.py
++++ b/mypy/plugins/attrs.py
+@@ -58,7 +58,7 @@ from mypy.server.trigger import make_wildcard_trigger
+ from mypy.state import state
+ from mypy.typeops import (
+     get_type_vars,
+-    make_simplified_union,
++    simplify_union,
+     map_type_from_supertype,
+     type_object_type,
+ )
+@@ -784,7 +784,7 @@ def _parse_converter(
+             types.append(item.arg_types[0])
+         # Make a union of all the valid types.
+         if types:
+-            converter_info.init_type = make_simplified_union(types)
++            converter_info.init_type = simplify_union(types)
+ 
+     if is_attr_converters_optional and converter_info.init_type:
+         # If the converter was attr.converter.optional(type) then add None to
+diff --git a/mypy/plugins/ctypes.py b/mypy/plugins/ctypes.py
+index b6dbec13c..4e44825ae 100644
+--- a/mypy/plugins/ctypes.py
++++ b/mypy/plugins/ctypes.py
+@@ -8,7 +8,7 @@ from mypy import nodes
+ from mypy.maptype import map_instance_to_supertype
+ from mypy.messages import format_type
+ from mypy.subtypes import is_subtype
+-from mypy.typeops import make_simplified_union
++from mypy.typeops import simplify_union
+ from mypy.types import (
+     AnyType,
+     CallableType,
+@@ -72,7 +72,7 @@ def _autoconvertible_to_cdata(tp: Type, api: mypy.plugin.CheckerPluginInterface)
+                     allowed_types.append(api.named_generic_type("builtins.int", []))
+                     allowed_types.append(NoneType())
+ 
+-    return make_simplified_union(allowed_types)
++    return simplify_union(allowed_types)
+ 
+ 
+ def _autounboxed_cdata(tp: Type) -> ProperType:
+@@ -85,7 +85,7 @@ def _autounboxed_cdata(tp: Type) -> ProperType:
+     tp = get_proper_type(tp)
+ 
+     if isinstance(tp, UnionType):
+-        return make_simplified_union([_autounboxed_cdata(t) for t in tp.items])
++        return simplify_union([_autounboxed_cdata(t) for t in tp.items])
+     elif isinstance(tp, Instance):
+         for base in tp.type.bases:
+             if base.type.fullname == "_ctypes._SimpleCData":
+@@ -218,7 +218,7 @@ def array_value_callback(ctx: mypy.plugin.AttributeContext) -> Type:
+                     ),
+                     ctx.context,
+                 )
+-        return make_simplified_union(types)
++        return simplify_union(types)
+     return ctx.default_attr_type
+ 
+ 
+@@ -241,5 +241,5 @@ def array_raw_callback(ctx: mypy.plugin.AttributeContext) -> Type:
+                     ' with element type "c_char", not {}'.format(format_type(et, ctx.api.options)),
+                     ctx.context,
+                 )
+-        return make_simplified_union(types)
++        return simplify_union(types)
+     return ctx.default_attr_type
+diff --git a/mypy/plugins/default.py b/mypy/plugins/default.py
+index 67352a05e..bc23dff7c 100644
+--- a/mypy/plugins/default.py
++++ b/mypy/plugins/default.py
+@@ -62,7 +62,7 @@ from mypy.plugins.singledispatch import (
+     singledispatch_register_callback,
+ )
+ from mypy.subtypes import is_subtype
+-from mypy.typeops import is_literal_type_like, make_simplified_union
++from mypy.typeops import is_literal_type_like, simplify_union
+ from mypy.types import (
+     TPDICT_FB_NAMES,
+     AnyType,
+@@ -260,7 +260,7 @@ def typed_dict_get_signature_callback(ctx: MethodSigContext) -> CallableType:
+             tv = signature.variables[0]
+             assert isinstance(tv, TypeVarType)
+             return signature.copy_modified(
+-                arg_types=[signature.arg_types[0], make_simplified_union([value_type, tv])],
++                arg_types=[signature.arg_types[0], simplify_union([value_type, tv])],
+                 ret_type=ret_type,
+             )
+     return signature
+@@ -312,7 +312,7 @@ def typed_dict_get_callback(ctx: MethodContext) -> Type:
+         # for nicer reveal_type, put default at the end, if it is present
+         if default_type in output_types:
+             output_types = [t for t in output_types if t != default_type] + [default_type]
+-        return make_simplified_union(output_types)
++        return simplify_union(output_types)
+     return ctx.default_return_type
+ 
+ 
+@@ -341,7 +341,7 @@ def typed_dict_pop_signature_callback(ctx: MethodSigContext) -> CallableType:
+             # variable that accepts everything.
+             tv = signature.variables[0]
+             assert isinstance(tv, TypeVarType)
+-            typ = make_simplified_union([value_type, tv])
++            typ = simplify_union([value_type, tv])
+             return signature.copy_modified(arg_types=[str_type, typ], ret_type=typ)
+     return signature.copy_modified(arg_types=[str_type, signature.arg_types[1]])
+ 
+@@ -376,9 +376,9 @@ def typed_dict_pop_callback(ctx: MethodContext) -> Type:
+                 return AnyType(TypeOfAny.from_error)
+ 
+         if len(ctx.args[1]) == 0:
+-            return make_simplified_union(value_types)
++            return simplify_union(value_types)
+         elif len(ctx.arg_types) == 2 and len(ctx.arg_types[1]) == 1 and len(ctx.args[1]) == 1:
+-            return make_simplified_union([*value_types, ctx.arg_types[1][0]])
++            return simplify_union([*value_types, ctx.arg_types[1][0]])
+     return ctx.default_return_type
+ 
+ 
+@@ -450,7 +450,7 @@ def typed_dict_setdefault_callback(ctx: MethodContext) -> Type:
+ 
+             value_types.append(value_type)
+ 
+-        return make_simplified_union(value_types)
++        return simplify_union(value_types)
+     return ctx.default_return_type
+ 
+ 
+@@ -529,7 +529,7 @@ def typed_dict_update_signature_callback(ctx: MethodSigContext) -> CallableType:
+                     item = item.copy_modified(item_names=list(td.items))
+                 items.append(item)
+             if items:
+-                arg_type = make_simplified_union(items)
++                arg_type = simplify_union(items)
+         return signature.copy_modified(arg_types=[arg_type])
+     return signature
+ 
+diff --git a/mypy/plugins/enums.py b/mypy/plugins/enums.py
+index 387fdb869..e094b8b49 100644
+--- a/mypy/plugins/enums.py
++++ b/mypy/plugins/enums.py
+@@ -20,7 +20,7 @@ import mypy.plugin  # To avoid circular imports.
+ from mypy.checker_shared import TypeCheckerSharedApi
+ from mypy.nodes import TypeInfo, Var
+ from mypy.subtypes import is_equivalent
+-from mypy.typeops import fixup_partial_type, make_simplified_union
++from mypy.typeops import fixup_partial_type, simplify_union
+ from mypy.types import (
+     ELLIPSIS_TYPE_NAMES,
+     CallableType,
+@@ -247,7 +247,7 @@ def enum_value_callback(ctx: mypy.plugin.AttributeContext) -> Type:
+                 for proper_type in proper_types
+             )
+             if all_equivalent_types:
+-                return make_simplified_union(cast(Sequence[Type], proper_types))
++                return simplify_union(cast(Sequence[Type], proper_types))
+         return ctx.default_attr_type
+ 
+     assert isinstance(ctx.type, Instance)
+diff --git a/mypy/semanal_shared.py b/mypy/semanal_shared.py
+index f4ec7eb2c..53c831893 100644
+--- a/mypy/semanal_shared.py
++++ b/mypy/semanal_shared.py
+@@ -30,7 +30,7 @@ from mypy.nodes import (
+ from mypy.plugin import SemanticAnalyzerPluginInterface
+ from mypy.tvar_scope import TypeVarLikeScope
+ from mypy.type_visitor import ANY_STRATEGY, BoolTypeQuery
+-from mypy.typeops import make_simplified_union
++from mypy.typeops import simplify_union
+ from mypy.types import (
+     TPDICT_FB_NAMES,
+     AnyType,
+@@ -313,7 +313,7 @@ def calculate_tuple_fallback(typ: TupleType) -> None:
+                 items.append(AnyType(TypeOfAny.from_error))
+         else:
+             items.append(item)
+-    fallback.args = (make_simplified_union(items),)
++    fallback.args = (simplify_union(items),)
+ 
+ 
+ class _NamedTypeCallback(Protocol):
+diff --git a/mypy/stubtest.py b/mypy/stubtest.py
+index d4c530ff9..e820226dc 100644
+--- a/mypy/stubtest.py
++++ b/mypy/stubtest.py
+@@ -1067,7 +1067,7 @@ class Signature(Generic[T]):
+                 all_types = [
+                     arg.variable.type or arg.type_annotation for arg, _ in all_args[arg_name]
+                 ]
+-                return mypy.typeops.make_simplified_union([t for t in all_types if t])
++                return mypy.typeops.simplify_union([t for t in all_types if t])
+ 
+         def get_kind(arg_name: str) -> nodes.ArgKind:
+             kinds = {arg.kind for arg, _ in all_args[arg_name]}
+diff --git a/mypy/subtypes.py b/mypy/subtypes.py
+index b774aa4e8..b1f2dd814 100644
+--- a/mypy/subtypes.py
++++ b/mypy/subtypes.py
+@@ -2261,8 +2261,8 @@ def union_function_signatures(
+         new_returns.append(target.ret_type)
+ 
+     if simplify_unions:
+-        arg_types = [mypy.typeops.make_simplified_union(args) for args in new_args]
+-        ret_type = mypy.typeops.make_simplified_union(new_returns)
++        arg_types = [mypy.typeops.simplify_union(args) for args in new_args]
++        ret_type = mypy.typeops.simplify_union(new_returns)
+     else:
+         arg_types = [UnionType.make_union(args) for args in new_args]
+         ret_type = UnionType.make_union(new_returns)
+diff --git a/mypy/suggestions.py b/mypy/suggestions.py
+index 39a220e34..893182fb3 100644
+--- a/mypy/suggestions.py
++++ b/mypy/suggestions.py
+@@ -60,7 +60,7 @@ from mypy.plugin import FunctionContext, MethodContext, Plugin
+ from mypy.server.update import FineGrainedBuildManager
+ from mypy.state import state
+ from mypy.traverser import TraverserVisitor
+-from mypy.typeops import bind_self, make_simplified_union
++from mypy.typeops import bind_self, simplify_union
+ from mypy.types import (
+     AnyType,
+     CallableType,
+@@ -940,7 +940,7 @@ def generate_type_combinations(types: list[Type]) -> list[Type]:
+     and unioning the types. We try both.
+     """
+     joined_type = join_type_list(types)
+-    union_type = make_simplified_union(types)
++    union_type = simplify_union(types)
+     if joined_type == union_type:
+         return [joined_type]
+     else:
+@@ -1034,7 +1034,7 @@ def refine_union(t: UnionType, s: ProperType) -> Type:
+     # Turn strict optional on when simplifying the union since we
+     # don't want to drop Nones.
+     with state.strict_optional_set(True):
+-        return make_simplified_union(new_items)
++        return simplify_union(new_items)
+ 
+ 
+ def refine_callable(t: CallableType, s: CallableType) -> CallableType:
+diff --git a/mypy/test/testtypes.py b/mypy/test/testtypes.py
+index b287e82b3..4a67f2384 100644
+--- a/mypy/test/testtypes.py
++++ b/mypy/test/testtypes.py
+@@ -31,7 +31,7 @@ from mypy.state import state
+ from mypy.subtypes import is_more_precise, is_proper_subtype, is_same_type, is_subtype
+ from mypy.test.helpers import Suite, assert_equal, assert_type, skip
+ from mypy.test.typefixture import InterfaceTypeFixture, TypeFixture
+-from mypy.typeops import false_only, make_simplified_union, true_only
++from mypy.typeops import false_only, simplify_union, true_only
+ from mypy.types import (
+     LITERAL_TYPE,
+     AnyType,
+@@ -683,8 +683,8 @@ class TypeOpsSuite(Suite):
+         self.assert_simplified_union([fx.lit_str1, fx.lit_str1, fx.lit_str1_inst], fx.lit_str1)
+ 
+     def assert_simplified_union(self, original: list[Type], union: Type) -> None:
+-        assert_equal(make_simplified_union(original), union)
+-        assert_equal(make_simplified_union(list(reversed(original))), union)
++        assert_equal(simplify_union(original), union)
++        assert_equal(simplify_union(list(reversed(original))), union)
+ 
+     def test_generic_callable_overlap_is_symmetric(self) -> None:
+         any_type = AnyType(TypeOfAny.from_omitted_generics)
+@@ -855,10 +855,10 @@ class JoinSuite(Suite):
+             self.assert_join(t, self.fx.anyt, self.fx.anyt)
+ 
+     def test_mixed_truth_restricted_type_simple(self) -> None:
+-        # make_simplified_union against differently restricted truthiness types drops restrictions.
++        # simplify_union against differently restricted truthiness types drops restrictions.
+         true_a = true_only(self.fx.a)
+         false_o = false_only(self.fx.o)
+-        u = make_simplified_union([true_a, false_o])
++        u = simplify_union([true_a, false_o])
+         assert u.can_be_true
+         assert u.can_be_false
+ 
+diff --git a/mypy/typeops.py b/mypy/typeops.py
+index 8453da4dd..5757c1d3b 100644
+--- a/mypy/typeops.py
++++ b/mypy/typeops.py
+@@ -127,7 +127,7 @@ def tuple_fallback(typ: TupleType) -> Instance:
+         info,
+         # Note: flattening recursive unions is dangerous, since it can fool recursive
+         # types optimization in subtypes.py and go into infinite recursion.
+-        [make_simplified_union(items, handle_recursive=False)],
++        [simplify_union(items, handle_recursive=False)],
+         extra_attrs=typ.partial_fallback.extra_attrs,
+     )
+ 
+@@ -603,7 +603,7 @@ def is_simple_literal(t: ProperType) -> bool:
+     return False
+ 
+ 
+-def make_simplified_union(
++def simplify_union(
+     items: Sequence[Type],
+     line: int = -1,
+     column: int = -1,
+@@ -804,7 +804,7 @@ def true_only(t: Type) -> ProperType:
+         # The true version of a union type is the union of the true versions of its components
+         new_items = [true_only(item) for item in t.items]
+         can_be_true_items = [item for item in new_items if item.can_be_true]
+-        return make_simplified_union(can_be_true_items, line=t.line, column=t.column)
++        return simplify_union(can_be_true_items, line=t.line, column=t.column)
+     else:
+         ret_type = _get_type_method_ret_type(t, name="__bool__") or _get_type_method_ret_type(
+             t, name="__len__"
+@@ -839,7 +839,7 @@ def false_only(t: Type) -> ProperType:
+         # The false version of a union type is the union of the false versions of its components
+         new_items = [false_only(item) for item in t.items]
+         can_be_false_items = [item for item in new_items if item.can_be_false]
+-        return make_simplified_union(can_be_false_items, line=t.line, column=t.column)
++        return simplify_union(can_be_false_items, line=t.line, column=t.column)
+     elif isinstance(t, Instance) and t.type.fullname in ("builtins.str", "builtins.bytes"):
+         return LiteralType("", fallback=t)
+     elif isinstance(t, Instance) and t.type.fullname == "builtins.int":
+@@ -871,7 +871,7 @@ def true_or_false(t: Type) -> ProperType:
+ 
+     if isinstance(t, UnionType):
+         new_items = [true_or_false(item) for item in t.items]
+-        return make_simplified_union(new_items, line=t.line, column=t.column)
++        return simplify_union(new_items, line=t.line, column=t.column)
+ 
+     new_t = copy_type(t)
+     new_t.can_be_true = new_t.can_be_true_default()
+@@ -884,14 +884,14 @@ def erase_def_to_union_or_bound(tdef: TypeVarLikeType) -> Type:
+     if isinstance(tdef, ParamSpecType):
+         return AnyType(TypeOfAny.from_error)
+     if isinstance(tdef, TypeVarType) and tdef.values:
+-        return make_simplified_union(tdef.values)
++        return simplify_union(tdef.values)
+     else:
+         return tdef.upper_bound
+ 
+ 
+ def erase_to_union_or_bound(typ: TypeVarType) -> ProperType:
+     if typ.values:
+-        return make_simplified_union(typ.values)
++        return simplify_union(typ.values)
+     else:
+         return get_proper_type(typ.upper_bound)
+ 

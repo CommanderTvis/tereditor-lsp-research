@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic, which definition runs for a call resolved through the inheritance chain; fills a pr place (tasks/typescript-xlarge/pr-log.md)"
+symbol = "super.setAttribute at packages/platform-browser/src/dom/dom_renderer.ts:734"
+selection = "Calls `super.m(...)` inside methods of classes in non-test files under packages/**/src where the immediate base class does not declare m, so the definition that runs lies at least two classes up (syntactic scan with the TypeScript compiler API, base classes resolved by unique simple name); 4 candidates, sorted by call site, seeded shuffle awk srand(20261110), first taken."

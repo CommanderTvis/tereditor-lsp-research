@@ -1,0 +1,6 @@
+type = "move"
+origin = "synthetic: move a function into another sourced file (devrig move)"
+symbol = "bats_setup_tracing"
+from = "lib/bats-core/tracing.bash"
+to = "lib/bats-core/setup_tracing.bash"
+selection = "Candidates: functions defined exactly once at top level in lib/bats-core/*.bash and used (non-comment lines, word match) in at least 2 files other than the defining one among bin/, lib/, libexec/ (tests not counted); 18 candidates, sorted by name, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk), first taken: bats_setup_tracing. Destination: a new file lib/bats-core/<name without the bats_ prefix>.bash; the old file may neither define it nor source the new file. Selection script: fn-index over bin/ lib/ libexec/ at the pinned commit."

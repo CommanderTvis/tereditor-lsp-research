@@ -1,0 +1,12 @@
+diff --git a/study-fallback/angular-pr-2.ts b/study-fallback/angular-pr-2.ts
+new file mode 100644
+--- /dev/null
++++ b/study-fallback/angular-pr-2.ts
+@@ -0,0 +1,8 @@
++/** Deterministic fallback artifact for the empty Angular PR candidate set. */
++export function angularStudyFallback2(value: string): string {
++  return value.trim();
++}
++
++export const angularStudyFallback2Description =
++  "No qualifying issue-linked merged PR was available for this xlarge snapshot.";

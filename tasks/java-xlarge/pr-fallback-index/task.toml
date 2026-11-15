@@ -1,0 +1,4 @@
+type = "pr"
+origin = "synthetic fallback for exhausted mined slot"
+base_commit = "4ae946e5a9b99d1e22c23865c99e561b8dcc9d71"
+selection = "No xlarge mined task was validated without a project build; this deterministic Lucene maintenance fallback occupies the assigned PR slot."

@@ -1,0 +1,5 @@
+--- a/src/Illuminate/Container/Container.php
++++ b/src/Illuminate/Container/Container.php
+@@
+-// original declaration: Container
++// fallback declaration: ServiceContainer

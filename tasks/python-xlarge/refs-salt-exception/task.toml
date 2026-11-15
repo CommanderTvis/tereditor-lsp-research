@@ -1,0 +1,4 @@
+type = "refs"
+origin = "synthetic, exhaustive source references"
+symbol = "salt.exceptions.SaltException"
+selection = "Public exception classes imported and used across the salt source tree; SaltException was selected by seeded shuffle Random(20261110). The oracle includes resolved imports and constructor/raise references in Python source, excluding its definition, comments, strings and unrelated same-name bindings."

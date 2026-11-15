@@ -1,11 +1,13 @@
-# csharp, large: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# csharp, large: Jellyfin. Mined candidates were not validated in the available run; all PR slots use documented
+# synthetic fallbacks (tasks/csharp-large/).
 lang = "csharp"
 size = "large"
-status = "stub"
+status = "curated"
 repo = "https://github.com/jellyfin/jellyfin"
 tag = "v12.4"
 commit = "83d0d0e7f76e23e2e085c8ff67d28b772d35967d"
 loc = 254851
 loc_by_language = { "C#" = 254851 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["rename", "rename-file", "callers", "pr", "pr", "pr"]
+substitutions = ["two unavailable mined slots use explicit `pr-fallback-2` and `pr-fallback-3`; the real pr-6422 task and three original synthetic tasks are preserved"]

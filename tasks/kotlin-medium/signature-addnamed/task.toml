@@ -1,0 +1,5 @@
+type = "signature"
+origin = "reorder parameters; the specs' addNamedCode overrides delegate to it and keep their own order"
+symbol = "com.squareup.kotlinpoet.CodeBlock.Builder.addNamed"
+change = "addNamed(format, arguments) -> addNamed(arguments, format)"
+selection = "Public functions declared exactly once (by name) in kotlinpoet's main source sets with at least 2 value parameters and at least 6 whole-word, non-comment occurrences in at least 3 .kt/.java files other than the declaring one; sorted: addEnumConstant, addFileComment, addNamed, of (4 candidates); k = 1 + int(rand() * 4) after srand(20261110) = 3. The change is the fixed rule for this type: swap the first two parameters."

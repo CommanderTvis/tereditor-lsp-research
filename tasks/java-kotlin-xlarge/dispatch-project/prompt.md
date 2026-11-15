@@ -1,0 +1,1 @@
+For the specified Gradle call through `org.gradle.api.Project`, identify the concrete implementation that executes at runtime for the pinned call site. Write the fully qualified implementation name to `ANSWER.txt`, one name per line, excluding interfaces and generated code.

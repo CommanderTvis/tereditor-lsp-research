@@ -1,0 +1,93 @@
+diff --git a/include/fmt/base.h b/include/fmt/base.h
+index 9df28341..f0ce0d25 100644
+--- a/include/fmt/base.h
++++ b/include/fmt/base.h
+@@ -1292,7 +1292,7 @@ FMT_CONSTEXPR auto code_point_length(const Char* begin) -> int {
+ // Parses the range [begin, end) as an unsigned integer. This function assumes
+ // that the range is non-empty and the first character is a digit.
+ template <typename Char>
+-FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
++FMT_CONSTEXPR auto parse_nonnegative_int(const Char* end, const Char*& begin,
+                                          int error_value) noexcept -> int {
+   FMT_ASSERT(begin != end && '0' <= *begin && *begin <= '9', "");
+   unsigned value = 0, prev = 0;
+@@ -1334,7 +1334,7 @@ FMT_CONSTEXPR auto parse_arg_id(const Char* begin, const Char* end,
+   if (c >= '0' && c <= '9') {
+     int index = 0;
+     if (c != '0')
+-      index = parse_nonnegative_int(begin, end, INT_MAX);
++      index = parse_nonnegative_int(end, begin, INT_MAX);
+     else
+       ++begin;
+     if (begin == end || (*begin != '}' && *begin != ':'))
+@@ -1387,7 +1387,7 @@ FMT_CONSTEXPR auto parse_dynamic_spec(const Char* begin, const Char* end,
+   FMT_ASSERT(begin != end, "");
+   auto kind = arg_id_kind::none;
+   if ('0' <= *begin && *begin <= '9') {
+-    int val = parse_nonnegative_int(begin, end, -1);
++    int val = parse_nonnegative_int(end, begin, -1);
+     if (val == -1) report_error("number is too big");
+     value = val;
+   } else {
+diff --git a/include/fmt/printf.h b/include/fmt/printf.h
+index 8d792fbd..325f865c 100644
+--- a/include/fmt/printf.h
++++ b/include/fmt/printf.h
+@@ -335,7 +335,7 @@ auto parse_header(const Char*& it, const Char* end, format_specs& specs,
+   if (c >= '0' && c <= '9') {
+     // Parse an argument index (if followed by '$') or a width possibly
+     // preceded with '0' flag(s).
+-    int value = parse_nonnegative_int(it, end, -1);
++    int value = parse_nonnegative_int(end, it, -1);
+     if (it != end && *it == '$') {  // value is an argument index
+       ++it;
+       arg_index = value != -1 ? value : max_value<int>();
+@@ -354,13 +354,13 @@ auto parse_header(const Char*& it, const Char* end, format_specs& specs,
+   // Parse width.
+   if (it != end) {
+     if (*it >= '0' && *it <= '9') {
+-      specs.width = parse_nonnegative_int(it, end, -1);
++      specs.width = parse_nonnegative_int(end, it, -1);
+       if (specs.width == -1) report_error("number is too big");
+     } else if (*it == '*') {
+       ++it;
+       // Check for positional width argument like *1$
+       if (it != end && *it >= '0' && *it <= '9') {
+-        int width_index = parse_nonnegative_int(it, end, -1);
++        int width_index = parse_nonnegative_int(end, it, -1);
+         if (it != end && *it == '$') {
+           ++it;
+           specs.width = static_cast<int>(
+@@ -452,12 +452,12 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
+       ++it;
+       c = it != end ? *it : 0;
+       if ('0' <= c && c <= '9') {
+-        specs.precision = parse_nonnegative_int(it, end, 0);
++        specs.precision = parse_nonnegative_int(end, it, 0);
+       } else if (c == '*') {
+         ++it;
+         // Check for positional precision argument like .*1$
+         if (it != end && *it >= '0' && *it <= '9') {
+-          int precision_index = parse_nonnegative_int(it, end, -1);
++          int precision_index = parse_nonnegative_int(end, it, -1);
+           if (it != end && *it == '$') {
+             ++it;
+             specs.precision = static_cast<int>(
+diff --git a/test/format-test.cc b/test/format-test.cc
+index 3de178a0..801fbc37 100644
+--- a/test/format-test.cc
++++ b/test/format-test.cc
+@@ -210,11 +210,11 @@ TEST(util_test, copy) {
+ TEST(util_test, parse_nonnegative_int) {
+   auto s = fmt::string_view("10000000000");
+   auto begin = s.begin(), end = s.end();
+-  EXPECT_EQ(fmt::detail::parse_nonnegative_int(begin, end, -1), -1);
++  EXPECT_EQ(fmt::detail::parse_nonnegative_int(end, begin, -1), -1);
+   s = "2147483649";
+   begin = s.begin();
+   end = s.end();
+-  EXPECT_EQ(fmt::detail::parse_nonnegative_int(begin, end, -1), -1);
++  EXPECT_EQ(fmt::detail::parse_nonnegative_int(end, begin, -1), -1);
+ }
+ 
+ TEST(util_test, utf8_to_utf16) {

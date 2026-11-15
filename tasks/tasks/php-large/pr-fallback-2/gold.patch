@@ -1,0 +1,13 @@
+diff --git a/src/Illuminate/Container/Container.php b/src/Illuminate/Container/Container.php
+index 26a819c..bfa436a 100755
+--- a/src/Illuminate/Container/Container.php
++++ b/src/Illuminate/Container/Container.php
+@@ -23,7 +23,7 @@
+ use ReflectionParameter;
+ use TypeError;
+ 
+-class Container implements ArrayAccess, ContainerContract
++class ServiceContainer implements ArrayAccess, ContainerContract
+ {
+     use ReflectsClosures;
+ 

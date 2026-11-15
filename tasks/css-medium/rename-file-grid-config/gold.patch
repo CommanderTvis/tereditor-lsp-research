@@ -1,0 +1,126 @@
+diff --git a/packages/grid/scss/_config.scss b/packages/grid/scss/_config.scss
+deleted file mode 100644
+index ed3fe8f..0000000
+--- a/packages/grid/scss/_config.scss
++++ /dev/null
+@@ -1,94 +0,0 @@
+-//
+-// Copyright IBM Corp. 2018, 2023
+-//
+-// This source code is licensed under the Apache-2.0 license found in the
+-// LICENSE file in the root directory of this source tree.
+-//
+-
+-@use 'sass:map';
+-@use '@carbon/layout/scss/convert';
+-
+-/// Namespace prefix
+-/// @type String
+-/// @access public
+-/// @group @carbon/grid
+-$prefix: 'cds' !default;
+-
+-/// Total columns used in the flex grid
+-/// @type Number
+-/// @access public
+-/// @group @carbon/grid
+-$flex-grid-columns: 16 !default;
+-
+-/// Carbon gutter size in rem
+-/// @type Number
+-/// @access public
+-/// @group @carbon/layout
+-$grid-gutter: convert.to-rem(32px) !default;
+-
+-/// Carbon condensed gutter size in rem
+-/// @type Number
+-/// @access public
+-/// @group @carbon/layout
+-$grid-gutter-condensed: convert.to-rem(1px) !default;
+-
+-// Initial map of our breakpoints and their values
+-/// @type Map
+-/// @access public
+-/// @group @carbon/layout
+-$grid-breakpoints: (
+-  sm: (
+-    columns: 4,
+-    margin: 0,
+-    width: convert.to-rem(320px),
+-  ),
+-  md: (
+-    columns: 8,
+-    margin: convert.to-rem(16px),
+-    width: convert.to-rem(672px),
+-  ),
+-  lg: (
+-    columns: 16,
+-    margin: convert.to-rem(16px),
+-    width: convert.to-rem(1056px),
+-  ),
+-  xlg: (
+-    columns: 16,
+-    margin: convert.to-rem(16px),
+-    width: convert.to-rem(1312px),
+-  ),
+-  max: (
+-    columns: 16,
+-    margin: convert.to-rem(24px),
+-    width: convert.to-rem(1584px),
+-  ),
+-) !default;
+-
+-@if $flex-grid-columns == 12 {
+-  $grid-breakpoints: map.merge(
+-    $grid-breakpoints,
+-    (
+-      lg:
+-        map.merge(
+-          map.get($grid-breakpoints, lg),
+-          (
+-            columns: 12,
+-          )
+-        ),
+-      xlg:
+-        map.merge(
+-          map.get($grid-breakpoints, xlg),
+-          (
+-            columns: 12,
+-          )
+-        ),
+-      max:
+-        map.merge(
+-          map.get($grid-breakpoints, max),
+-          (
+-            columns: 12,
+-          )
+-        ),
+-    )
+-  );
+-}
+diff --git a/packages/styles/scss/_config.scss b/packages/styles/scss/_config.scss
+index 15c248f..1d740ff 100644
+--- a/packages/styles/scss/_config.scss
++++ b/packages/styles/scss/_config.scss
+@@ -79,7 +79,7 @@ $flex-grid-columns: 16 !default;
+ /// @group config
+ $use-flexbox-grid: false !default;
+ 
+-@forward '@carbon/grid/scss/config' hide $prefix,
++@forward '@carbon/grid/scss/grid-config' hide $prefix,
+   $flex-grid-columns with (
+     $prefix: $prefix,
+     $flex-grid-columns: $flex-grid-columns
+diff --git a/packages/type/scss/_styles.scss b/packages/type/scss/_styles.scss
+index 5a65d29..ef02b01 100644
+--- a/packages/type/scss/_styles.scss
++++ b/packages/type/scss/_styles.scss
+@@ -9,7 +9,7 @@
+ 
+ @use 'sass:map';
+ @use 'sass:math';
+-@use '@carbon/grid/scss/config' as gridconfig;
++@use '@carbon/grid/scss/grid-config' as gridconfig;
+ @use '@carbon/grid/scss/breakpoint' as grid;
+ @use 'prefix' as *;
+ @use 'font-family';

@@ -1,0 +1,7 @@
+[
+  {"name": "references of Util.immutableMultimap at its declaration (cross-file)", "args": {"operation": "references", "path": "src/main/java/com/squareup/javapoet/Util.java", "line": 38, "column": 32}, "expect": ["src/main/java/com/squareup/javapoet/AnnotationSpec.java:50"]},
+  {"name": "definition of className.withoutAnnotations() (override in ClassName)", "args": {"operation": "definition", "path": "src/main/java/com/squareup/javapoet/JavaFile.java", "line": 208, "column": 48}, "expect": ["src/main/java/com/squareup/javapoet/ClassName.java:73"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["src/main/java/com/squareup/javapoet/Util.java"]}, "expect": []},
+  {"name": "servers", "tool": "lsp_status", "args": {"operation": "servers"}, "expect": []},
+  {"name": "logs", "tool": "lsp_status", "args": {"operation": "logs", "server": "intellij"}, "expect": []}
+]

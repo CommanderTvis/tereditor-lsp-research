@@ -1,0 +1,14 @@
+[BUG] User salt.utils.path.readlink on everywhere
+
+**Description**
+Python 3.8 added support for directory junctions on Windows. This prefixes the return with `\\?\` which breaks some of our states. Let's use `salt.utils.path.readlink` everywhere.
+
+https://docs.python.org/3/library/os.html#os.readlink
+
+**Versions Report**
+<details><summary>salt --versions-report</summary>
+
+```
+3004
+```
+</details>

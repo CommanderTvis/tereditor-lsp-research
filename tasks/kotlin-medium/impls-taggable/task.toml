@@ -1,0 +1,4 @@
+type = "impls"
+origin = "devrig find implementations; a sealed class in between (TypeName) and a same-named nested Builder interface"
+symbol = "com.squareup.kotlinpoet.Taggable"
+selection = "Interfaces and sealed, abstract or open classes declared in main source sets with at least 3 transitive subtypes (from supertype lists parsed out of every .kt source); sorted: Annotatable, ContextParameterizable, ContextReceivable, Documentable, OriginatingElementsHolder, Taggable, TypeName (7 candidates); k = 1 + int(rand() * 7) after srand(20261110) = 6."

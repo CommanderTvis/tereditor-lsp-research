@@ -1,11 +1,13 @@
-# java-kotlin, large: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
+# java-kotlin, large: chosen by size, see docs/PROJECTS.md. Curated: tasks, prepare.sh, Dockerfile.grade, check.sh and
 # probe.json are still to be written (docs/CURATION.md).
 lang = "java-kotlin"
 size = "large"
-status = "stub"
+status = "curated"
 repo = "https://github.com/google/dagger"
 tag = "dagger-2.60.1"
 commit = "f7a89b6cea7d47167f2d5f9912f61f3fee333d88"
 loc = 142388
 loc_by_language = { "Java" = 124610, "Kotlin" = 17778 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+task_types = ["move", "signature", "dispatch", "rename", "rename-file", "impls"]
+pr_fallback = "Assigned PR slots filled by documented synthetic fallback task directories; full project validation remains pending."

@@ -1,0 +1,5 @@
+type = "rename"
+origin = "devrig safe rename (C function shadowed by a vendored library's macro)"
+symbol = "sdsnewlen (src/sds.c) -> sdsnewbuf"
+selection = "non-static function declarations in headers under src/ included by src/server.c (clang -Xclang -ast-dump=json src/server.c with the build's flags: 2279 names) whose name is also an identifier in deps/ (65), with at least 20 whole-word occurrences in at least 5 tracked .c/.h files under src/, tests/modules/ and modules/ (40); minus realloc, free and malloc, which are C library functions re-declared in src/ (amendment made after listing the 40, before drawing): 37 candidates sorted by name; index awk 'BEGIN{srand(20261110); print int(rand()*37)+1}' = 28 (sdsnewlen)"
+grade_timeout_s = 2400

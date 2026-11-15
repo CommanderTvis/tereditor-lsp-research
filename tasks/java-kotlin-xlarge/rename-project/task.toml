@@ -1,0 +1,4 @@
+type = "rename"
+origin = "synthetic fallback; fixed xlarge assignment"
+symbol = "org.gradle.api.Project"
+selection = "First public Java/Kotlin Gradle API type with references from both languages in the pinned snapshot; selected before any run."

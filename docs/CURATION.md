@@ -24,8 +24,35 @@ prove each one valid. Read [TASKS.md](TASKS.md) first: it is the contract. `proj
 
 ## Writing tasks
 
-Five per project unless the language cannot support a type: `refs`, `rename`, `compile`, `bugfix`, and one of
-`impls`, `dispatch`, `callers`, `inspect`, `signature`. Spread the fifth type across your three projects.
+The counts and kinds per project are in [TASKS.md](TASKS.md): half synthetic (refactorings and a navigation question,
+generated with a fixed seed by rules fixed in advance), half mined pull requests (the selection criteria are in
+TASKS.md, "Mined pull requests"). Never choose or drop a task after seeing any run of it.
+
+For each project, in this order:
+
+1. Complete the project's files if it is a stub (`prepare.sh`, `grade-setup.sh`, `check.sh`, `probe.json`), then
+   `./study setup <group>` (once per group) and `./study project <project>`.
+2. Synthetic tasks: exactly the types the assignment table in TASKS.md gives the project. Pick each task's subject by
+   a rule fixed before looking at candidates (for example: list every public symbol with at least N references in at
+   least M files and a name shared with another symbol, sort them, take the k-th with k from the seeded shuffle
+   `awk 'BEGIN{srand(20261110)}...'`); write the rule, the candidate count and the seed in the task's `task.toml`
+   (`selection = "..."`). Existing tasks of an assigned type are kept; tasks of types no longer assigned are deleted
+   (git history keeps them).
+3. Mined tasks: `sh harness/gen/mine-prs.sh <project>` writes `tasks/<project>/pr-candidates.jsonl` in seeded order.
+   Take candidates strictly in that order. For each, create `tasks/<project>/pr-<number>/` with `task.toml`
+   (`type = "pr"`, `base_commit`, `merged_at`, `pr`, `issue`), `prompt.md` (the issue's title and body, unedited
+   except for removing links to the fix), `gold.patch` (the pull request's non-test change, base to merge),
+   `hidden/` (the post-merge versions of the test files it changed) and `grade.sh` (its fail-to-pass tests, then the
+   pass-to-pass tests of the affected modules). `./study project <project>` sets up the base commit;
+   `./study validate <project>` must print VALID. A candidate that does not build or validate with the current
+   toolchains is skipped, and the reason goes into `tasks/<project>/pr-log.md`. Stop at the assigned number of valid
+   tasks. If candidates run out, fill the remaining places with synthetic tasks of the next types in the rotation and
+   record that in `project.toml`.
+4. `./study probe <project>` (and `intellij-enforced` for JVM projects), recorded in `project.toml`.
+5. `./study prune <project>` to free disk before the next project.
+
+Xlarge projects may be too large to set up or grade on the available machine; then mark them
+`status = "skipped"` in `project.toml` with the measured reason (memory, disk, time), rather than shrinking them.
 
 - Make tasks realistic and discriminating: pick symbols whose names collide with other symbols, are overridden,
   re-exported, aliased, shadowed or reached through interfaces, so that text search alone is error-prone; and pick

@@ -1,0 +1,4 @@
+type = "refs"
+origin = "synthetic fallback; compiler-mutation oracle"
+symbol = "org.jetbrains.kotlin.name.Name"
+selection = "Same fixed symbol as the paired rename task; references are collected from Kotlin source only, excluding the declaration and generated code."

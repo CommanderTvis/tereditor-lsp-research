@@ -1,0 +1,7 @@
+type = "pr"
+pr = 108
+issue = 43
+base_commit = "330a603b7c43432fd030b5892a39e5422482f7a5"
+merged_at = "2013-11-26T05:35:01Z"
+gold_from = "diff 330a603b7c43432fd030b5892a39e5422482f7a5..699e28dbb4fb52fc684877f55300389264cf9a51 (merge^1=cb4e9be895919e9f692cdb8363f3ebbf646e8efa^1)"
+toolchain = "CPython 3.12 + pytest (grade-python)"

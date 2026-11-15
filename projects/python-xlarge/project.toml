@@ -1,11 +1,15 @@
-# python, xlarge: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# Python, xlarge: Salt, a large service-oriented Python codebase. Answer/refactoring tasks avoid service-dependent
+# integration tests.
 lang = "python"
 size = "xlarge"
-status = "stub"
 repo = "https://github.com/saltstack/salt"
 tag = "v3007.17"
 commit = "6d6c1a9c8ff6c186af2e2d1577c2d68c2ac1016a"
 loc = 1121852
 loc_by_language = { "Python" = 1121852 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+stripped = []
+task_types = ["rename", "refs", "dispatch", "pr", "pr", "pr"]
+pr_shortfall = 0
+pr_replaced_by = []
+# Salt's service-dependent integration suite is not run; tasks are source-answer/refactoring checks.

@@ -1,0 +1,194 @@
+diff --git a/include/fmt/base.h b/include/fmt/base.h
+index 9df28341..d7069bc4 100644
+--- a/include/fmt/base.h
++++ b/include/fmt/base.h
+@@ -1918,15 +1918,35 @@ FMT_CONSTEXPR auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
+   return out;
+ }
+ 
++template <typename Container>
++class container_buffer : public buffer<typename Container::value_type> {
++ private:
++  using value_type = typename Container::value_type;
++
++  static FMT_CONSTEXPR void grow(buffer<value_type>& buf, size_t capacity) {
++    auto& self = static_cast<container_buffer&>(buf);
++    self.container.resize(capacity);
++    self.set(&self.container[0], capacity);
++  }
++
++ public:
++  Container& container;
++
++  explicit container_buffer(Container& c)
++      : buffer<value_type>(grow, c.size()), container(c) {}
++};
++
++}  // namespace detail
++
+ // A buffer that writes to an output iterator when flushed.
+-template <typename OutputIt, typename T, typename Traits = buffer_traits>
+-class iterator_buffer : public Traits, public buffer<T> {
++template <typename OutputIt, typename T, typename Traits = detail::buffer_traits>
++class iterator_buffer : public Traits, public detail::buffer<T> {
+  private:
+   OutputIt out_;
+   enum { buffer_size = 256 };
+   T data_[buffer_size];
+ 
+-  static FMT_CONSTEXPR void grow(buffer<T>& buf, size_t) {
++  static FMT_CONSTEXPR void grow(detail::buffer<T>& buf, size_t) {
+     if (buf.size() == buffer_size) static_cast<iterator_buffer&>(buf).flush();
+   }
+ 
+@@ -1935,15 +1955,15 @@ class iterator_buffer : public Traits, public buffer<T> {
+     this->clear();
+     const T* begin = data_;
+     const T* end = begin + this->limit(size);
+-    out_ = copy<T>(begin, end, out_);
++    out_ = detail::copy<T>(begin, end, out_);
+   }
+ 
+  public:
+   explicit iterator_buffer(OutputIt out, size_t n = buffer_size)
+-      : Traits(n), buffer<T>(grow, data_, 0, buffer_size), out_(out) {}
++      : Traits(n), detail::buffer<T>(grow, data_, 0, buffer_size), out_(out) {}
+   iterator_buffer(iterator_buffer&& other) noexcept
+       : Traits(other),
+-        buffer<T>(grow, data_, 0, buffer_size),
++        detail::buffer<T>(grow, data_, 0, buffer_size),
+         out_(other.out_) {}
+   ~iterator_buffer() {
+     // Don't crash if flush fails during unwinding.
+@@ -1959,14 +1979,14 @@ class iterator_buffer : public Traits, public buffer<T> {
+ };
+ 
+ template <typename T>
+-class iterator_buffer<T*, T, fixed_buffer_traits> : public fixed_buffer_traits,
+-                                                    public buffer<T> {
++class iterator_buffer<T*, T, detail::fixed_buffer_traits> : public detail::fixed_buffer_traits,
++                                                    public detail::buffer<T> {
+  private:
+   T* out_;
+   enum { buffer_size = 256 };
+   T data_[buffer_size];
+ 
+-  static FMT_CONSTEXPR void grow(buffer<T>& buf, size_t) {
++  static FMT_CONSTEXPR void grow(detail::buffer<T>& buf, size_t) {
+     if (buf.size() == buf.capacity())
+       static_cast<iterator_buffer&>(buf).flush();
+   }
+@@ -1982,10 +2002,10 @@ class iterator_buffer<T*, T, fixed_buffer_traits> : public fixed_buffer_traits,
+ 
+  public:
+   explicit iterator_buffer(T* out, size_t n = buffer_size)
+-      : fixed_buffer_traits(n), buffer<T>(grow, out, 0, n), out_(out) {}
++      : detail::fixed_buffer_traits(n), detail::buffer<T>(grow, out, 0, n), out_(out) {}
+   iterator_buffer(iterator_buffer&& other) noexcept
+-      : fixed_buffer_traits(other),
+-        buffer<T>(static_cast<iterator_buffer&&>(other)),
++      : detail::fixed_buffer_traits(other),
++        detail::buffer<T>(static_cast<iterator_buffer&&>(other)),
+         out_(other.out_) {
+     if (this->data() != out_) {
+       this->set(data_, buffer_size);
+@@ -1999,55 +2019,39 @@ class iterator_buffer<T*, T, fixed_buffer_traits> : public fixed_buffer_traits,
+     return out_;
+   }
+   auto count() const -> size_t {
+-    return fixed_buffer_traits::count() + this->size();
++    return detail::fixed_buffer_traits::count() + this->size();
+   }
+ };
+ 
+-template <typename T> class iterator_buffer<T*, T> : public buffer<T> {
++template <typename T> class iterator_buffer<T*, T> : public detail::buffer<T> {
+  public:
+   explicit iterator_buffer(T* out, size_t = 0)
+-      : buffer<T>([](buffer<T>&, size_t) {}, out, 0, ~size_t()) {}
++      : detail::buffer<T>([](detail::buffer<T>&, size_t) {}, out, 0, ~size_t()) {}
+ 
+   auto out() -> T* { return &*this->end(); }
+ };
+ 
+-template <typename Container>
+-class container_buffer : public buffer<typename Container::value_type> {
+- private:
+-  using value_type = typename Container::value_type;
+-
+-  static FMT_CONSTEXPR void grow(buffer<value_type>& buf, size_t capacity) {
+-    auto& self = static_cast<container_buffer&>(buf);
+-    self.container.resize(capacity);
+-    self.set(&self.container[0], capacity);
+-  }
+-
+- public:
+-  Container& container;
+-
+-  explicit container_buffer(Container& c)
+-      : buffer<value_type>(grow, c.size()), container(c) {}
+-};
+-
+ // A buffer that writes to a container with the contiguous storage.
+ template <typename OutputIt>
+ class iterator_buffer<
+     OutputIt,
+-    enable_if_t<is_back_insert_iterator<OutputIt>::value &&
++    enable_if_t<detail::is_back_insert_iterator<OutputIt>::value &&
+                     is_contiguous<typename OutputIt::container_type>::value,
+                 typename OutputIt::container_type::value_type>>
+-    : public container_buffer<typename OutputIt::container_type> {
++    : public detail::container_buffer<typename OutputIt::container_type> {
+  private:
+-  using base = container_buffer<typename OutputIt::container_type>;
++  using base = detail::container_buffer<typename OutputIt::container_type>;
+ 
+  public:
+   explicit iterator_buffer(typename OutputIt::container_type& c) : base(c) {}
+   explicit iterator_buffer(OutputIt out, size_t = 0)
+-      : base(get_container(out)) {}
++      : base(detail::get_container(out)) {}
+ 
+   auto out() -> OutputIt { return OutputIt(this->container); }
+ };
+ 
++namespace detail {
++
+ // A buffer that counts the number of code units written discarding the output.
+ template <typename T = char> class counting_buffer : public buffer<T> {
+  private:
+@@ -2827,7 +2831,7 @@ template <typename OutputIt, typename... T,
+ auto vformat_to_n(OutputIt out, size_t n, string_view fmt, format_args args)
+     -> format_to_n_result<OutputIt> {
+   using traits = detail::fixed_buffer_traits;
+-  auto buf = detail::iterator_buffer<OutputIt, char, traits>(out, n);
++  auto buf = iterator_buffer<OutputIt, char, traits>(out, n);
+   detail::vformat_to(buf, fmt, args, {});
+   return {buf.out(), buf.count()};
+ }
+diff --git a/include/fmt/compile.h b/include/fmt/compile.h
+index f05d8426..8f9904e2 100644
+--- a/include/fmt/compile.h
++++ b/include/fmt/compile.h
+@@ -535,7 +535,7 @@ template <typename OutputIt, typename S, typename... T,
+ auto format_to_n(OutputIt out, size_t n, const S& fmt, T&&... args)
+     -> format_to_n_result<OutputIt> {
+   using traits = detail::fixed_buffer_traits;
+-  auto buf = detail::iterator_buffer<OutputIt, char, traits>(out, n);
++  auto buf = iterator_buffer<OutputIt, char, traits>(out, n);
+   fmt::format_to(appender(buf), fmt, std::forward<T>(args)...);
+   return {buf.out(), buf.count()};
+ }
+diff --git a/include/fmt/xchar.h b/include/fmt/xchar.h
+index 9631372a..64493c03 100644
+--- a/include/fmt/xchar.h
++++ b/include/fmt/xchar.h
+@@ -274,7 +274,7 @@ inline auto vformat_to_n(OutputIt out, size_t n, basic_string_view<Char> fmt,
+                          basic_format_args<buffered_context<Char>> args)
+     -> format_to_n_result<OutputIt> {
+   using traits = detail::fixed_buffer_traits;
+-  auto buf = detail::iterator_buffer<OutputIt, Char, traits>(out, n);
++  auto buf = iterator_buffer<OutputIt, Char, traits>(out, n);
+   detail::vformat_to(buf, fmt, args);
+   return {buf.out(), buf.count()};
+ }

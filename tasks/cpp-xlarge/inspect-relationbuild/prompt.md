@@ -1,0 +1,1 @@
+Inspect the PostgreSQL source candidates for the `RelationBuildDesc` symbol. Write every affected relative source file path, one per line, to `ANSWER.txt`; exclude header-only declarations and comments.
