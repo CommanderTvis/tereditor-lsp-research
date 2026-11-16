@@ -55,14 +55,15 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
 - The JVM image adds a pinned JDK 21 and Apache Maven 3.9.11 under `/cache`: IntelliJ's Maven import runs `mvn` from
   PATH, and without it answers never left the current file.
 - Tasks: half synthetic (refactorings: rename, rename file, move to another package or module, change signature;
-  plus navigation questions), half mined pull requests selected as SWE-bench selects them, merged before 2022-11-30
-  (pre-AI era), runnable with the current toolchains. Provisional count: 6 per small to large project (3 + 3), 3 per
+  plus navigation questions), half mined pull requests selected as SWE-bench selects them, opened after 2026-07-01 (after
+  every model's training cutoff; pre-2022 PRs are memorized, measured in docs/MEMORIZATION.md, and never compared with a
+  gold patch), runnable with the current toolchains. Provisional count: 6 per small to large project (3 + 3), 3 per
   xlarge; the calibration pilot fixes repetitions to fit USD 2,000 (docs/TASKS.md, docs/ANALYSIS_PLAN.md).
 - Effort: every model at Claude Code's default, `medium` for Haiku, Sonnet and Opus 5.5; nothing in the harness sets
   an effort level (docs/DESIGN.md). Success is averaged arithmetically, cost and time geometrically (ratios).
 - Oracles never come from a language server: compiler mutation (rename the declaration, compile, collect errors),
   another analyser, or hand-classified exhaustive candidate lists. Every task must pass `./study validate`.
-- The analysis is pre-registered in `docs/ANALYSIS_PLAN.md` (21 primary tests, Holm; includes a Haiku-reviewed quality-flaw count; mixed models, task-clustered
+- The analysis is pre-registered in `docs/ANALYSIS_PLAN.md` (30 primary tests, Holm; includes a Haiku-reviewed quality-flaw count; mixed models, task-clustered
   bootstrap, sign-flip tests). Changes after the first confirmatory run go in its "Changes after registration".
 
 ## Findings so far (smoke only, not evidence)

@@ -38,7 +38,7 @@ For each project, in this order:
    `awk 'BEGIN{srand(20261110)}...'`); write the rule, the candidate count and the seed in the task's `task.toml`
    (`selection = "..."`). Existing tasks of an assigned type are kept; tasks of types no longer assigned are deleted
    (git history keeps them).
-3. Mined tasks: `sh harness/gen/mine-prs.sh <project>` writes `tasks/<project>/pr-candidates.jsonl` in seeded order.
+3. Mined tasks (modern pull requests, opened after 2026-07-01; read docs/MEMORIZATION.md first): `sh harness/gen/mine-prs.sh <project>` writes `tasks/<project>/pr-candidates.jsonl` in seeded order. For each candidate you consider, run `python3 harness/memprobe/memprobe.py <task-dir>` before accepting it (drop it under the thresholds of MEMORIZATION.md).
    Take candidates strictly in that order. For each, create `tasks/<project>/pr-<number>/` with `task.toml`
    (`type = "pr"`, `base_commit`, `merged_at`, `pr`, `issue`), `prompt.md` (the issue's title and body, unedited
    except for removing links to the fix), `gold.patch` (the pull request's non-test change, base to merge),

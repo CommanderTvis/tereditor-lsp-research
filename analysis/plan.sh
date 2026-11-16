@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$STUDY_ROOT"
 name=$1; shift
-projects="*"; models="claude-haiku-5-5 claude-sonnet-5-5 claude-opus-5-5"; arms="baseline optional enforced intellij-optional intellij-enforced"
+projects="*"; models="claude-haiku-5-5 claude-sonnet-5-5 claude-opus-5-5"; arms="baseline baseline-review optional enforced intellij-optional intellij-enforced"
 reps=1; rpm=""; tasks="*"; budget=10; turns=200; timeout=3600; effort="-"; seed=20261110
 while [ $# -gt 0 ]; do
   case "$1" in

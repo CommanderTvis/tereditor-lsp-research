@@ -10,14 +10,16 @@ die() { echo "env: $*" >&2; exit 2; }
 
 TEREDITOR_COMMIT=$(sed -n 's/^TEREDITOR_COMMIT=//p' "$STUDY_ROOT/harness/tereditor.env")
 TEREDITOR_DIR="$STUDY_STATE/tereditor/$TEREDITOR_COMMIT-$(uname -m)"
-CACHE="$STUDY_STATE/cache"
+# Everything built on a machine (language-server caches, managed runtimes, prepared snapshots) is keyed by its
+# architecture, so an amd64 and an arm64 builder can share one state volume without overwriting each other.
+CACHE="$STUDY_STATE/cache-$(uname -m)"
 mkdir -p "$CACHE/home" "$CACHE/managed" "$CACHE/state"
 # The commit a task starts from: its task.toml's base_commit (a mined pull request), else the project's pinned commit;
 # and the state directory of a project at a commit (snapshot, grading home and overlay, setup markers).
 toml_val() { sed -n "s/^$2[[:space:]]*=[[:space:]]*\"\{0,1\}\([^\"]*\)\"\{0,1\}[[:space:]]*\$/\1/p" "$1" 2>/dev/null | head -n1; }
 project_commit() { toml_val "$STUDY_ROOT/projects/$1/project.toml" commit; }
 task_commit() { local c; c=$(toml_val "$2/task.toml" base_commit); [ -n "$c" ] && echo "$c" || project_commit "$1"; }
-state_dir() { echo "$STUDY_STATE/projects/$1/$2"; }
+state_dir() { echo "$STUDY_STATE/projects-$(uname -m)/$1/$2"; }
 
 # Extra environment (NAME=value) and binds a caller adds to a sandbox.
 SERVER_ENV=(); AGENT_ENV=(); GRADE_BINDS=()
@@ -106,22 +108,27 @@ grade_exec() {
   exec bwrap "${A[@]}" "$@"
 }
 
-# agent_exec <workspace> <home> <in-dir> <socket-dir> cmd...: the agent's sandbox, network on (the API).
+# agent_exec <workspace> <home> <in-dir> <socket-dir> cmd...: the agent's sandbox. It has no network of its own (a
+# private network namespace); HTTPS_PROXY points at a loopback forwarder to the egress socket in <socket-dir>, behind
+# which harness/env/egress-conn.sh lets through only the hosts of harness/egress-allow.txt (the Anthropic API).
 # Credentials come in as AGENT_ENV (an array of NAME=value); the cloud session's token file is bound if present.
 agent_exec() {
   local ws=$1 home=$2 in=$3 sock=$4 etc kv; shift 4
   etc=$(mktemp -d); etc_dir "$etc" agent 0 /home/agent
   base_args
+  A+=(--unshare-net)
   closure_binds "$STUDY_AGENT_CLOSURE"
   A+=(--ro-bind "$STUDY_AGENT/bin" /bin --ro-bind "$STUDY_AGENT/bin" /usr/bin --ro-bind "$STUDY_AGENT/lib" /lib --ro-bind "$etc" /etc
       --ro-bind "$STUDY_AGENT/etc/ssl" /etc/ssl --bind "$ws" /workspace --bind "$home" /home/agent
       --ro-bind "$in" /in --bind "$sock" /run/study --ro-bind-try /home/claude/.claude/remote /home/claude/.claude/remote
       --chdir /workspace --setenv HOME /home/agent --setenv USER agent --setenv PATH /bin --setenv LANG C.UTF-8
-      --setenv TERM dumb --setenv SSL_CERT_FILE /etc/ssl/certs/ca-bundle.crt)
+      --setenv TERM dumb --setenv SSL_CERT_FILE /etc/ssl/certs/ca-bundle.crt
+      --setenv HTTPS_PROXY http://127.0.0.1:3128 --setenv https_proxy http://127.0.0.1:3128
+      --setenv HTTP_PROXY http://127.0.0.1:3128 --setenv http_proxy http://127.0.0.1:3128 --setenv NO_PROXY "")
   # Behind a TLS-re-signing egress proxy (a cloud session) the API's certificate chains to the proxy's CA.
   if [ -n "${HTTPS_PROXY:-}" ] && [ -f "${CURL_CA_BUNDLE:-}" ]; then
     A+=(--ro-bind "$CURL_CA_BUNDLE" /study-proxy-ca.crt --setenv NODE_EXTRA_CA_CERTS /study-proxy-ca.crt --setenv SSL_CERT_FILE /study-proxy-ca.crt)
   fi
   for kv in "${AGENT_ENV[@]}"; do A+=(--setenv "${kv%%=*}" "${kv#*=}"); done
-  exec bwrap "${A[@]}" "$@"
+  exec bwrap "${A[@]}" /bin/bash -c 'socat TCP-LISTEN:3128,bind=127.0.0.1,fork,reuseaddr UNIX-CONNECT:/run/study/egress.sock >/dev/null 2>&1 & sleep 0.3; exec "$@"' agent-wrapper "$@"
 }

@@ -7,7 +7,7 @@
 set -u
 patch=$1
 out=/out; mkdir -p "$out"
-type=$(sed -n 's/^type[[:space:]]*=[[:space:]]*"\([a-z]*\)".*/\1/p' /task/task.toml | head -n1)
+type=$(sed -n 's/^type[[:space:]]*=[[:space:]]*"\([a-z-]*\)".*/\1/p' /task/task.toml | head -n1)
 timeout_s=$(sed -n 's/^grade_timeout_s[[:space:]]*=[[:space:]]*\([0-9]*\).*/\1/p' /task/task.toml | head -n1)
 [ -n "$timeout_s" ] || timeout_s=1800
 start=$(date +%s)
@@ -39,7 +39,7 @@ case "$type" in
     ok=false; [ "$fp" = 0 ] && [ "$fn" = 0 ] && [ "$tp" -gt 0 ] && ok=true
     result "$ok" "$metrics,\"answer_present\":$([ -f ANSWER.txt ] && echo true || echo false)"
     ;;
-  rename|signature|compile|bugfix)
+  rename|rename-file|move|signature|compile|bugfix|pr)
     [ -d /task/hidden ] && cp -R /task/hidden/. "$work/"
     if [ -f /task/grade.sh ]; then check=/task/grade.sh; else check=/project/check.sh; fi
     TASK_DIR=/task timeout "$timeout_s" sh "$check" > "$out/check.log" 2>&1

@@ -131,21 +131,23 @@ script.
 
 Selected as SWE-bench selects them, with the study's own cutoff:
 
-- Merged into the default branch before 2022-11-30 (the release of ChatGPT), so the reference solution was written
-  before AI coding assistants were common. Authors that are bots are excluded.
+- Opened on or after 2026-07-01 and merged into the default branch: after the June 2026 training-data cutoff of every
+  model of the study, so the fix cannot be remembered (docs/MEMORIZATION.md, which gives the measured reason). Authors
+  that are bots are excluded.
 - Resolves an issue the pull request links (closing keywords), whose title and body become the prompt, unedited
   except for removing links to the fix itself.
 - Changes non-test source files in the project's language, and adds or changes tests.
 - Fail to pass: at least one test fails at the pull request's base commit and passes with the merged change. Pass to
   pass: the other tests of the affected modules pass before and after.
 - Builds and runs those tests with the study's current toolchains (`grade-<group>`); pull requests that need an older
-  toolchain are skipped, a bias toward the later part of the pre-cutoff history that the report states.
+  toolchain are skipped (rare for modern pull requests).
 - The task's starting point is the pull request's base commit (`base_commit` in `task.toml`), not the project's
   pinned commit; the task records the merge date and the code lines at its base commit.
-- Hidden tests are the pull request's test changes; `gold.patch` is its non-test change.
-
-Pre-2022 pull requests of well-known projects are in the models' training data. Each task's merge date is recorded
-so the analysis can check whether success depends on it.
+- Hidden tests are the pull request's test changes; `gold.patch` is its non-test change and is used only by
+  `./study validate` (the tests can pass). Nothing grades an agent by comparing its patch with it: modern pull requests
+  are partly unreviewed and carry the flaws this study measures.
+- Memorization probe: before a candidate becomes a task, `harness/memprobe/memprobe.py` runs all three models on its
+  issue with no tools, and the task is dropped under the thresholds of docs/MEMORIZATION.md.
 
 ## Answers
 

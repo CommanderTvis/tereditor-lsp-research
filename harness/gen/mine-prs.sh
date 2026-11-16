@@ -4,7 +4,8 @@
 # read-only) and writes tasks/<project>/pr-candidates.jsonl in a seeded random order, so the first candidates that
 # validate become the tasks and nobody chooses among them.
 #
-# Kept: merged before 2022-11-30 into the default branch; author not a bot; at least one linked issue it closes;
+# Kept: opened on or after 2026-07-01 and merged (after the June 2026 training-data cutoff of every model of the study,
+# so neither the fix nor its drafts can be remembered; docs/MEMORIZATION.md) into the default branch; author not a bot; at least one linked issue it closes;
 # changes at least one test file and at least one non-test source file of the project's language; at most 15 non-test
 # source files. Each line: number, merged_at, base_sha (the pull request's base commit), merge_sha, issue title and
 # body, test and source files.
@@ -23,10 +24,10 @@ test_re='(^|/)(tests?|spec|specs|__tests__|testing|test-data|testdata)/|(^|/)tes
 out=$root/tasks/$proj/pr-candidates.jsonl; mkdir -p "$(dirname "$out")"
 tmp=$(mktemp)
 
-# Merged pull requests before the cutoff that close at least one issue (GraphQL search, newest first, 100 per page).
+# Merged pull requests after the cutoff that close at least one issue (GraphQL search, newest first, 100 per page).
 cursor=""
 for page in 1 2 3 4 5 6 7 8 9 10; do
-  q="repo:$repo is:pr is:merged merged:<2022-11-30"
+  q="repo:$repo is:pr is:merged created:>=2026-07-01"
   gh api graphql -f q="$q" ${cursor:+-f after="$cursor"} -f query='
     query($q: String!, $after: String) {
       search(query: $q, type: ISSUE, first: 100, after: $after) {

@@ -6,6 +6,7 @@
 #   ./study setup [group ...]          tereditor from its pinned image; the language servers of the groups (default: all)
 #   ./study project <project> ...      snapshot, server preparation and grading dependencies of projects
 #   ./study probe <project> [arm]      the language server on this project, no model (results/probe/)
+#   ./study redteam                    attacks the agent's sandbox from inside: network, gold files, history (no model)
 #   ./study validate <project> ...     every task: starting state fails, reference solution passes, twice
 #   ./study plan <plan> [options]      results/<plan>/plan.tsv in a seeded random order (analysis/plan.sh)
 #   ./study run <plan> [-j N] [--project P]     run the pending lines of a plan, N at a time (default 2)
@@ -150,6 +151,8 @@ cmd_probe() {
   log "probe results: $out/probe.jsonl"
 }
 
+cmd_redteam() { env_run python redteam; }
+
 cmd_validate() { for p in "$@"; do env_run "$(group_of "$p")" validate "$p"; done; }
 
 cmd_plan() { name=$1; shift; mkdir -p "results/$name"; env_run python plan "$name" "$@"
@@ -213,6 +216,7 @@ case "$c" in
   setup) cmd_setup "$@" ;;
   project) cmd_project "$@" ;;
   probe) cmd_probe "$@" ;;
+  redteam) cmd_redteam ;;
   validate) cmd_validate "$@" ;;
   plan) cmd_plan "$@" ;;
   run) cmd_run "$@" ;;

@@ -51,7 +51,7 @@ def contamination(arm: str, init: dict | None) -> list[str]:
     builtins = {t for t in tools if not t.startswith("mcp__")}
     if builtins != BUILTIN_TOOLS:
         problems.append(f"built-in tools {sorted(builtins)} != {sorted(BUILTIN_TOOLS)}")
-    if arm == "baseline":
+    if arm in ("baseline", "baseline-review"):
         if mcp_tools:
             problems.append(f"baseline has MCP tools {sorted(mcp_tools)}")
         if servers:
@@ -85,6 +85,9 @@ def contamination(arm: str, init: dict | None) -> list[str]:
 def summarize(run_dir: str, plan_row: dict) -> dict:
     row = dict(plan_row)
     events = load_jsonl(os.path.join(run_dir, "stream.jsonl"))
+    # baseline-review: the second prompt is a second `claude -p --resume` process with its own stream and result.
+    review_events = load_jsonl(os.path.join(run_dir, "stream-review.jsonl")) if os.path.exists(os.path.join(run_dir, "stream-review.jsonl")) else []
+    review_result = next((e for e in reversed(review_events) if e.get("type") == "result"), None)
     init = next((e for e in events if e.get("type") == "system" and e.get("subtype") == "init"), None)
     result = next((e for e in reversed(events) if e.get("type") == "result"), None)
     row["init_tools"] = len((init or {}).get("tools") or [])
@@ -93,6 +96,12 @@ def summarize(run_dir: str, plan_row: dict) -> dict:
     problems = contamination(plan_row["arm"], init)
     row["contaminated"] = bool(problems)
     row["contamination"] = "; ".join(problems)
+    # The egress proxy logs every connection the agent tried; anything denied is an attempt to leave (docs/DESIGN.md).
+    egress = os.path.join(run_dir, "egress.log")
+    denied = [l.strip() for l in open(egress)] if os.path.exists(egress) else []
+    denied = [l for l in denied if " DENY " in l]
+    row["egress_denied"] = len(denied)
+    row["egress_denied_hosts"] = "; ".join(sorted({l.split(" DENY ", 1)[1] for l in denied}))[:300]
 
     # Tool use, counted over the main conversation and subagents alike.
     tools: Counter[str] = Counter()
@@ -102,7 +111,7 @@ def summarize(run_dir: str, plan_row: dict) -> dict:
     assistant_turns = 0
     edited_files: set[str] = set()
     hook_blocks = 0
-    for e in events:
+    for e in events + review_events:
         if e.get("type") == "assistant":
             assistant_turns += 1
             for c in (e.get("message") or {}).get("content") or []:
@@ -147,17 +156,22 @@ def summarize(run_dir: str, plan_row: dict) -> dict:
     # Cost, tokens, time, termination.
     r = result or {}
     usage = r.get("usage") or {}
+    rr = review_result or {}
+    ru = rr.get("usage") or {}
+
+    def add(a, b):  # sum of the two turns; blank stays blank when the run produced no number
+        return (a or 0) + (b or 0) if a != "" or b != "" else ""
     row.update({
         "result_subtype": r.get("subtype", "missing"),
         "is_error": r.get("is_error", True),
-        "cost_usd": r.get("total_cost_usd", ""),
-        "num_turns": r.get("num_turns", ""),
-        "duration_ms": r.get("duration_ms", ""),
-        "duration_api_ms": r.get("duration_api_ms", ""),
-        "input_tokens": usage.get("input_tokens", ""),
-        "output_tokens": usage.get("output_tokens", ""),
-        "cache_read_tokens": usage.get("cache_read_input_tokens", ""),
-        "cache_write_tokens": usage.get("cache_creation_input_tokens", ""),
+        "cost_usd": add(r.get("total_cost_usd", ""), rr.get("total_cost_usd", "")),
+        "num_turns": add(r.get("num_turns", ""), rr.get("num_turns", "")),
+        "duration_ms": add(r.get("duration_ms", ""), rr.get("duration_ms", "")),
+        "duration_api_ms": add(r.get("duration_api_ms", ""), rr.get("duration_api_ms", "")),
+        "input_tokens": add(usage.get("input_tokens", ""), ru.get("input_tokens", "")),
+        "output_tokens": add(usage.get("output_tokens", ""), ru.get("output_tokens", "")),
+        "cache_read_tokens": add(usage.get("cache_read_input_tokens", ""), ru.get("cache_read_input_tokens", "")),
+        "cache_write_tokens": add(usage.get("cache_creation_input_tokens", ""), ru.get("cache_creation_input_tokens", "")),
     })
     try:
         with open(os.path.join(run_dir, "exit.json")) as f:

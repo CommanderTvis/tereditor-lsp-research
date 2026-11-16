@@ -19,8 +19,8 @@ with their date and reason; the original text stays.
 3. **Quality flaws** (edit tasks only): the number of defects in the agent's diff that a post-hoc review finds, the
    non-functional damage tests cannot see: old names left in comments, docstrings, strings or docs; edits to unrelated
    symbols or places the task did not ask for; formatting churn; inconsistent naming; dead code or unused imports the
-   edit left behind. The reviewer is `claude-haiku-5-5` through `claude -p` with no tools, given the task prompt, the
-   agent's diff and the gold patch, never the arm; it answers with a list of concrete flaws (kind, file, line,
+   edit left behind. The reviewer is `claude-haiku-5-5` through `claude -p` with no tools, given the task prompt and the agent's
+   diff (with read-only access to the edited tree, to search for leftovers), never the gold patch and never the arm; it answers with a list of concrete flaws (kind, file, line,
    one-sentence reason), and "none" is a valid answer. The prompt is fixed before the first run (`harness/judge/`).
    Each diff is reviewed three times; its flaw count is the median. A human labels a random sample of 100 reported
    flaws as real or not, and the false-positive rate is reported next to the result. The reviewer is the same model
@@ -43,6 +43,7 @@ F1 on answer tasks; wall time; turns; input+output tokens; number of tool calls;
 For each of these pairs of arms, pooled over everything else in the tasks where both arms run:
 
 - tereditor: optional vs baseline, enforced vs baseline, enforced vs optional (all projects);
+- self-review: baseline-review vs baseline, optional vs baseline-review, enforced vs baseline-review (all projects);
 - IntelliJ: intellij-optional vs baseline, intellij-enforced vs baseline (JVM projects), and intellij-optional vs
   optional, intellij-enforced vs enforced (Kotlin and mixed projects, where both servers exist);
 
@@ -51,7 +52,7 @@ For each of these pairs of arms, pooled over everything else in the tasks where 
 
 - H3: the quality-flaw count differs (edit tasks; a count, summarised as a rate ratio).
 
-Twenty-one primary tests (seven pairs, three outcomes). Holm correction over the twenty-one. alpha = 0.05.
+Thirty primary tests (ten pairs, three outcomes). Holm correction over the thirty. alpha = 0.05.
 
 ## Models
 
@@ -85,7 +86,17 @@ memorised fixes; and synthetic against mined tasks, per arm.
 - A task found invalid after the fact (its gold solution fails the grader in the final environment); all its runs in
   all arms are excluded and the task is listed.
 
+A run whose egress log shows a denied connection attempt (`egress_denied` > 0: the agent tried to reach anything but the Anthropic API) is reported with its hosts and excluded from the primary analyses if the attempt was aimed at a source of the fix (the project's repository, a forge, a package index); other attempts are reported only.
+
 API errors after the first model call, caps and timeouts are failures, not exclusions.
+
+## Memorization (docs/MEMORIZATION.md)
+
+Pre-2022 pull requests are partly memorized (Opus 5.5 reproduced 35% of gold lines verbatim from the issue alone), so
+mined tasks are modern ones, memorization-probed before acceptance. Success never compares a patch with the gold patch.
+Each task's probe score (the highest verbatim share over the three models) is a covariate: the arm contrasts are
+reported pooled and split at the median score, and the model-by-arm interaction is read with it. The probe tables
+(pre-2022 and accepted tasks) go into the report.
 
 ## Sample size
 

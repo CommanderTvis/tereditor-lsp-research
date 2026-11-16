@@ -14,11 +14,11 @@ agent is merely offered them or pushed to use them?
 
 | Factor | Levels |
 | --- | --- |
-| Arm | `baseline`, `optional`, `enforced`, `intellij-optional`, `intellij-enforced` (below) |
+| Arm | `baseline`, `baseline-review`, `optional`, `enforced`, `intellij-optional`, `intellij-enforced` (below) |
 | Model | `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5`, through `claude -p`, each at Claude Code's default effort (`medium` for all three) |
 | Language | every language headless tereditor serves: C#, TypeScript/JavaScript, Python, PHP, C/C++, Kotlin, Shell, CSS/SCSS; plus Java and mixed Java+Kotlin for the IntelliJ arms |
 | Project size | small, medium, large (lines of code, see TASKS.md) |
-| Task | half synthetic (refactorings: `rename`, `rename-file`, `move`, `signature`; navigation: `refs`, `impls`, `dispatch`, `callers`, `inspect`), half mined pull requests merged before 2022-11-30 (docs/TASKS.md) |
+| Task | half synthetic (refactorings: `rename`, `rename-file`, `move`, `signature`; navigation: `refs`, `impls`, `dispatch`, `callers`, `inspect`), half mined pull requests opened after 2026-07-01 (docs/TASKS.md, docs/MEMORIZATION.md) |
 | Repetition | independent runs of the same cell |
 
 Tasks are nested in projects, projects in language x size. Arm and model are crossed with every task.
@@ -39,6 +39,14 @@ The two IntelliJ arms are `optional` and `enforced` with one change: headless te
 IntelliJ server (`TEREDITOR_PREFETCH=intellij`), which then serves `.kt` instead of the Kotlin server and is the only
 server for `.java`. The same six tools, the same text handling and (for `intellij-enforced`) the same CLAUDE.md and
 hooks. They run on JVM projects only (Kotlin, Java, mixed); elsewhere they would equal the tereditor arms.
+
+`baseline-review` is `baseline` followed by a second prompt in the same session (`harness/review-prompt.md`, fixed
+text): check that you did not break anything and left no mess, fix what you find. It is the habit people use today to buy
+quality with tokens, and the comparison the LSP arms must beat: the same tools as baseline (no compiler, so the review
+is by reading), the cost of both turns counted, runs on every project. The edit is taken after the second turn; an
+answer task is answered after it. Only the baseline has a review variant.
+
+Egress. The agent's sandbox has a private network namespace: no route, no DNS. Its `HTTPS_PROXY` reaches, through a loopback forwarder and a unix socket, a proxy on the host (`harness/env/egress-conn.sh`) that lets through `CONNECT api.anthropic.com:443` and nothing else (`harness/egress-allow.txt`), logging every attempt to the run's `egress.log`. `./study redteam` attacks this from inside the sandbox with no model (direct connections, DNS, proxy bypass tricks, searching the filesystem for a planted gold-patch canary, host paths, sockets, capabilities, writes to read-only mounts, git history) and must print `all attacks blocked` before any run. What it does not cover: a kernel or container escape, the Anthropic API itself as a channel, and the models' training data.
 
 Arm applicability: Java has no tereditor server without IntelliJ (Eclipse JDT is not headless), so Java projects run
 `baseline`, `intellij-optional` and `intellij-enforced` only. Kotlin and mixed projects run all five arms.

@@ -1,0 +1,2 @@
+# Hosts the agent's sandbox may reach (CONNECT, port 443), exactly as written, nothing else.
+api.anthropic.com
