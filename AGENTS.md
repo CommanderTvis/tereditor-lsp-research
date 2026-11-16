@@ -62,7 +62,7 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
   an effort level (docs/DESIGN.md). Success is averaged arithmetically, cost and time geometrically (ratios).
 - Oracles never come from a language server: compiler mutation (rename the declaration, compile, collect errors),
   another analyser, or hand-classified exhaustive candidate lists. Every task must pass `./study validate`.
-- The analysis is pre-registered in `docs/ANALYSIS_PLAN.md` (14 primary tests, Holm; mixed models, task-clustered
+- The analysis is pre-registered in `docs/ANALYSIS_PLAN.md` (21 primary tests, Holm; includes a Haiku-reviewed quality-flaw count; mixed models, task-clustered
   bootstrap, sign-flip tests). Changes after the first confirmatory run go in its "Changes after registration".
 
 ## Findings so far (smoke only, not evidence)

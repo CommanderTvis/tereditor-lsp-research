@@ -52,7 +52,7 @@ time. Two to four tasks per `xlarge` project are enough. Record the language ser
 
 ## Task types
 
-Every task has a deterministic grader; no LLM judge is used anywhere. Half the tasks are synthetic, generated from
+Every task has a deterministic grader for success; no LLM judge decides pass or fail. A separate Haiku review counts quality flaws in an edit's diff (docs/ANALYSIS_PLAN.md, outcome 3). Half the tasks are synthetic, generated from
 the pinned snapshot; half are mined from the project's own merged pull requests.
 
 | Id | Kind | Type | Agent output | Grader |

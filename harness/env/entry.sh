@@ -7,7 +7,7 @@
 set -eu
 export STUDY_ROOT=${STUDY_ROOT:-/study-root} STUDY_STATE=${STUDY_STATE:-/state}
 mkdir -p "$HOME/.config/nix" /var/tmp "$STUDY_STATE"
-printf 'experimental-features = nix-command flakes\nsandbox = false\nwarn-dirty = false\naccept-flake-config = false\n' \
+printf 'experimental-features = nix-command flakes\nsandbox = false\nfilter-syscalls = false\nwarn-dirty = false\naccept-flake-config = false\n' \
   > "$HOME/.config/nix/nix.conf"
 group=$1 script=$2; shift 2
 mkdir -p "$STUDY_STATE/gcroots"

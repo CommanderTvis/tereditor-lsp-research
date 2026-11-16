@@ -16,6 +16,18 @@ with their date and reason; the original text stays.
    failure.
 2. **Cost**: `total_cost_usd` reported by Claude Code for the run.
 
+3. **Quality flaws** (edit tasks only): the number of defects in the agent's diff that a post-hoc review finds, the
+   non-functional damage tests cannot see: old names left in comments, docstrings, strings or docs; edits to unrelated
+   symbols or places the task did not ask for; formatting churn; inconsistent naming; dead code or unused imports the
+   edit left behind. The reviewer is `claude-haiku-5-5` through `claude -p` with no tools, given the task prompt, the
+   agent's diff and the gold patch, never the arm; it answers with a list of concrete flaws (kind, file, line,
+   one-sentence reason), and "none" is a valid answer. The prompt is fixed before the first run (`harness/judge/`).
+   Each diff is reviewed three times; its flaw count is the median. A human labels a random sample of 100 reported
+   flaws as real or not, and the false-positive rate is reported next to the result. The reviewer is the same model
+   as one contestant; the review is identical for every arm, so the arm contrast is unaffected by who reviews, but
+   Haiku's own absolute counts may be flattered (self-preference), which the report states. Review cost counts toward the
+   budget. The reviewer cannot make a run pass or fail; success stays deterministic.
+
 Averages: success is a proportion, so it is averaged arithmetically and contrasts are differences in percentage
 points. Cost, tokens, turns and wall time are positive, skewed and differ between arms by a factor, so they are
 summarised on the log scale: geometric means, with contrasts as ratios (what the log-cost model estimates). The
@@ -37,7 +49,9 @@ For each of these pairs of arms, pooled over everything else in the tasks where 
 - H1: success differs.
 - H2: cost differs.
 
-Fourteen primary tests (seven pairs, two outcomes). Holm correction over the fourteen. alpha = 0.05.
+- H3: the quality-flaw count differs (edit tasks; a count, summarised as a rate ratio).
+
+Twenty-one primary tests (seven pairs, three outcomes). Holm correction over the twenty-one. alpha = 0.05.
 
 ## Models
 
