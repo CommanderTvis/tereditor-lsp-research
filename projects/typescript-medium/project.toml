@@ -2,6 +2,7 @@
 # a deeply generic Hono/Context API, many middleware modules and adapters, barrel re-exports per entry point.
 lang = "typescript"
 size = "medium"
+status = "curated"
 repo = "https://github.com/honojs/hono"
 commit = "f6fbaf0299c48eea9e656e03e2ffe7ac755e8823"
 loc = 63057

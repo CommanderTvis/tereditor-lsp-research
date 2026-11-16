@@ -2,6 +2,7 @@
 # integration tests.
 lang = "python"
 size = "xlarge"
+status = "curated"
 repo = "https://github.com/saltstack/salt"
 tag = "v3007.17"
 commit = "6d6c1a9c8ff6c186af2e2d1577c2d68c2ac1016a"

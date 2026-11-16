@@ -2,6 +2,7 @@
 # traits mixed into many classes, and short method names (get, has, add, inflect, getId) shared by unrelated classes.
 lang = "php"
 size = "small"
+status = "curated"
 repo = "https://github.com/thephpleague/container"
 tag = "5.2.0"
 commit = "58accbc032f0090a9bd08326f93062c5a658b2c5"

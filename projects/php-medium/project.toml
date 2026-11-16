@@ -2,6 +2,7 @@
 # from closures, PSR-7/17/18 types from vendor packages, and very large test files.
 lang = "php"
 size = "medium"
+status = "curated"
 repo = "https://github.com/guzzle/guzzle"
 tag = "8.3.1"
 commit = "7d9b1f430bb65ac664e120af227bf9a795ad6333"

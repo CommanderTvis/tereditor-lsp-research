@@ -1,6 +1,7 @@
 # Python, small: toolz, functional utilities. Many modules, star imports, a curried namespace that rebinds most names.
 lang = "python"
 size = "small"
+status = "curated"
 repo = "https://github.com/pytoolz/toolz"
 commit = "451af60dec590a6010e2babdbf391ea8f815122f"
 loc = 5765

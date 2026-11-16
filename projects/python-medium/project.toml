@@ -2,6 +2,7 @@
 # of Markdown elements and progress columns, many lazily imported modules.
 lang = "python"
 size = "medium"
+status = "curated"
 repo = "https://github.com/Textualize/rich"
 tag = "v15.0.0"
 commit = "6ac483cbea39cab124dfd3483bba70ffafb71050"

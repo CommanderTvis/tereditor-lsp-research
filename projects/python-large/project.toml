@@ -1,6 +1,7 @@
 # Python, large: mypy, a fully typed static checker with dense cross-module imports and visitor dispatch.
 lang = "python"
 size = "large"
+status = "curated"
 repo = "https://github.com/python/mypy"
 tag = "v2.4.1"
 commit = "ad02a35e623d105ab7340f75558716bc09f8242e"

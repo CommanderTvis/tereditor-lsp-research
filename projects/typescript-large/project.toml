@@ -2,6 +2,7 @@
 # metadata builders and query builders with many same-named methods (execute, create, update, release ...).
 lang = "typescript"
 size = "large"
+status = "curated"
 repo = "https://github.com/typeorm/typeorm"
 tag = "1.1.3"
 commit = "7a2707cb6a956db1e0c9d43e77ed00a324286f51"
