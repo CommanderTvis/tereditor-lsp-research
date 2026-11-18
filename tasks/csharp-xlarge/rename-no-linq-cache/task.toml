@@ -1,0 +1,7 @@
+type = "rename"
+origin = "synthetic refactoring: rename a class and its file"
+symbol = "LinqToDB.Linq.NoLinqCache"
+new_name = "NoQueryCache"
+selection = "Same rule and seeded draws as refs-raw-sql-string (draw 2 of 108 candidates, index 68, seed 20261110). Chosen among the candidates because the name also occurs in doc comments (cref) and in the public API listing Source/LinqToDB/PublicAPI/PublicAPI.Shipped.txt, which the reference solution updates."
+grade_timeout_s = 1800
+note = "grade.sh runs the CompileTests class (query cache) instead of the whole provider suite"

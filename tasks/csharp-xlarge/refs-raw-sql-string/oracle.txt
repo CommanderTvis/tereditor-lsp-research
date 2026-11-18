@@ -1,0 +1,17 @@
+Source/LinqToDB.EntityFrameworkCore/Internal/ReflectionMethods.cs:50
+Source/LinqToDB.EntityFrameworkCore/Internal/ReflectionMethods.cs:51
+Source/LinqToDB/DataExtensions.cs:1556
+Source/LinqToDB/Internal/Linq/Builder/ExpressionBuilder.SqlBuilder.cs:1882
+Source/LinqToDB/Internal/Linq/Builder/Visitors/ExposeExpressionVisitor.cs:264
+Source/LinqToDB/Internal/Linq/Builder/Visitors/ExposeExpressionVisitor.cs:265
+Source/LinqToDB/Internal/Linq/ExpressionCacheHelpers.cs:14
+Source/LinqToDB/Internal/Reflection/Methods.cs:234
+Source/LinqToDB/Internal/Reflection/Methods.cs:271
+Source/LinqToDB/Mapping/SqlQueryDependentAttribute.cs:37
+Source/LinqToDB/RawSqlString.cs:10
+Source/LinqToDB/RawSqlString.cs:16
+Source/LinqToDB/RawSqlString.cs:23
+Source/LinqToDB/RawSqlString.cs:29
+Source/LinqToDB/Sql/Sql.Expressions.cs:569
+Tests/Linq/Linq/FromSqlTests.cs:1296
+Tests/Linq/Linq/FromSqlTests.cs:1407

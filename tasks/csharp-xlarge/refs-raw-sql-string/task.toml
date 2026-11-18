@@ -1,0 +1,4 @@
+type = "refs"
+origin = "synthetic navigation: find all usages"
+symbol = "LinqToDB.RawSqlString"
+selection = "Rule fixed before looking at candidates: public or internal types declared exactly once in Source/LinqToDB whose whole-word name occurs in 6 to 30 .cs files of Source and Tests, on at least 2 comment lines, and in 8 to 60 lines in total; 108 candidates sorted by name; draws int(rand()*108)+1 with awk srand(20261110), in the order refs, rename: draw 1 = 80 (RawSqlString), draw 2 = 68 (NoLinqCache). The name also appears in doc comments (excluded by the prompt) and in the API listing PublicAPI.Shipped.txt (not C#)."

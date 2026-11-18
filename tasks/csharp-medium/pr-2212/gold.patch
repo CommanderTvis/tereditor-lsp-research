@@ -1,0 +1,83 @@
+diff --git a/src/Spectre.Console/Prompts/MultiSelectionPrompt.cs b/src/Spectre.Console/Prompts/MultiSelectionPrompt.cs
+index f4186a101..404ef2f88 100644
+--- a/src/Spectre.Console/Prompts/MultiSelectionPrompt.cs
++++ b/src/Spectre.Console/Prompts/MultiSelectionPrompt.cs
+@@ -7,6 +7,9 @@ namespace Spectre.Console;
+ public sealed class MultiSelectionPrompt<T> : IPrompt<List<T>>, IListPromptStrategy<T>
+     where T : notnull
+ {
++    private T? _defaultValue;
++    private bool _hasDefaultValue;
++
+     /// <summary>
+     /// Gets or sets the title.
+     /// </summary>
+@@ -63,7 +66,17 @@ public sealed class MultiSelectionPrompt<T> : IPrompt<List<T>>, IListPromptStrat
+     /// Gets or sets the choice to show as selected when the prompt is first displayed.
+     /// By default the first choice is selected.
+     /// </summary>
+-    public T? DefaultValue { get; set; }
++    public T? DefaultValue
++    {
++        get => _defaultValue;
++        set
++        {
++            // For value types, an unset DefaultValue is default(T) rather than null,
++            // so we need to keep track of whether it has been set explicitly.
++            _defaultValue = value;
++            _hasDefaultValue = true;
++        }
++    }
+ 
+     /// <summary>
+     /// Gets or sets a Func that will be triggered if Cancel is triggered by the 'ESC' key.
+@@ -303,7 +316,7 @@ IRenderable IListPromptStrategy<T>.Render(IAnsiConsole console, bool scrollable,
+     /// <inheritdoc/>
+     int IListPromptStrategy<T>.CalculateInitialIndex(IReadOnlyList<ListPromptItem<T>> nodes)
+     {
+-        if (DefaultValue is not null)
++        if (_hasDefaultValue && DefaultValue is not null)
+         {
+             return Tree.IndexOf(DefaultValue) ?? 0;
+         }
+diff --git a/src/Spectre.Console/Prompts/SelectionPrompt.cs b/src/Spectre.Console/Prompts/SelectionPrompt.cs
+index 9761a8775..898904471 100644
+--- a/src/Spectre.Console/Prompts/SelectionPrompt.cs
++++ b/src/Spectre.Console/Prompts/SelectionPrompt.cs
+@@ -8,6 +8,8 @@ public sealed class SelectionPrompt<T> : IPrompt<T>, IListPromptStrategy<T>
+     where T : notnull
+ {
+     private readonly ListPromptTree<T> _tree;
++    private T? _defaultValue;
++    private bool _hasDefaultValue;
+ 
+     /// <summary>
+     /// Gets or sets the title.
+@@ -72,7 +74,17 @@ public sealed class SelectionPrompt<T> : IPrompt<T>, IListPromptStrategy<T>
+     /// Gets or sets the choice to show as selected when the prompt is first displayed.
+     /// By default the first choice is selected.
+     /// </summary>
+-    public T? DefaultValue { get; set; }
++    public T? DefaultValue
++    {
++        get => _defaultValue;
++        set
++        {
++            // For value types, an unset DefaultValue is default(T) rather than null,
++            // so we need to keep track of whether it has been set explicitly.
++            _defaultValue = value;
++            _hasDefaultValue = true;
++        }
++    }
+ 
+     /// <summary>
+     /// Gets or sets a Func that will be triggered if Cancel is triggered by the 'ESC' key.
+@@ -257,7 +269,7 @@ IRenderable IListPromptStrategy<T>.Render(IAnsiConsole console, bool scrollable,
+     /// <inheritdoc/>
+     int IListPromptStrategy<T>.CalculateInitialIndex(IReadOnlyList<ListPromptItem<T>> nodes)
+     {
+-        if (DefaultValue is not null)
++        if (_hasDefaultValue && DefaultValue is not null)
+         {
+             return _tree.IndexOf(DefaultValue) ?? 0;
+         }

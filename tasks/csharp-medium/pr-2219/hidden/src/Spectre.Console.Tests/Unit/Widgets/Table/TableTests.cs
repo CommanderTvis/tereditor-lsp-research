@@ -1,0 +1,1109 @@
+namespace Spectre.Console.Tests.Unit;
+
+[ExpectationPath("Widgets/Table")]
+public sealed class TableTests
+{
+    public sealed class TheAddColumnMethod
+    {
+        [Fact]
+        public void Should_Throw_If_Column_Is_Null()
+        {
+            // Given
+            var table = new Table();
+
+            // When
+            var result = Record.Exception(() => table.AddColumn((string)null!));
+
+            // Then
+            result.ShouldBeOfType<ArgumentNullException>()
+                .ParamName.ShouldBe("column");
+        }
+
+        [Fact]
+        public void Should_Throw_If_Rows_Are_Not_Empty()
+        {
+            // Given
+            var grid = new Table();
+            grid.AddColumn("Foo");
+            grid.AddRow("Hello World");
+
+            // When
+            var result = Record.Exception(() => grid.AddColumn("Bar"));
+
+            // Then
+            result.ShouldBeOfType<InvalidOperationException>()
+                .Message.ShouldBe("Cannot add new columns to table with existing rows.");
+        }
+    }
+
+    public sealed class TheAddColumnsMethod
+    {
+        [Fact]
+        public void Should_Throw_If_Columns_Are_Null()
+        {
+            // Given
+            var table = new Table();
+
+            // When
+            var result = Record.Exception(() => table.AddColumns((string[])null!));
+
+            // Then
+            result.ShouldBeOfType<ArgumentNullException>()
+                .ParamName.ShouldBe("columns");
+        }
+    }
+
+    public sealed class TheAddRowMethod
+    {
+        [Fact]
+        public void Should_Throw_If_String_Rows_Are_Null()
+        {
+            // Given
+            var table = new Table();
+
+            // When
+            var result = Record.Exception(() => table.AddRow((string[])null!));
+
+            // Then
+            result.ShouldBeOfType<ArgumentNullException>()
+                .ParamName.ShouldBe("columns");
+        }
+
+        [Fact]
+        public void Should_Add_Empty_Items_If_User_Provides_Less_Row_Items_Than_Columns()
+        {
+            // Given
+            var table = new Table();
+            table.AddColumn("Hello");
+            table.AddColumn("World");
+
+            // When
+            table.AddRow("Foo");
+
+            // Then
+            table.Rows.Count.ShouldBe(1);
+        }
+
+        [Fact]
+        public void Should_Throw_If_Row_Columns_Are_Greater_Than_Number_Of_Columns()
+        {
+            // Given
+            var table = new Table();
+            table.AddColumn("Hello");
+
+            // When
+            var result = Record.Exception(() => table.AddRow("Foo", "Bar"));
+
+            // Then
+            result.ShouldBeOfType<InvalidOperationException>();
+            result.Message.ShouldBe("The number of row columns (including spans) are greater than the number of table columns. Expected 1 but got 2.");
+        }
+    }
+
+    public sealed class TheAddEmptyRowMethod
+    {
+        [Fact]
+        [Expectation("AddEmptyRow")]
+        public Task Should_Render_Table_Correctly()
+        {
+            // Given
+            var console = new TestConsole();
+            var table = new Table();
+            table.AddColumns("Foo", "Bar", "Baz");
+            table.AddRow("Qux", "Corgi", "Waldo");
+            table.AddEmptyRow();
+            table.AddRow("Grault", "Garply", "Fred");
+
+            // When
+            console.Write(table);
+
+            // Then
+            return Verifier.Verify(console.Output);
+        }
+    }
+
+    [Fact]
+    [Expectation("Render")]
+    public Task Should_Render_Table_Correctly()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumns("Foo", "Bar", "Baz");
+        table.AddRow("Qux", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    public sealed class ColumnSpanning
+    {
+        [Fact]
+        [Expectation("Render_ColumnSpan_2")]
+        public Task Should_Render_Table_With_2_Column_Span()
+        {
+            // Given
+            var console = new TestConsole().Width(80);
+            var table = new Table();
+            table.AddColumns("Col1", "Col2", "Col3", "Col4");
+            table.AddRow(new IRenderable[] { new Markup("A"), new TableCell("B spans 2").Span(2), new Markup("D") });
+            table.AddRow("E", "F", "G", "H");
+
+            // When
+            console.Write(table);
+
+            // Then
+            return Verifier.Verify(console.Output);
+        }
+
+        [Fact]
+        [Expectation("Render_ColumnSpan_3")]
+        public Task Should_Render_Table_With_3_Column_Span()
+        {
+            // Given
+            var console = new TestConsole().Width(80);
+            var table = new Table();
+            table.AddColumns("Item", "Qty", "Unit Price", "Total");
+            table.AddRow("Item A", "5", "20", "100");
+            table.AddRow(new IRenderable[] { new Markup("Item B"), new TableCell("Note: deliver after 5pm").Span(3) });
+            table.AddRow("Item C", "3", "15", "45");
+
+            // When
+            console.Write(table);
+
+            // Then
+            return Verifier.Verify(console.Output);
+        }
+
+        [Fact]
+        [Expectation("Render_ColumnSpan_All")]
+        public Task Should_Render_Table_With_Full_Row_Span()
+        {
+            // Given
+            var console = new TestConsole().Width(80);
+            var table = new Table();
+            table.AddColumns("Col1", "Col2", "Col3");
+            table.AddRow("A", "B", "C");
+            table.AddRow(new TableCell("Full width spanning cell").Span(3));
+            table.AddRow("D", "E", "F");
+
+            // When
+            console.Write(table);
+
+            // Then
+            return Verifier.Verify(console.Output);
+        }
+
+        [Fact]
+        [Expectation("Render_ColumnSpan_LeftAligned")]
+        public Task Should_Render_Spanned_Cell_LeftAligned()
+        {
+            // Given
+            var console = new TestConsole().Width(80);
+            var table = new Table();
+            table.AddColumn(new TableColumn("Left") { Alignment = Justify.Left });
+            table.AddColumn(new TableColumn("Center") { Alignment = Justify.Center });
+            table.AddColumn(new TableColumn("Right") { Alignment = Justify.Right });
+            table.AddRow(new IRenderable[] { new Markup("A"), new TableCell("Spanned").Span(2) });
+            table.AddRow("D", "E", "F");
+
+            // When
+            console.Write(table);
+
+            // Then
+            return Verifier.Verify(console.Output);
+        }
+
+        [Fact]
+        [Expectation("Render_ColumnSpan_Multiple")]
+        public Task Should_Render_Table_With_Multiple_Spans_In_Row()
+        {
+            // Given
+            var console = new TestConsole().Width(80);
+            var table = new Table();
+            table.AddColumns("Col1", "Col2", "Col3", "Col4", "Col5");
+            table.AddRow(new IRenderable[] { new TableCell("Span1").Span(2), new TableCell("Span2").Span(2), new Markup("E") });
+            table.AddRow("A", "B", "C", "D", "E");
+
+            // When
+            console.Write(table);
+
+            // Then
+            return Verifier.Verify(console.Output);
+        }
+
+        [Fact]
+        public void Should_Throw_When_Span_Exceeds_Column_Count()
+        {
+            // Given
+            var table = new Table();
+            table.AddColumns("Col1", "Col2", "Col3");
+
+            // When
+            var result = Record.Exception(() => table.AddRow(new TableCell("Too wide").Span(4)));
+
+            // Then
+            result.ShouldBeOfType<InvalidOperationException>();
+            result.Message.ShouldContain("greater than the number of table columns");
+        }
+
+        [Fact]
+        public void Should_Throw_When_Span_Is_Less_Than_1()
+        {
+            // Given, When
+            var result = Record.Exception(() => new TableCell("Test").Span(0));
+
+            // Then
+            result.ShouldBeOfType<ArgumentException>();
+            result.Message.ShouldContain("Column span must be at least 1");
+        }
+
+        [Fact]
+        public void Should_Throw_When_Spanning_In_Header()
+        {
+            // Given/When
+            var result = Record.Exception(() => new TableColumn(new TableCell("Header").Span(2)));
+
+            // Then
+            result.ShouldBeOfType<InvalidOperationException>();
+            result.Message.ShouldContain("Column spanning is not supported in table header rows");
+        }
+
+        [Fact]
+        public void Should_Throw_When_Spanning_In_Footer()
+        {
+            // Given
+            var table = new Table();
+            table.AddColumns("Col1", "Col2");
+            var column = table.Columns[0];
+
+            // When
+            var result = Record.Exception(() => column.Footer = new TableCell("Footer").Span(2));
+
+            // Then
+            result.ShouldBeOfType<InvalidOperationException>();
+            result.Message.ShouldContain("Column spanning is not supported in table footer rows");
+        }
+
+        [Fact]
+        [Expectation("Render_ColumnSpan_NoBorder")]
+        public Task Should_Render_Spanned_Cells_Without_Border()
+        {
+            // Given
+            var console = new TestConsole().Width(80);
+            var table = new Table();
+            table.Border = TableBorder.None;
+            table.AddColumns("Col1", "Col2", "Col3");
+            table.AddRow(new IRenderable[] { new Markup("A"), new TableCell("Spanned").Span(2) });
+            table.AddRow("D", "E", "F");
+
+            // When
+            console.Write(table);
+
+            // Then
+            return Verifier.Verify(console.Output);
+        }
+
+        [Fact]
+        [Expectation("Render_ColumnSpan_Multiline")]
+        public Task Should_Render_Multiline_Spanned_Cell()
+        {
+            // Given
+            var console = new TestConsole().Width(80);
+            var table = new Table();
+            table.AddColumns("Col1", "Col2", "Col3");
+            table.AddRow(new IRenderable[] { new Markup("A"), new TableCell("Line 1\nLine 2\nLine 3").Span(2) });
+            table.AddRow("D", "E", "F");
+
+            // When
+            console.Write(table);
+
+            // Then
+            return Verifier.Verify(console.Output);
+        }
+    }
+
+    [Fact]
+    [Expectation("Render_Row_Separators")]
+    public Task Should_Render_Table_With_Row_Separators_Correctly()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.ShowRowSeparators();
+        table.AddColumns("Foo", "Bar", "Baz");
+        table.AddRow("Qux", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Row_Separators_No_Header")]
+    public Task Should_Render_Table_With_Row_Separators_No_Header_Correctly()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+
+        table.ShowRowSeparators();
+        table.HideHeaders();
+
+        table.AddColumns("Foo", "Bar");
+        table.AddRow("Qux", "Corgi");
+        table.AddRow("Waldo", "Grault");
+        table.AddRow("Garply", "Fred");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_EA_Character")]
+    public Task Should_Render_Table_With_EA_Character_Correctly()
+    {
+        // Given
+        var console = new TestConsole().Width(48);
+        var table = new Table();
+        table.AddColumns("Foo", "Bar", "Baz");
+        table.AddRow("中文", "日本語", "한국어");
+        table.AddRow("这是中文测试字符串", "これは日本語のテスト文字列です", "이것은한국어테스트문자열입니다");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Footers")]
+    public Task Should_Render_Table_With_Footers_Correctly()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumn(new TableColumn("Foo").Footer("Oof").RightAligned());
+        table.AddColumn("Bar");
+        table.AddColumns(new TableColumn("Baz").Footer("Zab"));
+        table.AddRow("Qux", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_LeftAligned")]
+    public Task Should_Left_Align_Table_By_Default()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table()
+            .AddColumns("Foo", "Bar", "Baz")
+            .AddRow("Qux", "Corgi", "Waldo")
+            .AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_LeftAligned", "Align_Widget")]
+    public Task Should_Left_Align_Table_Correctly_When_Wrapped_In_Align_Widget()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumns("Foo", "Bar", "Baz");
+        table.AddRow("Qux", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(Align.Left(table));
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Centered")]
+    public Task Should_Center_Table_Correctly_Using_Aligner()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Align(
+            new Table()
+                .AddColumns("Foo", "Bar", "Baz")
+                .AddRow("Qux", "Corgi", "Waldo")
+                .AddRow("Grault", "Garply", "Fred"),
+            HorizontalAlignment.Center);
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Centered", "Align_Widget")]
+    public Task Should_Center_Table_Correctly_When_Wrapped_In_Align_Widget()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumns("Foo", "Bar", "Baz");
+        table.AddRow("Qux", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(Align.Center(table));
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_RightAligned")]
+    public Task Should_Right_Align_Table_Correctly_Using_Aligner()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Align(
+            new Table()
+                .AddColumns("Foo", "Bar", "Baz")
+                .AddRow("Qux", "Corgi", "Waldo")
+                .AddRow("Grault", "Garply", "Fred"),
+            HorizontalAlignment.Right);
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_RightAligned", "Align_Widget")]
+    public Task Should_Right_Align_Table_Correctly_When_Wrapped_In_Align_Widget()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumns("Foo", "Bar", "Baz");
+        table.AddRow("Qux", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(Align.Right(table));
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Nested")]
+    public Task Should_Render_Table_Nested_In_Panels_Correctly()
+    {
+        // A simple table
+        var console = new TestConsole();
+        var table = new Table()
+        {
+            Border = TableBorder.Rounded
+        };
+        table.AddColumn("Foo");
+        table.AddColumn("Bar");
+        table.AddColumn(new TableColumn("Baz")
+        {
+            Alignment = Justify.Right
+        });
+        table.AddRow("Qux\nQuuuuuux", "[blue]Corgi[/]", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred");
+
+        // Render a table in some panels.
+        console.Write(new Panel(new Panel(table)
+        {
+            Border = BoxBorder.Ascii,
+        }));
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_ColumnJustification")]
+    public Task Should_Render_Table_With_Column_Justification_Correctly()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumn(new TableColumn("Foo")
+        {
+            Alignment = Justify.Left
+        });
+        table.AddColumn(new TableColumn("Bar")
+        {
+            Alignment = Justify.Right
+        });
+        table.AddColumn(new TableColumn("Baz")
+        {
+            Alignment = Justify.Center
+        });
+        table.AddRow("Qux", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Lorem ipsum dolor sit amet");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Expand")]
+    public Task Should_Expand_Table_To_Available_Space_If_Specified()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table()
+        {
+            Expand = true
+        };
+        table.AddColumns("Foo", "Bar", "Baz");
+        table.AddRow("Qux", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    public void Should_Not_Expand_Fixed_Width_Columns()
+    {
+        // Given
+        var console = new TestConsole().Width(40);
+        var table = new Table()
+            .Expand()
+            .HideHeaders()
+            .HideFooters();
+
+        table.AddColumn(new TableColumn("Time").Width(12));
+        table.AddColumn("Message");
+        table.AddRow("12:00", "Hello");
+
+        // When
+        console.Write(table);
+
+        // Then
+        var line = console.Lines.Single(l => l.Contains("12:00"));
+        var firstSeparator = line.IndexOf('│');
+        var secondSeparator = line.IndexOf('│', firstSeparator + 1);
+
+        var firstColumnWidth = secondSeparator - firstSeparator - 1;
+        firstColumnWidth.ShouldBe(14);
+    }
+
+    [Fact]
+    [Expectation("Render_Multiline")]
+    public Task Should_Render_Table_With_Multiple_Rows_In_Cell_Correctly()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumns("Foo", "Bar", "Baz");
+        table.AddRow("Qux\nQuuux", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_CellPadding")]
+    public Task Should_Render_Table_With_Cell_Padding_Correctly()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumns("Foo", "Bar");
+        table.AddColumn(new TableColumn("Baz")
+        {
+            Padding = new Padding(3, 0, 2, 0)
+        });
+        table.AddRow("Qux\nQuuux", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_NoRows")]
+    public Task Should_Render_Table_Without_Rows()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumns("Foo", "Bar");
+        table.AddColumn(new TableColumn("Baz")
+        {
+            Padding = new Padding(3, 0, 2, 0)
+        });
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Impossible")]
+    public Task Should_Not_Draw_Tables_That_Are_Impossible_To_Draw()
+    {
+        // Given
+        var console = new TestConsole().Width(25);
+
+        var first = new Table().Border(TableBorder.Rounded).BorderColor(Color.Red);
+        first.AddColumn(new TableColumn("[u]PS1[/]").Centered());
+        first.AddColumn(new TableColumn("[u]PS2[/]"));
+        first.AddColumn(new TableColumn("[u]PS3[/]"));
+        first.AddRow("Hello", "[red]World[/]", string.Empty);
+        first.AddRow("[blue]Bonjour[/]", "[white]le[/]", "[red]monde![/]");
+        first.AddRow("[blue]Hej[/]", "[yellow]Världen[/]", string.Empty);
+
+        var second = new Table().Border(TableBorder.Square).BorderColor(Color.Green);
+        second.AddColumn(new TableColumn("[u]Foo[/]"));
+        second.AddColumn(new TableColumn("[u]Bar[/]"));
+        second.AddColumn(new TableColumn("[u]Baz[/]"));
+        second.AddRow("Hello", "[red]World[/]", string.Empty);
+        second.AddRow(first, new Text("Whaaat"), new Text("Lolz"));
+        second.AddRow("[blue]Hej[/]", "[yellow]Världen[/]", string.Empty);
+
+        var table = new Table().Border(TableBorder.Rounded);
+        table.AddColumn(new TableColumn(new Panel("[u]ABC[/]").BorderColor(Color.Red)));
+        table.AddColumn(new TableColumn(new Panel("[u]DEF[/]").BorderColor(Color.Green)));
+        table.AddColumn(new TableColumn(new Panel("[u]GHI[/]").BorderColor(Color.Blue)));
+        table.AddRow(new Text("Hello").Centered(), new Markup("[red]World[/]"), Text.Empty);
+        table.AddRow(second, new Text("Whaat"), new Text("Lol").RightJustified());
+        table.AddRow(new Markup("[blue]Hej[/]"), new Markup("[yellow]Världen[/]"), Text.Empty);
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Title_Caption")]
+    public Task Should_Render_Table_With_Title_And_Caption_Correctly()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table
+        {
+            Border = TableBorder.Rounded
+        };
+        table.Title = new TableTitle("Hello World");
+        table.Caption = new TableTitle("Goodbye World");
+        table.AddColumns("Foo", "Bar", "Baz");
+        table.AddRow("Qux", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Title_Caption_LeftAligned")]
+    public Task Should_Left_Align_Table_With_Title_And_Caption_Correctly()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table()
+            .RoundedBorder()
+            .Title(new TableTitle("Hello World"))
+            .Caption(new TableTitle("Goodbye World"))
+            .AddColumns("Foo", "Bar", "Baz")
+            .AddRow("Qux", "Corgi", "Waldo")
+            .AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Title_Caption_Centered")]
+    public Task Should_Center_Table_With_Title_And_Caption_Correctly_Using_Aligner()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Align(
+            new Table()
+                .RoundedBorder()
+                .Title(new TableTitle("Hello World"))
+                .Caption(new TableTitle("Goodbye World"))
+                .AddColumns("Foo", "Bar", "Baz")
+                .AddRow("Qux", "Corgi", "Waldo")
+                .AddRow("Grault", "Garply", "Fred"),
+            HorizontalAlignment.Center);
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Title_Caption_RightAligned")]
+    public Task Should_Right_Align_Table_With_Title_And_Caption_Correctly()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Align(
+            new Table()
+                .RoundedBorder()
+                .Title(new TableTitle("Hello World"))
+                .Caption(new TableTitle("Goodbye World"))
+                .AddColumns("Foo", "Bar", "Baz")
+                .AddRow("Qux", "Corgi", "Waldo")
+                .AddRow("Grault", "Garply", "Fred"),
+            HorizontalAlignment.Right);
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Title_Caption_LowerCase")]
+    public Task Should_Render_Table_Without_Capitalizing_First_Letter()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table
+        {
+            Border = TableBorder.Rounded
+        };
+        table.Title = new TableTitle("hello world");
+        table.Caption = new TableTitle("goodbye world");
+        table.AddColumns("Foo", "Bar", "Baz");
+        table.AddRow("Qux", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Fold")]
+    public Task Should_Render_With_Folded_Text_Table_Correctly()
+    {
+        // Given
+        var console = new TestConsole().Width(30);
+        var table = new Table();
+        table.AddColumns("Foo", "Bar", "Baz");
+        table.AddRow("Qux With A Long Description", "Corgi", "Waldo");
+        table.AddRow("Grault", "Garply", "Fred On A Long Long Walk");
+
+        var panel = new Panel(table);
+        panel.Border = BoxBorder.Double;
+
+        // When
+        console.Write(panel);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Empty_Column")]
+    public Task Should_Render_Empty_Column_Correctly()
+    {
+        // Given
+        var console = new TestConsole().Width(30);
+        var table = new Table();
+        table.AddColumns(string.Empty, string.Empty);
+        table.AddRow(string.Empty, "A");
+        table.AddRow(string.Empty, "B");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Cell_Overflow_Crop")]
+    public Task Should_Respect_Cell_Content_Overflow_Crop()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumn(new TableColumn("Column1").Width(15));
+        table.AddColumn(new TableColumn("Column2").Width(15));
+        table.AddRow(
+            new Text("foo pneumonoultramicroscopicsilicovolcanoconiosis bar").Overflow(Overflow.Crop),
+            new Text("Short text"));
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Cell_Overflow_Ellipsis")]
+    public Task Should_Respect_Cell_Content_Overflow_Ellipsis()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumn(new TableColumn("Column1").Width(15));
+        table.AddColumn(new TableColumn("Column2").Width(15));
+        table.AddRow(
+            new Text("foo pneumonoultramicroscopicsilicovolcanoconiosis bar").Overflow(Overflow.Ellipsis),
+            new Text("Short text"));
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Cell_Overflow_Fold")]
+    public Task Should_Respect_Cell_Content_Overflow_Fold()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumn(new TableColumn("Column1").Width(15));
+        table.AddColumn(new TableColumn("Column2").Width(15));
+        table.AddRow(
+            new Text("foo pneumonoultramicroscopicsilicovolcanoconiosis bar").Overflow(Overflow.Fold),
+            new Text("Short text"));
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Cell_Markup_Overflow")]
+    public Task Should_Respect_Markup_Content_Overflow_In_Cell()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumn(new TableColumn("Column1").Width(18));
+        table.AddColumn(new TableColumn("Column2").Width(15));
+        table.AddRow(
+            new Markup("[yellow]foo[/] [red]pneumonoultramicroscopicsilicovolcanoconiosis[/] [blue]bar[/]").Overflow(
+                Overflow.Ellipsis),
+            new Markup("[green]Short text[/]"));
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Cell_Overflow_Multiple_Rows")]
+    public Task Should_Respect_Cell_Content_Overflow_In_Multiple_Rows()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumn(new TableColumn("Column1").Width(15));
+        table.AddColumn(new TableColumn("Column2").Width(15));
+        table.AddRow(
+            new Text("foo pneumonoultramicroscopicsilicovolcanoconiosis").Overflow(Overflow.Crop),
+            new Text("First row"));
+        table.AddRow(
+            new Text("bar supercalifragilisticexpialidocious").Overflow(Overflow.Ellipsis),
+            new Text("Second row"));
+        table.AddRow(
+            new Text("qux antidisestablishmentarianism").Overflow(Overflow.Fold),
+            new Text("Third row"));
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [Expectation("Render_Cell_Overflow_With_NoWrap")]
+    public Task Should_Respect_Cell_Content_Overflow_With_NoWrap_Column()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumn(new TableColumn("Column1").Width(15).NoWrap());
+        table.AddColumn(new TableColumn("Column2").Width(15));
+        table.AddRow(
+            new Text("foo pneumonoultramicroscopicsilicovolcanoconiosis bar").Overflow(Overflow.Ellipsis),
+            new Text("Short text"));
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact]
+    [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/2033")]
+    public void Should_Not_Throw_When_Rendering_Long_CJK_Header_In_Narrow_Console()
+    {
+        // Given
+        var console = new TestConsole().Width(50);
+        var table = new Table()
+            .AddColumn("测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试");
+
+        // When
+        var result = Record.Exception(() => console.Write(table));
+
+        // Then
+        result.ShouldBeNull();
+    }
+
+    [Fact]
+    [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/2033")]
+    public void Should_Not_Throw_When_Rendering_Multiple_Long_CJK_Headers_In_Narrow_Console()
+    {
+        // Given
+        var console = new TestConsole().Width(50);
+        var table = new Table()
+            .AddColumn("测试测试测试测试测试测试测试测试")
+            .AddColumn("测试测试测试测试测试测试测试测试")
+            .AddColumn("测试测试测试测试测试测试测试测试");
+
+        // When
+        var result = Record.Exception(() => console.Write(table));
+
+        // Then
+        result.ShouldBeNull();
+    }
+
+    [Fact]
+    [Expectation("Render_Wide_Emoji_Hearts")]
+    [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/1847")]
+    public Task Should_Render_Table_With_Wide_Emoji_Correctly()
+    {
+        // Given
+        var console = new TestConsole();
+        var table = new Table();
+        table.AddColumns("hearts", "length", "LengthInTextElements");
+        table.AddRow("wide ❤️", "2", "1");
+        table.AddRow("normal ♥", "1", "1");
+
+        // When
+        console.Write(table);
+
+        // Then
+        return Verifier.Verify(console.Output);
+    }
+
+    [Fact(Timeout = 3000)]
+    [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/2131")]
+    public Task CollapseWidths_Should_Terminate_When_Wrappable_Columns_Collapse_To_Zero()
+    {
+        return Task.Run(() =>
+        {
+            // Given
+            var console = new TestConsole().Width(20);
+            var table = new Table().NoBorder();
+
+            var col1 = new TableColumn(string.Empty) { Padding = new Padding(0, 0, 0, 0) };
+            var col2 = new TableColumn(string.Empty) { Padding = new Padding(0, 0, 0, 0) };
+            var col3 = new TableColumn(string.Empty) { NoWrap = true, Width = 100, Padding = new Padding(0, 0, 0, 0) };
+
+            table.AddColumn(col1);
+            table.AddColumn(col2);
+            table.AddColumn(col3);
+
+            // When
+            console.Write(table);
+
+            // Then
+            console.Output.ShouldNotBeNullOrEmpty();
+        });
+    }
+
+    [Fact(Timeout = 3000)]
+    [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/2193")]
+    public Task Should_Terminate_When_Nested_Table_Column_Is_Narrower_Than_A_Wide_Cluster()
+    {
+        return Task.Run(() =>
+        {
+            // Given
+            var console = new TestConsole().Width(10);
+
+            var paragraphFrame = new Table().NoBorder().HideHeaders().AddColumn(string.Empty);
+            paragraphFrame.AddRow(new Markup("Hello 😄 world 😃"));
+
+            var listFrame = new Table().NoBorder().HideHeaders().AddColumn(string.Empty).AddColumn(string.Empty);
+            listFrame.Columns[0].RightAligned();
+            listFrame.AddRow(new Markup("-"), paragraphFrame);
+
+            var rootFrame = new Table().NoBorder().HideHeaders().AddColumn(string.Empty);
+            rootFrame.AddRow(listFrame);
+
+            // When
+            console.Write(rootFrame);
+
+            // Then
+            console.Output.ShouldNotBeNullOrEmpty();
+        });
+    }
+}

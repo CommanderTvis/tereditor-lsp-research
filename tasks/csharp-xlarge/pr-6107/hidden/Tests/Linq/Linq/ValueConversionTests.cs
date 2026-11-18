@@ -1,0 +1,1941 @@
+using System;
+using System.Collections.Generic;
+using System.Data.SqlTypes;
+using System.Globalization;
+using System.Linq;
+
+using LinqToDB;
+using LinqToDB.Internal.Common;
+using LinqToDB.Internal.Mapping;
+using LinqToDB.Mapping;
+using LinqToDB.SqlQuery;
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+using NUnit.Framework;
+
+using Shouldly;
+
+namespace Tests.Linq
+{
+	[TestFixture]
+	public class ValueConversionTests : TestBase
+	{
+
+		sealed class ItemClass
+		{
+			public string? Value { get; set; }
+		}
+
+		enum EnumValue
+		{
+			Value1,
+			Value2,
+			Value3,
+			Null
+		}
+
+		[Table("ValueConversion")]
+		sealed class MainClass
+		{
+			[PrimaryKey]
+			public int Id    { get; set; }
+
+			[Column(DataType = DataType.NVarChar, Length = 200, CanBeNull = true)]
+			public JToken? Value1 { get; set; }
+
+			[Column(DataType = DataType.NVarChar, Length = 200, CanBeNull = true)]
+			public List<ItemClass>? Value2 { get; set; }
+
+			[Column(DataType = DataType.NVarChar, Length = 50)]
+			public EnumValue Enum { get; set; }
+
+			[Column(DataType = DataType.VarChar, Length = 50, CanBeNull = true)]
+			public EnumValue? EnumNullable { get; set; }
+
+			[Column(DataType = DataType.VarChar, Length = 50, CanBeNull = true)]
+			public EnumValue EnumWithNull { get; set; }
+
+			[Column(DataType = DataType.VarChar, Length = 50, CanBeNull = true)]
+			[ValueConverter(ConverterType = typeof(WithNullConverter))]
+			public EnumValue EnumWithNullDeclarative { get; set; }
+
+			[Column(DataType = DataType.VarChar, Length = 1, CanBeNull = false)]
+			public bool BoolValue { get; set; }
+
+			[Column(DataType = DataType.VarChar, Length = 1, CanBeNull = false)]
+			public bool AnotherBoolValue { get; set; }
+
+			[Column]
+			public DateTime? DateTimeNullable { get; set; }
+
+			public static MainClass[] TestData()
+			{
+				return Enumerable.Range(1, 10)
+					.Select(i =>
+						new MainClass
+						{
+							Id = i, Value1 = i == 10 ? null : JToken.Parse($"{{ some : \"str{i}\" }}"),
+							Value2 = i == 10 ? null : new List<ItemClass> { new ItemClass { Value = "Value" + i } },
+							Enum = i % 3 == 1 ? EnumValue.Value1 : i % 3 == 2 ? EnumValue.Value2 : EnumValue.Value3,
+							EnumNullable = i % 4 == 1 ? EnumValue.Value1 : i % 4 == 2 ? EnumValue.Value2 : i % 4 == 3 ? EnumValue.Value3 : (EnumValue?)null,
+							EnumWithNull = i % 4 == 1 ? EnumValue.Value1 : i % 4 == 2 ? EnumValue.Value2 : i % 4 == 3 ? EnumValue.Value3 : EnumValue.Null,
+							EnumWithNullDeclarative = i % 4 == 1 ? EnumValue.Value1 : i % 4 == 2 ? EnumValue.Value2 : i % 4 == 3 ? EnumValue.Value3 : EnumValue.Null,
+							BoolValue = i % 4 == 1,
+							DateTimeNullable = i % 3 == 1 ? (DateTime?)null : Tests.TestData.Date
+						}
+					).ToArray();
+			}
+		}
+
+		sealed class WithNullConverter : ValueConverter<EnumValue, string?>
+		{
+#pragma warning disable CA2263 // Prefer generic overload when type is known
+			public WithNullConverter() : base(v => v == EnumValue.Null ? null : v.ToString(), p=> p == null ? EnumValue.Null : (EnumValue)Enum.Parse(typeof(EnumValue), p), true)
+#pragma warning restore CA2263 // Prefer generic overload when type is known
+			{
+
+			}
+		}
+
+		[Table("ValueConversion")]
+		sealed class MainClassRaw
+		{
+			[PrimaryKey]
+			public int Id    { get; set; }
+
+			[Column(DataType = DataType.NVarChar, Length = 200, CanBeNull = true)]
+			public string? Value1 { get; set; }
+
+			[Column(DataType = DataType.NVarChar, Length = 200, CanBeNull = true)]
+			public string? Value2 { get; set; }
+
+			[Column(DataType = DataType.NVarChar, Length = 50)]
+			public string Enum { get; set; } = null!;
+
+			[Column(DataType = DataType.VarChar, Length = 50, CanBeNull = true)]
+			public string? EnumNullable { get; set; }
+
+			[Column(DataType = DataType.VarChar, Length = 50, CanBeNull = true)]
+			public string? EnumWithNull { get; set; }
+
+			[Column(DataType = DataType.VarChar, Length = 50, CanBeNull = true)]
+			public string? EnumWithNullDeclarative { get; set; }
+
+			[Column(DataType = DataType.VarChar, Length = 1, CanBeNull = false)]
+			public char BoolValue { get; set; }
+
+			[Column(DataType = DataType.VarChar, Length = 1, CanBeNull = false)]
+			public char AnotherBoolValue { get; set; }
+
+			[Column]
+			public DateTime? DateTimeNullable { get; set; }
+		}
+
+		[Sql.Extension("{value1} = {value2}", ServerSideOnly = true, IsPredicate = true, Precedence = Precedence.Comparison)]
+		static bool AnyEquality<T>([ExprParameter] T value1, [ExprParameter] T value2)
+			=> throw new ServerSideOnlyException(nameof(AnyEquality));
+
+		private static MappingSchema CreateMappingSchema()
+		{
+			var ms = new MappingSchema();
+			var builder = new FluentMappingBuilder(ms);
+
+#pragma warning disable CA2263 // Prefer generic overload when type is known
+			builder.Entity<MainClass>()
+				.Property(e => e.Value1)
+				.HasConversion(v => JsonConvert.SerializeObject(v), p => JsonConvert.DeserializeObject<JToken>(p))
+				.Property(e => e.Value2)
+				.HasConversionFunc(JsonConvert.SerializeObject, JsonConvert.DeserializeObject<List<ItemClass>>)
+				.Property(e => e.Enum)
+				.HasConversion(v => v.ToString(), p => (EnumValue)Enum.Parse(typeof(EnumValue), p))
+				.Property(e => e.EnumNullable)
+				.HasConversion(v => v.ToString()!, p => (EnumValue)Enum.Parse(typeof(EnumValue), p))
+				.Property(e => e.EnumWithNull)
+				.HasConversion(
+					v => v == EnumValue.Null ? null : v.ToString(),
+					p => p == null ? EnumValue.Null : (EnumValue)Enum.Parse(typeof(EnumValue), p),
+					true
+				)
+				.Property(e => e.BoolValue)
+				.HasConversion(v => v ? 'Y' : 'N', p => p == 'Y')
+				.Property(e => e.AnotherBoolValue)
+				.HasConversion(v => v ? 'T' : 'F', p => p == 'T')
+				.Property(e => e.DateTimeNullable)
+				.HasConversion(
+					_ => _.HasValue ? _.Value.ToLocalTime() : new DateTime?(),
+					_ => _.HasValue ? new DateTime(_.Value.Ticks, DateTimeKind.Local) : new DateTime?()
+				)
+				.Build();
+#pragma warning restore CA2263 // Prefer generic overload when type is known
+
+			return ms;
+		}
+
+		[Test]
+		public void Select([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			// Table Materialization
+			var result = table.OrderBy(_ => _.Id).ToArray();
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(result[0].Value1, Is.Not.Null);
+				Assert.That(result[0].Value2!, Is.Not.Empty);
+
+				Assert.That(result[0].Enum, Is.EqualTo(EnumValue.Value1));
+				Assert.That(result[1].Enum, Is.EqualTo(EnumValue.Value2));
+				Assert.That(result[2].Enum, Is.EqualTo(EnumValue.Value3));
+
+				Assert.That(result[0].EnumNullable, Is.EqualTo(EnumValue.Value1));
+				Assert.That(result[1].EnumNullable, Is.EqualTo(EnumValue.Value2));
+				Assert.That(result[2].EnumNullable, Is.EqualTo(EnumValue.Value3));
+				Assert.That(result[3].EnumNullable, Is.Null);
+
+				Assert.That(result[0].EnumWithNull, Is.EqualTo(EnumValue.Value1));
+				Assert.That(result[1].EnumWithNull, Is.EqualTo(EnumValue.Value2));
+				Assert.That(result[2].EnumWithNull, Is.EqualTo(EnumValue.Value3));
+				Assert.That(result[3].EnumWithNull, Is.EqualTo(EnumValue.Null));
+
+				Assert.That(result[0].EnumWithNullDeclarative, Is.EqualTo(EnumValue.Value1));
+				Assert.That(result[1].EnumWithNullDeclarative, Is.EqualTo(EnumValue.Value2));
+				Assert.That(result[2].EnumWithNullDeclarative, Is.EqualTo(EnumValue.Value3));
+				Assert.That(result[3].EnumWithNullDeclarative, Is.EqualTo(EnumValue.Null));
+
+				Assert.That(result[9].Value1, Is.Null);
+				Assert.That(result[9].Value2, Is.Null);
+
+				Assert.That(result[0].BoolValue, Is.True);
+				Assert.That(result[1].BoolValue, Is.False);
+				Assert.That(result[2].BoolValue, Is.False);
+				Assert.That(result[3].BoolValue, Is.False);
+			}
+
+			var query = from t in table
+						select new
+						{
+							t.Id,
+							t.Value1,
+							t.Value2,
+						};
+
+			var selectResult = query.OrderBy(_ => _.Id).ToArray();
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(selectResult[0].Value1, Is.Not.Null);
+				Assert.That(selectResult[0].Value2!, Is.Not.Empty);
+			}
+
+			var subqueryResult = query.AsSubQuery().OrderBy(_ => _.Id).ToArray();
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(subqueryResult[0].Value1, Is.Not.Null);
+				Assert.That(subqueryResult[0].Value2!, Is.Not.Empty);
+			}
+
+			var unionResult = query.Concat(query.AsSubQuery()).OrderBy(_ => _.Id).ToArray();
+
+			var firstItem = unionResult.First();
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(firstItem.Value1, Is.Not.Null);
+				Assert.That(firstItem.Value2!, Is.Not.Empty);
+			}
+
+			var lastItem = unionResult.Last();
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(lastItem.Value1, Is.Null);
+				Assert.That(lastItem.Value2, Is.Null);
+			}
+
+			var firstList = query.AsSubQuery().OrderBy(e => e.Id).Skip(1).Select(q => q.Value2).FirstOrDefault();
+			Assert.That(firstList![0].Value, Is.EqualTo("Value2"));
+		}
+
+		[Test]
+		public void ParameterTests([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var testedList = testData[0].Value2;
+
+			var query = from t in table
+						where testedList == t.Value2
+						select new
+						{
+							t.Id,
+							t.Value1,
+							t.Value2,
+						};
+
+			var selectResult = query.ToArray();
+
+			Assert.That(selectResult, Has.Length.EqualTo(1));
+		}
+
+		[Test]
+		public void ParameterTestsNullable([IncludeDataSources(false, TestProvName.AllSQLite, TestProvName.AllClickHouse)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var testDate = TestData.Date;
+
+			var query1 = from t in table
+						 where testDate == t.DateTimeNullable!.Value
+						 select t.DateTimeNullable;
+
+			var query2 = from t in table
+						 where t.DateTimeNullable!.Value == testDate
+						 select t.DateTimeNullable;
+
+			var result1 = query1.ToArray();
+			var result2 = query2.ToArray();
+
+			AreEqual(result1, result2);
+		}
+
+		[Test]
+		public void GroupByTest([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var testedList = testData[0].Value2;
+
+			var query = from t in table
+						where testedList == t.Value2
+						group t by t.Id
+					into g
+						select g;
+
+			query = query.DisableGuard();
+
+			foreach (var item in query)
+			{
+				var elements = item.ToArray();
+			}
+		}
+
+		[Test]
+		public void ExtensionTest([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var testedList = testData[0].Value2;
+
+			var query = from t in table
+						where AnyEquality(t.Value2, testedList)
+						select t;
+
+			var selectResult = query.ToArray();
+
+			Assert.That(selectResult, Has.Length.EqualTo(1));
+		}
+
+		[Test]
+		public void BoolTest([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var query = from t in table
+						where t.BoolValue
+						select new
+						{
+							t.Id,
+							t.Value1,
+							t.Value2,
+							t.BoolValue
+						};
+
+			var selectResult = query.ToArray();
+
+			Assert.That(selectResult, Has.Length.EqualTo(3));
+		}
+
+		[Test]
+		public void BoolNotTest([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var query = from t in table
+						where !t.BoolValue
+						select new
+						{
+							t.Id,
+							t.Value1,
+							t.Value2,
+							t.BoolValue
+						};
+
+			var selectResult = query.ToArray();
+
+			Assert.That(selectResult, Has.Length.EqualTo(7));
+		}
+
+		[Test]
+		public void CoalesceTest([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var query = from t1 in table
+						select new
+						{
+							Converted = t1.EnumNullable ?? t1.Enum,
+						};
+
+			var selectResult = query.ToArray();
+
+			selectResult.Length.ShouldBe(10);
+		}
+
+		[Test]
+		public void ConditionUnionTest([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var query = from t1 in table
+						select new
+						{
+							Converted = t1.EnumNullable != null ? t1.EnumNullable : t1.Enum,
+						};
+
+			var selectResult = query.Concat(query).ToArray();
+
+			selectResult.Length.ShouldBe(20);
+		}
+
+		/// <summary>
+		/// A set operation distincts the value the condition chose, not the columns it chose between.
+		/// </summary>
+		/// <remarks>
+		/// The sibling above concatenates, so leaving the choice on the client costs nothing but columns. Here the
+		/// branches meet under a UNION, and a choice the database never made is a choice DISTINCT cannot see: ten
+		/// rows come back, one per pairing of the columns the rows were assembled from, where three values were
+		/// asked for. The two arms carry one conversion spelled against a nullable member and against a plain one.
+		/// </remarks>
+		[Test]
+		public void UnionDistinctsTheValueTheConditionChose([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var query = from t1 in table
+						select new
+						{
+							Converted = t1.EnumNullable != null ? t1.EnumNullable : t1.Enum,
+						};
+
+			var selectResult = query.Union(query).ToArray();
+
+			selectResult.Length.ShouldBe(3);
+		}
+
+		/// <summary>
+		/// A condition between two converted columns is answered where the rows are, so it can filter.
+		/// </summary>
+		/// <remarks>
+		/// A projection that cannot be folded still has somewhere to go - the client reads both columns and chooses
+		/// per row. A predicate has not: the choice has to be made in SQL or not at all.
+		/// </remarks>
+		[Test]
+		public void WhereChoosesBetweenTwoConvertedColumns([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+
+			var count = table.Count(t => (t.EnumNullable != null ? t.EnumNullable : t.Enum) == EnumValue.Value1);
+
+			count.ShouldBe(4);
+		}
+
+		[Test]
+		public void CoalesceConcatTest([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var query = from t1 in table
+						select new
+						{
+							Converted1 = t1.EnumNullable ?? t1.Enum,
+							Converted2 = t1.Value1,
+							Converted3 = t1.EnumNullable ?? t1.Enum,
+						};
+
+			var selectResult = query.Union(query).ToArray();
+
+			selectResult.Length.ShouldBe(10);
+		}
+
+		[Test]
+		public void BoolJoinTest([DataSources(false, TestProvName.AllClickHouse)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var query = from t1 in table
+						from t2 in table.Where(t2 => t2.BoolValue && t1.BoolValue).AsSubQuery()
+						select new
+						{
+							t1.Enum,
+						};
+
+			var selectResult = query.ToArray();
+
+			Assert.That(selectResult, Has.Length.EqualTo(9));
+		}
+
+		[Test]
+		public void NullTest([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var query = from t in table
+						where null == t.Value2
+						select new
+						{
+							t.Id,
+							t.Value1,
+							t.Value2,
+						};
+
+			var selectResult = query.ToArray();
+
+			Assert.That(selectResult, Has.Length.EqualTo(1));
+		}
+
+		[Test]
+		public void NullParameterTests([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			List<ItemClass>? testedList = null;
+
+			var query = from t in table
+						where testedList == t.Value2
+						select new
+						{
+							t.Id,
+							t.Value1,
+							t.Value2,
+						};
+
+			var selectResult = query.ToArray();
+
+			Assert.That(selectResult, Has.Length.EqualTo(1));
+		}
+
+		[Test]
+		public void Update([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			var testData = MainClass.TestData();
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable(testData);
+			var rawTable = db.GetTable<MainClassRaw>();
+
+			var updated = new List<ItemClass> { new ItemClass { Value = "updated" } };
+			var affected = table.Where(e => e.Id == 1)
+					.Set(e => e.Value1, p => p.Value1)
+					.Set(e => e.Value2, updated)
+					.Set(e => e.EnumWithNull, EnumValue.Null)
+					.Set(e => e.EnumWithNullDeclarative, EnumValue.Null)
+					.Update();
+
+			var update1Check = rawTable.First(e => e.Id == 1);
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(update1Check.Value1, Is.EqualTo(JsonConvert.SerializeObject(testData[0].Value1)));
+				Assert.That(update1Check.Value2, Is.EqualTo(JsonConvert.SerializeObject(updated)));
+				Assert.That(update1Check.EnumWithNull, Is.Null);
+				Assert.That(update1Check.EnumWithNullDeclarative, Is.Null);
+			}
+
+			var toUpdate2 = new MainClass
+			{
+				Id = 2,
+				Value1 = JToken.Parse("{ some: \"updated2}\" }"),
+				Value2 = new List<ItemClass> { new ItemClass { Value = "updated2" } },
+				EnumWithNull = EnumValue.Value2,
+				EnumWithNullDeclarative = EnumValue.Value2
+			};
+
+			db.Update(toUpdate2);
+
+			var update2Check = rawTable.First(e => e.Id == 2);
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(update2Check.Value1, Is.EqualTo(/*lang=json,strict*/ "{\"some\":\"updated2}\"}"));
+				Assert.That(update2Check.Value2, Is.EqualTo(JsonConvert.SerializeObject(new List<ItemClass> { new ItemClass { Value = "updated2" } })));
+				Assert.That(update2Check.EnumWithNull, Is.EqualTo("Value2"));
+				Assert.That(update2Check.EnumWithNullDeclarative, Is.EqualTo("Value2"));
+			}
+
+			var toUpdate3 = new MainClass
+			{
+				Id = 3,
+				Value1 = null,
+				Value2 = null,
+				EnumWithNull = EnumValue.Null,
+				EnumWithNullDeclarative = EnumValue.Null,
+			};
+			db.Update(toUpdate3);
+
+			var update3Check = rawTable.First(e => e.Id == 3)!;
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(update3Check.Value1, Is.Null);
+				Assert.That(update3Check.Value2, Is.Null);
+				Assert.That(update3Check.EnumWithNull, Is.Null);
+				Assert.That(update3Check.EnumWithNullDeclarative, Is.Null);
+			}
+		}
+
+		[Test]
+		public void Insert([DataSources(false)] string context)
+		{
+			var ms = CreateMappingSchema();
+
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable<MainClass>();
+			var rawTable = db.GetTable<MainClassRaw>();
+
+			var inserted = new List<ItemClass> { new ItemClass { Value = "inserted" } };
+			table
+				.Value(e => e.Id, 1)
+				.Value(e => e.Value1, new JArray())
+				.Value(e => e.Enum, EnumValue.Value1)
+				.Value(e => e.Value2, inserted)
+				.Value(e => e.BoolValue, true)
+				.Value(e => e.AnotherBoolValue, true)
+				.Insert();
+			var insert1Check = rawTable.First(e => e.Id == 1);
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(insert1Check.Value1, Is.EqualTo(JsonConvert.SerializeObject(new JArray())));
+				Assert.That(insert1Check.Value2, Is.EqualTo(JsonConvert.SerializeObject(inserted)));
+				Assert.That(insert1Check.Enum, Is.EqualTo("Value1"));
+				Assert.That(insert1Check.EnumWithNull, Is.Null);
+				Assert.That(insert1Check.EnumWithNullDeclarative, Is.Null);
+				Assert.That(insert1Check.BoolValue, Is.EqualTo('Y'));
+				Assert.That(insert1Check.AnotherBoolValue, Is.EqualTo('T'));
+			}
+
+			table
+				.Value(e => e.Id, 2)
+				.Value(e => e.Value1, (JToken?)null)
+				.Value(e => e.Value2, (List<ItemClass>?)null)
+				.Value(e => e.Enum, EnumValue.Value2)
+				.Value(e => e.BoolValue, false)
+				.Value(e => e.AnotherBoolValue, false)
+				.Insert();
+
+			var insert2Check = rawTable.First(e => e.Id == 2);
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(insert2Check.Value1, Is.Null);
+				Assert.That(insert2Check.Value2, Is.Null);
+				Assert.That(insert2Check.Enum, Is.EqualTo("Value2"));
+				Assert.That(insert2Check.EnumWithNull, Is.Null);
+				Assert.That(insert2Check.EnumWithNullDeclarative, Is.Null);
+				Assert.That(insert2Check.BoolValue, Is.EqualTo('N'));
+				Assert.That(insert2Check.AnotherBoolValue, Is.EqualTo('F'));
+			}
+
+			var toInsert = new MainClass
+			{
+				Id = 3,
+				Value1 = JToken.Parse("{ some: \"inserted3}\" }"),
+				Value2 = new List<ItemClass> { new ItemClass { Value = "inserted3" } },
+				Enum = EnumValue.Value3,
+				BoolValue = true,
+				AnotherBoolValue = true,
+			};
+
+			db.Insert(toInsert);
+
+			var insert3Check = rawTable.First(e => e.Id == 3);
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(insert3Check.Value1, Is.EqualTo(/*lang=json,strict*/ "{\"some\":\"inserted3}\"}"));
+				Assert.That(insert3Check.Value2, Is.EqualTo(JsonConvert.SerializeObject(new List<ItemClass> { new ItemClass { Value = "inserted3" } })));
+				Assert.That(insert3Check.Enum, Is.EqualTo("Value3"));
+				Assert.That(insert3Check.EnumNullable, Is.Null);
+				Assert.That(insert3Check.EnumWithNull, Is.EqualTo("Value1"));
+				Assert.That(insert3Check.EnumWithNullDeclarative, Is.EqualTo("Value1"));
+				Assert.That(insert3Check.BoolValue, Is.EqualTo('Y'));
+				Assert.That(insert3Check.AnotherBoolValue, Is.EqualTo('T'));
+
+				Assert.That(table.Count(), Is.EqualTo(3));
+			}
+		}
+
+		[Test]
+		public void InsertExpression([DataSources(false)] string context, [Values(1, 2)] int iteration)
+		{
+			var ms = CreateMappingSchema();
+
+			using var db = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable<MainClass>();
+			var rawTable = db.GetTable<MainClassRaw>();
+
+			var inserted  = new List<ItemClass> { new ItemClass { Value = "inserted" } };
+			var boolValue = iteration % 2 == 0;
+			table.Insert(() => new MainClass
+			{
+				Id = iteration,
+				Value1 = new JArray(),
+				Enum = EnumValue.Value1,
+				Value2 = inserted,
+				BoolValue = boolValue,
+				AnotherBoolValue = boolValue
+			});
+
+			var record = rawTable.Single(e => e.Id == iteration);
+
+			record.Id.ShouldBe(iteration);
+			record.Value1.ShouldBe(JsonConvert.SerializeObject(new JArray()));
+			record.Value2.ShouldBe(JsonConvert.SerializeObject(inserted));
+			record.Enum.ShouldBe("Value1");
+			record.EnumWithNull.ShouldBeNull();
+			record.EnumWithNullDeclarative.ShouldBeNull();
+			record.BoolValue.ShouldBe(boolValue ? 'Y' : 'N');
+			record.AnotherBoolValue.ShouldBe(boolValue ? 'T' : 'F');
+		}
+
+		public class Issue3684DateTimeNullConverter : ValueConverterFunc<DateTime?, System.Data.SqlTypes.SqlDateTime>
+		{
+			public Issue3684DateTimeNullConverter() : base(
+				model =>
+				{
+					if (model == null)
+						return SqlDateTime.Null;
+
+					return new SqlDateTime(model.Value);
+				},
+				provider =>
+				{
+					if (provider.IsNull)
+						return null;
+
+					return provider.Value;
+				}, true)
+			{
+			}
+		}
+
+		[Table]
+		public class Issue3684Table
+		{
+			[PrimaryKey, Identity                                                  ] public int       Id                   { get; set; }
+			[ValueConverter(ConverterType = typeof(Issue3684DateTimeNullConverter))]
+			[Column(DataType = DataType.DateTime2, Precision = 0)                  ] public DateTime? FirstAppointmentTime { get; set; }
+			[ValueConverter(ConverterType = typeof(Issue3684DateTimeNullConverter))]
+			[Column(DataType = DataType.DateTime)                                  ] public DateTime? PassportDateOfIssue  { get; set; }
+		}
+
+		[Test]
+		public void Issue3684Test([IncludeDataSources(true, TestProvName.AllSqlServer)] string context)
+		{
+			// remote context serialization for SqlDateTime
+			var ms = new MappingSchema();
+			ms.SetConvertExpression<SqlDateTime, string>(value => ((DateTime)value).ToBinary().ToString(CultureInfo.InvariantCulture));
+			ms.SetConvertExpression<string, SqlDateTime>(value => DateTime.FromBinary(long.Parse(value, CultureInfo.InvariantCulture)));
+
+			using var db    = GetDataContext(context, ms);
+			using var table = db.CreateLocalTable<Issue3684Table>();
+
+			table.Insert(() => new Issue3684Table());
+			table.Insert(() => new Issue3684Table() { FirstAppointmentTime = TestData.DateTime0, PassportDateOfIssue = TestData.DateTime3 });
+
+			var data = table.OrderBy(_ => _.Id).ToArray();
+
+			Assert.That(data, Has.Length.EqualTo(2));
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(data[0].Id, Is.EqualTo(1));
+				Assert.That(data[0].FirstAppointmentTime, Is.Null);
+				Assert.That(data[0].PassportDateOfIssue, Is.Null);
+
+				Assert.That(data[1].Id, Is.EqualTo(2));
+				Assert.That(data[1].FirstAppointmentTime, Is.EqualTo(TestData.DateTime0));
+				Assert.That(data[1].PassportDateOfIssue, Is.EqualTo(TestData.DateTime3));
+			}
+		}
+
+		sealed class BoolConverterAttribute : ValueConverterAttribute
+		{
+			public BoolConverterAttribute()
+			{
+				ValueConverter = new ValueConverter<bool, string>(b => b ? "Y" : "N", m => m == "Y", false);
+			}
+		}
+
+		sealed class BoolConverterNullableAttribute : ValueConverterAttribute
+		{
+			public BoolConverterNullableAttribute()
+			{
+				ValueConverter = new ValueConverter<bool?, string>(b => b == true ? "Y" : "N", m => m == "Y", false);
+			}
+		}
+
+		sealed class BoolConverterNullsAttribute : ValueConverterAttribute
+		{
+			public BoolConverterNullsAttribute()
+			{
+				ValueConverter = new ValueConverter<bool, string?>(b => b ? "Y" : null, m => m == "Y", true);
+			}
+		}
+
+		[Table]
+		public class Issue3830TestTable
+		{
+			[PrimaryKey                                                                        ] public int   Id    { get; set; }
+			[Column(DataType = DataType.Char, Length = 1), BoolConverter                       ] public bool  Bool1 { get; set; }
+			[Column(DataType = DataType.Char, Length = 1), BoolConverterNullable               ] public bool? Bool2 { get; set; }
+			[Column(DataType = DataType.Char, Length = 1, CanBeNull = true), BoolConverterNulls] public bool  Bool3 { get; set; }
+
+			public static readonly Issue3830TestTable[] TestData = new Issue3830TestTable[]
+			{
+				new Issue3830TestTable() { Id = 1, Bool1 = true,  Bool2 = null,  Bool3 = false },
+				new Issue3830TestTable() { Id = 2, Bool1 = false, Bool2 = null,  Bool3 = true  },
+				new Issue3830TestTable() { Id = 3, Bool1 = false, Bool2 = true,  Bool3 = false },
+				new Issue3830TestTable() { Id = 4, Bool1 = true,  Bool2 = false, Bool3 = true  },
+			};
+		}
+
+		[Test]
+		public void Issue3830Test([DataSources] string context, [Values] bool inline)
+		{
+			using var db        = GetDataContext(context);
+			db.InlineParameters = inline;
+			using var table     = db.CreateLocalTable(Issue3830TestTable.TestData);
+
+			foreach (var record in Issue3830TestTable.TestData)
+			{
+				// bool_field=value
+				AssertRecord(record, table.Where(r => r.Bool1 == record.Bool1 && r.Bool2 == record.Bool2 && r.Bool3 == record.Bool3).ToArray());
+				// bool_field
+				if (record.Bool1 == true ) AssertRecord(record, table.Where(r => r.Bool1 && r.Bool2 == record.Bool2 && r.Bool3 == record.Bool3).ToArray());
+				if (record.Bool3 == true ) AssertRecord(record, table.Where(r => r.Bool3 && r.Bool1 == record.Bool1 && r.Bool2 == record.Bool2).ToArray());
+				// !bool_field
+				if (record.Bool1 == false) AssertRecord(record, table.Where(r => !r.Bool1 && r.Bool2 == record.Bool2 && r.Bool3 == record.Bool3).ToArray());
+				if (record.Bool3 == false) AssertRecord(record, table.Where(r => !r.Bool3 && r.Bool1 == record.Bool1 && r.Bool2 == record.Bool2).ToArray());
+				// bool_field is null
+				if (record.Bool2 == null ) AssertRecord(record, table.Where(r => r.Bool2 == null && r.Bool1 == record.Bool1 && r.Bool3 == record.Bool3).ToArray());
+				// bool_field is not null
+				if (record.Bool2 != null ) AssertRecord(record, table.Where(r => r.Bool2 != null && r.Bool1 == record.Bool1 && r.Bool3 == record.Bool3).ToArray());
+			}
+
+			static void AssertRecord(Issue3830TestTable record, Issue3830TestTable[] result)
+			{
+				Assert.That(result, Has.Length.EqualTo(1));
+				using (Assert.EnterMultipleScope())
+				{
+					Assert.That(result[0].Id, Is.EqualTo(record.Id));
+					Assert.That(result[0].Bool1, Is.EqualTo(record.Bool1));
+					Assert.That(result[0].Bool2, Is.EqualTo(record.Bool2));
+					Assert.That(result[0].Bool3, Is.EqualTo(record.Bool3));
+				}
+			}
+		}
+
+		[Test]
+		public void ConditionNullTest([DataSources(TestProvName.AllAccess)] string context)
+		{
+			using var db = GetDataContext(context);
+
+			AreEqual(
+				from p in Parent
+				from i in new[] { 0, 1 }
+				select new
+				{
+					ID    = i == 0 ? null : (int?)p.ParentID,
+					Value = p.Value1
+				} into p
+				where p.ID == p.Value
+				select p
+				,
+				from p in db.Parent
+				from i in new[] { 0, 1 }
+				select new
+				{
+					ID    = i == 0 ? null : (int?)p.ParentID,
+					Value = p.Value1
+				} into p
+				where p.ID == p.Value
+				select p);
+		}
+
+		static class Issue5075
+		{
+			public sealed class Table
+			{
+				public required int Id { get; init; }
+
+				[ValueConverter(ConverterType = typeof(EnumConverter))]
+				[Column(DataType = DataType.NVarChar)]
+				public required EnumValue EnumValue { get; init; }
+
+				[ValueConverter(ConverterType = typeof(EnumConverter))]
+				[Column(DataType = DataType.NVarChar, CanBeNull = true)]
+				public required EnumValue EnumValueNullable { get; init; }
+
+				[ValueConverter(ConverterType = typeof(EnumConverter))]
+				[Column(DataType = DataType.NVarChar)]
+				public required EnumValue? EnumValueNull { get; init; }
+
+				sealed class EnumConverter() : ValueConverter<EnumValue, string>(
+					v => v.ToString(),
+#pragma warning disable CA2263 // Prefer generic overload when type is known
+					v => (EnumValue)Enum.Parse(typeof(EnumValue), v),
+#pragma warning restore CA2263 // Prefer generic overload when type is known
+					false);
+
+				public static readonly Table[] Data =
+				[
+					new (){ Id = 1, EnumValue = EnumValue.Admin, EnumValueNullable = EnumValue.Admin, EnumValueNull = null },
+					new (){ Id = 2, EnumValue = EnumValue.User, EnumValueNullable = EnumValue.User, EnumValueNull = EnumValue.Admin },
+					new (){ Id = 3, EnumValue = EnumValue.User, EnumValueNullable = EnumValue.User, EnumValueNull = EnumValue.User },
+				];
+			}
+
+			public enum EnumValue
+			{
+				Admin,
+				User
+			}
+		}
+
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/5075")]
+		public void Issue5075Test([IncludeDataSources(true, TestProvName.AllPostgreSQL)] string context)
+		{
+			using var db = GetDataContext(context);
+			using var tb = db.CreateLocalTable(Issue5075.Table.Data);
+
+			Issue5075.EnumValue? value = Issue5075.EnumValue.User;
+
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(tb.Where(t => t.EnumValue == value.Value).Count(), Is.EqualTo(2));
+				Assert.That(tb.Where(t => t.EnumValue == value).Count(), Is.EqualTo(2));
+
+				Assert.That(tb.Where(t => t.EnumValueNullable == value.Value).Count(), Is.EqualTo(2));
+				Assert.That(tb.Where(t => t.EnumValueNullable == value).Count(), Is.EqualTo(2));
+
+				Assert.That(tb.Where(t => t.EnumValueNull == value.Value).Count(), Is.EqualTo(1));
+				Assert.That(tb.Where(t => t.EnumValueNull == value).Count(), Is.EqualTo(1));
+			}
+
+			value = null;
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(tb.Where(t => t.EnumValue == value).Count(), Is.Zero);
+				Assert.That(tb.Where(t => t.EnumValue == value!.Value).Count(), Is.Zero);
+
+				Assert.That(tb.Where(t => t.EnumValueNullable == value).Count(), Is.Zero);
+				Assert.That(tb.Where(t => t.EnumValueNullable == value!.Value).Count(), Is.Zero);
+
+				Assert.That(tb.Where(t => t.EnumValueNull == value!.Value).Count(), Is.EqualTo(1));
+				Assert.That(tb.Where(t => t.EnumValueNull == value).Count(), Is.EqualTo(1));
+			}
+		}
+
+		[Table]
+		class Issue5310Table
+		{
+			[PrimaryKey]
+			public int Id { get; set; }
+
+			[Column(DbType = "smallint[]"), ValueConverter(ConverterType = typeof(CustomConverter))]
+			public PaymentType[]? Types { get; set; }
+
+			sealed class CustomConverter() : ValueConverter<PaymentType[], short[]>(
+				types => types.Select(t => (short)t).ToArray(),
+				values => values.Select(v => (PaymentType)v).ToArray(),
+				false);
+
+			public enum PaymentType : short
+			{
+				One = 1,
+				Two = 2
+			}
+
+			public static readonly Issue5310Table[] Data =
+			[
+				new () { Id = 1 }
+			];
+		}
+
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/5310")]
+		public void Issue5310Test([IncludeDataSources(false, TestProvName.AllPostgreSQL)] string context)
+		{
+			using var db = GetDataContext(context);
+			using var tb = db.CreateLocalTable(Issue5310Table.Data);
+
+			var data = tb
+				.Where(s => s.Id == 1)
+				.Set(s => s.Types, [Issue5310Table.PaymentType.One])
+				.UpdateWithOutput((_, inserted) => inserted)
+				.ToArray();
+
+			Assert.That(data, Has.Length.EqualTo(1));
+			Assert.That(data[0].Types, Is.Not.Null.And.Length.EqualTo(1));
+			Assert.That(data[0].Types[0], Is.EqualTo(Issue5310Table.PaymentType.One));
+		}
+
+		sealed class Issue5351YonConverterAttribute : ValueConverterAttribute
+		{
+			public Issue5351YonConverterAttribute(string yes, string? no)
+			{
+				ValueConverter = new ValueConverter<bool, string?>(
+					b => b ? yes : no,
+					s => s == yes,
+					handlesNulls: no == null
+				);
+			}
+		}
+
+		[Table(Name = "TableWithConverterValue")]
+		public class TableWithConverterValueRaw
+		{
+			[PrimaryKey] public int Id { get; set; }
+
+			[Column(DataType = DataType.Char, Length = 1, CanBeNull = true)]
+			public string? NoConversion { get; set; }
+
+			[Column(DataType = DataType.Char, Length = 1, CanBeNull = true)]
+			public string? Test1 { get; set; }
+
+			[Column(DataType = DataType.Char, Length = 1, CanBeNull = true)]
+			public string? Test2 { get; set; }
+
+			public static readonly TableWithConverterValueRaw[] TestData = new TableWithConverterValueRaw[]
+			{
+				new () { Id = 1, NoConversion = "X", Test1 = "X", Test2 = "X" },
+				new () { Id = 2, NoConversion = "X", Test1 = "X", Test2 = "X" },
+				new () { Id = 3, NoConversion = null, Test1 = null, Test2 = null },
+				new () { Id = 4, NoConversion = null, Test1 = null, Test2 = null },
+			};
+		}
+
+		[Table(Name = "TableWithConverterValue")]
+		public class TableWithConverterValue
+		{
+			[PrimaryKey] public int Id { get; set; }
+
+			[Column(DataType = DataType.Char, Length = 1, CanBeNull = true)]
+			public string? NoConversion { get; set; }
+
+			[Column(DataType = DataType.Char, Length = 1, CanBeNull = true), Issue5351YonConverter(yes: "X", no: null)]
+			public bool Test1 { get; set; }
+
+			[Column(DataType = DataType.Char, Length = 1, CanBeNull = true), Issue5351YonConverter(yes: "X", no: null)]
+			public bool Test2 { get; set; }
+		}
+
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/5351")]
+		public void UpdateValuesWithConversion([DataSources] string context, [Values] bool inline)
+		{
+			using var db        = GetDataContext(context);
+			db.InlineParameters = inline;
+
+			using var rawTable = db.CreateLocalTable(TableWithConverterValueRaw.TestData);
+			var       table    = db.GetTable<TableWithConverterValue>();
+
+			string key = "Valid";
+
+			var updatedFalse = db.GetTable<TableWithConverterValue>().Update(
+			  x => x.Id == 1, 
+			  x => new() { Test1 = key == "Invalid" }
+		    );
+
+			var updatedFalseRecord = db.GetTable<TableWithConverterValue>().Where(x => x.Id == 1).Single();
+
+			updatedFalseRecord.Test1.ShouldBeFalse();
+
+			var updatedTrue = db.GetTable<TableWithConverterValue>().Update(
+				x => x.Id == 2,
+				x => new() { Test1 = key == "Valid" }
+			);
+
+			var updatedTrueRecord = db.GetTable<TableWithConverterValue>().Where(x => x.Id == 2).Single();
+			updatedTrueRecord.Test1.ShouldBeTrue();
+
+			var trueRecords = db.GetTable<TableWithConverterValue>().Where(x => x.Test1 == (key == "Valid")).ToArray();
+		}
+
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/5505")]
+		public void UpdateValuesWithFieldOnRhsConversion([DataSources] string context, [Values] bool inline)
+		{
+			using var db        = GetDataContext(context);
+			db.InlineParameters = inline;
+
+			using var rawTable = db.CreateLocalTable(TableWithConverterValueRaw.TestData);
+
+			// Id=1 starts with Test1='X' (true), Test2='X' (true).
+			// RHS `!Test2` is a CLR-style boolean predicate over a converted column.
+			// It must still be wrapped by the column's ToProvider (bool -> 'X'/null),
+			// otherwise the SQL assigns a boolean predicate to a CHAR(1) column.
+			var affected = db.GetTable<TableWithConverterValue>()
+				.Where(x => x.Id == 1)
+				.Set(x => x.Test1, x => !x.Test2)
+				.Update();
+
+			if (context.SupportsRowcount())
+				affected.ShouldBe(1);
+
+			var record = db.GetTable<TableWithConverterValue>().Where(x => x.Id == 1).Single();
+			record.Test1.ShouldBeFalse();
+			record.Test2.ShouldBeTrue();
+
+			var raw = db.GetTable<TableWithConverterValueRaw>().Where(x => x.Id == 1).Single();
+			raw.Test1.ShouldBeNull();
+			raw.Test2.ShouldBe("X");
+		}
+
+		[Sql.Expression("({0} > 0)", ServerSideOnly = true, IsPredicate = true)]
+		static bool Issue5505IsPositive(int x) => throw new ServerSideOnlyException(nameof(Issue5505IsPositive));
+
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/5505")]
+		public void UpdateValuesWithUnrelatedFunctionConversion([DataSources] string context, [Values] bool inline)
+		{
+			using var db        = GetDataContext(context);
+			db.InlineParameters = inline;
+
+			using var rawTable = db.CreateLocalTable(TableWithConverterValueRaw.TestData);
+
+			// Id=1 starts with Test1='X' (true).
+			// RHS is an [Sql.Expression] returning CLR bool computed from an unrelated
+			// column (Id, not Test1). The function does not reference the target
+			// column, so its result is still in CLR form and the column's ToProvider
+			// must wrap it — otherwise the raw bool expression is assigned to a
+			// CHAR(1) column (e.g. PG rejects with 22001 "value too long for type
+			// character(1)").
+			var affected = db.GetTable<TableWithConverterValue>()
+				.Where(x => x.Id == 1)
+				.Set(x => x.Test1, x => Issue5505IsPositive(x.Id))
+				.Update();
+
+			if (context.SupportsRowcount())
+				affected.ShouldBe(1);
+
+			// Id=1 → (Id > 0) → true → converter writes 'X'
+			var raw = db.GetTable<TableWithConverterValueRaw>().Where(x => x.Id == 1).Single();
+			raw.Test1.ShouldBe("X");
+		}
+
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/5351")]
+		public void UpdateValuesWithConversionWithARowShouldThrow([IncludeDataSources(TestProvName.AllOracle)] string context, [Values] bool inline)
+		{
+			using var db        = GetDataContext(context);
+			db.InlineParameters = inline;
+
+			using var rawTable = db.CreateLocalTable(TableWithConverterValueRaw.TestData);
+			var       table    = db.GetTable<TableWithConverterValue>();
+
+			Assert.Throws<LinqToDBException>(() =>
+				_ = table
+					.Where(x => x.Id == 1)
+					.Set(x => Sql.Row(x.Test1, x.Test2), x => Sql.Row(true, x.Test2))
+					.Update()
+			);
+		}
+
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/5351")]
+		public void UpdateValuesWithConversionWithARowFromOtherTable([IncludeDataSources(TestProvName.AllOracle)] string context, [Values] bool inline)
+		{
+			using var db        = GetDataContext(context);
+			db.InlineParameters = inline;
+
+			using var rawTable = db.CreateLocalTable(TableWithConverterValueRaw.TestData);
+			var       table    = db.GetTable<TableWithConverterValue>();
+
+			_ = table
+				.Where(x => x.Id == 1)
+				.Set(
+					x => Sql.Row(x.Test1, x.Test2, x.NoConversion),
+					x => table
+						.Where(o => o.Id == 2)
+						.Select(o => Sql.Row(o.Test1, o.Test2, x.NoConversion))
+						.Single()
+				)
+				.Update();
+		}
+
+		sealed class DefaultValuesTable
+		{
+			[PrimaryKey] public int Id { get; set; }
+
+			[Column(CanBeNull = false, DataType = DataType.Int32), ValueConverter(ConverterType = typeof(ClassToIntConverter))]
+			public IntClass IntClassRequired { get; set; } = default!;
+			[Column(CanBeNull = true, DataType = DataType.Int32), ValueConverter(ConverterType = typeof(ClassToIntConverter))]
+			public IntClass? IntClassNullable { get; set; }
+
+			[Column(CanBeNull = false, DataType = DataType.Int32), ValueConverter(ConverterType = typeof(ClassToIntWithNullConverter))]
+			public IntClass? IntClassRequiredWithNull { get; set; }
+			[Column(CanBeNull = true, DataType = DataType.Int32), ValueConverter(ConverterType = typeof(ClassToIntWithNullConverter))]
+			public IntClass? IntClassNullableWithNull { get; set; }
+
+			[Column(CanBeNull = false, DataType = DataType.VarChar, Length = 10), ValueConverter(ConverterType = typeof(StructToStringConverter))]
+			public StringStruct StringStructRequired { get; set; } = default!;
+			[Column(CanBeNull = true, DataType = DataType.VarChar, Length = 10), ValueConverter(ConverterType = typeof(StructToStringConverter))]
+			public StringStruct? StringStructNullable { get; set; }
+
+			[Column(CanBeNull = false, DataType = DataType.VarChar, Length = 10), ValueConverter(ConverterType = typeof(StructToStringWithNullConverter))]
+			public StringStruct? StringStructRequiredWithNull { get; set; }
+			[Column(CanBeNull = true, DataType = DataType.VarChar, Length = 10), ValueConverter(ConverterType = typeof(StructToStringWithNullConverter))]
+			public StringStruct? StringStructNullableWithNull { get; set; }
+
+			[Column(CanBeNull = false, DataType = DataType.VarChar, Length = 10), ValueConverter(ConverterType = typeof(ClassToStringConverter))]
+			public StringClass StringClassRequired { get; set; } = default!;
+			[Column(CanBeNull = true, DataType = DataType.VarChar, Length = 10), ValueConverter(ConverterType = typeof(ClassToStringConverter))]
+			public StringClass? StringClassNullable { get; set; }
+
+			[Column(CanBeNull = false, DataType = DataType.VarChar, Length = 10), ValueConverter(ConverterType = typeof(ClassToStringWithNullConverter))]
+			public StringClass? StringClassRequiredWithNull { get; set; }
+			[Column(CanBeNull = true, DataType = DataType.VarChar, Length = 10), ValueConverter(ConverterType = typeof(ClassToStringWithNullConverter))]
+			public StringClass? StringClassNullableWithNull { get; set; }
+
+			[Column(CanBeNull = false, DataType = DataType.Int32), ValueConverter(ConverterType = typeof(StructToIntConverter))]
+			public IntStruct IntStructRequired { get; set; } = default!;
+			[Column(CanBeNull = true, DataType = DataType.Int32), ValueConverter(ConverterType = typeof(StructToIntConverter))]
+			public IntStruct? IntStructNullable { get; set; }
+
+			[Column(CanBeNull = false, DataType = DataType.Int32), ValueConverter(ConverterType = typeof(StructToIntWithNullConverter))]
+			public IntStruct? IntStructRequiredWithNull { get; set; }
+			[Column(CanBeNull = true, DataType = DataType.Int32), ValueConverter(ConverterType = typeof(StructToIntWithNullConverter))]
+			public IntStruct? IntStructNullableWithNull { get; set; }
+
+			sealed class ClassToIntConverter() : ValueConverter<IntClass, int>(v => v.Value, v => new(v), false);
+			sealed class ClassToIntWithNullConverter() : ValueConverter<IntClass?, int>(v => v == null ? -1 : v.Value, v => new(v), true);
+
+			sealed class StructToStringConverter() : ValueConverter<StringStruct, string>(v => v.Value, v => new(v), false);
+			sealed class StructToStringWithNullConverter() : ValueConverter<StringStruct?, string>(v => v == null ? "-1" : v.Value.Value, v => new(v), true);
+
+			sealed class ClassToStringConverter() : ValueConverter<StringClass, string>(v => v.Value, v => new(v), false);
+			sealed class ClassToStringWithNullConverter() : ValueConverter<StringClass?, string>(v => v == null ? "-1" : v.Value, v => new(v), true);
+
+			sealed class StructToIntConverter() : ValueConverter<IntStruct, int>(v => v.Value, v => new(v), false);
+			sealed class StructToIntWithNullConverter() : ValueConverter<IntStruct?, int>(v => v == null ? -1 : v.Value.Value, v => new(v), true);
+
+			public sealed class IntClass(int value)
+			{
+				public int Value => value;
+			}
+
+			public readonly struct StringStruct(string value)
+			{
+				public string Value => value;
+			}
+
+			public sealed class StringClass(string value)
+			{
+				public string Value => value;
+			}
+
+			public readonly struct IntStruct(int value)
+			{
+				public int Value => value;
+			}
+		}
+
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/5427")]
+		public void TestNullConversion([DataSources] string context)
+		{
+			using var db = GetDataContext(context);
+			using var tb = db.CreateLocalTable<DefaultValuesTable>();
+
+			db.Insert(new DefaultValuesTable()
+			{
+				Id = 1,
+				StringStructRequired = new("must_set"),
+				StringClassRequired = new("must_set")
+			});
+			db.Insert(new DefaultValuesTable()
+			{
+				Id = 2,
+
+				IntClassRequired = new(1),
+				IntClassNullable = new(1),
+				IntClassRequiredWithNull = new(1),
+				IntClassNullableWithNull = new(1),
+
+				StringStructRequired = new("one"),
+				StringStructNullable = new("one"),
+				StringStructRequiredWithNull = new("one"),
+				StringStructNullableWithNull = new("one"),
+
+				StringClassRequired = new("one"),
+				StringClassNullable = new("one"),
+				StringClassRequiredWithNull = new("one"),
+				StringClassNullableWithNull = new("one"),
+
+				IntStructRequired = new(1),
+				IntStructNullable = new(1),
+				IntStructRequiredWithNull = new(1),
+				IntStructNullableWithNull = new(1),
+			});
+
+			var res = tb.OrderBy(r => r.Id).ToArray();
+
+			using (Assert.EnterMultipleScope())
+			{
+				Assert.That(res[0].IntClassRequired.Value, Is.Zero);
+				Assert.That(res[0].IntClassNullable, Is.Null);
+
+				Assert.That(res[0].IntClassRequiredWithNull?.Value, Is.EqualTo(-1));
+				Assert.That(res[0].IntClassNullableWithNull?.Value, Is.EqualTo(-1));
+
+				Assert.That(res[0].StringStructRequired.Value, Is.EqualTo("must_set"));
+				Assert.That(res[0].StringStructNullable, Is.Null);
+
+				Assert.That(res[0].StringStructRequiredWithNull?.Value, Is.EqualTo("-1"));
+				Assert.That(res[0].StringStructNullableWithNull?.Value, Is.EqualTo("-1"));
+
+				Assert.That(res[0].StringClassRequired.Value, Is.EqualTo("must_set"));
+				Assert.That(res[0].StringClassNullable, Is.Null);
+
+				Assert.That(res[0].StringClassRequiredWithNull?.Value, Is.EqualTo("-1"));
+				Assert.That(res[0].StringClassNullableWithNull?.Value, Is.EqualTo("-1"));
+
+				Assert.That(res[0].IntStructRequired.Value, Is.Zero);
+				Assert.That(res[0].IntStructNullable, Is.Null);
+
+				Assert.That(res[0].IntStructRequiredWithNull?.Value, Is.EqualTo(-1));
+				Assert.That(res[0].IntStructNullableWithNull?.Value, Is.EqualTo(-1));
+
+				Assert.That(res[1].IntClassRequired.Value, Is.EqualTo(1));
+				Assert.That(res[1].IntClassNullable?.Value, Is.EqualTo(1));
+
+				Assert.That(res[1].IntClassRequiredWithNull?.Value, Is.EqualTo(1));
+				Assert.That(res[1].IntClassNullableWithNull?.Value, Is.EqualTo(1));
+
+				Assert.That(res[1].StringStructRequired.Value, Is.EqualTo("one"));
+				Assert.That(res[1].StringStructNullable?.Value, Is.EqualTo("one"));
+
+				Assert.That(res[1].StringStructRequiredWithNull?.Value, Is.EqualTo("one"));
+				Assert.That(res[1].StringStructNullableWithNull?.Value, Is.EqualTo("one"));
+
+				Assert.That(res[1].StringClassRequired.Value, Is.EqualTo("one"));
+				Assert.That(res[1].StringClassNullable?.Value, Is.EqualTo("one"));
+
+				Assert.That(res[1].StringClassRequiredWithNull?.Value, Is.EqualTo("one"));
+				Assert.That(res[1].StringClassNullableWithNull?.Value, Is.EqualTo("one"));
+
+				Assert.That(res[1].IntStructRequired.Value, Is.EqualTo(1));
+				Assert.That(res[1].IntStructNullable?.Value, Is.EqualTo(1));
+
+				Assert.That(res[1].IntStructRequiredWithNull?.Value, Is.EqualTo(1));
+				Assert.That(res[1].IntStructNullableWithNull?.Value, Is.EqualTo(1));
+			}
+		}
+
+		[Table]
+		sealed class ScaledRow
+		{
+			[PrimaryKey] public int Id { get; set; }
+
+			// Access has no 64-bit integer type, so it stores the count as CURRENCY - which carries one exactly.
+			// The storage type is a provider detail here: what is under test is that the conversion survives.
+			[Column(DataType = DataType.Int64)]
+			[Column(Configuration = ProviderName.Access, DataType = DataType.Money)]
+			public TimeSpan Span { get; set; }
+		}
+
+		/// <summary>
+		/// A converted column keeps its conversion when it is read through a set operation.
+		/// </summary>
+		/// <remarks>
+		/// The conversion is not applied by the SQL - it is applied when the row is materialised, by walking the
+		/// column expression back to the descriptor that carries it. A provider that wraps a set-operation column
+		/// breaks that walk unless the wrapper is transparent to it, and then the stored number is read raw: this
+		/// one stores seconds, so losing the conversion reads ninety minutes as fifty-four hundred ticks.
+		/// <para>
+		/// Informix is the provider that does the wrapping, in <c>NVL(x, NULL)</c>, to stop its driver typing the
+		/// column from the first branch alone. Nothing here is provider-specific though, and the assertion is the
+		/// same everywhere.
+		/// </para>
+		/// </remarks>
+		[Test]
+		public void ConversionSurvivesASetOperation([DataSources] string context)
+		{
+			var value = TimeSpan.FromMinutes(90);
+			var ms    = new MappingSchema();
+
+			new FluentMappingBuilder(ms)
+				.Entity<ScaledRow>()
+					.Property(e => e.Span)
+						.HasConversion(
+							ts => ts.Ticks / TimeSpan.TicksPerSecond,
+							v  => TimeSpan.FromTicks(v * TimeSpan.TicksPerSecond))
+				.Build();
+
+			using var db = GetDataContext(context, ms);
+			using var t  = db.CreateLocalTable<ScaledRow>();
+
+			db.Insert(new ScaledRow { Id = 1, Span = value });
+
+			var rows = t
+				.Select(r => new { Source = 1, r.Span })
+				.Concat(t.Select(r => new { Source = 2, r.Span }))
+				.OrderBy(r => r.Source)
+				.ToList();
+
+			rows.Count.ShouldBe(2);
+			rows.Select(r => r.Span).ShouldBe([value, value]);
+		}
+
+		sealed class SeparatelyDeclaredRowA
+		{
+			[PrimaryKey] public int Id { get; set; }
+
+			[Column(DataType = DataType.Int64)]
+			[Column(Configuration = ProviderName.Access, DataType = DataType.Money)]
+			public TimeSpan Span { get; set; }
+		}
+
+		sealed class SeparatelyDeclaredRowB
+		{
+			[PrimaryKey] public int Id { get; set; }
+
+			[Column(DataType = DataType.Int64)]
+			[Column(Configuration = ProviderName.Access, DataType = DataType.Money)]
+			public TimeSpan Span { get; set; }
+		}
+
+		/// <summary>
+		/// Two columns declaring the same conversion separately are read the same way, and the comparison that
+		/// establishes it does not depend on how the conversion spells its nullability.
+		/// </summary>
+		/// <remarks>
+		/// The sibling above pairs a column with itself, so the two descriptors are one object and the comparison
+		/// short-circuits on identity before looking at either conversion. Declared twice they are two objects that
+		/// behave alike, which is what the comparison exists to recognise - and the only shape that reaches it.
+		/// <para>
+		/// Nullable storage under a non-nullable member is what makes the parameter and the value it stands for
+		/// disagree: the conversion reads <c>v.Value</c>, so substituting a bare <see cref="long"/> for a
+		/// <c>long?</c> parameter asks for a member that type does not have. That threw
+		/// <em>Property 'Int64 Value' is not defined for type 'System.Int64'</em> while the query was still being
+		/// built. The nullable-member spelling of the same thing failed the other way, silently: its conversion is
+		/// wrapped in a nullability cast, and stripping the cast used to abandon the substitution underneath it, so
+		/// two identical conversions compared unequal.
+		/// </para>
+		/// </remarks>
+		[Test]
+		public void SeparatelyDeclaredConversionsAreReadTheSameWay([DataSources] string context)
+		{
+			var value = TimeSpan.FromMinutes(90);
+			var ms    = new MappingSchema();
+
+			new FluentMappingBuilder(ms)
+				.Entity<SeparatelyDeclaredRowA>()
+					.Property(e => e.Span)
+						.HasConversion(ts => (long?)ts.Ticks, v => TimeSpan.FromTicks(v!.Value))
+				.Entity<SeparatelyDeclaredRowB>()
+					.Property(e => e.Span)
+						.HasConversion(ts => (long?)ts.Ticks, v => TimeSpan.FromTicks(v!.Value))
+				.Build();
+
+			using var db = GetDataContext(context, ms);
+			using var a  = db.CreateLocalTable<SeparatelyDeclaredRowA>();
+			using var b  = db.CreateLocalTable<SeparatelyDeclaredRowB>();
+
+			db.Insert(new SeparatelyDeclaredRowA { Id = 1, Span = value });
+			db.Insert(new SeparatelyDeclaredRowB { Id = 2, Span = value });
+
+			var rows = a
+				.Select(r => new { r.Id, r.Span })
+				.Concat(b.Select(r => new { r.Id, r.Span }))
+				.OrderBy(r => r.Id)
+				.ToList();
+
+			rows.Count.ShouldBe(2);
+			rows.Select(r => r.Span).ShouldBe([value, value]);
+		}
+
+		/// <summary>
+		/// Two columns whose conversions are the same conversion, declared once each rather than shared, meeting in
+		/// one comparison.
+		/// </summary>
+		/// <remarks>
+		/// The refusal below rests on a comparison of what two conversions do, and that comparison answers "no" when
+		/// it cannot tell - so anything it fails to recognise is a query that used to work and now throws. Two
+		/// separately declared instances of one conversion are the shape where that would bite, and the only one
+		/// reaching the expression comparison at all: paired with itself a column is one descriptor object, and
+		/// identity settles it before either conversion is looked at.
+		/// </remarks>
+		[Test]
+		public void SeparatelyDeclaredConversionsStillCompare([DataSources] string context)
+		{
+			var value = TimeSpan.FromMinutes(90);
+			var ms    = new MappingSchema();
+
+			new FluentMappingBuilder(ms)
+				.Entity<SeparatelyDeclaredRowA>()
+					.Property(e => e.Span)
+						.HasConversion(ts => (long?)ts.Ticks, v => TimeSpan.FromTicks(v!.Value))
+				.Entity<SeparatelyDeclaredRowB>()
+					.Property(e => e.Span)
+						.HasConversion(ts => (long?)ts.Ticks, v => TimeSpan.FromTicks(v!.Value))
+				.Build();
+
+			using var db = GetDataContext(context, ms);
+			using var a  = db.CreateLocalTable<SeparatelyDeclaredRowA>();
+			using var b  = db.CreateLocalTable<SeparatelyDeclaredRowB>();
+
+			db.Insert(new SeparatelyDeclaredRowA { Id = 1, Span = value });
+			db.Insert(new SeparatelyDeclaredRowB { Id = 2, Span = value });
+
+			var matched =
+				(from x in a
+				 from y in b
+				 where x.Span == y.Span
+				 select x.Id)
+				.ToArray();
+
+			matched.ShouldBe([1]);
+		}
+
+		sealed class BlankPaddedCharConverter : ValueConverter<char?, char>
+		{
+			public BlankPaddedCharConverter() : base(
+				x => (!x.HasValue || x == default || x == '\0') ? ' ' : x.Value,
+				x => char.IsLetterOrDigit(x) ? x : null,
+				true)
+			{
+			}
+		}
+
+		[Table]
+		sealed class SharedConverterRowA
+		{
+			[PrimaryKey                                                   ] public int   Id   { get; set; }
+			[ValueConverter(ConverterType = typeof(BlankPaddedCharConverter))]
+			[Column(Length = 1)                                           ] public char? Code { get; set; }
+		}
+
+		[Table]
+		sealed class SharedConverterRowB
+		{
+			[PrimaryKey                                                   ] public int   Id   { get; set; }
+			[ValueConverter(ConverterType = typeof(BlankPaddedCharConverter))]
+			[Column(Length = 1)                                           ] public char? Code { get; set; }
+		}
+
+		/// <summary>
+		/// Two columns naming the same converter class get one converter instance each, and still combine in a set
+		/// operation.
+		/// </summary>
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/6052")]
+		public void SetOperationOverColumnsSharingAConverterClass([DataSources] string context)
+		{
+			using var db = GetDataContext(context);
+			using var a  = db.CreateLocalTable([new SharedConverterRowA { Id = 1, Code = 'A' }, new SharedConverterRowA { Id = 2, Code = null }]);
+			using var b  = db.CreateLocalTable([new SharedConverterRowB { Id = 3, Code = 'B' }]);
+
+			var rows = a
+				.Select(r => new { r.Id, r.Code })
+				.Union(b.Select(r => new { r.Id, r.Code }))
+				.OrderBy(r => r.Id)
+				.ToList();
+
+			rows.Select(r => r.Code).ShouldBe(['A', null, 'B']);
+		}
+
+		#region Issue 5975 / 5976
+
+		static DateTime Issue5975ToStore  (DateTime v) => v.AddHours(1);
+		static DateTime Issue5975FromStore(DateTime v) => v.AddHours(-1);
+
+		[Table]
+		sealed class Issue5975Row
+		{
+			[PrimaryKey] public int       Id    { get; set; }
+			[Column]     public DateTime  Plain { get; set; }
+			[Column]     public DateTime? Date  { get; set; }
+		}
+
+		static MappingSchema Issue5975MappingSchema()
+		{
+			var ms = new MappingSchema();
+
+			new FluentMappingBuilder(ms)
+				.Entity<Issue5975Row>()
+					.Property(e => e.Plain)
+						.HasConversion(v => Issue5975ToStore(v), v => Issue5975FromStore(v))
+					.Property(e => e.Date)
+						.HasConversion(
+							v => v != null ? (DateTime?)Issue5975ToStore(v.Value) : null,
+							v => v != null ? (DateTime?)Issue5975FromStore(v.Value) : null)
+				.Build();
+
+			return ms;
+		}
+
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/5975")]
+		public void InsertServerSideValueIntoClientConvertedColumn([DataSources] string context)
+		{
+			using var db = GetDataContext(context, Issue5975MappingSchema());
+			using var t  = db.CreateLocalTable<Issue5975Row>();
+
+			t.Insert(() => new Issue5975Row { Id = 1, Plain = Sql.CurrentTimestamp, Date = Sql.CurrentTimestamp });
+
+			var row = t.Single();
+			row.Date.ShouldNotBeNull();
+		}
+
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/5975")]
+		public void UpdateServerSideValueIntoClientConvertedColumn([DataSources] string context)
+		{
+			var stored = new DateTime(2020, 1, 1, 10, 0, 0);
+			var test   = new DateTime(2026, 6, 6, 1, 1, 1);
+
+			using var db = GetDataContext(context, Issue5975MappingSchema());
+			using var t  = db.CreateLocalTable(
+			[
+				new Issue5975Row { Id = 1, Plain = stored, Date = stored },
+				new Issue5975Row { Id = 2, Plain = stored, Date = null   },
+			]);
+
+			t.Update(x => new Issue5975Row { Date = x.Date != null ? test : Sql.DateAdd(Sql.DateParts.Day, 1, x.Plain) });
+
+			var rows = t.OrderBy(r => r.Id).ToArray();
+
+			rows[0].Date.ShouldBe(test);
+			rows[1].Date.ShouldNotBeNull();
+		}
+
+		[Table]
+		sealed class Issue5976RowA
+		{
+			[PrimaryKey] public int       Id   { get; set; }
+			[Column]     public DateTime? Date { get; set; }
+		}
+
+		[Table]
+		sealed class Issue5976RowB
+		{
+			[PrimaryKey] public int       Id   { get; set; }
+			[Column]     public DateTime? Date { get; set; }
+		}
+
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/5976")]
+		public void SetOperationOverNullableConversionsWithLiftedComparison([DataSources] string context)
+		{
+			var value = new DateTime(2020, 1, 1, 10, 0, 0);
+			var ms    = new MappingSchema();
+
+			new FluentMappingBuilder(ms)
+				.Entity<Issue5976RowA>()
+					.Property(e => e.Date)
+						.HasConversion(
+							v => v != null ? (DateTime?)Issue5975ToStore(v.Value) : null,
+							v => v != null ? (DateTime?)Issue5975FromStore(v.Value) : null)
+				.Entity<Issue5976RowB>()
+					.Property(e => e.Date)
+						.HasConversion(
+							v => v != null ? (DateTime?)Issue5975ToStore(v.Value) : null,
+							v => v != null ? (DateTime?)Issue5975FromStore(v.Value) : null)
+				.Build();
+
+			using var db = GetDataContext(context, ms);
+			using var a  = db.CreateLocalTable([new Issue5976RowA { Id = 1, Date = value }]);
+			using var b  = db.CreateLocalTable([new Issue5976RowB { Id = 2, Date = value }]);
+
+			var rows = a
+				.Select(r => new { r.Id, r.Date })
+				.Concat(b.Select(r => new { r.Id, r.Date }))
+				.OrderBy(r => r.Id)
+				.ToList();
+
+			rows.Count.ShouldBe(2);
+			rows.Select(r => r.Date).ShouldBe([value, value]);
+		}
+
+		[Table]
+		sealed class Issue5976RowC
+		{
+			[PrimaryKey] public int      Id   { get; set; }
+			[Column]     public DateTime Date { get; set; }
+		}
+
+		[Test(Description = "https://github.com/linq2db/linq2db/issues/5976")]
+		public void SetOperationOverNullableAndPlainConversions([DataSources] string context)
+		{
+			var value = new DateTime(2020, 1, 1, 10, 0, 0);
+			var ms    = new MappingSchema();
+
+			new FluentMappingBuilder(ms)
+				.Entity<Issue5976RowA>()
+					.Property(e => e.Date)
+						.HasConversion(
+							v => v != null ? (DateTime?)Issue5975ToStore(v.Value) : null,
+							v => v != null ? (DateTime?)Issue5975FromStore(v.Value) : null)
+				.Entity<Issue5976RowC>()
+					.Property(e => e.Date)
+						.HasConversion(v => Issue5975ToStore(v), v => Issue5975FromStore(v))
+				.Build();
+
+			using var db = GetDataContext(context, ms);
+			using var a  = db.CreateLocalTable([new Issue5976RowA { Id = 1, Date = value }]);
+			using var c  = db.CreateLocalTable([new Issue5976RowC { Id = 2, Date = value }]);
+
+			var rows = a
+				.Select(r => new { r.Id, r.Date })
+				.Concat(c.Select(r => new { r.Id, Date = (DateTime?)r.Date }))
+				.OrderBy(r => r.Id)
+				.ToList();
+
+			rows.Count.ShouldBe(2);
+			rows.Select(r => r.Date).ShouldBe([value, value]);
+		}
+
+		#endregion
+
+		[Table]
+		sealed class DivergentConversionRow
+		{
+			[PrimaryKey] public int Id      { get; set; }
+
+			// One CLR type, one storage type, two conversions that disagree about what the stored number is. Both
+			// are lossless and neither is unusual on its own; nothing but the conversions says they differ.
+			[Column    ] public int Doubled { get; set; }
+			[Column    ] public int Tripled { get; set; }
+
+			// No conversion, which disagrees with either of them just as sharply: what this column stores is the
+			// value, and what they store is not.
+			[Column    ] public int Plain   { get; set; }
+		}
+
+		/// <summary>
+		/// An operator between two columns whose value converters do not agree about what a stored value counts.
+		/// </summary>
+		/// <remarks>
+		/// A conversion is not arithmetic on the SQL side, so an operator between two columns runs on the numbers
+		/// they happen to be stored as: ten doubled and ten tripled add to fifty, which is then read back through
+		/// one of the two conversions and answers twenty-five for a sum the CLR puts at twenty. Compared, the same
+		/// two numbers answer no rows where the CLR answers one.
+		/// <para>
+		/// Not a duration problem - the pairing that reported it holds two <see cref="TimeSpan"/> columns counting
+		/// different units, but the shape is any two columns of one type whose converters disagree, and integers
+		/// scaled by two and by three are the smallest form of it.
+		/// </para>
+		/// <para>
+		/// A column carrying no conversion at all is refused against a converted one on the same terms, and it is
+		/// the commoner half of the shape: what it stores is the value itself and what the other stores is not, so
+		/// an operator between them counts neither. Nothing about that pairing looks unusual in the query text,
+		/// which is what makes it worth refusing rather than answering in the storage domain.
+		/// </para>
+		/// <para>
+		/// Refused only where the answer has to come from the database. A projection reads each column on its own
+		/// terms and the reader combines them, which is exact - and the two controls beside it are the pairings that
+		/// were never in doubt: a column with itself, and a column with a plain value, which is written down through
+		/// that column's own conversion and so arrives in its terms.
+		/// </para>
+		/// </remarks>
+		[Test]
+		public void DivergentConversionsRefuseToCombine([DataSources] string context)
+		{
+			var ms = new MappingSchema();
+
+			new FluentMappingBuilder(ms)
+				.Entity<DivergentConversionRow>()
+					.Property(e => e.Doubled)
+						.HasConversion(v => v * 2, p => p / 2)
+					.Property(e => e.Tripled)
+						.HasConversion(v => v * 3, p => p / 3)
+				.Build();
+
+			using var db = GetDataContext(context, ms);
+			using var t  = db.CreateLocalTable<DivergentConversionRow>();
+
+			db.Insert(new DivergentConversionRow { Id = 1, Doubled = 10, Tripled = 10, Plain = 10 });
+
+			string Refusal(string member1, string member2)
+			{
+				return string.Format(
+					CultureInfo.InvariantCulture,
+					ErrorHelper.Error_ValueConverter_DivergentOperands,
+					member1,
+					member2);
+			}
+
+			var combined = () => t
+				.Select(r => Sql.AsSql(r.Doubled + r.Tripled))
+				.ToArray();
+
+			var compared = () => t
+				.Where(r => r.Doubled == r.Tripled)
+				.ToArray();
+
+			var unconverted = () => t
+				.Select(r => Sql.AsSql(r.Doubled + r.Plain))
+				.ToArray();
+
+			combined   .ShouldThrow<LinqToDBException>().Message.ShouldContain(Refusal(nameof(DivergentConversionRow.Doubled), nameof(DivergentConversionRow.Tripled)));
+			compared   .ShouldThrow<LinqToDBException>().Message.ShouldContain(Refusal(nameof(DivergentConversionRow.Doubled), nameof(DivergentConversionRow.Tripled)));
+			unconverted.ShouldThrow<LinqToDBException>().Message.ShouldContain(Refusal(nameof(DivergentConversionRow.Doubled), nameof(DivergentConversionRow.Plain)));
+
+			var row = t
+				.Select(r => new
+				{
+					Divergent   = r.Doubled + r.Tripled,
+					Unmapped    = r.Doubled + r.Plain,
+					SameColumn  = Sql.AsSql(r.Doubled + r.Doubled),
+					NoConverter = Sql.AsSql(r.Plain   + r.Plain),
+					PlainValue  = Sql.AsSql(r.Doubled + 5),
+				})
+				.Single();
+
+			row.Divergent.ShouldBe(20);
+			row.Unmapped.ShouldBe(20);
+			row.SameColumn.ShouldBe(20);
+			row.NoConverter.ShouldBe(20);
+			row.PlainValue.ShouldBe(15);
+
+			t.Count(r => r.Doubled == 10).ShouldBe(1);
+		}
+
+		sealed class StorageTransparentConverter : ValueConverter<int, int>, IStorageTransparentConverter
+		{
+			public StorageTransparentConverter() : base(v => v, p => p, false)
+			{
+			}
+		}
+
+		[Table]
+		sealed class StorageTransparentRow
+		{
+			[PrimaryKey] public int Id     { get; set; }
+			[Column, ValueConverter(ConverterType = typeof(StorageTransparentConverter))]
+			             public int Marked { get; set; }
+			[Column    ] public int Plain  { get; set; }
+		}
+
+		/// <summary>
+		/// A converter marked as storing the value unchanged is not refused against a column without conversion.
+		/// </summary>
+		[Test]
+		public void StorageTransparentConversionCombines([DataSources] string context)
+		{
+			using var db = GetDataContext(context);
+			using var t  = db.CreateLocalTable<StorageTransparentRow>();
+
+			db.Insert(new StorageTransparentRow { Id = 1, Marked = 5, Plain = 5 });
+			db.Insert(new StorageTransparentRow { Id = 2, Marked = 6, Plain = 7 });
+
+			var ids = t
+				.Where(r => r.Marked == r.Plain)
+				.Select(r => r.Id)
+				.ToArray();
+
+			ids.ShouldBe([1]);
+
+			var sums = t
+				.OrderBy(r => r.Id)
+				.Select(r => Sql.AsSql(r.Marked + r.Plain))
+				.ToArray();
+
+			sums.ShouldBe([10, 13]);
+		}
+
+		sealed class ScaledValueRow
+		{
+			[PrimaryKey] public int Id    { get; set; }
+			[Column    ] public int Value { get; set; }
+
+			public static readonly ScaledValueRow[] Data =
+			{
+				new() { Id = 1, Value = 10 },
+				new() { Id = 2, Value = 20 },
+				new() { Id = 3, Value = 30 },
+			};
+		}
+
+		/// <summary>
+		/// A count over a column carrying a conversion answers how many rows there are, not a value of that column.
+		/// </summary>
+		/// <remarks>
+		/// The descriptor walk treats a single-argument aggregate as transparent, which is right for <c>MIN</c>,
+		/// <c>MAX</c> and <c>SUM</c> - they answer in the operand's own domain - and wrong for <c>COUNT</c>, which
+		/// answers in a type of its own. The type guard meant to separate them compares the result type with the
+		/// column's <em>member</em> type, so it cannot tell the two apart once that type is already <see cref="int"/>.
+		/// <para>
+		/// The conversion is deliberately <see langword="int"/> to <see langword="int"/> and lossy in a visible way: one mapping to a
+		/// different provider type would be stopped by that guard and hide the defect. Halving is what makes it
+		/// show - a running count of 1, 2, 3 came back as 0, 1, 1.
+		/// </para>
+		/// </remarks>
+		[Test]
+		public void CountOverAConvertedColumnIsNotConverted([IncludeDataSources(false, TestProvName.AllSQLite, TestProvName.AllPostgreSQL)] string context)
+		{
+			var ms = new MappingSchema();
+
+			new FluentMappingBuilder(ms)
+				.Entity<ScaledValueRow>()
+					.Property(e => e.Value)
+						.HasConversion(v => v * 2, p => p / 2)
+				.Build();
+
+			using var db = GetDataContext(context, ms);
+			using var t  = db.CreateLocalTable(ScaledValueRow.Data);
+
+			var counted = t
+				.OrderBy(r => r.Id)
+				.Select(r => Sql.Window.Count(r.Value, w => w.OrderBy(r.Id)))
+				.ToArray();
+
+			counted.ShouldBe([1, 2, 3]);
+
+			// The aggregates that do answer in the column's own domain still read through the conversion.
+			t.Max(r => r.Value).ShouldBe(30);
+			t.Min(r => r.Value).ShouldBe(10);
+		}
+	}
+}

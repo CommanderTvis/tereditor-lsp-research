@@ -1,0 +1,7 @@
+type = "move"
+origin = "synthetic refactoring: move a type to another namespace"
+symbol = "Spectre.Console.ProgressRenderer"
+new_namespace = "Spectre.Console.ProgressRendering"
+new_path = "src/Spectre.Console/Live/Progress/Rendering/ProgressRenderer.cs"
+selection = "Rule fixed before looking at candidates: internal types declared once in src/Spectre.Console (outside generated code) whose whole word occurs in 4 to 25 .cs files; 20 candidates sorted by name, draw int(rand()*20)+1 with awk srand(20261110) = 15 (LiveRenderable). That draw touches only 4 files, below the 5 files that docs/CURATION.md asks of medium projects, so before any task was written the rule was tightened to at least 5 files (10 candidates: Cell, Constants, EnumUtils, ListPromptInputResult, ListPromptItem, ListPromptState, ProgressBar, ProgressRenderer, Ratio, StringBuffer) and redrawn: index 8, ProgressRenderer (6 files, 3 derived classes, an abstract base). Public types were excluded because moving them changes the public API snapshot test."
+grade_timeout_s = 1200

@@ -1,4 +1,0 @@
-type = "refs"
-origin = "synthetic navigation: find all usages"
-symbol = "NonRetryingExecutionStrategy"
-selection = "Same rule and seeded draw as rename-materialize-collection-navigation (draw 1 of 83 candidates, index 62, seed 20261110). The name also appears in doc comments (excluded by the prompt) and in the API baseline JSON (not C#)."

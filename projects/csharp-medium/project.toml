@@ -1,20 +1,22 @@
-# csharp, medium: chosen by size, see docs/PROJECTS.md. Stub: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# C#, medium: Spectre.Console, a library for rich terminal output (tables, trees, prompts, markup, live displays) and its
+# command-line parsing extension points. Replaces AutoMapper: too few usable modern pull requests there (docs/PROJECTS.md).
 lang = "csharp"
 size = "medium"
 status = "curated"
-repo = "https://github.com/LuckyPennySoftware/AutoMapper"
-tag = "v16.3.0"
-commit = "9c31182a3eb99d5191ccc71ee90105846830917f"
-loc = 56611
-loc_by_language = { "C#" = 56611 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+repo = "https://github.com/spectreconsole/spectre.console"
+tag = "0.57.2"
+commit = "bbbb5729dde27b58deee44f447a788eea46ee451"
+loc = 41083
+stripped = []
+loc_by_language = { "C#" = 41083 }
+loc_method = "scc 3.5.0 code lines, harness/size/measure.sh (docs/PROJECTS.md)"
+size_note = "41k lines is 9% under the 45k target and inside the 25k to 80k medium band"
 task_types = ["move", "signature", "dispatch", "pr", "pr", "pr"]
 substitutions = []
-pr_shortfall = 1
-pr_shortfall_reason = "only 2 modern pull requests qualify (closing issue, tests plus source): tasks/csharp-medium/pr-log.md"
+# global.json pins SDK 10.0.300 (rollForward latestFeature). Pull requests merged from 2026-11-17 on pin SDK 11: check.sh
+# puts the study's SDK 11 (study-dotnet11) first on PATH only for those bases; SDK 10 stays the default.
 
 [probe]
 ok = true
-seconds_to_first_answer = 36
-note = "references (cross-project, cross-file), definition and diagnostics all correct (results/probe/csharp-medium-enforced)"
+seconds_to_first_answer = 37
+note = "references, implementations and diagnostics answered (results/probe/csharp-medium-enforced); the diagnostics call reported one finding in a file expected clean"

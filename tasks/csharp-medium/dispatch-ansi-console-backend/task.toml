@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic navigation: which definition is selected through indirection"
+symbol = "IAnsiConsoleBackend"
+selection = "Rule fixed before looking at candidates: internal interfaces of src/Spectre.Console with at least two implementing classes (IAnsiConsoleBackend, IListPromptStrategy<T>, IRenderHook ...), sorted by name, seeded draw with awk srand(20261110); the draw fell on IAnsiConsoleBackend (its two implementations are selected by a runtime capability check, so text search alone does not decide)."

@@ -1,0 +1,21 @@
+diff --git a/src/Spectre.Console/Rendering/Segment.cs b/src/Spectre.Console/Rendering/Segment.cs
+index 2ab8708cd..be3749b59 100644
+--- a/src/Spectre.Console/Rendering/Segment.cs
++++ b/src/Spectre.Console/Rendering/Segment.cs
+@@ -585,6 +585,16 @@ internal static List<string> SplitSegment(string text, int maxCellLength)
+         {
+             var cluster = splitEnumerator.GetTextElement();
+             var clusterWidth = Cell.GetCellLength(cluster);
++
++            // A single cluster (e.g. a wide emoji) can be wider than maxCellLength
++            // on its own and can't be reduced any further, so replace it with an ellipsis
++            // instead of letting it overflow.
++            if (clusterWidth > maxCellLength)
++            {
++                cluster = "…";
++                clusterWidth = 1;
++            }
++
+             if (length + clusterWidth > maxCellLength)
+             {
+                 list.Add(sb.ToString());

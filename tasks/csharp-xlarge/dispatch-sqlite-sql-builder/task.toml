@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic navigation: which definition runs through indirection"
+symbol = "IDataProvider.CreateSqlBuilder"
+selection = "Rule fixed before looking at candidates: the call sites of CreateSqlBuilder on a data provider inside the SQLite provider sources (SQLiteSchemaProvider.cs:192, SQLiteExtensions.cs:619 and :651), in file order; draw int(rand()*3)+1 with awk srand(20261110) = 3 (SQLiteExtensions.cs:651). The call is made through the IDataProvider interface; the provider is a sealed subclass of an abstract SQLiteDataProvider, so text search alone does not decide."

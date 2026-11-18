@@ -1,4 +1,0 @@
-type = "dispatch"
-origin = "devrig go-to-implementation through an interface; registry-ordered IsMatch chain"
-call = "IObjectMapper.MapExpression for TypePair(KeyValuePair<int,string>, Dictionary<string,object>) with the default mappers"
-selection = "the unit test suite was run with MapperConfiguration.FindMapper instrumented to log (source type, destination type, chosen mapper); kept: pairs of BCL types only (System.*, no test types) resolved by a default mapper (MapperRegistry), 140 pairs. Two-stage seeded draw, srand(20261110): mapper classes with at least one such pair sorted by name (10), index int(rand()*10)+1 = 8 (ToStringDictionaryMapper); its pairs sorted (1), the only one"

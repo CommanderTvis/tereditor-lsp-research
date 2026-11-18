@@ -1,0 +1,1 @@
+Rename the class `NoLinqCache` (`Source/LinqToDB/Linq/NoLinqCache.cs`) to `NoQueryCache`, and rename its source file to match. Update every reference across the repository, including doc comments and the public API listing file, so that the old name no longer appears anywhere. Behavior must not change.

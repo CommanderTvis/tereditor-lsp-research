@@ -1,0 +1,70 @@
+diff --git a/Source/LinqToDB/Internal/DataProvider/Firebird/FirebirdSqlBuilder.cs b/Source/LinqToDB/Internal/DataProvider/Firebird/FirebirdSqlBuilder.cs
+index 7b49f6f2ce3..14130f64915 100644
+--- a/Source/LinqToDB/Internal/DataProvider/Firebird/FirebirdSqlBuilder.cs
++++ b/Source/LinqToDB/Internal/DataProvider/Firebird/FirebirdSqlBuilder.cs
+@@ -25,6 +25,10 @@ public partial class FirebirdSqlBuilder : BasicSqlBuilder<FirebirdOptions>
+ 
+ 		protected override ConcatBuildStyle ConcatStyle => ConcatBuildStyle.Pipes;
+ 
++		// Firebird binds `||` tighter than every arithmetic operator, unary minus included
++		protected override int GetPrecedence(ISqlExpression expr)
++			=> expr is SqlConcatExpression ? Precedence.Unary + 1 : base.GetPrecedence(expr);
++
+ 		public FirebirdSqlBuilder(IDataProvider provider, MappingSchema mappingSchema, DataOptions dataOptions, ISqlOptimizer sqlOptimizer, SqlProviderFlags sqlProviderFlags)
+ 			: base(provider, mappingSchema, dataOptions, sqlOptimizer, sqlProviderFlags)
+ 		{
+@@ -669,7 +673,11 @@ protected override void BuildTypedExpression(DbDataType dataType, ISqlExpression
+ 				if (typeRequired)
+ 					StringBuilder.Append("CAST(");
+ 
+-				BuildExpression(value);
++				// the dropped CAST was a primary expression, so the bare operand keeps that precedence
++				if (typeRequired)
++					BuildExpression(value);
++				else
++					BuildExpression(Precedence.Primary, value);
+ 
+ 				if (typeRequired)
+ 				{
+diff --git a/Source/LinqToDB/Internal/DataProvider/SQLite/SQLiteSqlBuilder.cs b/Source/LinqToDB/Internal/DataProvider/SQLite/SQLiteSqlBuilder.cs
+index eacb45c454b..91d9f59c417 100644
+--- a/Source/LinqToDB/Internal/DataProvider/SQLite/SQLiteSqlBuilder.cs
++++ b/Source/LinqToDB/Internal/DataProvider/SQLite/SQLiteSqlBuilder.cs
+@@ -33,6 +33,10 @@ protected override ISqlBuilder CreateSqlBuilder()
+ 
+ 		protected override ConcatBuildStyle ConcatStyle       => ConcatBuildStyle.Pipes;
+ 
++		// SQLite binds `||` tighter than `* / %` and looser than unary operators (https://www.sqlite.org/lang_expr.html#operators)
++		protected override int GetPrecedence(ISqlExpression expr)
++			=> expr is SqlConcatExpression ? Precedence.Multiplicative + 1 : base.GetPrecedence(expr);
++
+ 		public override int CommandCount(SqlStatement statement)
+ 		{
+ 			return statement switch
+diff --git a/Source/LinqToDB/Internal/SqlProvider/BasicSqlBuilder.cs b/Source/LinqToDB/Internal/SqlProvider/BasicSqlBuilder.cs
+index 134e4f3c40b..4277e587c7c 100644
+--- a/Source/LinqToDB/Internal/SqlProvider/BasicSqlBuilder.cs
++++ b/Source/LinqToDB/Internal/SqlProvider/BasicSqlBuilder.cs
+@@ -4637,7 +4637,7 @@ protected static DbDataType CorrectDecimalFacets(DbDataType dataType, decimal de
+ 
+ 		#region GetPrecedence
+ 
+-		static int GetPrecedence(ISqlExpression expr)
++		protected virtual int GetPrecedence(ISqlExpression expr)
+ 		{
+ 			return expr.Precedence;
+ 		}
+diff --git a/Source/LinqToDB/PublicAPI/PublicAPI.Unshipped.txt b/Source/LinqToDB/PublicAPI/PublicAPI.Unshipped.txt
+index 32794b1752e..52bc9263ecb 100644
+--- a/Source/LinqToDB/PublicAPI/PublicAPI.Unshipped.txt
++++ b/Source/LinqToDB/PublicAPI/PublicAPI.Unshipped.txt
+@@ -15,6 +15,9 @@ LinqToDB.Internal.DataProvider.PostgreSQL.Translation.PostgreSQLMemberTranslator
+ LinqToDB.Internal.DataProvider.PostgreSQL.Translation.PostgreSQLMemberTranslator.PostgreSQL95AggregateFunctionsMemberTranslator.PostgreSQL95AggregateFunctionsMemberTranslator() -> void
+ override LinqToDB.Internal.DataProvider.PostgreSQL.Translation.PostgreSQL95MemberTranslator.CreateAggregateFunctionsMemberTranslator() -> LinqToDB.Linq.Translation.IMemberTranslator!
+ override LinqToDB.Internal.DataProvider.PostgreSQL.Translation.PostgreSQLMemberTranslator.PostgreSQL95AggregateFunctionsMemberTranslator.IsFilterSupported.get -> bool
++override LinqToDB.Internal.DataProvider.Firebird.FirebirdSqlBuilder.GetPrecedence(LinqToDB.Internal.SqlQuery.ISqlExpression! expr) -> int
++override LinqToDB.Internal.DataProvider.SQLite.SQLiteSqlBuilder.GetPrecedence(LinqToDB.Internal.SqlQuery.ISqlExpression! expr) -> int
++virtual LinqToDB.Internal.SqlProvider.BasicSqlBuilder.GetPrecedence(LinqToDB.Internal.SqlQuery.ISqlExpression! expr) -> int
+ static LinqToDB.Internal.Extensions.ReflectionExtensions.GetConstructorCoercing(this System.Type! type, params System.Type![]! types) -> System.Reflection.ConstructorInfo?
+ static LinqToDB.Internal.Extensions.ReflectionExtensions.GetConstructorEx(this System.Type! type, params System.Type![]! types) -> System.Reflection.ConstructorInfo?
+ static LinqToDB.Internal.Extensions.ReflectionExtensions.GetConstructorEx(this System.Type! type, System.Reflection.BindingFlags bindingFlags, params System.Type![]! types) -> System.Reflection.ConstructorInfo?

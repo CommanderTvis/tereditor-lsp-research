@@ -1,0 +1,63 @@
+diff --git a/src/Spectre.Console/Live/Progress/Progress.cs b/src/Spectre.Console/Live/Progress/Progress.cs
+index 72e6801..a5234e3 100644
+--- a/src/Spectre.Console/Live/Progress/Progress.cs
++++ b/src/Spectre.Console/Live/Progress/Progress.cs
+@@ -1,3 +1,5 @@
++using Spectre.Console.ProgressRendering;
++
+ namespace Spectre.Console;
+ 
+ /// <summary>
+diff --git a/src/Spectre.Console/Live/Progress/ProgressContext.cs b/src/Spectre.Console/Live/Progress/ProgressContext.cs
+index ac5749f..e33ed1f 100644
+--- a/src/Spectre.Console/Live/Progress/ProgressContext.cs
++++ b/src/Spectre.Console/Live/Progress/ProgressContext.cs
+@@ -1,3 +1,5 @@
++using Spectre.Console.ProgressRendering;
++
+ namespace Spectre.Console;
+ 
+ /// <summary>
+diff --git a/src/Spectre.Console/Live/Progress/Renderers/DefaultProgressRenderer.cs b/src/Spectre.Console/Live/Progress/Renderers/DefaultProgressRenderer.cs
+index 0fa3588..e4be632 100644
+--- a/src/Spectre.Console/Live/Progress/Renderers/DefaultProgressRenderer.cs
++++ b/src/Spectre.Console/Live/Progress/Renderers/DefaultProgressRenderer.cs
+@@ -1,3 +1,5 @@
++using Spectre.Console.ProgressRendering;
++
+ namespace Spectre.Console;
+ 
+ internal sealed class DefaultProgressRenderer : ProgressRenderer
+diff --git a/src/Spectre.Console/Live/Progress/Renderers/FallbackProgressRenderer.cs b/src/Spectre.Console/Live/Progress/Renderers/FallbackProgressRenderer.cs
+index 1537eef..1224078 100644
+--- a/src/Spectre.Console/Live/Progress/Renderers/FallbackProgressRenderer.cs
++++ b/src/Spectre.Console/Live/Progress/Renderers/FallbackProgressRenderer.cs
+@@ -1,3 +1,5 @@
++using Spectre.Console.ProgressRendering;
++
+ namespace Spectre.Console;
+ 
+ internal sealed class FallbackProgressRenderer : ProgressRenderer
+diff --git a/src/Spectre.Console/Live/Progress/Renderers/FallbackStatusRenderer.cs b/src/Spectre.Console/Live/Progress/Renderers/FallbackStatusRenderer.cs
+index 69e025c..c7c47ab 100644
+--- a/src/Spectre.Console/Live/Progress/Renderers/FallbackStatusRenderer.cs
++++ b/src/Spectre.Console/Live/Progress/Renderers/FallbackStatusRenderer.cs
+@@ -1,3 +1,5 @@
++using Spectre.Console.ProgressRendering;
++
+ namespace Spectre.Console;
+ 
+ internal sealed class FallbackStatusRenderer : ProgressRenderer
+diff --git a/src/Spectre.Console/Live/Progress/ProgressRenderer.cs b/src/Spectre.Console/Live/Progress/Rendering/ProgressRenderer.cs
+similarity index 89%
+rename from src/Spectre.Console/Live/Progress/ProgressRenderer.cs
+rename to src/Spectre.Console/Live/Progress/Rendering/ProgressRenderer.cs
+index 5840b20..750fab4 100644
+--- a/src/Spectre.Console/Live/Progress/ProgressRenderer.cs
++++ b/src/Spectre.Console/Live/Progress/Rendering/ProgressRenderer.cs
+@@ -1,4 +1,4 @@
+-namespace Spectre.Console;
++namespace Spectre.Console.ProgressRendering;
+ 
+ internal abstract class ProgressRenderer : IRenderHook
+ {

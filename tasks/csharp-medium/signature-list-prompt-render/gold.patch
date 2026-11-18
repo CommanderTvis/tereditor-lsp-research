@@ -1,0 +1,64 @@
+diff --git a/src/Spectre.Console/Prompts/List/IListPromptStrategy.cs b/src/Spectre.Console/Prompts/List/IListPromptStrategy.cs
+index 1d2260a..6a15900 100644
+--- a/src/Spectre.Console/Prompts/List/IListPromptStrategy.cs
++++ b/src/Spectre.Console/Prompts/List/IListPromptStrategy.cs
+@@ -34,8 +34,8 @@ internal interface IListPromptStrategy<T>
+     /// <param name="skipUnselectableItems">A value indicating whether or not the prompt should skip unselectable items.</param>
+     /// <param name="searchText">The search text.</param>
+     /// <returns>A <see cref="IRenderable"/> representing the items.</returns>
+-    public IRenderable Render(IAnsiConsole console, bool scrollable, int cursorIndex,
+-        IEnumerable<(int Index, ListPromptItem<T> Node)> items, bool skipUnselectableItems, string searchText);
++    public IRenderable Render(bool scrollable, int cursorIndex,
++        IEnumerable<(int Index, ListPromptItem<T> Node)> items, bool skipUnselectableItems, string searchText, IAnsiConsole console);
+ 
+     /// <summary>
+     /// Calculates the state's initial index.
+diff --git a/src/Spectre.Console/Prompts/List/ListPrompt.cs b/src/Spectre.Console/Prompts/List/ListPrompt.cs
+index c951e26..ee19add 100644
+--- a/src/Spectre.Console/Prompts/List/ListPrompt.cs
++++ b/src/Spectre.Console/Prompts/List/ListPrompt.cs
+@@ -126,11 +126,11 @@ internal sealed class ListPrompt<T>
+ 
+         // Build the renderable
+         return _strategy.Render(
+-            _console,
+             scrollable, cursorIndex,
+             state.Items.Skip(skip).Take(take)
+                 .Select((node, index) => (index, node)),
+             state.SkipUnselectableItems,
+-            state.SearchText);
++            state.SearchText,
++            _console);
+     }
+ }
+\ No newline at end of file
+diff --git a/src/Spectre.Console/Prompts/MultiSelectionPrompt.cs b/src/Spectre.Console/Prompts/MultiSelectionPrompt.cs
+index f4186a1..c274cba 100644
+--- a/src/Spectre.Console/Prompts/MultiSelectionPrompt.cs
++++ b/src/Spectre.Console/Prompts/MultiSelectionPrompt.cs
+@@ -244,8 +244,8 @@ public sealed class MultiSelectionPrompt<T> : IPrompt<List<T>>, IListPromptStrat
+     }
+ 
+     /// <inheritdoc/>
+-    IRenderable IListPromptStrategy<T>.Render(IAnsiConsole console, bool scrollable, int cursorIndex,
+-        IEnumerable<(int Index, ListPromptItem<T> Node)> items, bool skipUnselectableItems, string searchText)
++    IRenderable IListPromptStrategy<T>.Render(bool scrollable, int cursorIndex,
++        IEnumerable<(int Index, ListPromptItem<T> Node)> items, bool skipUnselectableItems, string searchText, IAnsiConsole console)
+     {
+         var list = new List<IRenderable>();
+         var highlightStyle = HighlightStyle ?? Color.Blue;
+diff --git a/src/Spectre.Console/Prompts/SelectionPrompt.cs b/src/Spectre.Console/Prompts/SelectionPrompt.cs
+index 9761a87..6f2f718 100644
+--- a/src/Spectre.Console/Prompts/SelectionPrompt.cs
++++ b/src/Spectre.Console/Prompts/SelectionPrompt.cs
+@@ -186,8 +186,8 @@ public sealed class SelectionPrompt<T> : IPrompt<T>, IListPromptStrategy<T>
+     }
+ 
+     /// <inheritdoc/>
+-    IRenderable IListPromptStrategy<T>.Render(IAnsiConsole console, bool scrollable, int cursorIndex,
+-        IEnumerable<(int Index, ListPromptItem<T> Node)> items, bool skipUnselectableItems, string searchText)
++    IRenderable IListPromptStrategy<T>.Render(bool scrollable, int cursorIndex,
++        IEnumerable<(int Index, ListPromptItem<T> Node)> items, bool skipUnselectableItems, string searchText, IAnsiConsole console)
+     {
+         var list = new List<IRenderable>();
+         var disabledStyle = DisabledStyle ?? Color.Grey;

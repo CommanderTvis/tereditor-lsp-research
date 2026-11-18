@@ -1,1 +1,0 @@
-Rename the class `MaterializeCollectionNavigationExpression` (in `src/EFCore/Query/`) to `CollectionNavigationMaterializationExpression`, and rename its source file to match. Update every reference across the repository, including doc comments, line comments and the API baseline file, so that the old name no longer appears anywhere. Behavior must not change.

@@ -1,0 +1,4 @@
+{"task": "tasks/csharp-xlarge/pr-5844", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 395, "fresh_lines": 395, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.00150249}
+{"task": "tasks/csharp-xlarge/pr-5844", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 395, "fresh_lines": 395, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0216309}
+{"task": "tasks/csharp-xlarge/pr-5844", "model": "claude-opus-5-5", "answered": true, "gold_lines": 395, "fresh_lines": 395, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0582338}
+SCORE tasks/csharp-xlarge/pr-5844 worst verbatim share 0.00 (gold lines 395)

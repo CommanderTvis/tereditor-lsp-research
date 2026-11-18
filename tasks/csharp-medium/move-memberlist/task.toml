@@ -1,6 +1,0 @@
-type = "move"
-origin = "devrig move refactoring; a widely used enum, extracted from a shared file into a new namespace"
-symbol = "AutoMapper.MemberList"
-destination = "AutoMapper.Core (src/AutoMapper/Core/MemberList.cs)"
-selection = "public top-level types declared in src/AutoMapper whose name occurs as a whole word in at least 5 other .cs files, one per name, sorted by full name; 50 candidates; index int(rand()*50)+1 after srand(20261110) = 37. Destination fixed before the draw: a new namespace AutoMapper.Core in src/AutoMapper/Core/, one file named after the type. (A first listing parsed `record struct` declarations wrongly and counted 52 candidates; the parser was fixed before the draw was used, and the earlier projects' candidate lists are unchanged by the fix.)"
-gold = "the enum and its documentation moved to the new file with namespace AutoMapper.Core; then `using AutoMapper.Core;` added to every file the compiler reported as not finding MemberList (2 rounds, 20 files); compiled and tested"

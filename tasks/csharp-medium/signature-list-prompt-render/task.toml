@@ -1,0 +1,5 @@
+type = "signature"
+origin = "synthetic refactoring: reorder a parameter through an interface, its implementations and its call site"
+symbol = "IListPromptStrategy<T>.Render"
+selection = "Rule fixed before looking at candidates: the methods of the internal interface with the most implementers in src/Spectre.Console (IListPromptStrategy<T>, implemented explicitly by SelectionPrompt<T> and MultiSelectionPrompt<T>, called by ListPrompt<T>), in file order (HandleInput, CalculatePageSize, Render, CalculateInitialIndex); draw int(rand()*4)+1 with awk srand(20261110) = 3: Render. The change is moving the leading parameter to the end."
+grade_timeout_s = 1200

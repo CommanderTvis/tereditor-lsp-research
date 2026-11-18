@@ -1,0 +1,438 @@
+namespace Spectre.Console.Tests.Unit;
+
+public sealed class SegmentTests
+{
+    public sealed class TheSplitMethod
+    {
+        [Theory]
+        [InlineData("Foo Bar", 0, "", "Foo Bar")]
+        [InlineData("Foo Bar", 1, "F", "oo Bar")]
+        [InlineData("Foo Bar", 2, "Fo", "o Bar")]
+        [InlineData("Foo Bar", 3, "Foo", " Bar")]
+        [InlineData("Foo Bar", 4, "Foo ", "Bar")]
+        [InlineData("Foo Bar", 5, "Foo B", "ar")]
+        [InlineData("Foo Bar", 6, "Foo Ba", "r")]
+        [InlineData("Foo Bar", 7, "Foo Bar", null)]
+        [InlineData("Foo 测试 Bar", 0, "", "Foo 测试 Bar")]
+        [InlineData("Foo 测试 Bar", 1, "F", "oo 测试 Bar")]
+        [InlineData("Foo 测试 Bar", 2, "Fo", "o 测试 Bar")]
+        [InlineData("Foo 测试 Bar", 3, "Foo", " 测试 Bar")]
+        [InlineData("Foo 测试 Bar", 4, "Foo ", "测试 Bar")]
+        [InlineData("Foo 测试 Bar", 5, "Foo 测", "试 Bar")]
+        [InlineData("Foo 测试 Bar", 6, "Foo 测", "试 Bar")]
+        [InlineData("Foo 测试 Bar", 7, "Foo 测试", " Bar")]
+        [InlineData("Foo 测试 Bar", 8, "Foo 测试", " Bar")]
+        [InlineData("Foo 测试 Bar", 9, "Foo 测试 ", "Bar")]
+        [InlineData("Foo 测试 Bar", 10, "Foo 测试 B", "ar")]
+        [InlineData("Foo 测试 Bar", 11, "Foo 测试 Ba", "r")]
+        [InlineData("Foo 测试 Bar", 12, "Foo 测试 Bar", null)]
+        public void Should_Split_Segment_Correctly(string text, int offset, string expectedFirst, string? expectedSecond)
+        {
+            // Given
+            var style = new Style(Color.Red, Color.Green, Decoration.Bold);
+            var link = new Link("https://example.com");
+            var segment = new Segment(text, style, link);
+
+            // When
+            var (first, second) = segment.Split(offset);
+
+            // Then
+            first.Text.ShouldBe(expectedFirst);
+            first.Style.ShouldBe(style);
+            first.Link.ShouldBe(link);
+            second?.Text.ShouldBe(expectedSecond);
+            second?.Style.ShouldBe(style);
+            second?.Link.ShouldBe(link);
+        }
+    }
+
+    public sealed class TheSplitLinesMethod
+    {
+        [Fact]
+        public void Should_Split_Segment()
+        {
+            // Given, When
+            var lines = Segment.SplitLines(
+            [
+                new Segment("Foo"),
+                        new Segment("Bar"),
+                        new Segment("\n"),
+                        new Segment("Baz"),
+                        new Segment("Qux"),
+                        new Segment("\n"),
+                        new Segment("Corgi")
+            ]);
+
+            // Then
+            lines.Count.ShouldBe(3);
+
+            lines[0].Count.ShouldBe(2);
+            lines[0][0].Text.ShouldBe("Foo");
+            lines[0][1].Text.ShouldBe("Bar");
+
+            lines[1].Count.ShouldBe(2);
+            lines[1][0].Text.ShouldBe("Baz");
+            lines[1][1].Text.ShouldBe("Qux");
+
+            lines[2].Count.ShouldBe(1);
+            lines[2][0].Text.ShouldBe("Corgi");
+        }
+
+        [Fact]
+        public void Should_Split_Segment_With_Windows_LineBreak()
+        {
+            // Given, When
+            var lines = Segment.SplitLines(
+            [
+                new Segment("Foo"),
+                        new Segment("Bar"),
+                        new Segment("\r\n"),
+                        new Segment("Baz"),
+                        new Segment("Qux"),
+                        new Segment("\r\n"),
+                        new Segment("Corgi")
+            ]);
+
+            // Then
+            lines.Count.ShouldBe(3);
+
+            lines[0].Count.ShouldBe(2);
+            lines[0][0].Text.ShouldBe("Foo");
+            lines[0][1].Text.ShouldBe("Bar");
+
+            lines[1].Count.ShouldBe(2);
+            lines[1][0].Text.ShouldBe("Baz");
+            lines[1][1].Text.ShouldBe("Qux");
+
+            lines[2].Count.ShouldBe(1);
+            lines[2][0].Text.ShouldBe("Corgi");
+        }
+
+        [Fact]
+        public void Should_Split_Segments_With_Linebreak_In_Text()
+        {
+            // Given, Given
+            var lines = Segment.SplitLines(
+            [
+                new Segment("Foo\n"),
+                        new Segment("Bar\n"),
+                        new Segment("Baz"),
+                        new Segment("Qux\n"),
+                        new Segment("Corgi")
+            ]);
+
+            // Then
+            lines.Count.ShouldBe(4);
+
+            lines[0].Count.ShouldBe(1);
+            lines[0][0].Text.ShouldBe("Foo");
+
+            lines[1].Count.ShouldBe(1);
+            lines[1][0].Text.ShouldBe("Bar");
+
+            lines[2].Count.ShouldBe(2);
+            lines[2][0].Text.ShouldBe("Baz");
+            lines[2][1].Text.ShouldBe("Qux");
+
+            lines[3].Count.ShouldBe(1);
+            lines[3][0].Text.ShouldBe("Corgi");
+        }
+    }
+
+    public sealed class TheSplitLinesWithMaxWidthMethod
+    {
+        [Fact]
+        [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/2033")]
+        public void Should_Split_Fullwidth_Segment_Without_Exception()
+        {
+            // Given (reproduces GitHub issue #2033)
+            var segments = new List<Segment>
+            {
+                new Segment("测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试"),
+            };
+
+            // When
+            var lines = Segment.SplitLines(segments, maxWidth: 10);
+
+            // Then
+            lines.Count.ShouldBe(7);
+            lines[0].CellCount().ShouldBe(10);
+            lines[1].CellCount().ShouldBe(10);
+            lines[2].CellCount().ShouldBe(10);
+            lines[3].CellCount().ShouldBe(10);
+            lines[4].CellCount().ShouldBe(10);
+            lines[5].CellCount().ShouldBe(10);
+            lines[6].CellCount().ShouldBe(4);
+        }
+
+        [Fact]
+        public void Should_Split_Fullwidth_Segment_At_Correct_Boundary()
+        {
+            // Given
+            var segments = new List<Segment>
+            {
+                new Segment("测试测试"), // 8 cells
+            };
+
+            // When
+            var lines = Segment.SplitLines(segments, maxWidth: 6);
+
+            // Then
+            lines.Count.ShouldBe(2);
+            lines[0][0].Text.ShouldBe("测试测"); // 6 cells
+            lines[1][0].Text.ShouldBe("试"); // 2 cells
+        }
+
+        [Fact]
+        public void Should_Split_Fullwidth_Segment_With_Odd_MaxWidth()
+        {
+            // Given
+            var segments = new List<Segment>
+            {
+                new Segment("测试测试"), // 8 cells
+            };
+
+            // When
+            var lines = Segment.SplitLines(segments, maxWidth: 5);
+
+            // Then
+            lines.Count.ShouldBe(2);
+            lines[0][0].Text.ShouldBe("测试测"); // 6 cells
+            lines[1][0].Text.ShouldBe("试"); // 2 cells
+        }
+
+        [Fact]
+        [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/1785")]
+        public void Should_Respect_Multiple_Linebreaks_In_A_Segment()
+        {
+            // Given
+            var segments = new[]
+            {
+                new Segment("Foo\nBar"),
+                new Segment("Baz"),
+                new Segment("Qux\nTra\nLate"),
+                new Segment("Corgi"),
+            };
+
+            // When
+            var lines = Segment.SplitLines(segments, maxWidth: 80);
+
+            // Then
+            lines.Count.ShouldBe(4);
+
+            lines[0].Count.ShouldBe(1);
+            lines[0][0].Text.ShouldBe("Foo");
+
+            lines[1].Count.ShouldBe(3);
+            lines[1][0].Text.ShouldBe("Bar");
+            lines[1][1].Text.ShouldBe("Baz");
+            lines[1][2].Text.ShouldBe("Qux");
+
+            lines[2].Count.ShouldBe(1);
+            lines[2][0].Text.ShouldBe("Tra");
+
+            lines[3].Count.ShouldBe(2);
+            lines[3][0].Text.ShouldBe("Late");
+            lines[3][1].Text.ShouldBe("Corgi");
+        }
+    }
+
+    public sealed class TheSplitSegmentMethod
+    {
+        [Fact]
+        [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/2193")]
+        public void Should_Replace_A_Single_Wide_Cluster_With_An_Ellipsis_When_It_Cannot_Fit()
+        {
+            // Given, When
+            var result = Segment.SplitSegment("😄", maxCellLength: 1);
+
+            // Then
+            result.ShouldBe(["…"]);
+        }
+
+        [Fact]
+        [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/2193")]
+        public void Should_Replace_Adjacent_Wide_Clusters_With_Separate_Ellipses()
+        {
+            // Given, When
+            var result = Segment.SplitSegment("😄😃", maxCellLength: 1);
+
+            // Then
+            result.ShouldBe(["…", "…"]);
+        }
+
+        [Fact]
+        [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/2193")]
+        public void Should_Replace_A_Wide_Cluster_With_An_Ellipsis_Even_When_Not_First_In_Text()
+        {
+            // Given, When
+            var result = Segment.SplitSegment("Hello😄", maxCellLength: 1);
+
+            // Then
+            result.ShouldBe(["H", "e", "l", "l", "o", "…"]);
+        }
+
+        [Fact]
+        public void Should_Not_Replace_A_Cluster_That_Exactly_Fits_The_Max_Width()
+        {
+            // Given, When
+            var result = Segment.SplitSegment("😄", maxCellLength: 2);
+
+            // Then
+            result.ShouldBe(["😄"]);
+        }
+    }
+
+    public sealed class TheSplitOverflowMethod
+    {
+        [Fact]
+        public void Should_Handle_Fullwidth_Text_When_Using_Ellipsis()
+        {
+            // Given
+            var text = "神様達が下界に来る前は、魔法は特定の種族の専売特許に過ぎなかった。";
+            var segment = new Segment(text);
+
+            // When
+            var result = Segment.SplitOverflow(segment, Overflow.Ellipsis, 10);
+
+            // Then
+            result.Count.ShouldBe(1);
+            result[0].CellCount().ShouldBeLessThanOrEqualTo(10);
+            result[0].Text.EndsWith("…", StringComparison.Ordinal).ShouldBeTrue();
+        }
+
+        [Fact]
+        public void Should_Handle_Fullwidth_Text_When_Using_Crop()
+        {
+            // Given
+            var text = "神様達が下界に来る前は、魔法は特定の種族の専売特許に過ぎなかった。";
+            var segment = new Segment(text);
+
+            // When
+            var result = Segment.SplitOverflow(segment, Overflow.Crop, 10);
+
+            // Then
+            result.Count.ShouldBe(1);
+            result[0].CellCount().ShouldBeLessThanOrEqualTo(10);
+            result[0].Text.EndsWith("…", StringComparison.Ordinal).ShouldBeFalse();
+        }
+
+        [Fact]
+        [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/2193")]
+        public void Should_Never_Return_A_Segment_Wider_Than_MaxWidth_When_Folding_A_Wide_Cluster()
+        {
+            // Given
+            var segment = new Segment("Hello 😄 world 😃");
+
+            // When
+            var result = Segment.SplitOverflow(segment, Overflow.Fold, maxWidth: 1);
+
+            // Then
+            result.ShouldAllBe(part => part.CellCount() <= 1);
+        }
+
+        [Fact]
+        [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/2193")]
+        public void Should_Fold_A_Standalone_Wide_Cluster_Into_An_Ellipsis()
+        {
+            // Given
+            var segment = new Segment("😄");
+
+            // When
+            var result = Segment.SplitOverflow(segment, Overflow.Fold, maxWidth: 1);
+
+            // Then
+            result.Count.ShouldBe(1);
+            result[0].Text.ShouldBe("…");
+        }
+    }
+
+    public sealed class LinkPreservation
+    {
+        private static readonly Link _link = new("https://example.com/readme.md");
+
+        [Fact]
+        [GitHubIssue("https://github.com/spectreconsole/spectre.console/issues/2124")]
+        public void Should_Preserve_Link_When_Splitting_Lines_By_Width()
+        {
+            // Given
+            var segment = new Segment("abcdefghijklmnop", Style.Plain, _link);
+
+            // When
+            var lines = Segment.SplitLines([segment], maxWidth: 4);
+
+            // Then
+            lines.Count.ShouldBeGreaterThan(1);
+            lines.ShouldAllBe(line => line.All(p => p.Link == _link));
+        }
+
+        [Fact]
+        public void Should_Preserve_Link_When_Folding_Overflow()
+        {
+            // Given
+            var segment = new Segment("abcdefghijklmnop", Style.Plain, _link);
+
+            // When
+            var result = Segment.SplitOverflow(segment, Overflow.Fold, maxWidth: 4);
+
+            // Then
+            result.ShouldAllBe(part => part.Link == _link);
+        }
+
+        [Fact]
+        public void Should_Preserve_Link_On_Ellipsis_When_Overflowing()
+        {
+            // Given
+            var segment = new Segment("abcdefghijklmnop", Style.Plain, _link);
+
+            // When
+            var result = Segment.SplitOverflow(segment, Overflow.Ellipsis, maxWidth: 5);
+
+            // Then
+            result.Count.ShouldBe(1);
+            result[0].Text.ShouldEndWith("…");
+            result[0].Link.ShouldBe(_link);
+        }
+
+        [Fact]
+        public void Should_Preserve_Link_When_Truncating()
+        {
+            // Given
+            var segment = new Segment("abcdefghijklmnop", Style.Plain, _link);
+
+            // When
+            var truncated = Segment.Truncate(segment, maxWidth: 4);
+
+            // Then
+            truncated.ShouldNotBeNull();
+            truncated.Text.ShouldBe("abcd");
+            truncated.Link.ShouldBe(_link);
+        }
+
+        [Fact]
+        public void Should_Preserve_Link_When_Cloning()
+        {
+            // Given
+            var segment = new Segment("abc", Style.Plain, _link);
+
+            // When
+            var result = segment.Clone();
+
+            // Then
+            result.Link.ShouldBe(_link);
+        }
+
+        [Fact]
+        public void Should_Preserve_Link_When_Stripping_Line_Endings()
+        {
+            // Given
+            var segment = new Segment("abc\n", Style.Plain, _link);
+
+            // When
+            var result = segment.StripLineEndings();
+
+            // Then
+            result.Link.ShouldBe(_link);
+        }
+    }
+}

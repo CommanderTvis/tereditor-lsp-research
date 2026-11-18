@@ -1,0 +1,6 @@
+StringJoinArithmeticFirst
+StringJoinArithmeticMiddle
+StringJoinArithmeticLast
+StringJoinNegatedArithmeticFirst
+StringPlusArithmetic
+StringJoinPlainItems

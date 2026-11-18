@@ -1,0 +1,1458 @@
+diff --git a/Source/LinqToDB/CompiledQuery.cs b/Source/LinqToDB/CompiledQuery.cs
+index 32395c6762e..826e034997b 100644
+--- a/Source/LinqToDB/CompiledQuery.cs
++++ b/Source/LinqToDB/CompiledQuery.cs
+@@ -2,7 +2,9 @@
+ using System.Collections.Generic;
+ using System.Linq;
+ using System.Linq.Expressions;
++using System.Reflection;
+ using System.Threading;
++using System.Threading.Tasks;
+ 
+ using JetBrains.Annotations;
+ 
+@@ -31,7 +33,7 @@ protected CompiledQuery(LambdaExpression query)
+ 
+ 		readonly Lock                     _sync = new ();
+ 		readonly LambdaExpression         _query;
+-		volatile Func<object?[],object?[]?,object?>? _compiledQuery;
++		volatile Func<object?[],object?>? _compiledQuery;
+ 
+ 		TResult ExecuteQuery<TResult>(params object?[] args)
+ 		{
+@@ -39,8 +41,18 @@ TResult ExecuteQuery<TResult>(params object?[] args)
+ 				lock (_sync)
+ 					_compiledQuery ??= CompileQuery(_query);
+ 
+-			//TODO: pass preambles
+-			return (TResult)_compiledQuery(args, null)!;
++			var result = _compiledQuery(args);
++
++			// The substitution replaces the folded call with a Table<T>, which does not implement the
++			// wrapper interfaces some operators return (ILoadWithQueryable<,>, I<Provider>SpecificQueryable<>).
++			// A caller who let TResult infer from such a call gets an unhelpful InvalidCastException here.
++			if (result is not null and not TResult)
++				throw new LinqToDBException(
++					$"Compiled query returned '{result.GetType()}', which cannot be converted to the declared result type '{typeof(TResult)}'. "
++					+ "The outermost call was folded into the compiled table, so the result is a table rather than that call's own type. "
++					+ "Declare the compiled query result type as 'IQueryable<T>' or 'IEnumerable<T>'.");
++
++			return (TResult)result!;
+ 		}
+ 
+ 		enum MethodType
+@@ -52,33 +64,172 @@ enum MethodType
+ 
+ 		interface ITableHelper
+ 		{
+-			Expression CallTable(LambdaExpression query, Expression expr, ParameterExpression ps, ParameterExpression preambles, MethodType type);
++			Expression CallTable(Expression expr, ParameterExpression ps, Expression? token, MethodType type);
+ 		}
+ 
+ 		sealed class TableHelper<T> : ITableHelper
+ 			where T : notnull
+ 		{
+-			public Expression CallTable(LambdaExpression query, Expression expr, ParameterExpression ps, ParameterExpression preambles, MethodType type)
++			public Expression CallTable(Expression expr, ParameterExpression ps, Expression? token, MethodType type)
+ 			{
+-				var table = new CompiledTable<T>(query, expr);
++				var table = new CompiledTable<T>(expr, CollectDependentArgumentIndexes(expr, ps));
++
++				if (type == MethodType.ElementAsync)
++					return Expression.Call(
++						Expression.Constant(table),
++						MemberHelper.MethodOf<CompiledTable<T>>(t => t.ExecuteAsync(null!, CancellationToken.None)),
++						ps, token!);
+ 
+ 				return Expression.Call(
+ 					Expression.Constant(table),
+ 					type == MethodType.Queryable ?
+-						MemberHelper.MethodOf<CompiledTable<T>>(t => t.Create      (null!, null!)) :
+-					type == MethodType.Element ?
+-						MemberHelper.MethodOf<CompiledTable<T>>(t => t.Execute     (null!, null!)) :
+-						MemberHelper.MethodOf<CompiledTable<T>>(t => t.ExecuteAsync(null!, null!)),
+-					ps, preambles);
++						MemberHelper.MethodOf<CompiledTable<T>>(t => t.Create (null!)) :
++						MemberHelper.MethodOf<CompiledTable<T>>(t => t.Execute(null!)),
++					ps);
+ 			}
+ 		}
+ 
+-		static Func<object?[],object?[]?,object?> CompileQuery(LambdaExpression query)
++		// Expose materialises a [SqlQueryDependent] argument that reads the argument array, so the query the
++		// compiled table caches is only valid for the values it was built from. Collect the slots those
++		// arguments read - once, here - so the table can key its cache on them.
++		static int[] CollectDependentArgumentIndexes(Expression expression, ParameterExpression ps)
++		{
++			var indexes = new List<int>();
++
++			expression.Visit((ps, indexes), static (context, e) =>
++			{
++				if (e is not MethodCallExpression mc)
++					return;
++
++				var dependent = SqlQueryDependentAttributeHelper.GetQueryDependentAttributes(mc.Method);
++
++				if (dependent == null)
++					return;
++
++				for (var i = 0; i < mc.Arguments.Count && i < dependent.Count; i++)
++				{
++					if (dependent[i] == null)
++						continue;
++
++					mc.Arguments[i].Visit(context, static (c, a) =>
++					{
++						if (a is BinaryExpression { NodeType: ExpressionType.ArrayIndex } arrayIndex
++							&& arrayIndex.Left == c.ps
++							&& arrayIndex.Right is ConstantExpression { Value: int idx }
++							&& !c.indexes.Contains(idx))
++						{
++							c.indexes.Add(idx);
++						}
++					});
++				}
++			});
++
++			indexes.Sort();
++
++			return indexes.Count == 0 ? [] : indexes.ToArray();
++		}
++
++		static bool ReplaceAsyncWithSync(MethodCallExpression methodCall, out MethodCallExpression newMethodCall)
+ 		{
+-			var ps        = ExpressionBuilder.ParametersParam;
+-			var preambles = Expression.Parameter(typeof(object[]), "preambles");
++			newMethodCall = methodCall;
++			var returnType = methodCall.Method.ReturnType;
++			if (!typeof(Task).IsAssignableFrom(returnType))
++			{
++				return true;
++			}
++
++			var methodName = methodCall.Method.Name;
++			if (!methodName.EndsWith("Async", StringComparison.Ordinal))
++			{
++				return true;
++			}
++
++			var newMethodName = methodName.Substring(0, methodName.Length - "Async".Length);
++			var methods = GetSimilarMethods(methodCall.Method.DeclaringType)
++				.Concat(GetSimilarMethods(typeof(Queryable)))
++				.ToList();
++
++			if (methods.Count == 0)
++			{
++				return false;
++			}
++
++			var sourceParametersArray = methodCall.Method.GetParameters();
++
++			var destArguments         = methodCall.Arguments;
++
++			ICollection<ParameterInfo> sourceParameters = sourceParametersArray;
++
++			if (sourceParametersArray.Length > 0 && sourceParametersArray[^1].ParameterType == typeof(CancellationToken))
++			{
++				sourceParameters = sourceParametersArray.Take(sourceParametersArray.Length - 1).ToList();
++				destArguments = destArguments.Take(destArguments.Count - 1).ToList().AsReadOnly();
++			}
++
++			var         sourceGenericArguments = methodCall.Method.GetGenericArguments();
++			MethodInfo? targetMethod           = null;
+ 
+-			var info = query.Body.Transform((query, ps, preambles), static (context, pi) =>
++			foreach (var method in methods)
++			{
++				if (methodCall.Method.IsGenericMethod)
++				{
++					if (!method.IsGenericMethod)
++					{
++						continue;
++					}
++
++					var genericArgs = method.GetGenericArguments();
++					if (sourceGenericArguments.Length != genericArgs.Length)
++						continue;
++
++					var candidateMethod = method.MakeGenericMethod(sourceGenericArguments);
++
++					if (TypeHelper.IsEqualParameters(sourceParameters, candidateMethod.GetParameters()))
++					{
++						targetMethod = candidateMethod;
++						break;
++					}
++				}
++				else
++				{
++					if (method.IsGenericMethod)
++					{
++						continue;
++					}
++
++					if (TypeHelper.IsEqualParameters(sourceParameters, method.GetParameters()))
++					{
++						targetMethod = method;
++						break;
++					}
++				}
++			}
++
++			if (targetMethod == null)
++			{
++				return false;
++			}
++
++			newMethodCall = Expression.Call(targetMethod, destArguments);
++			return true;
++
++			List<MethodInfo> GetSimilarMethods(Type? methodsContainer)
++			{
++				if (methodsContainer == null)
++					return [];
++
++				var methodInfos = methodsContainer.GetMethods()
++					.Where(m => string.Equals(m.Name, newMethodName, StringComparison.Ordinal))
++					.ToList();
++				return methodInfos;
++			}
++		}
++
++		static Func<object?[],object?> CompileQuery(LambdaExpression query)
++		{
++			var ps = ExpressionBuilder.ParametersParam;
++
++			var info = query.Body.Transform((query, ps), static (context, pi) =>
+ 			{
+ 				switch (pi.NodeType)
+ 				{
+@@ -96,7 +247,7 @@ public Expression CallTable(LambdaExpression query, Expression expr, ParameterEx
+ 				return pi;
+ 			});
+ 
+-			info = info.Transform((query, ps, preambles), static (context, pi) =>
++			info = info.Transform(ps, static (context, pi) =>
+ 			{
+ 				switch (pi.NodeType)
+ 				{
+@@ -109,29 +260,44 @@ public Expression CallTable(LambdaExpression query, Expression expr, ParameterEx
+ 						{
+ 							var type = expr.Type.GetGenericArguments()[0];
+ 
++							// Taken before ReplaceAsyncWithSync strips it: the compiled table needs the caller's
++							// token, and nothing downstream can recover it from the untyped argument array.
++							var methodParameters = expr.Method.GetParameters();
++							var token            = methodParameters.Length > 0 && methodParameters[^1].ParameterType == typeof(CancellationToken)
++								? expr.Arguments[^1]
++								: Expression.Constant(CancellationToken.None);
++
++							// The compiled table builds and caches the query from the synchronous form; only the
++							// call into it stays async.
++							if (!ReplaceAsyncWithSync(expr, out var syncCall))
++								throw new InvalidOperationException("Cannot convert async method call to sync.");
++
+ 							var helper = ActivatorExt.CreateInstance<ITableHelper>(typeof(TableHelper<>).MakeGenericType(type));
+ 
+-							return helper.CallTable(context.query, expr, context.ps, context.preambles, MethodType.ElementAsync);
++							return helper.CallTable(syncCall, context, token, MethodType.ElementAsync);
+ 						}
+-						else if (expr.IsQueryable)
++						else if (expr.IsQueryable || typeof(IQueryable).IsSameOrParentOf(expr.Type))
+ 						{
+-							var type   = typeof(IQueryable).IsSameOrParentOf(expr.Type) ?
++							var isQueryable = typeof(IQueryable).IsSameOrParentOf(expr.Type);
++
++							var type        = isQueryable ?
+ 									typeof(IQueryable<>) :
+ 									typeof(IEnumerable<>);
+ 
+ 							var qtype       = type.GetGenericType(expr.Type);
+ 							var elementType = qtype?.GetGenericArguments()[0];
+ 
+-							// The Queryable form substitutes a Table<T>, so it applies only when the call's static type
+-							// can hold one. A client-side materializer such as ToList() is typed List<T> and cannot:
+-							// leave the call in place so the inner queryable becomes the compiled table instead, which
+-							// is what already happens for its async counterpart.
+-							if (elementType == null || expr.Type.IsAssignableFrom(typeof(Table<>).MakeGenericType(elementType)))
++							// The Queryable form substitutes a Table<T>, so it applies where the call really is a
++							// queryable, or where its static type can hold the substituted table (IEnumerable<T>, as
++							// the *WithOutput operators are typed). A client-side materializer such as ToList() is
++							// typed List<T> and is neither: leave the call in place so the inner queryable becomes the
++							// compiled table instead, which is what already happens for its async counterpart.
++							if (elementType == null || isQueryable || expr.Type.IsAssignableFrom(typeof(Table<>).MakeGenericType(elementType)))
+ 							{
+ 								var helper = ActivatorExt.CreateInstance<ITableHelper>(
+ 									typeof(TableHelper<>).MakeGenericType(elementType ?? expr.Type));
+ 
+-								return helper.CallTable(context.query, expr, context.ps, context.preambles, elementType != null ? MethodType.Queryable : MethodType.Element);
++								return helper.CallTable(expr, context, null, elementType != null ? MethodType.Queryable : MethodType.Element);
+ 							}
+ 						}
+ 
+@@ -147,7 +313,7 @@ public Expression CallTable(LambdaExpression query, Expression expr, ParameterEx
+ 							var helper = ActivatorExt
+ 								.CreateInstance<ITableHelper>(typeof(TableHelper<>)
+ 								.MakeGenericType(pi.Type.GetGenericArguments()[0]));
+-							return helper.CallTable(context.query, pi, context.ps, context.preambles, MethodType.Queryable);
++							return helper.CallTable(pi, context, null, MethodType.Queryable);
+ 						}
+ 
+ 						break;
+@@ -156,7 +322,7 @@ public Expression CallTable(LambdaExpression query, Expression expr, ParameterEx
+ 				return pi;
+ 			});
+ 
+-			return Expression.Lambda<Func<object?[],object?[]?,object?>>(Expression.Convert(info, typeof(object)), ps, preambles).CompileExpression();
++			return Expression.Lambda<Func<object?[],object?>>(Expression.Convert(info, typeof(object)), ps).CompileExpression();
+ 		}
+ 
+ 		#region Invoke
+diff --git a/Source/LinqToDB/Internal/Expressions/ExpressionEvaluator.cs b/Source/LinqToDB/Internal/Expressions/ExpressionEvaluator.cs
+index 6e3faf4a543..5b3395d528c 100644
+--- a/Source/LinqToDB/Internal/Expressions/ExpressionEvaluator.cs
++++ b/Source/LinqToDB/Internal/Expressions/ExpressionEvaluator.cs
+@@ -39,6 +39,11 @@ member.Member.MemberType is MemberTypes.Field or MemberTypes.Property
+ 				MethodCallExpression { NodeType: ExpressionType.Call } mc =>
+ 					IsSimpleEvaluatable(mc.Object) && mc.Arguments.All(IsSimpleEvaluatable),
+ 
++				// A quote evaluates to its operand, so it needs no compiled lambda - which also cannot handle
++				// an operand referencing a free parameter, as a compiled-query tree does after CompileQuery
++				// rewrites its parameters to ArrayIndex(ps, i).
++				UnaryExpression { NodeType: ExpressionType.Quote } => true,
++
+ 				_ => false,
+ 			};
+ 		}
+@@ -56,6 +61,9 @@ member.Member.MemberType is MemberTypes.Field or MemberTypes.Property
+ 				case ExpressionType.Constant:
+ 					return ((ConstantExpression)expr).Value;
+ 
++				case ExpressionType.Quote:
++					return ((UnaryExpression)expr).Operand;
++
+ 				// Reduce() is what produced this value before, via a compiled lambda - it honours a
+ 				// mapping schema's custom default, so reducing here keeps the result identical.
+ 				case ExpressionType.Extension when expr is DefaultValueExpression defaultValue:
+diff --git a/Source/LinqToDB/Internal/Expressions/InternalExtensions.cs b/Source/LinqToDB/Internal/Expressions/InternalExtensions.cs
+index eca93a61edd..545aa73f4bf 100644
+--- a/Source/LinqToDB/Internal/Expressions/InternalExtensions.cs
++++ b/Source/LinqToDB/Internal/Expressions/InternalExtensions.cs
+@@ -232,7 +232,12 @@ expression is
+ 
+ 		extension(MethodCallExpression method)
+ 		{
+-			public bool IsQueryable
++			public bool IsQueryable => method.IsBuiltInQueryable || MemberCache.GetMemberInfo(method.Method).IsQueryable;
++
++			// The declaring types the builder has a sequence builder for. IsQueryable's other half - the
++			// IsQueryableAttribute marker - says a user method composes like a queryable operator, not that
++			// the builder can build it, so asking "does the builder know this call?" wants this, not the union.
++			public bool IsBuiltInQueryable
+ 			{
+ 				get
+ 				{
+@@ -244,8 +249,7 @@ public bool IsQueryable
+ 						type == typeof(LinqExtensions) ||
+ 						type == typeof(LinqInternalExtensions) ||
+ 						type == typeof(DataExtensions) ||
+-						type == typeof(TableExtensions) ||
+-						MemberCache.GetMemberInfo(method.Method).IsQueryable;
++						type == typeof(TableExtensions);
+ 				}
+ 			}
+ 
+diff --git a/Source/LinqToDB/Internal/Linq/Builder/ExpressionBuilder.cs b/Source/LinqToDB/Internal/Linq/Builder/ExpressionBuilder.cs
+index 2db387ba99a..e077e618170 100644
+--- a/Source/LinqToDB/Internal/Linq/Builder/ExpressionBuilder.cs
++++ b/Source/LinqToDB/Internal/Linq/Builder/ExpressionBuilder.cs
+@@ -549,11 +549,24 @@ public Expression ConvertExpressionTree(Expression expression)
+ 		static readonly ObjectPool<ExposeExpressionVisitor> _exposeVisitorPool = new(() => new ExposeExpressionVisitor(), v => v.Cleanup(), 100);
+ 
+ 		public static Expression ExposeExpression(Expression expression, IDataContext dataContext, ExpressionTreeOptimizationContext optimizationContext, object?[]? parameterValues, bool optimizeConditions, bool compactBinary)
++		{
++			return ExposeExpression(expression, dataContext, optimizationContext, parameterValues, optimizeConditions, compactBinary, out _);
++		}
++
++		/// <summary>
++		/// Same as the overload without <paramref name="materializedArgumentSlots"/>, additionally reporting which
++		/// <paramref name="parameterValues"/> slots this pass baked into the returned tree. A caller that caches
++		/// the result needs them in its key, and cannot derive them beforehand: expansion runs recursively, so a
++		/// dependent position can appear only after several rewrites.
++		/// </summary>
++		public static Expression ExposeExpression(Expression expression, IDataContext dataContext, ExpressionTreeOptimizationContext optimizationContext, object?[]? parameterValues, bool optimizeConditions, bool compactBinary, out int[] materializedArgumentSlots)
+ 		{
+ 			using var visitor = _exposeVisitorPool.Allocate();
+ 
+ 			var result = visitor.Value.ExposeExpression(dataContext, optimizationContext, parameterValues, expression, optimizeConditions, compactBinary, isSingleConvert: false);
+ 
++			materializedArgumentSlots = visitor.Value.MaterializedArgumentSlots;
++
+ 			return result;
+ 		}
+ 
+diff --git a/Source/LinqToDB/Internal/Linq/Builder/Visitors/ExposeExpressionVisitor.cs b/Source/LinqToDB/Internal/Linq/Builder/Visitors/ExposeExpressionVisitor.cs
+index 0a9784c0578..69c611d5c48 100644
+--- a/Source/LinqToDB/Internal/Linq/Builder/Visitors/ExposeExpressionVisitor.cs
++++ b/Source/LinqToDB/Internal/Linq/Builder/Visitors/ExposeExpressionVisitor.cs
+@@ -33,10 +33,18 @@ sealed class ExposeExpressionVisitor : ExpressionVisitorBase, IExpressionEvaluat
+ 		bool                              _optimizeConditions;
+ 		bool                              _compactBinary;
+ 		bool                              _isSingleConvert;
++		List<int>?                        _materializedArgumentSlots;
+ 
+ 		public IDataContext  DataContext   => _dataContext;
+ 		public MappingSchema MappingSchema => _dataContext.MappingSchema;
+ 
++		/// <summary>
++		/// Argument-array slots whose values this pass baked into the tree. Expansion can create a
++		/// <see cref="SqlQueryDependentAttribute"/> position that did not exist before it ran, so a caller
++		/// caching the result cannot know these up front - it has to be told which ones were used.
++		/// </summary>
++		public int[] MaterializedArgumentSlots => _materializedArgumentSlots is null ? [] : _materializedArgumentSlots.ToArray();
++
+ 		Stack<ReadOnlyCollection<ParameterExpression>>? _allowedParameters;
+ 
+ 		public Expression ExposeExpression(IDataContext dataContext,
+@@ -69,6 +77,9 @@ public override void Cleanup()
+ 			_compactBinary       = false;
+ 			_isSingleConvert     = false;
+ 
++			_materializedArgumentSlots = null;
++			_parameterValues           = null;
++
+ 			_allowedParameters?.Clear();
+ 
+ 			base.Cleanup();
+@@ -180,6 +191,25 @@ MethodCallExpression HandleSqlDependentParameters(MethodCallExpression node, ILi
+ 						if (argument.NodeType != ExpressionType.Constant)
+ 						{
+ 							var newArgument = attr.PrepareForCache(argument, this);
++
++							// A dependent argument taken from a compiled query's own arguments cannot be
++							// evaluated while ps is a free parameter, so it would reach the SQL as a parameter
++							// and never take part in the query's identity. Its value is that identity, so
++							// materialise it here; CompiledTable carries the same values in its cache key.
++							// Resolved against newArgument rather than argument: PrepareForCache rebuilds a
++							// params array when any element folds, and leaves the ps-reading elements in place.
++							if (_parameterValues != null)
++							{
++								var resolved = ResolveCompiledQueryArguments(newArgument);
++
++								if (!ReferenceEquals(resolved, newArgument) && IsCompilable(resolved))
++								{
++									RecordMaterializedArgumentSlots(newArgument);
++
++									newArgument = Expression.Constant(EvaluateExpression(resolved), argument.Type);
++								}
++							}
++
+ 							if (newArgument.Type != argument.Type)
+ 								newArgument = Expression.Convert(newArgument, argument.Type);
+ 
+@@ -328,6 +358,56 @@ Expression HandleInvoke(MethodCallExpression node, LambdaExpression invokeLambda
+ 			return null;
+ 		}
+ 
++		void RecordMaterializedArgumentSlots(Expression materialized)
++		{
++			materialized.Visit(this, static (visitor, e) =>
++			{
++				if (e is BinaryExpression { NodeType: ExpressionType.ArrayIndex } arrayIndex
++					&& arrayIndex.Left == ExpressionBuilder.ParametersParam
++					&& arrayIndex.Right is ConstantExpression { Value: int idx })
++				{
++					visitor._materializedArgumentSlots ??= new List<int>();
++
++					if (!visitor._materializedArgumentSlots.Contains(idx))
++						visitor._materializedArgumentSlots.Add(idx);
++				}
++			});
++		}
++
++		// Substitutes the compiled query's argument array with its values, so an expression reading them can be
++		// evaluated. Returns the expression unchanged when it reads nothing from the array.
++		Expression ResolveCompiledQueryArguments(Expression expression)
++		{
++			if (_parameterValues == null)
++				return expression;
++
++			return expression.Transform(_parameterValues, static (values, e) =>
++				e == ExpressionBuilder.ParametersParam ? Expression.Constant(values, e.Type) : e)!;
++		}
++
++		// Recognises the shape CompileQuery leaves for a compiled query's own parameters - Convert(ps[i], T) -
++		// and resolves it only when that slot actually holds the data context.
++		IDataContext? GetCompiledQueryRootContext(Expression expression)
++		{
++			if (_parameterValues == null)
++				return null;
++
++			var expr = expression;
++
++			if (expr is UnaryExpression { NodeType: ExpressionType.Convert } convert)
++				expr = convert.Operand;
++
++			if (expr is BinaryExpression { NodeType: ExpressionType.ArrayIndex } arrayIndex
++				&& arrayIndex.Left == ExpressionBuilder.ParametersParam
++				&& arrayIndex.Right is ConstantExpression { Value: int idx }
++				&& idx >= 0 && idx < _parameterValues.Length)
++			{
++				return _parameterValues[idx] as IDataContext;
++			}
++
++			return null;
++		}
++
+ 		object? EvaluateExpression(Expression? expression)
+ 		{
+ 			if (expression == null)
+@@ -400,6 +480,18 @@ bool TryConvertIQueryable(Expression node, out Expression converted)
+ 
+ 					if (mc.IsQueryable)
+ 					{
++						// Only the root argument is resolved out of the argument array; the remaining ones keep
++						// their ps[i] parameters, so no call's parameter values are baked into the cached tree.
++						if (GetCompiledQueryRootContext(mc.Arguments[0]) is { } rootContext)
++						{
++							var rootArgs = mc.Arguments.ToArray();
++
++							rootArgs[0] = SqlQueryRootExpression.Create(rootContext, mc.Arguments[0].Type);
++							converted   = mc.Update(mc.Object, rootArgs);
++
++							return true;
++						}
++
+ 						if (mc.Arguments[0] is MemberExpression or ConstantExpression)
+ 						{
+ 							if (IsCompilable(mc))
+@@ -426,8 +518,14 @@ bool TryConvertIQueryable(Expression node, out Expression converted)
+ 							}
+ 						}
+ 
+-						converted = mc;
+-						return false;
++						// A user method carrying the IsQueryable marker reaches here: the branches above did not
++						// apply, and the builder has no builder for it either, so on the compiled path it still
++						// needs the expansion below. Everything else exits as before.
++						if (mc.IsBuiltInQueryable || _parameterValues == null)
++						{
++							converted = mc;
++							return false;
++						}
+ 					}
+ 				}
+ 
+@@ -437,12 +535,78 @@ bool TryConvertIQueryable(Expression node, out Expression converted)
+ 
+ 					return !ExpressionEqualityComparer.Instance.Equals(converted, node);
+ 				}
++
++				// A method the builder does not know, held non-evaluable by the compiled query's argument array.
++				// Expanding it over that source leaves those reads in the tree. Confined to the compiled path:
++				// an ordinary query reaches the same shapes through association and ExpressionMethod expansion,
++				// where the call is left in the tree for the builder to report as it is on master.
++				// A method whose body reconstructs its own call - every As<Provider>() entry point does - expands
++				// to a node equal to this one, and accepting it would re-enter Visit on the same shape forever.
++				if (_parameterValues != null && node is MethodCallExpression call && !call.IsBuiltInQueryable
++					&& ExpandOverSource(call) is { } expanded
++					&& !ExpressionEqualityComparer.Instance.Equals(expanded, node))
++				{
++					converted = expanded;
++
++					return true;
++				}
+ 			}
+ 
+ 			converted = node;
+ 			return false;
+ 		}
+ 
++		// Expands a call by invoking it over a query built on its own source expression as-is. The source is never
++		// evaluated, so whatever it references - a compiled query's argument array, for one - survives into the
++		// returned tree. Same shape AssociationHelper and TableBuilder use to apply user filter functions.
++		Expression? ExpandOverSource(MethodCallExpression call)
++		{
++			if (!call.Method.IsStatic || call.Arguments.Count == 0)
++				return null;
++
++			var source      = call.Arguments[0];
++			var elementType = typeof(IQueryable<>).GetGenericType(source.Type)?.GetGenericArguments()[0];
++
++			if (elementType == null)
++				return null;
++
++			var args = call.Arguments.ToArray();
++
++			for (var i = 1; i < args.Length; i++)
++			{
++				// A quote is left as it is: it evaluates to its own operand, so whatever the lambda closes over -
++				// the argument array included - stays inside it instead of being folded to a value.
++				if (args[i] is UnaryExpression { NodeType: ExpressionType.Quote })
++					continue;
++
++				// Anything else is folded to a value by the invocation below and baked into the cached tree,
++				// where nothing reads it again - so only an already-literal argument can take part.
++				if (args[i] is not ConstantExpression)
++					return null;
++			}
++
++			var expandedSource = ExpressionQueryImpl.CreateQuery(elementType, DataContext, source);
++
++			// ExpressionQueryImpl<T> is only an IQueryable<T>, so a source declared narrower cannot hold one.
++			// ITable<T> is the common case and Table<T> satisfies it; anything narrower still declines, which
++			// leaves the call in the tree for the builder to report instead of letting Expression.Constant throw.
++			if (!source.Type.IsInstanceOfType(expandedSource))
++			{
++				var tableType = typeof(Table<>).MakeGenericType(elementType);
++
++				if (!source.Type.IsAssignableFrom(tableType))
++					return null;
++
++				expandedSource = ActivatorExt.CreateInstance<IQueryable>(tableType, DataContext, source);
++			}
++
++			args[0] = Expression.Constant(expandedSource, source.Type);
++
++			// Evaluated without the visitor's ps substitution: that one rewrites the array parameter inside the
++			// quote too, which would bind the expansion to the invocation that first built the cached query.
++			return call.Update(call.Object, args).EvaluateExpression() is IQueryable expanded ? expanded.Expression : null;
++		}
++
+ 		Expression ConvertIQueryable(Expression expression)
+ 		{
+ 			if (expression.NodeType is ExpressionType.Call)
+diff --git a/Source/LinqToDB/Internal/Linq/CompiledTable{T}.cs b/Source/LinqToDB/Internal/Linq/CompiledTable{T}.cs
+index 8ac4b685641..0be1a2607ef 100644
+--- a/Source/LinqToDB/Internal/Linq/CompiledTable{T}.cs
++++ b/Source/LinqToDB/Internal/Linq/CompiledTable{T}.cs
+@@ -1,9 +1,7 @@
+ ﻿using System;
+ using System.Collections.Generic;
+-using System.Diagnostics.CodeAnalysis;
+ using System.Linq;
+ using System.Linq.Expressions;
+-using System.Reflection;
+ using System.Threading;
+ using System.Threading.Tasks;
+ 
+@@ -16,197 +14,193 @@ namespace LinqToDB.Internal.Linq
+ 	sealed class CompiledTable<T>
+ 		where T : notnull
+ 	{
+-		public CompiledTable(LambdaExpression lambda, Expression expression)
++		public CompiledTable(Expression expression, int[] dependentArgumentIndexes)
+ 		{
+-			_lambda     = lambda;
+-			_expression = expression;
++			_expression               = expression;
++			_dependentArgumentIndexes = dependentArgumentIndexes;
+ 		}
+ 
+-		readonly LambdaExpression _lambda;
+-		readonly Expression       _expression;
++		readonly Expression _expression;
+ 
+-		static bool ReplaceAsyncWithSync(MethodCallExpression methodCall, out MethodCallExpression newMethodCall)
++		// Grows when a build reports a slot the pre-expose scan could not see - expansion is recursive, so a
++		// dependent position can appear only after several rewrites. Written under _learnLock, read unlocked.
++		volatile int[] _dependentArgumentIndexes;
++
++		readonly Lock _learnLock = new();
++
++		// Expose materialises a [SqlQueryDependent] argument read from the argument array, so the cached query
++		// belongs to those values and not just to this fold site.
++		static DependentArgumentValues GetDependentArgumentValues(int[] indexes, object?[] parameterValues)
+ 		{
+-			newMethodCall = methodCall;
+-			var returnType = methodCall.Method.ReturnType;
+-			if (!typeof(Task).IsAssignableFrom(returnType))
+-			{
+-				return true;
+-			}
++			if (indexes.Length == 0)
++				return DependentArgumentValues.None;
+ 
+-			var methodName = methodCall.Method.Name;
+-			if (!methodName.EndsWith("Async", StringComparison.Ordinal))
+-			{
+-				return true;
+-			}
++			var values = new object?[indexes.Length];
+ 
+-			var newMethodName = methodName.Substring(0, methodName.Length - "Async".Length);
+-			var methods = GetSimilarMethods(methodCall.Type.DeclaringType)
+-				.Concat(GetSimilarMethods(typeof(Queryable)))
+-				.ToList();
++			for (var i = 0; i < values.Length; i++)
++				values[i] = parameterValues[indexes[i]];
+ 
+-			if (methods.Count == 0)
+-			{
+-				return false;
+-			}
++			return new DependentArgumentValues(values);
++		}
+ 
+-			var sourceParametersArray = methodCall.Method.GetParameters();
++		Query<T> GetInfo(IDataContext dataContext, object?[] parameterValues)
++		{
++			for (;;)
++			{
++				var indexes = _dependentArgumentIndexes;
++				var query   = GetInfo(dataContext, parameterValues, indexes, out var unseenSlots);
+ 
+-			var destArguments         = methodCall.Arguments;
++				if (unseenSlots == null)
++					return query;
+ 
+-			ICollection<ParameterInfo> sourceParameters = sourceParametersArray;
++				lock (_learnLock)
++					_dependentArgumentIndexes = Union(_dependentArgumentIndexes, unseenSlots);
++			}
++		}
+ 
+-			if (sourceParametersArray.Length > 0 && sourceParametersArray[^1].ParameterType == typeof(CancellationToken))
++		Query<T> GetInfo(IDataContext dataContext, object?[] parameterValues, int[] indexes, out int[]? unseenSlots)
++		{
++			var cacheKey =
++				(
++					operation: "CT",
++					configurationID: dataContext.ConfigurationID,
++					// Identity of this fold site, not a structural comparison: the cache is global per T,
++					// and one compiled query can fold more than one table of the same type.
++					table      : this,
++					queryFlags : dataContext.GetQueryFlags(),
++					dependent  : GetDependentArgumentValues(indexes, parameterValues)
++				);
++
++			if (QueryRunner.Cache<T>.QueryCache.TryGetValue(cacheKey, out var cached))
+ 			{
+-				sourceParameters = sourceParametersArray.Take(sourceParametersArray.Length - 1).ToList();
+-				destArguments = destArguments.Take(destArguments.Count - 1).ToList().AsReadOnly();
++				unseenSlots = null;
++
++				return cached;
+ 			}
+ 
+-			var         sourceGenericArguments = methodCall.Method.GetGenericArguments();
+-			MethodInfo? targetMethod           = null;
++			// Built outside the cache on purpose. Routing this through GetOrCreate publishes the entry before
++			// its key can be checked against what the build materialised, and a thread hitting it in that window
++			// would run this query for its own argument values.
++			var query = BuildQuery(dataContext, parameterValues, out var materializedSlots);
+ 
+-			foreach (var method in methods)
++			if (!IsCovered(materializedSlots, indexes))
+ 			{
+-				if (methodCall.Method.IsGenericMethod)
+-				{
+-					if (!method.IsGenericMethod)
+-					{
+-						continue;
+-					}
+-
+-					var genericArgs = method.GetGenericArguments();
+-					if (sourceGenericArguments.Length != genericArgs.Length)
+-						continue;
+-
+-					var candidateMethod = method.MakeGenericMethod(sourceGenericArguments);
+-
+-					if (TypeHelper.IsEqualParameters(sourceParameters, candidateMethod.GetParameters()))
+-					{
+-						targetMethod = candidateMethod;
+-						break;
+-					}
+-				}
+-				else
+-				{
+-					if (method.IsGenericMethod)
+-					{
+-						continue;
+-					}
+-
+-					if (TypeHelper.IsEqualParameters(sourceParameters, method.GetParameters()))
+-					{
+-						targetMethod = method;
+-						break;
+-					}
+-				}
++				// A slot the pre-expose scan could not see took part in the build, so this key cannot tell two
++				// argument values apart. Nothing is published - the caller widens the key and comes back.
++				unseenSlots = materializedSlots;
++
++				return query;
+ 			}
+ 
+-			if (targetMethod == null)
++			using (var entry = QueryRunner.Cache<T>.QueryCache.CreateEntry(cacheKey))
+ 			{
+-				return false;
++				entry.SlidingExpiration = dataContext.Options.LinqOptions.CacheSlidingExpirationOrDefault;
++				entry.Size              = 1;
++				entry.Value             = query;
+ 			}
+ 
+-			newMethodCall = Expression.Call(targetMethod, destArguments);
+-			return true;
+-
+-			List<MethodInfo> GetSimilarMethods(Type? methodsContainer)
+-			{
+-				if (methodsContainer == null)
+-					return [];
++			unseenSlots = null;
+ 
+-				var methodInfos = methodsContainer.GetMethods()
+-					.Where(m => string.Equals(m.Name, newMethodName, StringComparison.Ordinal))
+-					.ToList();
+-				return methodInfos;
+-			}
++			return query;
+ 		}
+ 
+-		Query<T> GetInfo(IDataContext dataContext, object?[] parameterValues)
++		Query<T> BuildQuery(IDataContext dataContext, object?[] parameterValues, out int[] materializedSlots)
+ 		{
+-			var configurationID = dataContext.ConfigurationID;
+-			var dataOptions     = dataContext.Options;
++			var optimizationContext = new ExpressionTreeOptimizationContext(dataContext);
++			var exposed = ExpressionBuilder.ExposeExpression(_expression, dataContext,
++				optimizationContext, parameterValues, optimizeConditions : false, compactBinary : true,
++				out materializedSlots);
+ 
+-			var result = QueryRunner.Cache<T>.QueryCache.GetOrCreate(
+-				(
+-					operation: "CT",
+-					configurationID,
+-					expression : _expression,
+-					queryFlags : dataContext.GetQueryFlags()
+-				),
+-				(dataContext, lambda: _lambda, dataOptions, parameterValues),
+-				static (o, key, ctx) =>
+-				{
+-					o.SlidingExpiration = ctx.dataOptions.LinqOptions.CacheSlidingExpirationOrDefault;
++			var query             = new Query<T>(dataContext);
++			var expressions       = (IQueryExpressions)new RuntimeExpressionsContainer(exposed);
++			var parametersContext = new ParametersContext(expressions, optimizationContext, dataContext);
+ 
+-					var correctedExpression = key.expression;
++			var validateSubqueries = !ExpressionBuilder.NeedsSubqueryValidation(dataContext);
++			query = new ExpressionBuilder(query, validateSubqueries, optimizationContext, parametersContext, dataContext, exposed, parameterValues)
++				.Build<T>(ref expressions);
+ 
+-					if (key.expression is MethodCallExpression methodCall)
+-					{
+-						if (!ReplaceAsyncWithSync(methodCall, out var newMethodCall))
+-						{
+-							throw new InvalidOperationException("Cannot convert async method call to sync.");
+-						}
++			if (query.ErrorExpression != null)
++			{
++				if (!validateSubqueries)
++				{
++					query = new Query<T>(dataContext);
+ 
+-						correctedExpression = newMethodCall;
+-					}
++					query = new ExpressionBuilder(query, true, optimizationContext, parametersContext, dataContext, exposed, parameterValues)
++						.Build<T>(ref expressions);
++				}
+ 
+-					var optimizationContext = new ExpressionTreeOptimizationContext(ctx.dataContext);
+-					var exposed = ExpressionBuilder.ExposeExpression(correctedExpression, ctx.dataContext,
+-						optimizationContext, ctx.parameterValues, optimizeConditions : false, compactBinary : true);
++				if (query.ErrorExpression != null)
++					throw query.ErrorExpression.CreateException();
++			}
+ 
+-					var query             = new Query<T>(ctx.dataContext);
+-					var expressions       = (IQueryExpressions)new RuntimeExpressionsContainer(exposed);
+-					var parametersContext = new ParametersContext(expressions, optimizationContext, ctx.dataContext);
++			query.CompiledExpressions = expressions;
+ 
+-					var validateSubqueries = !ExpressionBuilder.NeedsSubqueryValidation(ctx.dataContext);
+-					query = new ExpressionBuilder(query, validateSubqueries, optimizationContext, parametersContext, ctx.dataContext, exposed, ctx.parameterValues)
+-						.Build<T>(ref expressions);
++			return query;
++		}
+ 
+-					if (query.ErrorExpression != null)
+-					{
+-						if (!validateSubqueries)
+-						{
+-							query = new Query<T>(ctx.dataContext);
++		static bool IsCovered(int[] materializedSlots, int[] indexes)
++		{
++			foreach (var slot in materializedSlots)
++				if (Array.IndexOf(indexes, slot) < 0)
++					return false;
+ 
+-							query = new ExpressionBuilder(query, true, optimizationContext, parametersContext, ctx.dataContext, exposed, ctx.parameterValues)
+-								.Build<T>(ref expressions);
+-						}
++			return true;
++		}
+ 
+-						if (query.ErrorExpression != null)
+-							throw query.ErrorExpression.CreateException();
+-					}
++		static int[] Union(int[] indexes, int[] materializedSlots)
++		{
++			var union = new List<int>(indexes);
+ 
+-					query.CompiledExpressions = expressions;
++			foreach (var slot in materializedSlots)
++				if (!union.Contains(slot))
++					union.Add(slot);
+ 
+-					return query;
+-				})!;
++			union.Sort();
+ 
+-			return result;
++			return union.ToArray();
+ 		}
+ 
+-		[SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "Method used by two-parameter call in generated expression")]
+-		public IQueryable<T> Create(object[] parameters, object[] preambles)
++		public IQueryable<T> Create(object[] parameters)
+ 		{
+ 			var db    = (IDataContext)parameters[0];
+ 			var query = GetInfo(db, parameters);
+ 
+-			return new Table<T>(db, _expression) { Info = query, Parameters = parameters };
++			// The exposed tree, not _expression: Info carries parameter accessors built against it, and a
++			// pre-set Info makes ExpressionQuery skip the expose that would otherwise reconcile the two.
++			return new Table<T>(db, query.CompiledExpressions!.MainExpression)
++			{
++				Info                = query,
++				Parameters          = parameters,
++				CompiledExpressions = query.CompiledExpressions,
++			};
+ 		}
+ 
+-		public T Execute(object[] parameters, object[] preambles)
++		public T Execute(object[] parameters)
+ 		{
+-			var db    = (IDataContext)parameters[0];
+-			var query = GetInfo(db, parameters);
++			var db          = (IDataContext)parameters[0];
++			var query       = GetInfo(db, parameters);
++			var expressions = query.CompiledExpressions!;
+ 
+-			return (T)query.GetElement(db, query.CompiledExpressions!, parameters, preambles)!;
++			using (query.StartLoadTransaction(db))
++			{
++				var preambles = query.InitPreambles(db, expressions, parameters);
++
++				return (T)query.GetElement(db, expressions, parameters, preambles)!;
++			}
+ 		}
+ 
+-		public async Task<T> ExecuteAsync(object[] parameters, object[] preambles)
++		public async Task<T> ExecuteAsync(object[] parameters, CancellationToken cancellationToken)
+ 		{
+-			var db    = (IDataContext)parameters[0];
+-			var query = GetInfo(db, parameters);
++			var db          = (IDataContext)parameters[0];
++			var query       = GetInfo(db, parameters);
++			var expressions = query.CompiledExpressions!;
++
++			var transaction = await query.StartLoadTransactionAsync(db, cancellationToken).ConfigureAwait(false);
++			await using var tr = (transaction ?? EmptyIAsyncDisposable.Instance).ConfigureAwait(false);
++
++			var preambles = await query.InitPreamblesAsync(db, expressions, parameters, cancellationToken).ConfigureAwait(false);
+ 
+-			return (T)(await query.GetElementAsync(db, query.CompiledExpressions!, parameters, preambles, default).ConfigureAwait(false))!;
++			return (T)(await query.GetElementAsync(db, expressions, parameters, preambles, cancellationToken).ConfigureAwait(false))!;
+ 		}
+ 	}
+ }
+diff --git a/Source/LinqToDB/Internal/Linq/DependentArgumentValues.cs b/Source/LinqToDB/Internal/Linq/DependentArgumentValues.cs
+new file mode 100644
+index 00000000000..8a198429b3f
+--- /dev/null
++++ b/Source/LinqToDB/Internal/Linq/DependentArgumentValues.cs
+@@ -0,0 +1,92 @@
++using System;
++using System.Collections;
++using System.Diagnostics.CodeAnalysis;
++
++namespace LinqToDB.Internal.Linq
++{
++	/// <summary>
++	/// Values a compiled table's query was built from, for the arguments its expression materialises.
++	/// The cache key is compared through the tuple's per-field default comparer, which would compare an
++	/// array by reference - hence a holder rather than the array itself. Values compare element-wise and
++	/// recursively; SqlQueryDependentAttribute.ObjectsEqual compares a sequence's elements with the
++	/// non-recursive object.Equals, so it is the looser of the two - the difference can only cost an extra
++	/// miss here, never a false match.
++	/// </summary>
++	sealed class DependentArgumentValues : IEquatable<DependentArgumentValues>
++	{
++		public static readonly DependentArgumentValues None = new([]);
++
++		public DependentArgumentValues(object?[] values)
++		{
++			_values = values;
++		}
++
++		readonly object?[] _values;
++
++		public bool Equals([NotNullWhen(true)] DependentArgumentValues? other)
++		{
++			if (other == null || other._values.Length != _values.Length)
++				return false;
++
++			for (var i = 0; i < _values.Length; i++)
++				if (!ValuesEqual(_values[i], other._values[i]))
++					return false;
++
++			return true;
++		}
++
++		public override bool Equals([NotNullWhen(true)] object? obj) => Equals(obj as DependentArgumentValues);
++
++		public override int GetHashCode()
++		{
++			var hash = _values.Length;
++
++			foreach (var value in _values)
++				hash = unchecked(hash * 397 + ValueHashCode(value));
++
++			return hash;
++		}
++
++		static bool ValuesEqual(object? value1, object? value2)
++		{
++			if (ReferenceEquals(value1, value2))
++				return true;
++
++			if (value1 == null || value2 == null)
++				return false;
++
++			if (value1 is not string and IEnumerable list1 && value2 is not string and IEnumerable list2)
++			{
++				var enum1 = list1.GetEnumerator();
++				var enum2 = list2.GetEnumerator();
++
++				using (enum1 as IDisposable)
++				using (enum2 as IDisposable)
++				{
++					while (enum1.MoveNext())
++						if (!enum2.MoveNext() || !ValuesEqual(enum1.Current, enum2.Current))
++							return false;
++
++					return !enum2.MoveNext();
++				}
++			}
++
++			return value1.Equals(value2);
++		}
++
++		static int ValueHashCode(object? value)
++		{
++			if (value is not string and IEnumerable list)
++			{
++				var hash = 17;
++
++				foreach (var item in list)
++					hash = unchecked(hash * 397 + ValueHashCode(item));
++
++				return hash;
++			}
++
++			return value?.GetHashCode() ?? 0;
++		}
++	}
++}
+diff --git a/Source/LinqToDB/Internal/Linq/ExpressionQuery.cs b/Source/LinqToDB/Internal/Linq/ExpressionQuery.cs
+index 659f0b6ca79..d8ce3b5d93c 100644
+--- a/Source/LinqToDB/Internal/Linq/ExpressionQuery.cs
++++ b/Source/LinqToDB/Internal/Linq/ExpressionQuery.cs
+@@ -38,6 +38,18 @@ protected void Init(IDataContext dataContext, Expression? expression)
+ 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+ 		internal object?[]? Preambles;
+ 
++		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
++		internal IQueryExpressions? CompiledExpressions;
++
++		// A compiled table hands over the container its Info's accessors were built against. Rebuilding one from
++		// the main expression alone carries no dynamic entries, and an accessor rooted at one - which a query
++		// filter closing over a value produces - then has nothing to resolve. Only for enumerating this query as
++		// it is: a composed expression is a different tree and gets its own container.
++		IQueryExpressions GetOwnExpressions(Expression expression)
++		{
++			return CompiledExpressions ?? new RuntimeExpressionsContainer(expression);
++		}
++
+ 		#endregion
+ 
+ 		#region Public Members
+@@ -50,7 +62,7 @@ IReadOnlyList<QuerySql> IExpressionQuery.GetSqlQueries(SqlGenerationOptions? opt
+ 				DataContext.InlineParameters = options.InlineParameters.Value;
+ 
+ 			var expression  = Expression;
+-			var expressions = (IQueryExpressions)new RuntimeExpressionsContainer(expression);
++			var expressions = GetOwnExpressions(expression);
+ 			var info        = GetQuery(ref expressions, true, out var dependsOnParameters);
+ 
+ 			if (options?.MultiInsertMode != null && info.Queries[0].Statement is SqlMultiInsertStatement multiInsert)
+@@ -117,66 +129,12 @@ async Task<TResult> IQueryProviderAsync.ExecuteAsync<TResult>(Expression express
+ 
+ 		IDisposable? StartLoadTransaction(Query query)
+ 		{
+-			// Do not start implicit transaction if there is no preambles
+-			//
+-			if (!query.IsAnyPreambles())
+-				return null;
+-
+-			var dc = DataContext switch
+-			{
+-				DataConnection dataConnection => dataConnection,
+-				DataContext    dataContext    => dataContext.GetDataConnection(),
+-				_                             => null,
+-			};
+-
+-			if (dc == null)
+-				return null;
+-
+-			// transaction will be maintained by TransactionScope
+-			//
+-			if (TransactionScopeHelper.IsInsideTransactionScope)
+-				return null;
+-
+-			if (dc.TransactionAsync != null || dc.CurrentCommand?.Transaction != null)
+-				return null;
+-
+-			if (DataContext is DataContext ctx)
+-				return ctx!.BeginTransaction(dc.DataProvider.SqlProviderFlags.DefaultMultiQueryIsolationLevel);
+-
+-			return dc!.BeginTransaction(dc.DataProvider.SqlProviderFlags.DefaultMultiQueryIsolationLevel);
++			return query.StartLoadTransaction(DataContext);
+ 		}
+ 
+-		async Task<IAsyncDisposable?> StartLoadTransactionAsync(Query query, CancellationToken cancellationToken)
++		Task<IAsyncDisposable?> StartLoadTransactionAsync(Query query, CancellationToken cancellationToken)
+ 		{
+-			// Do not start implicit transaction if there is no preambles
+-			//
+-			if (!query.IsAnyPreambles())
+-				return null;
+-
+-			var dc = DataContext switch
+-			{
+-				DataConnection dataConnection => dataConnection,
+-				DataContext    dataContext    => dataContext.GetDataConnection(),
+-				_                             => null,
+-			};
+-
+-			if (dc == null)
+-				return null;
+-
+-			// transaction will be maintained by TransactionScope
+-			//
+-			if (TransactionScopeHelper.IsInsideTransactionScope)
+-				return null;
+-
+-			if (dc.TransactionAsync != null || dc.CurrentCommand?.Transaction != null)
+-				return null;
+-
+-			if (DataContext is DataContext ctx)
+-				return await ctx.BeginTransactionAsync(dc.DataProvider.SqlProviderFlags.DefaultMultiQueryIsolationLevel, cancellationToken)!
+-					.ConfigureAwait(false);
+-
+-			return await dc.BeginTransactionAsync(dc.DataProvider.SqlProviderFlags.DefaultMultiQueryIsolationLevel, cancellationToken)!
+-				.ConfigureAwait(false);
++			return query.StartLoadTransactionAsync(DataContext, cancellationToken);
+ 		}
+ 
+ 		async Task<IAsyncEnumerable<TResult>> IQueryProviderAsync.ExecuteAsyncEnumerable<TResult>(Expression expression, CancellationToken cancellationToken)
+@@ -197,7 +155,7 @@ async Task<IAsyncEnumerable<TResult>> IQueryProviderAsync.ExecuteAsyncEnumerable
+ 		public async Task GetForEachAsync(Action<T> action, CancellationToken cancellationToken)
+ 		{
+ 			var expression  = Expression;
+-			var expressions = (IQueryExpressions)new RuntimeExpressionsContainer(expression);
++			var expressions = GetOwnExpressions(expression);
+ 			var query       = GetQuery(ref expressions, true, out var dependsOnParameters);
+ 
+ 			if (!dependsOnParameters)
+@@ -222,7 +180,7 @@ public async Task GetForEachAsync(Action<T> action, CancellationToken cancellati
+ 		public async Task GetForEachUntilAsync(Func<T,bool> func, CancellationToken cancellationToken)
+ 		{
+ 			var expression  = Expression;
+-			var expressions = (IQueryExpressions)new RuntimeExpressionsContainer(expression);
++			var expressions = GetOwnExpressions(expression);
+ 			var query       = GetQuery(ref expressions, true, out var dependsOnParameters);
+ 
+ 			if (!dependsOnParameters)
+@@ -241,7 +199,7 @@ public async Task GetForEachUntilAsync(Func<T,bool> func, CancellationToken canc
+ 		public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
+ 		{
+ 			var expression  = Expression;
+-			var expressions = (IQueryExpressions)new RuntimeExpressionsContainer(expression);
++			var expressions = GetOwnExpressions(expression);
+ 			var query       = GetQuery(ref expressions, true, out var dependsOnParameters);
+ 
+ 			if (!dependsOnParameters)
+@@ -349,7 +307,7 @@ IEnumerator<T> IEnumerable<T>.GetEnumerator()
+ 			using var _ = ActivityService.Start(ActivityID.QueryProviderGetEnumeratorT);
+ 
+ 			var expression  = Expression;
+-			var expressions = (IQueryExpressions)new RuntimeExpressionsContainer(expression);
++			var expressions = GetOwnExpressions(expression);
+ 			var query       = GetQuery(ref expressions, true, out var dependsOnParameters);
+ 
+ 			if (!dependsOnParameters)
+@@ -368,7 +326,7 @@ IEnumerator IEnumerable.GetEnumerator()
+ 			using var _ = ActivityService.Start(ActivityID.QueryProviderGetEnumerator);
+ 
+ 			var expression  = Expression;
+-			var expressions = (IQueryExpressions)new RuntimeExpressionsContainer(expression);
++			var expressions = GetOwnExpressions(expression);
+ 			var query       = GetQuery(ref expressions, true, out var dependsOnParameters);
+ 
+ 			if (!dependsOnParameters)
+diff --git a/Source/LinqToDB/Internal/Linq/Query.cs b/Source/LinqToDB/Internal/Linq/Query.cs
+index b535463be3d..b1e461f1474 100644
+--- a/Source/LinqToDB/Internal/Linq/Query.cs
++++ b/Source/LinqToDB/Internal/Linq/Query.cs
+@@ -6,6 +6,7 @@
+ using System.Threading;
+ using System.Threading.Tasks;
+ 
++using LinqToDB.Data;
+ using LinqToDB.Internal.Expressions;
+ using LinqToDB.Internal.Expressions.ExpressionVisitors;
+ using LinqToDB.Internal.Linq.Builder;
+@@ -194,6 +195,62 @@ internal bool IsAnyPreambles()
+ 			return preambles;
+ 		}
+ 
++		internal IDisposable? StartLoadTransaction(IDataContext dataContext)
++		{
++			var dc = GetTransactionOwner(dataContext);
++
++			if (dc == null)
++				return null;
++
++			if (dataContext is DataContext ctx)
++				return ctx.BeginTransaction(dc.DataProvider.SqlProviderFlags.DefaultMultiQueryIsolationLevel);
++
++			return dc.BeginTransaction(dc.DataProvider.SqlProviderFlags.DefaultMultiQueryIsolationLevel);
++		}
++
++		internal async Task<IAsyncDisposable?> StartLoadTransactionAsync(IDataContext dataContext, CancellationToken cancellationToken)
++		{
++			var dc = GetTransactionOwner(dataContext);
++
++			if (dc == null)
++				return null;
++
++			if (dataContext is DataContext ctx)
++				return await ctx.BeginTransactionAsync(dc.DataProvider.SqlProviderFlags.DefaultMultiQueryIsolationLevel, cancellationToken)
++					.ConfigureAwait(false);
++
++			return await dc.BeginTransactionAsync(dc.DataProvider.SqlProviderFlags.DefaultMultiQueryIsolationLevel, cancellationToken)
++				.ConfigureAwait(false);
++		}
++
++		DataConnection? GetTransactionOwner(IDataContext dataContext)
++		{
++			// Do not start implicit transaction if there is no preambles
++			//
++			if (!IsAnyPreambles())
++				return null;
++
++			var dc = dataContext switch
++			{
++				DataConnection dataConnection => dataConnection,
++				DataContext    context        => context.GetDataConnection(),
++				_                             => null,
++			};
++
++			if (dc == null)
++				return null;
++
++			// transaction will be maintained by TransactionScope
++			//
++			if (TransactionScopeHelper.IsInsideTransactionScope)
++				return null;
++
++			if (dc.TransactionAsync != null || dc.CurrentCommand?.Transaction != null)
++				return null;
++
++			return dc;
++		}
++
+ 		#endregion
+ 	}
+ }
+diff --git a/Source/LinqToDB/Internal/Linq/QueryRunner.cs b/Source/LinqToDB/Internal/Linq/QueryRunner.cs
+index 3da0bdcb87a..e64f7ea17d9 100644
+--- a/Source/LinqToDB/Internal/Linq/QueryRunner.cs
++++ b/Source/LinqToDB/Internal/Linq/QueryRunner.cs
+@@ -44,7 +44,11 @@ public static void ClearCache()
+ 				QueryCache.Clear();
+ 			}
+ 
+-			internal static MemoryCache<IStructuralEquatable,Query<T>> QueryCache { get; } = new(new());
++			// Bounded because CompiledTable keys this on the runtime values of a query's [SqlQueryDependent]
++			// arguments, so the entry count follows what callers pass rather than the shape of their code -
++			// a hint or table name taken from a compiled-query argument adds one entry per distinct value.
++			// The cache is static per closed T, so the limit is per element type rather than process-wide.
++			internal static MemoryCache<IStructuralEquatable,Query<T>> QueryCache { get; } = new(new() { SizeLimit = 1000 });
+ 		}
+ 
+ 		public static class Cache<T,TR>
+diff --git a/Tests/Linq/Linq/CompileTestsAsync.cs b/Tests/Linq/Linq/CompileTestsAsync.cs
+index bf7f6bd57a6..b905565e89a 100644
+--- a/Tests/Linq/Linq/CompileTestsAsync.cs
++++ b/Tests/Linq/Linq/CompileTestsAsync.cs
+@@ -6,6 +6,7 @@
+ 
+ using LinqToDB;
+ using LinqToDB.Async;
++using LinqToDB.Data;
+ using LinqToDB.Mapping;
+ using LinqToDB.Tools.EntityServices;
+ 
+@@ -766,6 +767,138 @@ public async Task CustomContext_CompiledQueryCustomTest([DataSources(false)] str
+ 			Assert.That(result2[0], Is.SameAs(result1[0]));
+ 		}
+ 
++		[Test(Description = "https://github.com/linq2db/linq2db/pull/5844#issuecomment-5538235961")]
++		public async Task ClosureValueSurvivesRebalancedPredicateAsyncTest([IncludeDataSources(TestProvName.AllSQLite)] string context)
++		{
++			using var db = GetDataContext(context);
++
++			// GetForEachAsync takes the same cached-Info shortcut as the synchronous enumeration, so the
++			// async path needs its own guard that the table was handed the exposed tree.
++			var id    = 2;
++			var query = CompiledQuery.Compile<ITestDataContext,IQueryable<Parent>>(d =>
++				d.Parent.Where(p => p.ParentID == id && p.ParentID > 0 && p.ParentID < 1000 && p.ParentID != -1));
++
++			var parents = await query(db).ToListAsync();
++
++			Assert.That(parents.Select(p => p.ParentID).ToList(), Is.EqualTo(new[] { 2 }));
++		}
++
++		[Test(Description = "https://github.com/linq2db/linq2db/issues/5842")]
++		// Sybase excluded by https://github.com/linq2db/linq2db/issues/5865 - the element-form eager-load
++		// preamble joins a derived table carrying TOP, which SybaseDataProvider already declares invalid
++		// through IsJoinDerivedTableWithTakeInvalid, but the preamble reaches the provider without that
++		// check running, so only the first detail row comes back.
++		public async Task ElementFormLoadWithAsyncTest([DataSources(TestProvName.AllSybase)] string context)
++		{
++			var query = CompiledQuery.Compile<ITestDataContext,int,CancellationToken,Task<Parent>>(static (db, id, token) =>
++				db.Parent
++					.Where(p => p.ParentID == id)
++					.LoadWith(p => p.Children)
++					.FirstAsync(token));
++
++			using var db = GetDataContext(context);
++
++			var parent = await query(db, 1, default);
++			var other  = await query(db, 2, default);
++
++			using (Assert.EnterMultipleScope())
++			{
++				Assert.That(parent.ParentID, Is.EqualTo(1));
++				Assert.That(parent.Children, Has.Count.EqualTo(1));
++				Assert.That(other.ParentID,  Is.EqualTo(2));
++				Assert.That(other.Children,  Has.Count.EqualTo(2));
++			}
++		}
++
++		[Test(Description = "https://github.com/linq2db/linq2db/issues/5842")]
++		public async Task ElementFormLoadWithOpensLoadTransactionAsync([IncludeDataSources(false, TestProvName.AllSQLite)] string context)
++		{
++			var queryable = CompiledQuery.Compile<ITestDataContext,int,CancellationToken,Task<List<Parent>>>(static (db, id, token) =>
++				db.Parent
++					.Where(p => p.ParentID == id)
++					.LoadWith(p => p.Children)
++					.ToListAsync(token));
++
++			var element = CompiledQuery.Compile<ITestDataContext,int,CancellationToken,Task<Parent>>(static (db, id, token) =>
++				db.Parent
++					.Where(p => p.ParentID == id)
++					.LoadWith(p => p.Children)
++					.FirstAsync(token));
++
++			var transactions = 0;
++
++			using var db = GetDataContext(context, o => o.UseTracing(e =>
++			{
++				if (e.TraceInfoStep == TraceInfoStep.BeforeExecute && e.Operation == TraceOperation.BeginTransaction)
++					transactions++;
++			}));
++
++			var viaQueryable   = (await queryable(db, 1, default))[0];
++			var afterQueryable = transactions;
++			var viaElement     = await element(db, 1, default);
++			var afterElement   = transactions;
++			var viaElement2    = await element(db, 2, default);
++
++			using (Assert.EnterMultipleScope())
++			{
++				Assert.That(viaQueryable.Children, Has.Count.EqualTo(1));
++				Assert.That(viaElement.Children,   Has.Count.EqualTo(1));
++				Assert.That(viaElement2.Children,  Has.Count.EqualTo(2));
++
++				Assert.That(afterQueryable, Is.EqualTo(1), "queryable form must open the implicit eager-loading transaction");
++				Assert.That(afterElement,   Is.EqualTo(2), "element form must open one as well");
++				Assert.That(transactions,   Is.EqualTo(3), "and must dispose it - a leak leaves the connection inside it, so the next call opens none");
++			}
++		}
++
++		[Test(Description = "https://github.com/linq2db/linq2db/issues/5842")]
++		public void ElementFormLoadWithHonorsCancellationAsync([IncludeDataSources(false, TestProvName.AllSQLite)] string context)
++		{
++			var eager = CompiledQuery.Compile<ITestDataContext,int,CancellationToken,Task<Parent>>(static (db, id, token) =>
++				db.Parent
++					.Where(p => p.ParentID == id)
++					.LoadWith(p => p.Children)
++					.FirstAsync(token));
++
++			// No LoadWith means no preamble and so no implicit transaction, which makes GetElementAsync the
++			// first await able to observe the token - the site that used to receive default.
++			var plain = CompiledQuery.Compile<ITestDataContext,int,CancellationToken,Task<Parent>>(static (db, id, token) =>
++				db.Parent
++					.Where(p => p.ParentID == id)
++					.FirstAsync(token));
++
++			using var cts = new CancellationTokenSource();
++			cts.Cancel();
++
++			using var db = GetDataContext(context);
++
++			Assert.ThrowsAsync<OperationCanceledException>(async () =>
++			{
++				try
++				{
++					await eager(db, 1, cts.Token);
++				}
++				catch (OperationCanceledException)
++				{
++					// normalizes TaskCanceledException, which the assert above would not match
++					throw new OperationCanceledException();
++				}
++			});
++
++			Assert.ThrowsAsync<OperationCanceledException>(async () =>
++			{
++				try
++				{
++					await plain(db, 1, cts.Token);
++				}
++				catch (OperationCanceledException)
++				{
++					// normalizes TaskCanceledException, which the assert above would not match
++					throw new OperationCanceledException();
++				}
++			});
++		}
++
+ 		[ActiveIssue]
+ 		[Test(Description = "https://github.com/linq2db/linq2db/issues/3266")]
+ 		public async Task Issue3266Test([DataSources(false)] string context)

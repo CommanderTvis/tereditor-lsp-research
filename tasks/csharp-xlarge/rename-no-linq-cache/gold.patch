@@ -1,0 +1,151 @@
+diff --git a/Source/LinqToDB/Common/Configuration.cs b/Source/LinqToDB/Common/Configuration.cs
+index be6ef21..c8b9e76 100644
+--- a/Source/LinqToDB/Common/Configuration.cs
++++ b/Source/LinqToDB/Common/Configuration.cs
+@@ -385,7 +385,7 @@ public static bool GuardGrouping
+ 			/// Default value: <see langword="false"/>.
+ 			/// <para />
+ 			/// It is not recommended to enable this option as it could lead to severe slowdown. Better approach will be
+-			/// to use <see cref="NoLinqCache"/> scope around queries, that produce severe memory leaks you need to fix.
++			/// to use <see cref="NoQueryCache"/> scope around queries, that produce severe memory leaks you need to fix.
+ 			/// <para />
+ 			/// <a href="https://github.com/linq2db/linq2db/issues/256">More details</a>.
+ 			/// </summary>
+diff --git a/Source/LinqToDB/DataOptionsExtensions.cs b/Source/LinqToDB/DataOptionsExtensions.cs
+index ffa30d3..aab2eae 100644
+--- a/Source/LinqToDB/DataOptionsExtensions.cs
++++ b/Source/LinqToDB/DataOptionsExtensions.cs
+@@ -243,7 +243,7 @@ public static LinqOptions WithDefaultEagerLoadingStrategy(this LinqOptions optio
+ 		/// Default value: <see langword="false"/>.
+ 		/// <para />
+ 		/// It is not recommended to enable this option as it could lead to severe slowdown. Better approach will be
+-		/// to use <see cref="NoLinqCache"/> scope around queries, that produce severe memory leaks you need to fix.
++		/// to use <see cref="NoQueryCache"/> scope around queries, that produce severe memory leaks you need to fix.
+ 		/// <para />
+ 		/// <a href="https://github.com/linq2db/linq2db/issues/256">More details</a>.
+ 		/// </summary>
+@@ -568,7 +568,7 @@ public static DataOptions UseDefaultEagerLoadingStrategy(this DataOptions option
+ 		/// Default value: <see langword="false"/>.
+ 		/// <para />
+ 		/// It is not recommended to enable this option as it could lead to severe slowdown. Better approach will be
+-		/// to use <see cref="NoLinqCache"/> scope around queries, that produce severe memory leaks you need to fix.
++		/// to use <see cref="NoQueryCache"/> scope around queries, that produce severe memory leaks you need to fix.
+ 		/// <para />
+ 		/// <a href="https://github.com/linq2db/linq2db/issues/256">More details</a>.
+ 		/// </summary>
+diff --git a/Source/LinqToDB/Internal/Linq/Query{T}.cs b/Source/LinqToDB/Internal/Linq/Query{T}.cs
+index 0372646..db38104 100644
+--- a/Source/LinqToDB/Internal/Linq/Query{T}.cs
++++ b/Source/LinqToDB/Internal/Linq/Query{T}.cs
+@@ -20,7 +20,7 @@ public sealed class Query<T> : Query
+ 		public Query(IDataContext dataContext)
+ 			: base(dataContext)
+ 		{
+-			DoNotCache = NoLinqCache.IsNoCache;
++			DoNotCache = NoQueryCache.IsNoCache;
+ 		}
+ 
+ 		internal override void Init(IBuildContext parseContext)
+diff --git a/Source/LinqToDB/Linq/NoLinqCache.cs b/Source/LinqToDB/Linq/NoQueryCache.cs
+similarity index 90%
+rename from Source/LinqToDB/Linq/NoLinqCache.cs
+rename to Source/LinqToDB/Linq/NoQueryCache.cs
+index 8279105..04a8aeb 100644
+--- a/Source/LinqToDB/Linq/NoLinqCache.cs
++++ b/Source/LinqToDB/Linq/NoQueryCache.cs
+@@ -10,7 +10,7 @@ namespace LinqToDB.Linq
+ 	/// Take into account that this class only disables adding of new query, created in its scope, to a cache.
+ 	/// If query already present in cache - linq2db will use cached query.
+ 	/// </summary>
+-	public sealed class NoLinqCache : IDisposable
++	public sealed class NoQueryCache : IDisposable
+ 	{
+ 		static readonly AsyncLocal<bool> _value = new AsyncLocal<bool>();
+ 
+@@ -19,10 +19,10 @@ public sealed class NoLinqCache : IDisposable
+ 		/// </summary>
+ 		public static IDisposable Scope()
+ 		{
+-			return new NoLinqCache();
++			return new NoQueryCache();
+ 		}
+ 
+-		NoLinqCache()
++		NoQueryCache()
+ 		{
+ 			_value.Value = true;
+ 		}
+diff --git a/Source/LinqToDB/LinqOptions.cs b/Source/LinqToDB/LinqOptions.cs
+index 04d7e71..ddc05f8 100644
+--- a/Source/LinqToDB/LinqOptions.cs
++++ b/Source/LinqToDB/LinqOptions.cs
+@@ -112,7 +112,7 @@ namespace LinqToDB
+ 	/// Default value: <see langword="false"/>.
+ 	/// <para />
+ 	/// It is not recommended to enable this option as it could lead to severe slowdown. Better approach will be
+-	/// to use <see cref="NoLinqCache"/> scope around queries, that produce severe memory leaks you need to fix.
++	/// to use <see cref="NoQueryCache"/> scope around queries, that produce severe memory leaks you need to fix.
+ 	/// <para />
+ 	/// <a href="https://github.com/linq2db/linq2db/issues/256">More details</a>.
+ 	/// </summary>
+diff --git a/Source/LinqToDB/PublicAPI/PublicAPI.Shipped.txt b/Source/LinqToDB/PublicAPI/PublicAPI.Shipped.txt
+index 54bd7b8..259e483 100644
+--- a/Source/LinqToDB/PublicAPI/PublicAPI.Shipped.txt
++++ b/Source/LinqToDB/PublicAPI/PublicAPI.Shipped.txt
+@@ -6445,7 +6445,7 @@ LinqToDB.Linq.LinqException.LinqException(System.Exception! innerException) -> v
+ LinqToDB.Linq.LinqException.LinqException(string! message) -> void
+ LinqToDB.Linq.LinqException.LinqException(string! message, System.Exception! innerException) -> void
+ LinqToDB.Linq.LinqException.LinqException(string! message, params object?[]! args) -> void
+-LinqToDB.Linq.NoLinqCache
++LinqToDB.Linq.NoQueryCache
+ LinqToDB.Linq.Tools
+ LinqToDB.Linq.Translation.AggregateFunctionBuilder
+ LinqToDB.Linq.Translation.AggregateFunctionBuilder.AggregateBuildInfo
+@@ -15081,7 +15081,7 @@ static LinqToDB.Linq.Expressions.SetGenericInfoProvider(System.Type! type) -> vo
+ static LinqToDB.Linq.Expressions.TrimLeft(string? str, params char[]! trimChars) -> string?
+ static LinqToDB.Linq.Expressions.TrimRight(string? str, params char[]! trimChars) -> string?
+ static LinqToDB.Linq.Expressions.VarChar(object? obj, int? size) -> string?
+-static LinqToDB.Linq.NoLinqCache.Scope() -> System.IDisposable!
++static LinqToDB.Linq.NoQueryCache.Scope() -> System.IDisposable!
+ static LinqToDB.Linq.Tools.ClearAllCaches() -> void
+ static LinqToDB.Linq.Translation.AggregateFunctionBuilder.AggregateBuildInfo.operator !=(LinqToDB.Linq.Translation.AggregateFunctionBuilder.AggregateBuildInfo? left, LinqToDB.Linq.Translation.AggregateFunctionBuilder.AggregateBuildInfo? right) -> bool
+ static LinqToDB.Linq.Translation.AggregateFunctionBuilder.AggregateBuildInfo.operator ==(LinqToDB.Linq.Translation.AggregateFunctionBuilder.AggregateBuildInfo? left, LinqToDB.Linq.Translation.AggregateFunctionBuilder.AggregateBuildInfo? right) -> bool
+diff --git a/Tests/Linq/DataProvider/SqlServerTypesTests.TVP.cs b/Tests/Linq/DataProvider/SqlServerTypesTests.TVP.cs
+index cb89c7d..43fa9c7 100644
+--- a/Tests/Linq/DataProvider/SqlServerTypesTests.TVP.cs
++++ b/Tests/Linq/DataProvider/SqlServerTypesTests.TVP.cs
+@@ -296,7 +296,7 @@ void AssertResult(Result[] r1, Result[] r2)
+ 			Result[] res2;
+ 
+ 			// workaround
+-			using (NoLinqCache.Scope())
++			using (NoQueryCache.Scope())
+ 			{
+ 				res1 = GetResult(1, 2);
+ 				res2 = GetResult(2, 3);
+diff --git a/Tests/Linq/UserTests/Issue278Tests.cs b/Tests/Linq/UserTests/Issue278Tests.cs
+index a43b233..f519919 100644
+--- a/Tests/Linq/UserTests/Issue278Tests.cs
++++ b/Tests/Linq/UserTests/Issue278Tests.cs
+@@ -171,7 +171,7 @@ private void TestIt(string context, string caseName, int threadCount, Action<ITe
+ 							db.GetTable<LinqDataTypes2>().ClearCache();
+ 
+ 						if (mode == CacheMode.NoCacheScope && (rnd.Next() % 2 == 0))
+-							using (NoLinqCache.Scope())
++							using (NoQueryCache.Scope())
+ 								actions[rnd.Next() % actions.Length](db);
+ 						else
+ 							actions[rnd.Next() % actions.Length](db);
+diff --git a/Tests/Tests.Benchmarks/Benchmarks/Queries/CacheActivityBenchmark.cs b/Tests/Tests.Benchmarks/Benchmarks/Queries/CacheActivityBenchmark.cs
+index 3d8fa42..cc21df6 100644
+--- a/Tests/Tests.Benchmarks/Benchmarks/Queries/CacheActivityBenchmark.cs
++++ b/Tests/Tests.Benchmarks/Benchmarks/Queries/CacheActivityBenchmark.cs
+@@ -193,7 +193,7 @@ public int LongChainQueries()
+ 		[Benchmark]
+ 		public int NoLinqCacheScope()
+ 		{
+-			using var _ = NoLinqCache.Scope();
++			using var _ = NoQueryCache.Scope();
+ 
+ 			var total = 0;
+ 

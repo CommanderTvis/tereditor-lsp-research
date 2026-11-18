@@ -1,23 +1,17 @@
-# C#, xlarge: Entity Framework Core, an object-relational mapper (LINQ query translation, model building, change tracking,
-# many providers). Replaces the ASP.NET Core placeholder: too few usable modern pull requests there (see docs/PROJECTS.md).
+# C#, xlarge: linq2db, a LINQ-to-database ORM (expression-tree translation to SQL for dozens of database providers,
+# source generators, an EF Core integration). Replaces the Entity Framework Core stand-in (owner-approved replacement).
 lang = "csharp"
 size = "xlarge"
 status = "curated"
-repo = "https://github.com/dotnet/efcore"
-tag = "v11.0.0"
-commit = "9e685c7a52d1a344d133a3d370e458db97417b3f"
-loc = 1312023
-stripped = []
-loc_by_language = { "C#" = 1312023 }
+repo = "https://github.com/linq2db/linq2db"
+tag = "v6.5.1"
+commit = "a987817007fb97817206de66ca24df20e851911f"
+loc = 718857
+stripped = ["CLAUDE.md", "AGENTS.md"]
+loc_by_language = { "C#" = 718857 }
 loc_method = "scc 3.5.0 code lines, harness/size/measure.sh (docs/PROJECTS.md)"
+size_note = "718,857 C# lines, inside the 700k to 3M xlarge band at its lower edge (about 65% of the lines are tests)"
 task_types = ["refs", "rename", "dispatch", "pr", "pr", "pr"]
 substitutions = []
-pr_shortfall = 2
-pr_shortfall_reason = "12-alpha bases cannot run on the .NET 11 runtime; release-11 bases hit offline-package and compiler problems; remaining candidates not tried (machine load): tasks/csharp-xlarge/pr-log.md"
-# Needs the .NET 11 SDK (global.json asks for 11.0.100-rc.1 with rollForward latestMajor, allowPrerelease): the study's
-# grade environment carries sdk_11_0. Graded test projects: test/EFCore.Tests, test/EFCore.InMemory.FunctionalTests and
-# test/EFCore.Sqlite.FunctionalTests only (no SQL Server, Cosmos or Azure projects).
-
-[probe]
-ok = false
-note = "references and definition returned no answer in 180 s each: tereditor reports 'Needs .NET SDK. The project asks for .NET SDK 11.0.100-rc.1 (rollForward latestMajor), which is not pinned (pinned: 10.0.403, 10.0.401)'. prepare.sh could not install SDK 11 (no curl or wget in the server sandbox). Diagnostics call returned clean but checked 0 of 1 files. A finding about the product, not a dropped project (results/probe/csharp-xlarge-enforced)"
+# Graded: the Tests/Linq test project (linq2db.Tests) for net10.0 on the SQLite providers only (--provider SQLite.MS); no
+# database server, container or vendor client library is needed. Everything else in the solution is not built.

@@ -1,6 +1,0 @@
-type = "rename"
-origin = "synthetic refactoring: rename a widely used class"
-symbol = "MaterializeCollectionNavigationExpression"
-new_name = "CollectionNavigationMaterializationExpression"
-selection = "Rule fixed before looking at candidates: types declared exactly once among the public or internal types of src/EFCore, whose whole-word name occurs in 6 to 30 .cs files of src and test, on at least 2 comment lines, and in 8 to 60 lines in total; 83 candidates sorted by name; refs and rename draw index int(rand()*83)+1 with awk srand(20261110), refs first (62: NonRetryingExecutionStrategy), rename second (52, a redraw if equal). A first draw without the 8 to 60 occurrences cap (ObservableHashSet, over 300 lines) was discarded before any task was written, and the cap added. The name also appears in comments (doc cref, line comments) and in src/EFCore/EFCore.baseline.json, which the reference solution updates."
-grade_timeout_s = 1500

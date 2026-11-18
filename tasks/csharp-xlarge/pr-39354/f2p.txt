@@ -1,3 +1,0 @@
-GetValues_copies_only_what_fits_when_too_narrow
-GetValues_throws_before_read_when_empty
-GetValues_throws_after_last_row_when_empty
