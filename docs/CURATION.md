@@ -40,8 +40,8 @@ For each project, in this order:
    (git history keeps them).
 3. Mined tasks (modern pull requests, opened after 2026-07-01; read docs/MEMORIZATION.md first): `sh harness/gen/mine-prs.sh <project>` writes `tasks/<project>/pr-candidates.jsonl` in seeded order. Run `python3 harness/memprobe/memprobe.py <task-dir>` on each accepted task and keep its output; it is a measurement, not a filter: never drop a task for a high score.
    Take candidates strictly in that order. For each, create `tasks/<project>/pr-<number>/` with `task.toml`
-   (`type = "pr"`, `base_commit`, `merged_at`, `pr`, `issue`), `prompt.md` (the issue's title and body, unedited
-   except for removing links to the fix), `gold.patch` (the pull request's non-test change, base to merge),
+   (`type = "pr"`, `base_commit`, `merged_at`, `pr`, `issue`), `prompt.md` (the closed issue's title and body or, without one, the pull request's, unedited
+   except for removing links to issues and pull requests), `gold.patch` (the pull request's non-test change, base to merge),
    `hidden/` (the post-merge versions of the test files it changed) and `grade.sh` (its fail-to-pass tests, then the
    pass-to-pass tests of the affected modules). `./study project <project>` sets up the base commit;
    `./study validate <project>` must print VALID. A candidate that does not build or validate with the current

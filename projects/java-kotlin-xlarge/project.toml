@@ -16,3 +16,4 @@ task_types = ["rename", "dispatch", "refs", "pr", "pr", "pr"]
 [probe]
 ok = false
 note = "no probe.json was written for this slot, so no probe ran; write one from the refs task oracle and run ./study probe java-kotlin-xlarge intellij-enforced (POLL_S=900)"
+replacement_note = "no live replacement: spinnaker (524k, 25% under the band) is a Gradle monorepo of includeBuilds; the slot keeps its 3 validated synthetic tasks"

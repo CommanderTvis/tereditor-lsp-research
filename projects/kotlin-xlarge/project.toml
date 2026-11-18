@@ -1,12 +1,6 @@
-# kotlin, xlarge: chosen by size, see docs/PROJECTS.md. SKIPPED: the build needs JDK toolchains the harness does not ship.
+# Kotlin, xlarge: no buildable project yet (status dropped).
 lang = "kotlin"
 size = "xlarge"
-status = "skipped"
-repo = "https://github.com/JetBrains/kotlin"
-tag = "v2.4.21"
-commit = "9180ce6a7a7d3627f88b424717583f28ddca052d"
-loc = 2533743
-loc_by_language = { "Kotlin" = 2533743 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-size_note = "Skipped on toolchain, not on a measured size or time. The Kotlin repository's Gradle build requires JDK toolchains 17 (plus the JDK_1_8, JDK_9_0, JDK_11_0, JDK_16_0, JDK_17_0 environment variables for tests) and has no toolchain download repository. ./study project kotlin-xlarge: ':compiler:util:compileKotlin' failed at the settings stage after 35 s with 'Cannot find a Java installation matching languageVersion=17 ... Toolchain download repositories have not been configured' (the grading environment has JDK 21 only). Measured at the pinned commit with the current grading environment (JDK 21 only, no tar, no Gradle toolchain repositories): the build does not start. Time feasibility (cold build plus one module's tests within 20 minutes on 3 CPUs) is therefore NOT measured. The repository has 2.5M code lines. Mining of modern pull requests never ran. tereditor's Kotlin server is expired, a known finding; no probe was run."
+status = "dropped"
+dropped_reason = "JetBrains/kotlin needs five JDK toolchains; JiRaska/open-bank-oss needs over 2 hours of module resolution; TencentBlueKing/bk-ci generates its model with jOOQ from a live MySQL database; of the larger Kotlin projects, androidx and signal-android have no merged PRs and compose-multiplatform-core and duckduckgo/Android qualified none under the closing-issue rule (relaxed since, harness/gen/mine-prs.sh). Next candidate: JetBrains/compose-multiplatform-core with the Android SDK as an opt-in toolchain."
 task_types = []

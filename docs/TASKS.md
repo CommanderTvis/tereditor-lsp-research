@@ -134,8 +134,8 @@ Selected as SWE-bench selects them, with the study's own cutoff:
 - Opened on or after 2026-07-01 and merged into the default branch: after the June 2026 training-data cutoff of every
   model of the study, so the fix cannot be remembered (docs/MEMORIZATION.md, which gives the measured reason). Authors
   that are bots are excluded.
-- Resolves an issue the pull request links (closing keywords), whose title and body become the prompt, unedited
-  except for removing links to the fix itself.
+- The prompt is the title and body of the issue the pull request closes (closing keywords) or, when it closes none, of the
+  pull request itself; links to the project's issues and pull requests are removed, since the agent has no network.
 - Changes non-test source files in the project's language, and adds or changes tests.
 - Fail to pass: at least one test fails at the pull request's base commit and passes with the merged change. Pass to
   pass: the other tests of the affected modules pass before and after.

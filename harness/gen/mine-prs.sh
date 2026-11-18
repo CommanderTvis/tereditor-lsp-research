@@ -5,7 +5,7 @@
 # validate become the tasks and nobody chooses among them.
 #
 # Kept: opened on or after 2026-07-01 and merged (after the June 2026 training-data cutoff of every model of the study,
-# so neither the fix nor its drafts can be remembered; docs/MEMORIZATION.md) into the default branch; author not a bot; at least one linked issue it closes;
+# so neither the fix nor its drafts can be remembered; docs/MEMORIZATION.md) into the default branch; author not a bot; text for the prompt: the linked issue it closes, or else its own title and body (with links to the project's issues and pull requests removed);
 # changes at least one test file and at least one non-test source file of the project's language; at most 15 non-test
 # source files. Each line: number, merged_at, base_sha (the pull request's base commit), merge_sha, issue title and
 # body, test and source files.
@@ -24,7 +24,7 @@ test_re='(^|/)(tests?|spec|specs|__tests__|testing|test-data|testdata)/|(^|/)tes
 out=$root/tasks/$proj/pr-candidates.jsonl; mkdir -p "$(dirname "$out")"
 tmp=$(mktemp)
 
-# Merged pull requests after the cutoff that close at least one issue (GraphQL search, newest first, 100 per page).
+# Merged pull requests after the cutoff (GraphQL search, newest first, 100 per page).
 cursor=""
 for page in 1 2 3 4 5 6 7 8 9 10; do
   q="repo:$repo is:pr is:merged created:>=2026-07-01"
@@ -33,7 +33,7 @@ for page in 1 2 3 4 5 6 7 8 9 10; do
       search(query: $q, type: ISSUE, first: 100, after: $after) {
         pageInfo { hasNextPage endCursor }
         nodes { ... on PullRequest {
-          number mergedAt author { __typename login } baseRefName
+          number title body mergedAt author { __typename login } baseRefName
           closingIssuesReferences(first: 3) { nodes { number title body } }
           files(first: 100) { nodes { path } }
           mergeCommit { oid }
@@ -49,13 +49,12 @@ default=$(gh api "repos/$repo" -q .default_branch)
 jq -c --arg src "$src" --arg test "$test_re" --arg def "$default" '
   select(.author.__typename != "Bot" and (.author.login // "" | test("\\[bot\\]$|^dependabot|^renovate") | not))
   | select(.baseRefName == $def)
-  | select((.closingIssuesReferences.nodes | length) > 0)
   | ([.files.nodes[].path]) as $f
   | ($f | map(select(test($test)))) as $tests
   | ($f | map(select(test($test) | not) | select(test($src)))) as $srcs
   | select(($tests | length) > 0 and ($srcs | length) > 0 and ($srcs | length) <= 15)
   | {number, merged_at: .mergedAt, merge_sha: .mergeCommit.oid,
-     issue: (.closingIssuesReferences.nodes[0] | {number, title, body}), tests: $tests, sources: $srcs}' "$tmp" > "$tmp.kept"
+     issue: (if (.closingIssuesReferences.nodes | length) > 0 then .closingIssuesReferences.nodes[0] | {number, title, body} else {number: null, title, body: ((.body // "") | gsub("https?://github\\.com/[^ )\\]]*/(issues|pull)/[0-9]+"; ""))} end), tests: $tests, sources: $srcs}' "$tmp" > "$tmp.kept"
 
 # The pull request's base commit (REST base.sha, as SWE-bench uses), then a seeded shuffle.
 : > "$tmp.full"
