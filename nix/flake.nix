@@ -77,30 +77,8 @@
           # A second Node for projects that need it (payload: node 24), off PATH so Node 22 stays the default: `study-node24` prints its home.
           node24-home = pkgs.writeShellScriptBin "study-node24" "echo ${pkgs.nodejs_24}";
 
-          # JDKs that nixpkgs no longer ships, from Azul's Zulu builds (JDK 9 exists for x86_64 Linux only), pinned by sha256;
-          # kept off PATH like study-jdk25: `study-jdk9` and `study-jdk16` print their homes (JetBrains/kotlin builds against both).
-          zulu = { v, file, sha256 }: pkgs.stdenvNoCC.mkDerivation {
-            pname = "zulu-jdk"; version = v; dontStrip = true;
-            src = pkgs.fetchurl { url = "https://cdn.azul.com/zulu/bin/${file}"; inherit sha256; };
-            nativeBuildInputs = [ pkgs.autoPatchelfHook ];
-            buildInputs = [ pkgs.stdenv.cc.cc.lib pkgs.zlib pkgs.alsa-lib pkgs.freetype pkgs.xorg.libX11 pkgs.xorg.libXext pkgs.xorg.libXi pkgs.xorg.libXrender pkgs.xorg.libXtst ];
-            autoPatchelfIgnoreMissingDeps = true;
-            installPhase = "mkdir -p $out && cp -r . $out/";
-          };
-          zuluJdks = {
-            x86_64-linux = {
-              jdk9 = zulu { v = "9.0.7"; file = "zulu9.0.7.1-ca-jdk9.0.7-linux_x64.tar.gz"; sha256 = "45f2dfbee93b91b1468cf81d843fc6d9a47fef1f831c0b7ceff4f1eb6e6851c8"; };
-              jdk16 = zulu { v = "16.0.2"; file = "zulu16.32.15-ca-jdk16.0.2-linux_x64.tar.gz"; sha256 = "8eb9764ed708d6953bf77e8f04c03260801e87a1fe7b85b41648dab2e99ff31b"; };
-            };
-            aarch64-linux = {
-              jdk16 = zulu { v = "16.0.2"; file = "zulu16.32.15-ca-jdk16.0.2-linux_aarch64.tar.gz"; sha256 = "601ead5a1e50cdca6da4ece8971ea9ede9b9c33e921a1a8352637abd546e75c8"; };
-            };
-          }.${system};
-          jdk9-home = pkgs.writeShellScriptBin "study-jdk9" (if zuluJdks ? jdk9 then "echo ${zuluJdks.jdk9}" else "echo 'no JDK 9 build exists for this architecture (x86_64 only)' >&2; exit 1");
-          jdk16-home = pkgs.writeShellScriptBin "study-jdk16" "echo ${zuluJdks.jdk16}";
-
           # JDK and Maven for the JVM language servers' Gradle and Maven import.
-          jvm-tools = env "study-jvm-tools" ((with pkgs; [ jdk21_headless maven ]) ++ [ jdk25-home jdk17-home jdk11-home jdk8-home jdk9-home jdk16-home ]);
+          jvm-tools = env "study-jvm-tools" ((with pkgs; [ jdk21_headless maven ]) ++ [ jdk25-home jdk17-home jdk11-home jdk8-home ]);
 
           grade = {
             python = env "study-grade-python" (common ++ [ (pkgs.python312.withPackages (p: [ p.pytest ])) ]);
@@ -108,7 +86,7 @@
             csharp = env "study-grade-csharp" (common ++ [ dotnet11-home ] ++ (with pkgs; [
               (dotnetCorePackages.combinePackages [ dotnetCorePackages.sdk_10_0 dotnetCorePackages.runtime_8_0 ]) icu openssl ]));
             php = env "study-grade-php" (common ++ (with pkgs; [ php84 php84Packages.composer unzip ]));
-            jvm = env "study-grade-jvm" (common ++ (with pkgs; [ jdk21_headless maven gradle ]) ++ [ jdk25-home jdk17-home jdk11-home jdk8-home jdk9-home jdk16-home ]);
+            jvm = env "study-grade-jvm" (common ++ (with pkgs; [ jdk21_headless maven gradle ]) ++ [ jdk25-home jdk17-home jdk11-home jdk8-home ]);
             cpp = env "study-grade-cpp" (common ++ (with pkgs; [ gcc14 cmake gnumake pkg-config python312 tcl ]));
             shell = env "study-grade-shell" (common ++ (with pkgs; [ bats shellcheck util-linux procps ]));
             css = env "study-grade-css" (common ++ (with pkgs; [ dart-sass nodejs_22 ]));
