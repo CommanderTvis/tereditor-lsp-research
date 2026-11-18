@@ -70,6 +70,10 @@
           jdk11-home = pkgs.writeShellScriptBin "study-jdk11" "echo ${pkgs.jdk11_headless}/lib/openjdk";
           jdk8-home = pkgs.writeShellScriptBin "study-jdk8" "echo ${pkgs.jdk8_headless}/lib/openjdk";
 
+          # .NET 11 for the projects that need it (efcore), off PATH so SDK 10 stays the default (the newest SDK's apphost does not
+          # start in the grading sandbox): `study-dotnet11` prints its home, whose bin/ holds dotnet.
+          dotnet11-home = pkgs.writeShellScriptBin "study-dotnet11" "echo ${pkgs.dotnetCorePackages.sdk_11_0}";
+
           # A second Node for projects that need it (payload: node 24), off PATH so Node 22 stays the default: `study-node24` prints its home.
           node24-home = pkgs.writeShellScriptBin "study-node24" "echo ${pkgs.nodejs_24}";
 
@@ -79,8 +83,8 @@
           grade = {
             python = env "study-grade-python" (common ++ [ (pkgs.python312.withPackages (p: [ p.pytest ])) ]);
             typescript = env "study-grade-typescript" (common ++ (with pkgs; [ nodejs_22 bun pnpm ]) ++ [ node24-home ]);
-            csharp = env "study-grade-csharp" (common ++ (with pkgs; [
-              (dotnetCorePackages.combinePackages [ dotnetCorePackages.sdk_10_0 dotnetCorePackages.sdk_11_0 dotnetCorePackages.runtime_8_0 ]) icu openssl ]));
+            csharp = env "study-grade-csharp" (common ++ [ dotnet11-home ] ++ (with pkgs; [
+              (dotnetCorePackages.combinePackages [ dotnetCorePackages.sdk_10_0 dotnetCorePackages.runtime_8_0 ]) icu openssl ]));
             php = env "study-grade-php" (common ++ (with pkgs; [ php84 php84Packages.composer unzip ]));
             jvm = env "study-grade-jvm" (common ++ (with pkgs; [ jdk21_headless maven gradle ]) ++ [ jdk25-home jdk17-home jdk11-home jdk8-home ]);
             cpp = env "study-grade-cpp" (common ++ (with pkgs; [ gcc14 cmake gnumake pkg-config python312 tcl ]));

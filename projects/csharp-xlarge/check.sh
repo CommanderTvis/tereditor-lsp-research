@@ -8,6 +8,7 @@ set -e
 export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_ROLL_FORWARD=LatestMajor DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
 # The repository's main branch targets a .NET 12 alpha (and the release branch the 11 release): the study's grading
 # environment carries the .NET 11 SDK and runtime only, so every commit is built for net11.0 against the installed runtime.
+PATH="$(study-dotnet11)/bin:$PATH"   # SDK 11 is opt-in: the grading environment defaults to SDK 10
 rt=$(dotnet --list-runtimes | sed -n 's/^Microsoft.NETCore.App \(11[^ ]*\) .*/\1/p' | tail -n1)
 props="-p:NuGetAudit=false -p:CheckEolTargetFramework=false -p:EnableSourceLink=false -p:EnableSourceControlManagerQueries=false -p:TreatWarningsAsErrors=false -p:NetCurrent=net11.0 -p:DefaultNetCoreTargetFramework=net11.0"
 # A commit may pin a newer SDK build than the installed one (global.json): ask for the installed .NET 11 SDK instead (the work tree only).
