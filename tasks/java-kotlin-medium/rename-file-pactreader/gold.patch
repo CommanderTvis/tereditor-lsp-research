@@ -1,0 +1,240 @@
+diff --git a/compatibility-suite/src/test/groovy/steps/shared/MockServerSharedSteps.groovy b/compatibility-suite/src/test/groovy/steps/shared/MockServerSharedSteps.groovy
+index 5d31c31..6a7fc4f 100644
+--- a/compatibility-suite/src/test/groovy/steps/shared/MockServerSharedSteps.groovy
++++ b/compatibility-suite/src/test/groovy/steps/shared/MockServerSharedSteps.groovy
+@@ -20,7 +20,7 @@ import io.cucumber.java.en.When
+ import org.apache.hc.core5.http.HttpRequest
+ 
+ import static au.com.dius.pact.consumer.MockHttpServerKt.mockServer
+-import static au.com.dius.pact.core.model.PactReaderKt.queryStringToMap
++import static au.com.dius.pact.core.model.PactReaderUtilsKt.queryStringToMap
+ import static io.ktor.http.HttpHeaderValueParserKt.parseHeaderValue
+ import static steps.shared.SharedSteps.configureBody
+ import static steps.shared.SharedSteps.determineContentType
+diff --git a/compatibility-suite/src/test/groovy/steps/shared/SharedSteps.groovy b/compatibility-suite/src/test/groovy/steps/shared/SharedSteps.groovy
+index 90f1e32..fc3c172 100644
+--- a/compatibility-suite/src/test/groovy/steps/shared/SharedSteps.groovy
++++ b/compatibility-suite/src/test/groovy/steps/shared/SharedSteps.groovy
+@@ -16,7 +16,7 @@ import groovy.xml.XmlSlurper
+ import io.cucumber.datatable.DataTable
+ import io.cucumber.java.en.Given
+ 
+-import static au.com.dius.pact.core.model.PactReaderKt.queryStringToMap
++import static au.com.dius.pact.core.model.PactReaderUtilsKt.queryStringToMap
+ import static io.ktor.http.HttpHeaderValueParserKt.parseHeaderValue
+ 
+ @Canonical
+diff --git a/compatibility-suite/src/test/groovy/steps/v1/HttpConsumer.groovy b/compatibility-suite/src/test/groovy/steps/v1/HttpConsumer.groovy
+index 48ba324..e45ac4d 100644
+--- a/compatibility-suite/src/test/groovy/steps/v1/HttpConsumer.groovy
++++ b/compatibility-suite/src/test/groovy/steps/v1/HttpConsumer.groovy
+@@ -24,7 +24,7 @@ import steps.shared.CompatibilitySuiteWorld
+ import steps.shared.MockServerData
+ 
+ import static au.com.dius.pact.consumer.MockHttpServerKt.mockServer
+-import static au.com.dius.pact.core.model.PactReaderKt.queryStringToMap
++import static au.com.dius.pact.core.model.PactReaderUtilsKt.queryStringToMap
+ 
+ @SuppressWarnings(['SpaceAfterOpeningBrace', 'AbcMetric', 'NestedBlockDepth'])
+ class HttpConsumer {
+diff --git a/compatibility-suite/src/test/groovy/steps/v2/HttpConsumer.groovy b/compatibility-suite/src/test/groovy/steps/v2/HttpConsumer.groovy
+index 7df9a07..3a8d363 100644
+--- a/compatibility-suite/src/test/groovy/steps/v2/HttpConsumer.groovy
++++ b/compatibility-suite/src/test/groovy/steps/v2/HttpConsumer.groovy
+@@ -11,7 +11,7 @@ import steps.shared.CompatibilitySuiteWorld
+ import steps.shared.MockServerData
+ 
+ import static au.com.dius.pact.consumer.MockHttpServerKt.mockServer
+-import static au.com.dius.pact.core.model.PactReaderKt.queryStringToMap
++import static au.com.dius.pact.core.model.PactReaderUtilsKt.queryStringToMap
+ import static io.ktor.http.HttpHeaderValueParserKt.parseHeaderValue
+ import static steps.shared.SharedSteps.configureBody
+ import static steps.shared.SharedSteps.determineContentType
+diff --git a/core/matchers/src/test/groovy/au/com/dius/pact/core/matchers/MatchingSpec.groovy b/core/matchers/src/test/groovy/au/com/dius/pact/core/matchers/MatchingSpec.groovy
+index 36bd368..19a8ab2 100644
+--- a/core/matchers/src/test/groovy/au/com/dius/pact/core/matchers/MatchingSpec.groovy
++++ b/core/matchers/src/test/groovy/au/com/dius/pact/core/matchers/MatchingSpec.groovy
+@@ -1,7 +1,7 @@
+ package au.com.dius.pact.core.matchers
+ 
+ import au.com.dius.pact.core.model.OptionalBody
+-import au.com.dius.pact.core.model.PactReaderKt
++import au.com.dius.pact.core.model.PactReaderUtilsKt
+ import au.com.dius.pact.core.model.Request
+ import au.com.dius.pact.core.model.Response
+ import au.com.dius.pact.core.model.matchingrules.ContentTypeMatcher
+@@ -27,7 +27,7 @@ class MatchingSpec extends Specification {
+   private MatchingContext bodyContext
+ 
+   def setup() {
+-    request = new Request('GET', '/', PactReaderKt.queryStringToMap('q=p&q=p2&r=s'),
++    request = new Request('GET', '/', PactReaderUtilsKt.queryStringToMap('q=p&q=p2&r=s'),
+       [testreqheader: 'testreqheadervalue'], OptionalBody.body('{"test": true}'.bytes))
+     headerContext = new MatchingContext(new MatchingRuleCategory('header'), true)
+     metadataContext = new MatchingContext(new MatchingRuleCategory('header'), true)
+diff --git a/core/matchers/src/test/groovy/au/com/dius/pact/core/matchers/RequestMatchingSpec.groovy b/core/matchers/src/test/groovy/au/com/dius/pact/core/matchers/RequestMatchingSpec.groovy
+index ebc58f7..a848c2a 100755
+--- a/core/matchers/src/test/groovy/au/com/dius/pact/core/matchers/RequestMatchingSpec.groovy
++++ b/core/matchers/src/test/groovy/au/com/dius/pact/core/matchers/RequestMatchingSpec.groovy
+@@ -2,7 +2,7 @@ package au.com.dius.pact.core.matchers
+ 
+ import au.com.dius.pact.core.model.Consumer
+ import au.com.dius.pact.core.model.OptionalBody
+-import au.com.dius.pact.core.model.PactReaderKt
++import au.com.dius.pact.core.model.PactReaderUtilsKt
+ import au.com.dius.pact.core.model.Provider
+ import au.com.dius.pact.core.model.ProviderState
+ import au.com.dius.pact.core.model.Request
+@@ -21,7 +21,7 @@ class RequestMatchingSpec extends Specification {
+   private RequestResponsePact pact
+ 
+   def setup() {
+-    request = new Request('GET', '/', PactReaderKt.queryStringToMap('q=p&q=p2&r=s'),
++    request = new Request('GET', '/', PactReaderUtilsKt.queryStringToMap('q=p&q=p2&r=s'),
+       [testreqheader: ['testreqheadervalue']],
+       OptionalBody.body('{"test": true}'.bytes))
+ 
+@@ -119,7 +119,7 @@ class RequestMatchingSpec extends Specification {
+   def 'request matching should allow query string in different order'() {
+     given:
+     def queryRequest = request.copy()
+-    queryRequest.query = PactReaderKt.queryStringToMap('r=s&q=p&q=p2')
++    queryRequest.query = PactReaderUtilsKt.queryStringToMap('r=s&q=p&q=p2')
+ 
+     when:
+     def actualResponse = test(queryRequest)
+@@ -131,7 +131,7 @@ class RequestMatchingSpec extends Specification {
+   def 'request matching should fail if query string has the same parameter repeated in different order'() {
+     given:
+     def queryRequest = request.copy()
+-    queryRequest.query = PactReaderKt.queryStringToMap('r=s&q=p2&q=p')
++    queryRequest.query = PactReaderUtilsKt.queryStringToMap('r=s&q=p2&q=p')
+ 
+     when:
+     def actualResponse = test(queryRequest)
+diff --git a/core/model/src/main/kotlin/au/com/dius/pact/core/model/PactReader.kt b/core/model/src/main/kotlin/au/com/dius/pact/core/model/PactReaderUtils.kt
+similarity index 100%
+rename from core/model/src/main/kotlin/au/com/dius/pact/core/model/PactReader.kt
+rename to core/model/src/main/kotlin/au/com/dius/pact/core/model/PactReaderUtils.kt
+diff --git a/core/model/src/test/groovy/au/com/dius/pact/core/model/ModelFixtures.groovy b/core/model/src/test/groovy/au/com/dius/pact/core/model/ModelFixtures.groovy
+index 9ca7199..d86c6ab 100644
+--- a/core/model/src/test/groovy/au/com/dius/pact/core/model/ModelFixtures.groovy
++++ b/core/model/src/test/groovy/au/com/dius/pact/core/model/ModelFixtures.groovy
+@@ -6,7 +6,7 @@ import au.com.dius.pact.core.model.matchingrules.TypeMatcher
+ @Singleton
+ class ModelFixtures {
+ 
+-  static request = new Request('GET', '/', PactReaderKt.queryStringToMap('q=p&q=p2&r=s'),
++  static request = new Request('GET', '/', PactReaderUtilsKt.queryStringToMap('q=p&q=p2&r=s'),
+     [testreqheader: ['testreqheadervalue']], OptionalBody.body('{"test":true}'.bytes))
+ 
+   static response = new Response(200, [testreqheader: ['testreqheaderval']],
+@@ -19,7 +19,7 @@ class ModelFixtures {
+   }
+ 
+   static requestWithMatchers = new Request('GET', '/',
+-    PactReaderKt.queryStringToMap('q=p&q=p2&r=s'),
++    PactReaderUtilsKt.queryStringToMap('q=p&q=p2&r=s'),
+     [testreqheader: ['testreqheadervalue']], OptionalBody.body('{"test":true}'.bytes),
+     requestMatchers())
+ 
+@@ -32,7 +32,7 @@ class ModelFixtures {
+   static responseWithMatchers = new Response(200, [testreqheader: ['testreqheaderval']],
+     OptionalBody.body('{"responsetest":true}'.bytes), responseMatchers())
+ 
+-  static requestNoBody = new Request('GET', '/', PactReaderKt.queryStringToMap('q=p&q=p2&r=s'),
++  static requestNoBody = new Request('GET', '/', PactReaderUtilsKt.queryStringToMap('q=p&q=p2&r=s'),
+     [testreqheader: ['testreqheadervalue']])
+ 
+   static requestDecodedQuery = new Request('GET', '/', [datetime: ['2011-12-03T10:15:30+01:00'],
+@@ -42,6 +42,6 @@ class ModelFixtures {
+   static responseNoBody = new Response(200, [testreqheader: ['testreqheaderval']])
+ 
+   static requestLowerCaseMethod = new Request('get', '/',
+-    PactReaderKt.queryStringToMap('q=p&q=p2&r=s'),
++    PactReaderUtilsKt.queryStringToMap('q=p&q=p2&r=s'),
+     [testreqheader: ['testreqheadervalue']], OptionalBody.body('{"test":true}'.bytes))
+ }
+diff --git a/core/model/src/test/groovy/au/com/dius/pact/core/model/PactMergeSpec.groovy b/core/model/src/test/groovy/au/com/dius/pact/core/model/PactMergeSpec.groovy
+index 9ca850a..91fdf6a 100644
+--- a/core/model/src/test/groovy/au/com/dius/pact/core/model/PactMergeSpec.groovy
++++ b/core/model/src/test/groovy/au/com/dius/pact/core/model/PactMergeSpec.groovy
+@@ -17,7 +17,7 @@ class PactMergeSpec extends Specification {
+   private pact, interaction, request, response
+ 
+   def setup() {
+-    request = new Request('Get', '/', PactReaderKt.queryStringToMap('q=p&q=p2&r=s'),
++    request = new Request('Get', '/', PactReaderUtilsKt.queryStringToMap('q=p&q=p2&r=s'),
+       [testreqheader: 'testreqheadervalue'], OptionalBody.body('{"test":true}'.bytes))
+     response = new Response(200, [testreqheader: 'testreqheaderval'],
+       OptionalBody.body('{"responsetest":true}'.bytes))
+diff --git a/core/model/src/test/groovy/au/com/dius/pact/core/model/PactReaderKtSpec.groovy b/core/model/src/test/groovy/au/com/dius/pact/core/model/PactReaderKtSpec.groovy
+index 8200949..c79b318 100644
+--- a/core/model/src/test/groovy/au/com/dius/pact/core/model/PactReaderKtSpec.groovy
++++ b/core/model/src/test/groovy/au/com/dius/pact/core/model/PactReaderKtSpec.groovy
+@@ -3,7 +3,7 @@ package au.com.dius.pact.core.model
+ import spock.lang.Issue
+ import spock.lang.Specification
+ 
+-import static au.com.dius.pact.core.model.PactReaderKt.queryStringToMap
++import static au.com.dius.pact.core.model.PactReaderUtilsKt.queryStringToMap
+ 
+ class PactReaderKtSpec extends Specification {
+   def 'parsing a query string'() {
+diff --git a/core/model/src/test/groovy/au/com/dius/pact/core/model/PactSerialiserSpec.groovy b/core/model/src/test/groovy/au/com/dius/pact/core/model/PactSerialiserSpec.groovy
+index 6a36f18..ca6e865 100644
+--- a/core/model/src/test/groovy/au/com/dius/pact/core/model/PactSerialiserSpec.groovy
++++ b/core/model/src/test/groovy/au/com/dius/pact/core/model/PactSerialiserSpec.groovy
+@@ -33,7 +33,7 @@ class PactSerialiserSpec extends Specification {
+   }
+ 
+   def setup() {
+-    request = new Request('GET', '/', PactReaderKt.queryStringToMap('q=p&q=p2&r=s'),
++    request = new Request('GET', '/', PactReaderUtilsKt.queryStringToMap('q=p&q=p2&r=s'),
+       [testreqheader: ['testreqheadervalue']], OptionalBody.body('{"test":true}'.bytes))
+     response = new Response(200, [testreqheader: ['testreqheaderval']],
+       OptionalBody.body('{"responsetest":true}'.bytes))
+@@ -41,7 +41,7 @@ class PactSerialiserSpec extends Specification {
+     consumer = new Consumer('test_consumer')
+     def requestMatchers = new MatchingRulesImpl()
+     requestMatchers.addCategory('body').addRule('$.test', TypeMatcher.INSTANCE)
+-    requestWithMatchers = new Request('GET', '/', PactReaderKt.queryStringToMap('q=p&q=p2&r=s'),
++    requestWithMatchers = new Request('GET', '/', PactReaderUtilsKt.queryStringToMap('q=p&q=p2&r=s'),
+       [testreqheader: ['testreqheadervalue']], OptionalBody.body('{"test":true}'.bytes), requestMatchers
+     )
+     def responseMatchers = new MatchingRulesImpl()
+diff --git a/core/model/src/test/groovy/au/com/dius/pact/core/model/PactSpec.groovy b/core/model/src/test/groovy/au/com/dius/pact/core/model/PactSpec.groovy
+index 6a48702..f776fdd 100644
+--- a/core/model/src/test/groovy/au/com/dius/pact/core/model/PactSpec.groovy
++++ b/core/model/src/test/groovy/au/com/dius/pact/core/model/PactSpec.groovy
+@@ -6,7 +6,7 @@ class PactSpec extends Specification {
+   private pact, interaction, request, response, provider, consumer
+ 
+   def setup() {
+-    request = new Request('Get', '/', PactReaderKt.queryStringToMap('q=p&q=p2&r=s'),
++    request = new Request('Get', '/', PactReaderUtilsKt.queryStringToMap('q=p&q=p2&r=s'),
+       [testreqheader: 'testreqheadervalue'], OptionalBody.body('{"test":true}'.bytes))
+     response = new Response(200, [testreqheader: 'testreqheaderval'], OptionalBody.body('{"responsetest":true}'.bytes))
+     interaction = new RequestResponseInteraction('test interaction', [new ProviderState('test state')],
+diff --git a/provider/src/test/groovy/au/com/dius/pact/provider/groovysupport/ProviderClientSpec.groovy b/provider/src/test/groovy/au/com/dius/pact/provider/groovysupport/ProviderClientSpec.groovy
+index 9a821fe..41af2cd 100644
+--- a/provider/src/test/groovy/au/com/dius/pact/provider/groovysupport/ProviderClientSpec.groovy
++++ b/provider/src/test/groovy/au/com/dius/pact/provider/groovysupport/ProviderClientSpec.groovy
+@@ -2,7 +2,7 @@ package au.com.dius.pact.provider.groovysupport
+ 
+ import au.com.dius.pact.core.model.ContentType as PactContentType
+ import au.com.dius.pact.core.model.OptionalBody
+-import au.com.dius.pact.core.model.PactReaderKt
++import au.com.dius.pact.core.model.PactReaderUtilsKt
+ import au.com.dius.pact.core.model.ProviderState
+ import au.com.dius.pact.core.model.Request
+ import au.com.dius.pact.core.support.Json
+@@ -717,7 +717,7 @@ class ProviderClientSpec extends Specification {
+ 
+   def 'query parameters must NOT be placed in the body for URL encoded FORM POSTs'() {
+     given:
+-    def request = new Request('POST', '/', PactReaderKt.queryStringToMap('a=1&b=11&c=Hello World'),
++    def request = new Request('POST', '/', PactReaderUtilsKt.queryStringToMap('a=1&b=11&c=Hello World'),
+       ['Content-Type': [ContentType.APPLICATION_FORM_URLENCODED.toString()]], OptionalBody.body('A=B'.bytes))
+ 
+     when:

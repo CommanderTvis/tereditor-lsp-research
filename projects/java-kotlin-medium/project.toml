@@ -1,13 +1,29 @@
-# java-kotlin, medium: chosen by size, see docs/PROJECTS.md. Curated: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# Java+Kotlin, medium: pact-foundation/pact-jvm, consumer-driven contract testing for the JVM. A multi-module Gradle build:
+# the model, matchers and broker client in Kotlin, the consumer DSL in Kotlin and Java, JUnit integrations in Java, the
+# provider verification in Kotlin, and a large Spock (Groovy) test suite. Replaces moshi (no modern pull requests that
+# close issues, docs/MEMORIZATION.md).
 lang = "java-kotlin"
 size = "medium"
 status = "curated"
-repo = "https://github.com/square/moshi"
-tag = "parent-1.15.0"
-commit = "491e66bd6475860ec0cba35f76dd14ec88fbeeca"
-loc = 26558
-loc_by_language = { "Java" = 18420, "Kotlin" = 8138 }
+repo = "https://github.com/pact-foundation/pact-jvm"
+tag = "4_7_7"
+commit = "5658d0c9e1c3ac8bff5db4b7ea33bc504093f226"
+loc = 63442
+stripped = ["CLAUDE.md", ".github/copilot-instructions.md"]
+loc_by_language = { "Kotlin" = 47248, "Java" = 16194 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-task_types = ["rename", "rename-file", "impls", "move", "signature", "dispatch"]
-pr_fallback = "Assigned PR slots filled by documented synthetic fallback task directories; full project validation remains pending."
+size_note = "Kotlin 74 percent and Java 26 percent of the 63.4k lines; the Groovy tests (50.9k lines of Spock specs) and Gradle scripts are not counted, per the size measure. Modules whose tests need native libraries or services (pact-jvm-server, the Pact FFI based compatibility suite, provider:lein, spring) are not built or tested by check.sh."
+# Assigned (docs/TASKS.md): rename, rename-file, impls + 3 pr (modern pull requests, tasks/java-kotlin-medium/pr-log.md).
+task_types = ["rename", "rename-file", "impls", "pr", "pr", "pr"]
+substitutions = []
+
+[probe]
+ok = false
+seconds_to_first_answer = 4
+note = "the Kotlin server (arm enforced) answered every call with 'This build of kotlin-server has expired' (language server disconnected), so references and definitions were empty for the whole 180 s; diagnostics and lsp_status calls returned. A finding about the pinned tereditor build, not about the project (results/probe/java-kotlin-medium-enforced)."
+
+[probe_intellij]
+ok = true
+seconds_to_first_answer = 3
+licence = "intellij server started and answered all calls"
+note = "definition from Kotlin and from Java code, diagnostics and lsp_status complete within 1 s; references by name of PactDslRequestWithoutPath found the Java use (BaseProviderRule.java:247) but not the Kotlin return-type use at PactDslWithProvider.kt:64 within 900 s (partial result, results/probe/java-kotlin-medium-intellij-enforced)."

@@ -1,1 +1,0 @@
-tests/test_table.py::test_table_show_header_false_substitution[box1-\u250c\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2510\n\u2502 1 \u2502 2 \u2502\n\u2502 3 \u2502 4 \u2502\n\u2514\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2518\n]

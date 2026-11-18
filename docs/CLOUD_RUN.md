@@ -15,20 +15,33 @@ uses `./study` with the native backend (docs/NIX.md): no Docker daemon is needed
   finished is lost; a new session resumes from the latest bundle.
 - All projects run on linux/amd64 here. Do not mix in runs from another architecture for the same project.
 
-## Before the first command (the owner's part)
+## Starting it (the owner's part)
 
-A cloud environment with network access **Full**: no repository, no environment variables, no setup script.
+One time, at claude.ai/code, create an environment (the environment selector, "Add environment") with network access
+**Full** and one environment variable, the JetBrains offline activation code (the zip from "Download a code for offline
+activation", or the `... - for 2018.2 or later.txt` file inside it), base64 encoded:
 
-1. The credential is the session's own login: the native backend binds the session's token file
-   (`/home/claude/.claude/remote/.oauth_token`) into each agent sandbox and redacts it from every output.
-2. Attach JetBrains' offline activation code to the first message: the zip from "Download a code for offline
-   activation", or the `... - for 2018.2 or later.txt` file inside it. It is required.
-3. To resume a lost run, also attach the latest `study-<date>.bundle` the previous session sent.
-4. The message in `docs/CLOUD_PROMPT.md` starts the session; it is the owner's go for the confirmatory run, within
-   the budget below.
+```text
+STUDY_LICENSE_B64=<output of: base64 < license.zip | tr -d '\n'>
+```
+
+The variable is visible to whoever uses that environment, so keep it a personal environment. Then, from a clone of this
+repository, with that environment selected (`/remote-env` in an interactive `claude` once):
+
+```sh
+git clone https://github.com/CommanderTvis/tereditor-lsp-research && cd tereditor-lsp-research
+claude --cloud "Run the study per docs/CLOUD_RUN.md: follow it from Phase 0 to Phase D without stopping. This message is the owner's go for the confirmatory run."
+```
+
+The session works on the pushed branch of the repository, so a public repository needs no connection and no key. The
+credential is the session's own login: the native backend binds the session's token file
+(`/home/claude/.claude/remote/.oauth_token`) into each agent sandbox and redacts it from every output. To resume a lost
+run, apply the latest `study-<date>.bundle` the previous session sent to a branch of your fork, push it, and run the
+same command from that checkout.
 
 Status: the environments and sandboxes run end to end on Apple `container`, and a cloud smoke on the native backend
-passed; the full runbook has not run yet.
+passed; the full runbook has not run yet. To confirm on the first start: whether `claude --cloud` returns at once, and
+whether the session can run its sandboxes under the permission mode cloud sessions offer.
 
 ## Rules for the session
 
@@ -40,25 +53,32 @@ passed; the full runbook has not run yet.
   branch, so the latest bundle supersedes earlier ones) and send it to the owner as a download, with one line saying
   what it now contains.
 - While curating tasks, never read run results; while running, never change tasks, prompts, oracles, arms or the
-  harness. A defect found mid-run is recorded in `docs/ANALYSIS_PLAN.md` under "Changes after registration" with the
+  harness. A defect found mid-run is noted in `docs/ANALYSIS_PLAN.md` with the
   date, and the affected runs are handled by the plan's exclusion rules, not by editing data.
 - Disk: check `df -h /` before each project; if a project cannot fit, record it as skipped (`project.toml`
   `status = "skipped"`, with the reason) and continue.
-- Budget: USD 2,000 as reported by Claude Code (`total_cost_usd`), across all model runs of the study. Stop starting
-  runs at 95% and say so in the report.
+- Usage limits: a run that stops on a limit is retried by `./study run` after a wait, so the session just keeps going
+  through exhausted windows; do not stop or ask the owner.
+- Budget: USD 400 (indicative, a moderate overshoot is acceptable) as reported by Claude Code (`total_cost_usd`), across all model runs of the study. Stop starting
+  runs at 125% of it (the first pass of every task comes before extra repetitions) and say so in the report.
 
 ## Phase 0: preflight
 
 ```sh
-git clone https://github.com/CommanderTvis/tereditor-lsp-research /root/study && cd /root/study
+cd "$(git rev-parse --show-toplevel)"   # the session starts in a checkout of the repository
 git config user.name "Claude Code cloud session" && git config user.email noreply@anthropic.com
 git switch -c run/$(date -u +%F)
-# resuming: git pull /path/to/attached/study-<date>.bundle run/<date>   (then ./study restore main)
-cp /path/to/attachment license.zip            # or license.txt for the bare code
+printf %s "$STUDY_LICENSE_B64" | base64 -d > license.bin   # never print it
+if unzip -tq license.bin >/dev/null 2>&1; then mv license.bin license.zip; else mv license.bin license.txt; fi
 git check-ignore -q license.zip && git check-ignore -q license.txt && echo "licence files ignored"
 export STUDY_RUNTIME=native STUDY_CPUS=3 STUDY_MEMORY=10g
 ./study setup python
 ```
+
+Preflight for the Kotlin server: `./study project kotlin-small && ./study probe kotlin-small enforced`. If its first answer
+is "This build of kotlin-server has expired" (an upstream build problem, AGENTS.md), plan the confirmatory run with
+`--skip-arms "optional:kotlin enforced:kotlin optional:java-kotlin enforced:java-kotlin"`, so the arms that would measure a
+dead tool do not run; the IntelliJ arms and the baselines of those projects run as usual.
 
 Then the toolz smoke (`./study plan smoke-cloud --projects python-small --tasks refs-get --models claude-haiku-5-5`,
 `run`, `grade`, `analyze`): 3 runs, all graded, 0 contamination failures. If anything fails here, stop and report;
@@ -125,7 +145,7 @@ git add results/main/archive/<p>.tar.gz && git commit -m "Runs: <p>"     # and s
 
 1. `./study restore main && ./study analyze main` (results/main/report/).
 2. Write `REPORT.md` at the repository root: question, design summary (link docs/), what ran (projects, tasks, runs,
-   exclusions with reasons, budget used), primary results exactly as the pre-registered analysis produced them, the
+   exclusions with reasons, budget used), primary results exactly as the analysis plan produced them, the
    secondary and exploratory results labelled as such, tereditor and IntelliJ findings, deviations from the plan, and
    threats to validity. No claim without a number from `results/main/report/`.
 3. Sign it at the end with the date: `Report generated on <YYYY-MM-DD> (UTC) by a Claude Code cloud session from

@@ -1,0 +1,25 @@
+Running 'nvm install --save' works as expected'
+Running 'nvm install' with '--reinstall-packages-from' requires a valid version
+Running 'nvm install' with an invalid version fails nicely
+Running 'nvm ls' should not show a trailing slash
+Sourcing nvm.sh should keep version if one is active
+Sourcing nvm.sh should use the default if available and no nvm node is loaded
+Sourcing nvm.sh with --install and .nvmrc should install it
+Sourcing nvm.sh with --install should install the default
+Sourcing nvm.sh with --no-use should not use anything
+Subcommands with missing or invalid args show a focused usage error
+install_nvm_as_script_download_failure
+install_nvm_from_git
+nvm install -b
+nvm install with nonlowercase LTS name
+nvm ls-remote
+nvm_check_global_modules
+nvm_download
+nvm_get_arch_unofficial
+nvm_get_artifact_compression
+nvm_install_binary_extract
+nvm_install_binary_extract self-heals a broken version dir
+nvm_install_no_progress_bar
+nvm_install_with_aliased_dot
+nvm_install_with_node_version
+nvm_process_nvmrc

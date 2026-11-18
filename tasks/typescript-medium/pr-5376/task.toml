@@ -1,0 +1,8 @@
+type = "pr"
+origin = "mined pull request (modern, docs/MEMORIZATION.md)"
+pr = 5376
+issue = 5375
+base_commit = "edd138ee3049749190de3dcd7e32d7bcbf224e41"
+merge_commit = "f5a53463ad2ff791fc02418b645750ce75a260ad"
+merged_at = "2026-09-20T08:33:52Z"
+test_files = ["src/helper/accepts/accepts.test.ts"]

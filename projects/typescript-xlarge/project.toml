@@ -1,20 +1,23 @@
-# TypeScript, xlarge: angular. A Bazel monorepo of about 30 pnpm workspace packages (compiler, compiler-cli, core,
-# forms, router ...), visitor hierarchies across packages, namespace imports (`import * as o`), many same-named
-# classes in different packages.
+# TypeScript, xlarge: payload (payloadcms/payload), a headless CMS framework. A pnpm monorepo of about 50 packages
+# (payload core, ui, next, graphql, db adapters on a shared drizzle layer, richtext-lexical, plugins, storage adapters)
+# with a large integration test suite under test/. Collections, fields, hooks and access functions are configured through
+# deeply generic types; many packages declare same-named helpers.
 lang = "typescript"
 size = "xlarge"
 status = "curated"
-repo = "https://github.com/angular/angular"
-tag = "v22.2.6"
-commit = "dda2d41d948380d63619d597c9815db0aa77fd1d"
-loc = 775624
-loc_by_language = { "TypeScript" = 769362, "TypeScript Typings" = 6262 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-stripped = ["AGENTS.md", ".vscode/", ".claude/ and other agent or editor instruction files where present (harness/env/project.sh)"]
+repo = "https://github.com/payloadcms/payload"
+commit = "ec351643011603cf75dc91db5d03f80ff120f1e9"
+commit_date = "2026-10-30"
+loc = 855853
+loc_by_language = { "TypeScript" = 843778, "TypeScript Typings" = 12075 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md (sh harness/size/measure.sh); tests included, no release tag pinned (dated commit of the default branch, version 4.0.0-beta.6)"
+stripped = ["AGENTS.md", ".claude/", ".claude-plugin/", ".cursor/", ".codex/", ".agents/", ".mcp.json", ".vscode/", ".idea/ and other agent or editor instruction files where present (harness/env/project.sh)"]
 task_types = ["impls", "dispatch", "callers", "pr", "pr", "pr"]
-# Assigned: impls + 2 pr. No pull request qualifies or can be graded (tasks/typescript-xlarge/pr-log.md), so both pr
-# places are filled with the next navigation types in the rotation, dispatch and callers.
+# Tests run with Node 24 (study-node24 of the grading toolchain) through vitest on sqlite (libsql) only: no database
+# server, no browsers (e2e and visual tests are excluded).
 pr_shortfall = 0
-pr_replaced_by = []
-# Built and tested upstream with Bazel only; the grading toolchain has no Bazel, so the project has answer tasks only
-# and check.sh does nothing.
+
+[probe]
+ok = true
+seconds_to_first_answer = 1.0
+note = "cross-file references of getPayload complete in 22.7 s, definition of ValidationError in 6.3 s, diagnostics clean; STUDY_MEMORY=8g"

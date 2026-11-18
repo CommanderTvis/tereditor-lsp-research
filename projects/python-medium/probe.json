@@ -1,7 +1,7 @@
 [
-  {"name": "references measure_renderables (cross-file)", "args": {"operation": "references", "query": "measure_renderables", "path": "rich/measure.py"},
-   "expect": ["tests/test_measure.py:24", "rich/panel.py:287", "tests/test_console.py:667"]},
-  {"name": "definition of Segment from another module", "args": {"operation": "definition", "query": "Segment"},
-   "expect": ["rich/segment.py:61"]},
-  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["rich/measure.py"]}, "expect": []}
+  {"name": "references UseInferenceDefault (cross-file)", "args": {"operation": "references", "query": "UseInferenceDefault", "path": "astroid/exceptions.py"},
+   "expect": ["astroid/inference_tip.py:48", "astroid/nodes/node_ng.py:147", "tests/brain/test_brain.py:443"]},
+  {"name": "definition of InferenceContext from another module", "args": {"operation": "definition", "query": "InferenceContext"},
+   "expect": ["astroid/context.py:29"]},
+  {"name": "diagnostics on a file", "tool": "lsp_diagnostics", "args": {"paths": ["astroid/constraint.py"]}, "expect": []}
 ]

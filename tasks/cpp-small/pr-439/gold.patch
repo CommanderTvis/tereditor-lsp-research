@@ -1,0 +1,34 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 2ad5772..b62ff83 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -2,6 +2,14 @@
+ # MD4C Change Log
+ 
+ 
++## Next Version
++
++Fixes:
++
++  * [#435](https://github.com/mity/md4c/issues/435):
++    Lower-case `<![cdata` does not make a valid HTML block starting condition.
++
++
+ ## Version 0.6.0
+ 
+ New Features:
+diff --git a/src/md4c.c b/src/md4c.c
+index ad1ef3d..22bb2be 100644
+--- a/src/md4c.c
++++ b/src/md4c.c
+@@ -6175,8 +6175,8 @@ md_is_html_block_start_condition(MD_CTX* ctx, OFF beg)
+ 
+     /* Check for type 4 or 5: <! */
+     if(off < ctx->size  &&  CH(off) == _T('!')) {
+-        /* Check for type 4: <! followed by uppercase letter. */
+-        if(off + 1 < ctx->size  &&  ISASCII(off+1))
++        /* Check for type 4: <! followed by an ASCII letter. */
++        if(off + 1 < ctx->size  &&  ISALPHA(off+1))
+             return 4;
+ 
+         /* Check for type 5: <![CDATA[ */

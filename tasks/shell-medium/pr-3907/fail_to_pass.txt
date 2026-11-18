@@ -1,0 +1,2 @@
+test/fast/Unit tests/nvm_compare_checksum
+test/fast/Unit tests/nvm_err

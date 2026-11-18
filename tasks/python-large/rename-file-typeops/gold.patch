@@ -1,5 +1,5 @@
 diff --git a/mypy/applytype.py b/mypy/applytype.py
-index fbc93492f..24c0c133e 100644
+index fbc9349..24c0c13 100644
 --- a/mypy/applytype.py
 +++ b/mypy/applytype.py
 @@ -7,7 +7,7 @@ from mypy.erasetype import erase_typevars
@@ -12,7 +12,7 @@ index fbc93492f..24c0c133e 100644
      AnyType,
      CallableType,
 diff --git a/mypy/binder.py b/mypy/binder.py
-index fb35d96b7..e2ae09521 100644
+index fb35d96..e2ae095 100644
 --- a/mypy/binder.py
 +++ b/mypy/binder.py
 @@ -19,7 +19,7 @@ from mypy.nodes import (
@@ -25,7 +25,7 @@ index fb35d96b7..e2ae09521 100644
      AnyType,
      Instance,
 diff --git a/mypy/checker.py b/mypy/checker.py
-index f03d06d96..f49aea517 100644
+index f03d06d..f49aea5 100644
 --- a/mypy/checker.py
 +++ b/mypy/checker.py
 @@ -235,7 +235,7 @@ from mypy.subtypes import (
@@ -38,7 +38,7 @@ index f03d06d96..f49aea517 100644
      can_have_shared_disjoint_base,
      coerce_to_literal,
 diff --git a/mypy/checkexpr.py b/mypy/checkexpr.py
-index 6cdd64e84..abcda215e 100644
+index 6cdd64e..b8d64f0 100644
 --- a/mypy/checkexpr.py
 +++ b/mypy/checkexpr.py
 @@ -145,7 +145,7 @@ from mypy.typeanal import (
@@ -50,8 +50,17 @@ index 6cdd64e84..abcda215e 100644
      callable_type,
      custom_special_method,
      erase_to_union_or_bound,
+@@ -4769,7 +4769,7 @@ class ExpressionChecker(ExpressionVisitor[Type], ExpressionCheckerSharedApi):
+         return union
+ 
+     def union_tuple_fallback_item(self, left_type: TupleType) -> Type:
+-        # TODO: this duplicates logic in typeops.tuple_fallback().
++        # TODO: this duplicates logic in type_operations.tuple_fallback().
+         items = []
+         for item in left_type.items:
+             if isinstance(item, UnpackType):
 diff --git a/mypy/checkmember.py b/mypy/checkmember.py
-index 3ba99d8e8..381ddb832 100644
+index 3ba99d8..48956a8 100644
 --- a/mypy/checkmember.py
 +++ b/mypy/checkmember.py
 @@ -43,7 +43,7 @@ from mypy.nodes import (
@@ -63,8 +72,26 @@ index 3ba99d8e8..381ddb832 100644
      bind_self,
      erase_to_bound,
      freeze_all_type_vars,
+@@ -1503,7 +1503,7 @@ def bind_self_fast(method: F, original_type: Type | None = None) -> F:
+     """Return a copy of `method`, with the type of its first parameter (usually
+     self or cls) bound to original_type.
+ 
+-    This is a faster version of mypy.typeops.bind_self() that can be used for methods
++    This is a faster version of mypy.type_operations.bind_self() that can be used for methods
+     with trivial self/cls annotations.
+     """
+     if isinstance(method, Overloaded):
+@@ -1514,7 +1514,7 @@ def bind_self_fast(method: F, original_type: Type | None = None) -> F:
+         # Invalid method, return something.
+         return method
+     if method.arg_kinds[0] in (ARG_STAR, ARG_STAR2):
+-        # See typeops.py for details.
++        # See type_operations.py for details.
+         return method
+     return method.copy_modified(
+         arg_types=method.arg_types[1:],
 diff --git a/mypy/checkpattern.py b/mypy/checkpattern.py
-index 81904bc24..dc918e9d9 100644
+index 81904bc..dc918e9 100644
 --- a/mypy/checkpattern.py
 +++ b/mypy/checkpattern.py
 @@ -29,7 +29,7 @@ from mypy.patterns import (
@@ -77,7 +104,7 @@ index 81904bc24..dc918e9d9 100644
      make_simplified_union,
      try_getting_str_literals_from_type,
 diff --git a/mypy/checkstrformat.py b/mypy/checkstrformat.py
-index aba49d71b..933e5b1e7 100644
+index aba49d7..933e5b1 100644
 --- a/mypy/checkstrformat.py
 +++ b/mypy/checkstrformat.py
 @@ -46,7 +46,7 @@ from mypy.nodes import (
@@ -90,7 +117,7 @@ index aba49d71b..933e5b1e7 100644
      AnyType,
      Instance,
 diff --git a/mypy/constraints.py b/mypy/constraints.py
-index 52bbd0ed0..086bd8fe9 100644
+index 52bbd0e..73f290d 100644
 --- a/mypy/constraints.py
 +++ b/mypy/constraints.py
 @@ -6,7 +6,7 @@ from collections.abc import Iterable, Sequence
@@ -102,8 +129,59 @@ index 52bbd0ed0..086bd8fe9 100644
  from mypy.argmap import ArgTypeExpander
  from mypy.erasetype import erase_typevars
  from mypy.expandtype import expand_type_by_instance
+@@ -335,9 +335,9 @@ def _infer_constraints(
+     # We however keep any ErasedType items, so that the caller will see it when using
+     # checkexpr.has_erased_component().
+     if not type_state.keep_unions and isinstance(template, UnionType):
+-        template = mypy.typeops.make_simplified_union(template.items, keep_erased=True)
++        template = mypy.type_operations.make_simplified_union(template.items, keep_erased=True)
+     if not type_state.keep_unions and isinstance(actual, UnionType):
+-        actual = mypy.typeops.make_simplified_union(actual.items, keep_erased=True)
++        actual = mypy.type_operations.make_simplified_union(actual.items, keep_erased=True)
+ 
+     # Ignore Any types from the type suggestion engine to avoid them
+     # causing us to infer Any in situations where a better job could
+@@ -1010,7 +1010,7 @@ class ConstraintBuilderVisitor(TypeVisitor[list[Constraint]]):
+                 res.extend(cb)
+             return res
+         elif isinstance(actual, TupleType) and self.direction == SUPERTYPE_OF:
+-            instance = mypy.typeops.tuple_fallback(actual)
++            instance = mypy.type_operations.tuple_fallback(actual)
+             erased = erase_typevars(template)
+             assert isinstance(erased, ProperType) and isinstance(erased, Instance)
+             # Special-case protocols before using fallback to get more precise constraints
+@@ -1072,7 +1072,7 @@ class ConstraintBuilderVisitor(TypeVisitor[list[Constraint]]):
+                     inst, erase_typevars(temp), ignore_pos_arg_names=True
+                 ):
+                     continue
+-            # This exception matches the one in typeops.py, see PR #14121 for context.
++            # This exception matches the one in type_operations.py, see PR #14121 for context.
+             if member == "__call__" and instance.type.is_metaclass(precise=True):
+                 continue
+             res.extend(infer_constraints(temp, inst, self.direction))
+@@ -1231,9 +1231,9 @@ class ConstraintBuilderVisitor(TypeVisitor[list[Constraint]]):
+             # This matches the corresponding logic in subtypes.py.
+             item = self.actual.item
+             if isinstance(item, TupleType):
+-                item = mypy.typeops.tuple_fallback(item)
++                item = mypy.type_operations.tuple_fallback(item)
+             if isinstance(item, Instance):
+-                constructor = mypy.typeops.type_object_type(item.type)
++                constructor = mypy.type_operations.type_object_type(item.type)
+                 constructor = expand_type_by_instance(constructor, item)
+                 # Only consider return type to match historic behavior (see below).
+                 if isinstance(constructor, CallableType):
+@@ -1686,7 +1686,7 @@ def infer_callable_arguments_constraints(
+ 
+     # Phase 1b: compare left args with corresponding non-star right arguments.
+     for right_arg in right.formal_arguments():
+-        left_arg = mypy.typeops.callable_corresponding_argument(left, right_arg)
++        left_arg = mypy.type_operations.callable_corresponding_argument(left, right_arg)
+         if left_arg is None:
+             continue
+         res.extend(infer_directed_arg_constraints(left_arg.typ, right_arg.typ, direction))
 diff --git a/mypy/erasetype.py b/mypy/erasetype.py
-index cb8d66f29..a4e197414 100644
+index cb8d66f..a4e1974 100644
 --- a/mypy/erasetype.py
 +++ b/mypy/erasetype.py
 @@ -129,7 +129,7 @@ class EraseTypeVisitor(TypeVisitor[ProperType]):
@@ -125,7 +203,7 @@ index cb8d66f29..a4e197414 100644
                              merged.append(make_simplified_union(types))
                              del instances_by_name[item.type.fullname]
 diff --git a/mypy/inspections.py b/mypy/inspections.py
-index 6e2018262..5ef3105c2 100644
+index 6e20182..5ef3105 100644
 --- a/mypy/inspections.py
 +++ b/mypy/inspections.py
 @@ -24,7 +24,7 @@ from mypy.nodes import (
@@ -138,7 +216,7 @@ index 6e2018262..5ef3105c2 100644
      FunctionLike,
      Instance,
 diff --git a/mypy/join.py b/mypy/join.py
-index c609b303b..2b4f28a11 100644
+index c609b30..13a0447 100644
 --- a/mypy/join.py
 +++ b/mypy/join.py
 @@ -5,7 +5,7 @@ from __future__ import annotations
@@ -150,21 +228,98 @@ index c609b303b..2b4f28a11 100644
  from mypy.expandtype import expand_type
  from mypy.maptype import map_instance_to_supertype
  from mypy.nodes import CONTRAVARIANT, COVARIANT, INVARIANT, VARIANCE_NOT_READY, TypeInfo
+@@ -220,7 +220,7 @@ def join_types(s: Type, t: Type, instance_joiner: InstanceJoiner | None = None)
+ 
+     For example, the join of 'int' and 'object' is 'object'.
+     """
+-    if mypy.typeops.is_recursive_pair(s, t):
++    if mypy.type_operations.is_recursive_pair(s, t):
+         # This case can trigger an infinite recursion, general support for this will be
+         # tricky so we use a trivial join (like for protocols).
+         return trivial_join(s, t)
+@@ -229,8 +229,8 @@ def join_types(s: Type, t: Type, instance_joiner: InstanceJoiner | None = None)
+ 
+     if (s.can_be_true, s.can_be_false) != (t.can_be_true, t.can_be_false):
+         # if types are restricted in different ways, use the more general versions
+-        s = mypy.typeops.true_or_false(s)
+-        t = mypy.typeops.true_or_false(t)
++        s = mypy.type_operations.true_or_false(s)
++        t = mypy.type_operations.true_or_false(t)
+ 
+     if isinstance(s, UnionType) and not isinstance(t, UnionType):
+         s, t = t, s
+@@ -272,7 +272,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
+         if is_proper_subtype(self.s, t):
+             return t
+         else:
+-            return mypy.typeops.make_simplified_union([self.s, t])
++            return mypy.type_operations.make_simplified_union([self.s, t])
+ 
+     def visit_any(self, t: AnyType) -> ProperType:
+         return t
+@@ -284,7 +284,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
+             elif isinstance(self.s, (UnboundType, AnyType)):
+                 return AnyType(TypeOfAny.special_form)
+             else:
+-                return mypy.typeops.make_simplified_union([self.s, t])
++                return mypy.type_operations.make_simplified_union([self.s, t])
+         else:
+             return self.s
+ 
+@@ -591,7 +591,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
+             if self.instance_joiner is None:
+                 self.instance_joiner = InstanceJoiner()
+             fallback = self.instance_joiner.join_instances(
+-                mypy.typeops.tuple_fallback(self.s), mypy.typeops.tuple_fallback(t)
++                mypy.type_operations.tuple_fallback(self.s), mypy.type_operations.tuple_fallback(t)
+             )
+             assert isinstance(fallback, Instance)
+             items = self.join_tuples(self.s, t)
+@@ -609,7 +609,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
+                     return self.s
+                 return fallback
+         else:
+-            return join_types(self.s, mypy.typeops.tuple_fallback(t))
++            return join_types(self.s, mypy.type_operations.tuple_fallback(t))
+ 
+     def resolve_typeddict_item(
+         self, item_name: str, s: TypedDictItem, t: TypedDictItem
+@@ -676,7 +676,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
+             if t == self.s:
+                 return t
+             if self.s.fallback.type.is_enum and t.fallback.type.is_enum:
+-                return mypy.typeops.make_simplified_union([self.s, t])
++                return mypy.type_operations.make_simplified_union([self.s, t])
+             return join_types(self.s.fallback, t.fallback)
+         elif isinstance(self.s, Instance) and self.s.last_known_value == t:
+             return t
+@@ -712,7 +712,7 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
+         elif isinstance(typ, UnboundType):
+             return AnyType(TypeOfAny.special_form)
+         elif isinstance(typ, TupleType):
+-            return self.default(mypy.typeops.tuple_fallback(typ))
++            return self.default(mypy.type_operations.tuple_fallback(typ))
+         elif isinstance(typ, TypedDictType):
+             return self.default(typ.fallback)
+         elif isinstance(typ, FunctionLike):
 diff --git a/mypy/maptype.py b/mypy/maptype.py
-index d9bb6da80..b6219c0e6 100644
+index d9bb6da..2c48bcf 100644
 --- a/mypy/maptype.py
 +++ b/mypy/maptype.py
-@@ -87,7 +87,7 @@ def map_instance_to_direct_supertypes(instance: Instance, supertype: TypeInfo) -
+@@ -87,9 +87,9 @@ def map_instance_to_direct_supertypes(instance: Instance, supertype: TypeInfo) -
                          tuple_type = expand_type_by_instance(instance.type.tuple_type, instance)
                          if isinstance(tuple_type, TupleType):
                              # Make the import here to avoid cyclic imports.
 -                            import mypy.typeops
 +                            import mypy.type_operations
  
-                             result.append(mypy.typeops.tuple_fallback(tuple_type))
+-                            result.append(mypy.typeops.tuple_fallback(tuple_type))
++                            result.append(mypy.type_operations.tuple_fallback(tuple_type))
                              continue
+                         elif isinstance(tuple_type, Instance):
+                             # This can happen after normalizing variadic tuples.
 diff --git a/mypy/meet.py b/mypy/meet.py
-index bfc6d88a1..6ba5faf0c 100644
+index bfc6d88..6ba5faf 100644
 --- a/mypy/meet.py
 +++ b/mypy/meet.py
 @@ -15,7 +15,7 @@ from mypy.subtypes import (
@@ -177,7 +332,7 @@ index bfc6d88a1..6ba5faf0c 100644
      MYPYC_NATIVE_INT_NAMES,
      TUPLE_LIKE_INSTANCE_NAMES,
 diff --git a/mypy/messages.py b/mypy/messages.py
-index b58c9e7ac..c03e7613c 100644
+index b58c9e7..305a2a6 100644
 --- a/mypy/messages.py
 +++ b/mypy/messages.py
 @@ -19,7 +19,7 @@ from contextlib import contextmanager
@@ -198,8 +353,34 @@ index b58c9e7ac..c03e7613c 100644
  from mypy.types import (
      AnyType,
      CallableType,
+@@ -2225,7 +2225,7 @@ class MessageBuilder:
+         skip = []
+         original_subtype = subtype
+         if isinstance(subtype, TupleType):
+-            subtype = mypy.typeops.tuple_fallback(subtype)
++            subtype = mypy.type_operations.tuple_fallback(subtype)
+         elif isinstance(subtype, TypedDictType):
+             subtype = subtype.fallback
+         elif isinstance(subtype, TypeType):
+@@ -2594,13 +2594,13 @@ class MessageBuilder:
+             self.fail(*error_info[:2], code=error_info[2])
+         for nonoverlaps, kind, context in iter_errors.yield_nonoverlapping_types():
+             self.dangerous_comparison(
+-                mypy.typeops.make_simplified_union(nonoverlaps[0]),
+-                mypy.typeops.make_simplified_union(nonoverlaps[1]),
++                mypy.type_operations.make_simplified_union(nonoverlaps[0]),
++                mypy.type_operations.make_simplified_union(nonoverlaps[1]),
+                 kind,
+                 context,
+             )
+         for types, context in iter_errors.yield_revealed_type_infos():
+-            self.reveal_type(mypy.typeops.make_simplified_union(types), context)
++            self.reveal_type(mypy.type_operations.make_simplified_union(types), context)
+ 
+ 
+ def quote_type_string(type_string: str) -> str:
 diff --git a/mypy/plugins/attrs.py b/mypy/plugins/attrs.py
-index 1593c73cd..ad12de2e0 100644
+index 1593c73..ad12de2 100644
 --- a/mypy/plugins/attrs.py
 +++ b/mypy/plugins/attrs.py
 @@ -56,7 +56,7 @@ from mypy.plugins.common import (
@@ -212,7 +393,7 @@ index 1593c73cd..ad12de2e0 100644
      make_simplified_union,
      map_type_from_supertype,
 diff --git a/mypy/plugins/common.py b/mypy/plugins/common.py
-index 16ccdb418..78f5af070 100644
+index 16ccdb4..78f5af0 100644
 --- a/mypy/plugins/common.py
 +++ b/mypy/plugins/common.py
 @@ -32,7 +32,7 @@ from mypy.semanal_shared import (
@@ -225,7 +406,7 @@ index 16ccdb418..78f5af070 100644
      AnyType,
      CallableType,
 diff --git a/mypy/plugins/ctypes.py b/mypy/plugins/ctypes.py
-index b6dbec13c..06f6841cc 100644
+index b6dbec1..06f6841 100644
 --- a/mypy/plugins/ctypes.py
 +++ b/mypy/plugins/ctypes.py
 @@ -8,7 +8,7 @@ from mypy import nodes
@@ -238,7 +419,7 @@ index b6dbec13c..06f6841cc 100644
      AnyType,
      CallableType,
 diff --git a/mypy/plugins/dataclasses.py b/mypy/plugins/dataclasses.py
-index a511e714a..02a62f96e 100644
+index a511e71..02a62f9 100644
 --- a/mypy/plugins/dataclasses.py
 +++ b/mypy/plugins/dataclasses.py
 @@ -54,7 +54,7 @@ from mypy.plugins.common import (
@@ -251,7 +432,7 @@ index a511e714a..02a62f96e 100644
      AnyType,
      CallableType,
 diff --git a/mypy/plugins/default.py b/mypy/plugins/default.py
-index 67352a05e..f137637a6 100644
+index 67352a0..f137637 100644
 --- a/mypy/plugins/default.py
 +++ b/mypy/plugins/default.py
 @@ -62,7 +62,7 @@ from mypy.plugins.singledispatch import (
@@ -264,7 +445,7 @@ index 67352a05e..f137637a6 100644
      TPDICT_FB_NAMES,
      AnyType,
 diff --git a/mypy/plugins/enums.py b/mypy/plugins/enums.py
-index 387fdb869..e90cbc95d 100644
+index 387fdb8..e90cbc9 100644
 --- a/mypy/plugins/enums.py
 +++ b/mypy/plugins/enums.py
 @@ -20,7 +20,7 @@ import mypy.plugin  # To avoid circular imports.
@@ -277,7 +458,7 @@ index 387fdb869..e90cbc95d 100644
      ELLIPSIS_TYPE_NAMES,
      CallableType,
 diff --git a/mypy/plugins/functools.py b/mypy/plugins/functools.py
-index a53048927..3871ed3c0 100644
+index a530489..3871ed3 100644
 --- a/mypy/plugins/functools.py
 +++ b/mypy/plugins/functools.py
 @@ -20,7 +20,7 @@ from mypy.nodes import (
@@ -290,7 +471,7 @@ index a53048927..3871ed3c0 100644
      AnyType,
      CallableType,
 diff --git a/mypy/refinfo.py b/mypy/refinfo.py
-index a5b92832b..23da79c6c 100644
+index a5b9283..23da79c 100644
 --- a/mypy/refinfo.py
 +++ b/mypy/refinfo.py
 @@ -14,7 +14,7 @@ from mypy.nodes import (
@@ -303,7 +484,7 @@ index a5b92832b..23da79c6c 100644
      FunctionLike,
      Instance,
 diff --git a/mypy/semanal.py b/mypy/semanal.py
-index 22f645d93..b650f7130 100644
+index 22f645d..b650f71 100644
 --- a/mypy/semanal.py
 +++ b/mypy/semanal.py
 @@ -257,7 +257,7 @@ from mypy.typeanal import (
@@ -316,7 +497,7 @@ index 22f645d93..b650f7130 100644
      ANNOTATED_TYPE_NAMES,
      ASSERT_TYPE_NAMES,
 diff --git a/mypy/semanal_infer.py b/mypy/semanal_infer.py
-index abe9bf18c..37cfb3e1e 100644
+index abe9bf1..37cfb3e 100644
 --- a/mypy/semanal_infer.py
 +++ b/mypy/semanal_infer.py
 @@ -4,7 +4,7 @@ from __future__ import annotations
@@ -329,7 +510,7 @@ index abe9bf18c..37cfb3e1e 100644
      AnyType,
      CallableType,
 diff --git a/mypy/semanal_shared.py b/mypy/semanal_shared.py
-index f4ec7eb2c..08bf6d9db 100644
+index f4ec7eb..f67ddf6 100644
 --- a/mypy/semanal_shared.py
 +++ b/mypy/semanal_shared.py
 @@ -30,7 +30,7 @@ from mypy.nodes import (
@@ -341,8 +522,17 @@ index f4ec7eb2c..08bf6d9db 100644
  from mypy.types import (
      TPDICT_FB_NAMES,
      AnyType,
+@@ -297,7 +297,7 @@ def calculate_tuple_fallback(typ: TupleType) -> None:
+     assert fallback.type.fullname == "builtins.tuple"
+     items = []
+     for item in flatten_nested_tuples(typ.items):
+-        # TODO: this duplicates some logic in typeops.tuple_fallback().
++        # TODO: this duplicates some logic in type_operations.tuple_fallback().
+         if isinstance(item, UnpackType):
+             unpacked_type = get_proper_type(item.type)
+             if isinstance(unpacked_type, TypeVarTupleType):
 diff --git a/mypy/server/deps.py b/mypy/server/deps.py
-index 1de2d2384..92aa062e4 100644
+index 1de2d23..92aa062 100644
 --- a/mypy/server/deps.py
 +++ b/mypy/server/deps.py
 @@ -143,7 +143,7 @@ from mypy.options import Options
@@ -355,7 +545,7 @@ index 1de2d2384..92aa062e4 100644
      AnyType,
      CallableType,
 diff --git a/mypy/solve.py b/mypy/solve.py
-index 4a5eec47c..bdf328cb9 100644
+index 4a5eec4..bdf328c 100644
 --- a/mypy/solve.py
 +++ b/mypy/solve.py
 @@ -12,7 +12,7 @@ from mypy.graph_utils import prepare_sccs, strongly_connected_components, topsor
@@ -367,8 +557,30 @@ index 4a5eec47c..bdf328cb9 100644
  from mypy.types import (
      AnyType,
      Instance,
+diff --git a/mypy/stubtest.py b/mypy/stubtest.py
+index d4c530f..ade4b92 100644
+--- a/mypy/stubtest.py
++++ b/mypy/stubtest.py
+@@ -1067,7 +1067,7 @@ class Signature(Generic[T]):
+                 all_types = [
+                     arg.variable.type or arg.type_annotation for arg, _ in all_args[arg_name]
+                 ]
+-                return mypy.typeops.make_simplified_union([t for t in all_types if t])
++                return mypy.type_operations.make_simplified_union([t for t in all_types if t])
+ 
+         def get_kind(arg_name: str) -> nodes.ArgKind:
+             kinds = {arg.kind for arg, _ in all_args[arg_name]}
+@@ -2196,7 +2196,7 @@ def get_mypy_type_of_runtime_value(
+         # The logic here is similar to ExpressionChecker.analyze_ref_expr
+         type_info = get_mypy_node_for_name(runtime.__module__, runtime.__name__)
+         if isinstance(type_info, nodes.TypeInfo):
+-            result = mypy.typeops.type_object_type(type_info)
++            result = mypy.type_operations.type_object_type(type_info)
+             if mypy.checkexpr.is_type_type_context(type_context):
+                 # This is the type in a type[] expression, so substitute type
+                 # variables with Any.
 diff --git a/mypy/subtypes.py b/mypy/subtypes.py
-index b774aa4e8..52d5c0870 100644
+index b774aa4..4c52e67 100644
 --- a/mypy/subtypes.py
 +++ b/mypy/subtypes.py
 @@ -6,7 +6,7 @@ from typing import Any, Final, TypeAlias as _TypeAlias, TypeVar, cast
@@ -380,7 +592,109 @@ index b774aa4e8..52d5c0870 100644
  from mypy.checker_state import checker_state
  from mypy.erasetype import erase_type
  from mypy.expandtype import (
-@@ -1636,7 +1636,7 @@ def find_node_type(
+@@ -171,7 +171,7 @@ def is_subtype(
+         ), "Don't pass both context and individual flags"
+     if type_state.is_assumed_subtype(left, right):
+         return True
+-    if mypy.typeops.is_recursive_pair(left, right):
++    if mypy.type_operations.is_recursive_pair(left, right):
+         # This case requires special care because it may cause infinite recursion.
+         # Our view on recursive types is known under a fancy name of iso-recursive mu-types.
+         # Roughly this means that a recursive type is defined as an alias where right hand side
+@@ -226,7 +226,7 @@ def is_proper_subtype(
+         ), "Don't pass both context and individual flags"
+     if type_state.is_assumed_proper_subtype(left, right):
+         return True
+-    if mypy.typeops.is_recursive_pair(left, right):
++    if mypy.type_operations.is_recursive_pair(left, right):
+         # Same as for non-proper subtype, see detailed comment there for explanation.
+         with pop_on_exit(type_state.get_assumptions(is_proper=True), left, right):
+             return _is_subtype(left, right, subtype_context, proper_subtype=True)
+@@ -344,7 +344,7 @@ def _is_subtype(
+             and (left.type.is_enum or left.type.fullname == "builtins.bool")
+         ):
+             right = UnionType(
+-                mypy.typeops.try_contracting_literals_in_union(flatten_nested_unions(right.items))
++                mypy.type_operations.try_contracting_literals_in_union(flatten_nested_unions(right.items))
+             )
+             if proper_subtype:
+                 is_subtype_of_item = any(
+@@ -503,7 +503,7 @@ class SubtypeVisitor(TypeVisitor[bool]):
+             return not isinstance(self.right, NoneType)
+         right = self.right
+         if isinstance(right, TupleType) and right.partial_fallback.type.is_enum:
+-            return self._is_subtype(left, mypy.typeops.tuple_fallback(right))
++            return self._is_subtype(left, mypy.type_operations.tuple_fallback(right))
+         if isinstance(right, TupleType):
+             if len(right.items) == 1:
+                 # Non-normalized Tuple type (may be left after semantic analysis
+@@ -640,7 +640,7 @@ class SubtypeVisitor(TypeVisitor[bool]):
+         if isinstance(right, TypeType):
+             item = right.item
+             if isinstance(item, TupleType):
+-                item = mypy.typeops.tuple_fallback(item)
++                item = mypy.type_operations.tuple_fallback(item)
+             # TODO: this is a bit arbitrary, we should only skip Any-related cases.
+             if not self.proper_subtype:
+                 if is_named_instance(left, "builtins.type"):
+@@ -809,7 +809,7 @@ class SubtypeVisitor(TypeVisitor[bool]):
+                         return False
+                 return True
+             elif self._is_subtype(left.partial_fallback, right) and self._is_subtype(
+-                mypy.typeops.tuple_fallback(left), right
++                mypy.type_operations.tuple_fallback(left), right
+             ):
+                 return True
+             elif right.type.is_protocol and is_protocol_implementation(
+@@ -1139,7 +1139,7 @@ class SubtypeVisitor(TypeVisitor[bool]):
+             # avoid redundant check for union of literals
+             for item in left.relevant_items():
+                 p_item = get_proper_type(item)
+-                lit_type = mypy.typeops.simple_literal_type(p_item)
++                lit_type = mypy.type_operations.simple_literal_type(p_item)
+                 if lit_type is not None:
+                     if lit_type in literal_types:
+                         continue
+@@ -1166,7 +1166,7 @@ class SubtypeVisitor(TypeVisitor[bool]):
+                 p_item = get_proper_type(item)
+                 if p_item in fast_check:
+                     continue
+-                lit_type = mypy.typeops.simple_literal_type(p_item)
++                lit_type = mypy.type_operations.simple_literal_type(p_item)
+                 if lit_type in fast_check:
+                     continue
+                 if not self._is_subtype(item, self.orig_right):
+@@ -1217,9 +1217,9 @@ class SubtypeVisitor(TypeVisitor[bool]):
+                 # Note: self-types are special since returning `Self` is more precise
+                 # than its upper bound, so we don't unwrap TypeVar to its bound here.
+                 if isinstance(item, TupleType):
+-                    item = mypy.typeops.tuple_fallback(item)
++                    item = mypy.type_operations.tuple_fallback(item)
+                 if isinstance(item, Instance):
+-                    constructor = mypy.typeops.type_object_type(item.type)
++                    constructor = mypy.type_operations.type_object_type(item.type)
+                     constructor = expand_type_by_instance(constructor, item)
+                     if isinstance(constructor, CallableType):
+                         # Only consider return type to match historic behavior (see below).
+@@ -1296,7 +1296,7 @@ def is_protocol_implementation(
+     # supported for now.
+     original_left = left
+     if isinstance(left, TupleType):
+-        left = mypy.typeops.tuple_fallback(left)
++        left = mypy.type_operations.tuple_fallback(left)
+     # We need to record this check to generate protocol fine-grained dependencies.
+     type_state.record_protocol_subtype_check(left.type, right.type)
+     # nominal subtyping currently ignores '__init__' and '__new__' signatures
+@@ -1398,7 +1398,7 @@ def get_protocol_member(
+ ) -> Type | None:
+     if member == "__call__" and class_obj:
+         # Special case: class objects always have __call__ that is just the constructor.
+-        return mypy.typeops.type_object_type(left.type)
++        return mypy.type_operations.type_object_type(left.type)
+ 
+     if member == "__call__" and left.type.is_metaclass(precise=True):
+         # Special case: we want to avoid falling back to metaclass __call__
+@@ -1636,10 +1636,10 @@ def find_node_type(
      """Find type of a variable or method 'node' (maybe also a decorated method).
      Apply type arguments from 'itype', and bind 'self' to 'subtype'.
      """
@@ -388,9 +702,67 @@ index b774aa4e8..52d5c0870 100644
 +    from mypy.type_operations import bind_self
  
      if isinstance(node, FuncBase):
-         typ: Type | None = mypy.typeops.function_type(
+-        typ: Type | None = mypy.typeops.function_type(
++        typ: Type | None = mypy.type_operations.function_type(
+             node, fallback=Instance(itype.type.mro[-1], [])
+         )
+     else:
+@@ -1964,7 +1964,7 @@ def are_parameters_compatible(
+     #           also accept. The only exception is if we are allowing partial
+     #           overlaps: in that case, we ignore optional args on the right.
+     for right_arg in right.formal_arguments():
+-        left_arg = mypy.typeops.callable_corresponding_argument(left, right_arg)
++        left_arg = mypy.type_operations.callable_corresponding_argument(left, right_arg)
+         if left_arg is None:
+             if allow_partial_overlap and not right_arg.required:
+                 continue
+@@ -2156,7 +2156,7 @@ def unify_generic_callable(
+     """
+     import mypy.solve
+ 
+-    if set(type.type_var_ids()) & {v.id for v in mypy.typeops.get_all_type_vars(target)}:
++    if set(type.type_var_ids()) & {v.id for v in mypy.type_operations.get_all_type_vars(target)}:
+         # Overload overlap check does nasty things like unifying in opposite direction.
+         # This can easily create type variable clashes, so we need to refresh.
+         type = freshen_function_type_vars(type)
+@@ -2261,8 +2261,8 @@ def union_function_signatures(
+         new_returns.append(target.ret_type)
+ 
+     if simplify_unions:
+-        arg_types = [mypy.typeops.make_simplified_union(args) for args in new_args]
+-        ret_type = mypy.typeops.make_simplified_union(new_returns)
++        arg_types = [mypy.type_operations.make_simplified_union(args) for args in new_args]
++        ret_type = mypy.type_operations.make_simplified_union(new_returns)
+     else:
+         arg_types = [UnionType.make_union(args) for args in new_args]
+         ret_type = UnionType.make_union(new_returns)
+@@ -2323,13 +2323,13 @@ def try_restrict_literal_union(t: UnionType, s: Type) -> list[Type] | None:
+     Otherwise, returns None
+     """
+     ps = get_proper_type(s)
+-    if not mypy.typeops.is_simple_literal(ps):
++    if not mypy.type_operations.is_simple_literal(ps):
+         return None
+ 
+     new_items: list[Type] = []
+     for i in t.relevant_items():
+         pi = get_proper_type(i)
+-        if not mypy.typeops.is_simple_literal(pi):
++        if not mypy.type_operations.is_simple_literal(pi):
+             return None
+         if pi != ps:
+             new_items.append(i)
+@@ -2450,7 +2450,7 @@ def infer_variance(info: TypeInfo, i: int) -> bool:
+                 continue
+ 
+             if isinstance(self_type, TupleType):
+-                self_type = mypy.typeops.tuple_fallback(self_type)
++                self_type = mypy.type_operations.tuple_fallback(self_type)
+             flags = get_member_flags(member, self_type)
+             settable = IS_SETTABLE in flags
+ 
 diff --git a/mypy/suggestions.py b/mypy/suggestions.py
-index 39a220e34..9f737ceef 100644
+index 39a220e..9f737ce 100644
 --- a/mypy/suggestions.py
 +++ b/mypy/suggestions.py
 @@ -60,7 +60,7 @@ from mypy.plugin import FunctionContext, MethodContext, Plugin
@@ -403,7 +775,7 @@ index 39a220e34..9f737ceef 100644
      AnyType,
      CallableType,
 diff --git a/mypy/test/testtypes.py b/mypy/test/testtypes.py
-index b287e82b3..751741dbf 100644
+index b287e82..751741d 100644
 --- a/mypy/test/testtypes.py
 +++ b/mypy/test/testtypes.py
 @@ -31,7 +31,7 @@ from mypy.state import state
@@ -419,3 +791,16 @@ diff --git a/mypy/typeops.py b/mypy/type_operations.py
 similarity index 100%
 rename from mypy/typeops.py
 rename to mypy/type_operations.py
+diff --git a/mypy/types.py b/mypy/types.py
+index dd9c2b5..da510f1 100644
+--- a/mypy/types.py
++++ b/mypy/types.py
+@@ -2835,7 +2835,7 @@ class TupleType(ProperType):
+         partial_fallback: The (imprecise) underlying instance type that is used
+             for non-tuple methods. This is generally builtins.tuple[Any, ...] for
+             regular tuples, but it's different for named tuples and classes with
+-            a tuple base class. Use mypy.typeops.tuple_fallback to calculate the
++            a tuple base class. Use mypy.type_operations.tuple_fallback to calculate the
+             precise fallback type derived from item types.
+         implicit: If True, derived from a tuple expression (t,....) instead of Tuple[t, ...]
+     """

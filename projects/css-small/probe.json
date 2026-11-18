@@ -1,0 +1,7 @@
+[
+  {"name": "references at position (divide in mixins/_functions.scss, used across the sources)", "args": {"operation": "references", "path": "core/scss/mixins/_functions.scss", "line": 289, "column": 10},
+   "expect": ["core/scss/_variables.scss:430", "core/scss/_variables.scss:431", "core/scss/mixins/bootstrap/_grid.scss:50"]},
+  {"name": "definition of focus-ring by name", "args": {"operation": "definition", "query": "focus-ring"},
+   "expect": ["core/scss/mixins/_mixins.scss:76"]},
+  {"name": "diagnostics on a partial", "tool": "lsp_diagnostics", "args": {"paths": ["core/scss/mixins/_functions.scss"]}, "expect": []}
+]

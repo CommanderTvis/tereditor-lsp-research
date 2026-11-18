@@ -1,4 +1,0 @@
-type = "signature"
-origin = "devrig change signature"
-symbol = "rich.markdown.MarkdownElement.on_child_close: remove the context parameter"
-selection = "non-dunder methods of classes in non-test rich/ modules overridden in at least 3 transitive subclasses (python3 select.py <snapshot> rich, an ast walk, classes resolved by simple name), sorted by path:line: Highlighter.highlight, MarkdownElement.create, MarkdownElement.on_enter, MarkdownElement.on_child_close, ProgressColumn.render; then the documented medium-size requirement (docs/CURATION.md: at least 5 files or 10 locations, counting definitions and call sites of the method, hand-checked) drops MarkdownElement.on_enter (6 locations in 1 file), leaving 4; index random.Random(20261110).randrange(4) = 2 (CPython 3.12). Change rule: remove a parameter no override uses if there is one, else add one."

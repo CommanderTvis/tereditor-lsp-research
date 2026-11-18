@@ -1,0 +1,7 @@
+[
+ {"name":"references of ParserOptions at its declaration (cross-file)","args":{"operation":"references","path":"core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/ParserOptions.kt","line":466,"column":13},"expect":["core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/parse.kt:72","core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/parse.kt:96"]},
+ {"name":"definition of rename from a call site (an interface member, many overrides)","args":{"operation":"definition","path":"core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/DataFrameImpl.kt","line":70,"column":38},"expect":["core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/columns/ColumnReference.kt:28"]},
+ {"name":"implementations of ColumnReference","args":{"operation":"implementation","path":"core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/columns/ColumnReference.kt","line":27,"column":15},"expect":["core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/columns/ColumnGroupImpl.kt:104"]},
+ {"name":"diagnostics clean file","tool":"lsp_diagnostics","args":{"paths":["core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/ParserOptions.kt"]},"expect":[]},
+ {"name":"servers","tool":"lsp_status","args":{"operation":"servers"},"expect":[]}
+]

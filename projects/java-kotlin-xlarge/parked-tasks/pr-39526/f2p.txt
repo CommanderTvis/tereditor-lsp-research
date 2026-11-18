@@ -1,0 +1,3 @@
+:gradle-cli org.gradle.launcher.cli.RunBuildActionTest
+:launcher org.gradle.tooling.internal.provider.LoggingBridgingBuildActionExecuterTest
+:logging org.gradle.internal.logging.console.BuildStatusRendererTest

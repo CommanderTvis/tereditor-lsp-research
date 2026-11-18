@@ -1,0 +1,3059 @@
+diff --git a/.github/workflows/generated-sources-master.yml b/.github/workflows/generated-sources-master.yml
+index ec3f136..486a706 100644
+--- a/.github/workflows/generated-sources-master.yml
++++ b/.github/workflows/generated-sources-master.yml
+@@ -31,7 +31,7 @@ jobs:
+         run: |
+           git config --global user.name 'github-actions[bot]'
+           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+-          git add './core/generated-sources' './dataframe-csv/generated-sources' './dataframe-geo/generated-sources' './dataframe-excel/generated-sources' './dataframe-jdbc/generated-sources' './docs/StardustDocs/resources/snippets' './docs/StardustDocs/topics' './examples/projects'
++          git add './core/generated-sources' './dataframe-csv/generated-sources' './dataframe-json/generated-sources' './dataframe-geo/generated-sources' './dataframe-excel/generated-sources' './dataframe-jdbc/generated-sources' './docs/StardustDocs/resources/snippets' './docs/StardustDocs/topics' './examples/projects'
+           git diff --staged --quiet || git commit -m "Automated commit of generated code"
+           git push
+         env:
+diff --git a/.github/workflows/generated-sources.yml b/.github/workflows/generated-sources.yml
+index 35cd3a8..7b4d3d5 100644
+--- a/.github/workflows/generated-sources.yml
++++ b/.github/workflows/generated-sources.yml
+@@ -44,7 +44,7 @@ jobs:
+       - name: Check for changes in generated sources
+         id: git-diff
+         run: |
+-          git add './core/generated-sources' './dataframe-csv/generated-sources' './dataframe-geo/generated-sources' './dataframe-excel/generated-sources' './dataframe-jdbc/generated-sources' './docs/StardustDocs/resources/snippets' './docs/StardustDocs/topics' './examples/projects'
++          git add './core/generated-sources' './dataframe-csv/generated-sources' './dataframe-json/generated-sources' './dataframe-geo/generated-sources' './dataframe-excel/generated-sources' './dataframe-jdbc/generated-sources' './docs/StardustDocs/resources/snippets' './docs/StardustDocs/topics' './examples/projects'
+           echo "changed=$(if git diff --staged --quiet; then echo 'false'; else echo 'true'; fi)" >> $GITHUB_OUTPUT
+ 
+       - name: Commit and push if changes
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/documentation/DocumentationUrls.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/documentation/DocumentationUrls.kt
+index 78d0d0d..dbae32a 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/documentation/DocumentationUrls.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/documentation/DocumentationUrls.kt
+@@ -549,6 +549,9 @@ public interface DocumentationUrls {
+     /** [See `JsonPath` on the documentation website.]({@include [Url]}/read.html#specify-key-value-paths) */
+     public typealias JsonPath = Nothing
+ 
++    /** [See the "value" and "array" columns on the documentation website.]({@include [Url]}/read.html#value-and-array-columns) */
++    public typealias JsonValueAndArrayColumns = Nothing
++
+     /** [Deephaven CSV](https://github.com/deephaven/deephaven-csv) */
+     public typealias Deephaven = Nothing
+ 
+diff --git a/dataframe-json/build.gradle.kts b/dataframe-json/build.gradle.kts
+index d9b9916..06640ae 100644
+--- a/dataframe-json/build.gradle.kts
++++ b/dataframe-json/build.gradle.kts
+@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+ plugins {
+     with(conventions.plugins.dfbuild) {
+         alias(kotlinJvm8)
++        alias(kodex)
+     }
+     with(libs.plugins) {
+         alias(publisher)
+diff --git a/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/readJson.kt b/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/readJson.kt
+index 74de9fa..3b6715a 100644
+--- a/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/readJson.kt
++++ b/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/readJson.kt
+@@ -300,28 +300,12 @@ internal fun fromJsonListAnyColumns(
+                 isLenient = isLenient,
+             )
+ 
+-            val res = when {
+-                parsed.isSingleUnnamedColumn() -> {
+-                    val col = (parsed.getColumn(0) as UnnamedColumn).col
+-                    val elementType = col.type
+-                    val columnValues = col.values
+-                        .asList()
+-                        .splitByIndices(startIndices.asSequence())
+-                        .toList()
+-                    DataColumn.createValueColumn(
+-                        name = ARRAY_COLUMN_NAME,
+-                        values = columnValues,
+-                        type = List::class.createType(listOf(KTypeProjection.invariant(elementType))),
+-                    )
+-                }
+-
+-                else ->
+-                    parsed.unwrapUnnamedColumns()
+-                        .chunked(
+-                            startIndices = startIndices,
+-                            name = ARRAY_COLUMN_NAME, // will be erased
+-                        )
+-            }
++            val res = createArrayColumn(
++                parsed = parsed,
++                name = ARRAY_COLUMN_NAME, // will be erased
++                records = records,
++                startIndices = startIndices,
++            )
+             listOf(UnnamedColumn(res))
+         }
+ 
+@@ -450,6 +434,40 @@ internal fun fromJsonListAnyColumns(
+ 
+ private fun AnyFrame.isSingleUnnamedColumn() = columnsCount() == 1 && getColumn(0) is UnnamedColumn
+ 
++/**
++ * Collects the arrays of [records] into a single column named [name]: a `List` value column when the arrays
++ * hold single values, else a [FrameColumn] holding the objects of each array.
++ *
++ * @param parsed The contents of all arrays of [records], parsed and concatenated into one [DataFrame].
++ * @param startIndices For each record, the index in [parsed] where its array starts, so that [parsed] can be
++ *     split back into one entry per record.
++ */
++private fun createArrayColumn(
++    parsed: AnyFrame,
++    name: String,
++    records: List<*>,
++    startIndices: Iterable<Int>,
++): DataColumn<Any?> =
++    if (parsed.isSingleUnnamedColumn()) {
++        val col = (parsed.getColumn(0) as UnnamedColumn).col
++        val columnValues = col.values
++            .asList()
++            .splitByIndices(startIndices.asSequence())
++            .toList()
++            // records that hold no array at all (like `null`) are not empty lists
++            .mapIndexed { i, list -> list.takeIf { records[i] is JsonArray } }
++        DataColumn.createValueColumn(
++            name = name,
++            values = columnValues,
++            type = List::class.createType(
++                arguments = listOf(KTypeProjection.invariant(col.type)),
++                nullable = records.any { it !is JsonArray },
++            ),
++        )
++    } else {
++        parsed.unwrapUnnamedColumns().chunked(startIndices, name)
++    }
++
+ /**
+  * Json to DataFrame converter that creates allows creates `value` and `array` accessors
+  * instead of [Any] columns.
+@@ -478,9 +496,9 @@ internal fun fromJsonListArrayAndValueColumns(
+     // list element type can be JsonObject, JsonArray or primitive
+     // So first, we gather all properties of objects to merge including "array" and "value" if needed
+     // so the resulting type of a property with instances 123, ["abc"], and { "a": 1, "b": 2 } will be
+-    // { array: List<String>, value: Int?, a: Int?, b: Int? }
++    // { array: List<String>?, value: Int?, a: Int?, b: Int? }
+     // and instances will look like
+-    // { "array": [], "value": 123, "a": null, "b": null }
++    // { "array": null, "value": 123, "a": null, "b": null }
+ 
+     val nameGenerator = ColumnNameGenerator()
+     records.forEach { record ->
+@@ -659,24 +677,12 @@ internal fun fromJsonListArrayAndValueColumns(
+                             jsonPath = jsonPath.appendArrayWithWildcard(),
+                         )
+ 
+-                        val res = when {
+-                            parsed.isSingleUnnamedColumn() -> {
+-                                val col = (parsed.getColumn(0) as UnnamedColumn).col
+-                                val elementType = col.type
+-                                val columnValues =
+-                                    col.values
+-                                        .asList()
+-                                        .splitByIndices(startIndices.asSequence())
+-                                        .toList()
+-                                DataColumn.createValueColumn(
+-                                    name = colName,
+-                                    values = columnValues,
+-                                    type = List::class.createType(listOf(KTypeProjection.invariant(elementType))),
+-                                )
+-                            }
+-
+-                            else -> parsed.unwrapUnnamedColumns().chunked(startIndices, colName)
+-                        }
++                        val res = createArrayColumn(
++                            parsed = parsed,
++                            name = colName,
++                            records = records,
++                            startIndices = startIndices,
++                        )
+                         UnnamedColumn(res)
+                     }
+ 
+diff --git a/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/writeJson.kt b/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/writeJson.kt
+index 26a8d6a..e5f65bf 100644
+--- a/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/writeJson.kt
++++ b/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/writeJson.kt
+@@ -20,9 +20,9 @@ import org.jetbrains.kotlinx.dataframe.AnyFrame
+ import org.jetbrains.kotlinx.dataframe.ColumnsContainer
+ import org.jetbrains.kotlinx.dataframe.DataColumn
+ import org.jetbrains.kotlinx.dataframe.api.FormattedFrame
+-import org.jetbrains.kotlinx.dataframe.api.all
+-import org.jetbrains.kotlinx.dataframe.api.allNulls
++import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
+ import org.jetbrains.kotlinx.dataframe.api.indices
++import org.jetbrains.kotlinx.dataframe.api.isEmpty
+ import org.jetbrains.kotlinx.dataframe.api.isList
+ import org.jetbrains.kotlinx.dataframe.api.schema
+ import org.jetbrains.kotlinx.dataframe.api.take
+@@ -40,6 +40,7 @@ import org.jetbrains.kotlinx.dataframe.impl.io.SerializationKeys.NROW
+ import org.jetbrains.kotlinx.dataframe.impl.io.SerializationKeys.TYPE
+ import org.jetbrains.kotlinx.dataframe.impl.io.SerializationKeys.TYPES
+ import org.jetbrains.kotlinx.dataframe.impl.io.SerializationKeys.VERSION
++import org.jetbrains.kotlinx.dataframe.indices
+ import org.jetbrains.kotlinx.dataframe.io.ARRAY_COLUMN_NAME
+ import org.jetbrains.kotlinx.dataframe.io.Base64ImageEncodingOptions
+ import org.jetbrains.kotlinx.dataframe.io.CustomEncoder
+@@ -176,10 +177,11 @@ internal fun encodeValue(col: AnyCol, index: Int, customEncoders: List<CustomEnc
+     return when {
+         matchingEncoder != null -> matchingEncoder.encode(col[index])
+ 
++        // a `null` list is not an empty one, just like in `encodeRow`
+         col.isList() -> col[index]?.let { list ->
+             val values = (list as List<*>).map { convert(it) }
+             JsonArray(values)
+-        } ?: JsonArray(emptyList())
++        } ?: JsonPrimitive(null)
+ 
+         col.typeClass in valueTypes -> convert(col[index])
+ 
+@@ -251,30 +253,19 @@ private fun createJsonTypeDescriptor(columnSchema: ColumnSchema): JsonObject =
+         },
+     )
+ 
++/**
++ * Unlike [encodeFrame], this is the wire format of the Kotlin Notebook plugin, described in
++ * `docs/serialization_format.md`: every row has to be an object with one entry per column of [frame].
++ * So the unnamed `value`/`array` columns are encoded as regular columns here, instead of as the JSON record
++ * they were read from.
++ */
+ internal fun encodeFrameWithMetadata(
+     frame: AnyFrame,
+     rowLimit: Int? = null,
+     customEncoders: List<CustomEncoder> = emptyList(),
+ ): JsonArray {
+-    val valueColumn = frame.extractValueColumn()
+-    val arrayColumn = frame.extractArrayColumn()
+-
+-    val arraysAreFrames = arrayColumn?.kind() == ColumnKind.Frame
+-
+     val data = frame.indices().map { rowIndex ->
+-        valueColumn?.get(rowIndex)
+-            ?: arrayColumn?.get(rowIndex)?.let {
+-                if (arraysAreFrames) {
+-                    encodeFrameWithMetadata(
+-                        it as AnyFrame,
+-                        rowLimit,
+-                        customEncoders,
+-                    )
+-                } else {
+-                    null
+-                }
+-            }
+-            ?: encodeRowWithMetadata(frame, rowIndex, rowLimit, customEncoders)
++        encodeRowWithMetadata(frame, rowIndex, rowLimit, customEncoders)
+     }
+ 
+     return buildJsonArray { addAll(data.map { convert(it) }) }
+@@ -289,16 +280,16 @@ internal fun AnyFrame.extractValueColumn(): DataColumn<*>? {
+         ?.maxByOrNull { it.name }
+         ?.takeIf { it.kind() == ColumnKind.Value }
+         // 'readJson' cannot have created an all-null 'value' column, consider it a regular one
+-        ?.takeUnless { it.allNulls() }
+-        ?.takeIf { valueCol ->
++        ?.takeIf { it.holdsAnyValue() }
++        ?.takeUnless { valueCol ->
+             val otherCols = allColumns - valueCol
+-            // It's a valid 'value' column only if for each non-null value,
+-            // the corresponding cells in the other columns are all null.
+-            val isValidValueColumn = this.all { row ->
+-                valueCol[row] == null || otherCols.all { it[row] == null }
++            // A column is not considered a valid value column if any non-null value is joined
++            // with another value of another column in the same row.
++            val isInvalidValueColumn = indices().any { row ->
++                valueCol.holdsValueAt(row) && otherCols.any { it.holdsValueAt(row) }
+             }
+ 
+-            isValidValueColumn
++            isInvalidValueColumn
+         }
+ }
+ 
+@@ -308,6 +299,11 @@ internal fun AnyFrame.extractValueColumn(): DataColumn<*>? {
+ internal val AnyFrame.isPossibleToFindUnnamedColumns: Boolean
+     get() = columns().size != 1
+ 
++// An unnamed `value`/`array` column always holds at least one value, as it's only created for
++// records that actually hold a value or an array.
++// A column of `null`s only was created by the user, like dataFrameOf("value" to listOf(null, null)).
++private fun AnyCol.holdsAnyValue(): Boolean = indices.any { holdsValueAt(it) }
++
+ internal fun AnyFrame.extractArrayColumn(): DataColumn<*>? {
+     val allColumns = columns()
+ 
+@@ -315,46 +311,71 @@ internal fun AnyFrame.extractArrayColumn(): DataColumn<*>? {
+         .filter { it.name.startsWith(ARRAY_COLUMN_NAME) }
+         .takeIf { isPossibleToFindUnnamedColumns }
+         ?.maxByOrNull { it.name }
+-        ?.takeUnless { it.kind() == ColumnKind.Group }
++        // 'readJson' stores arrays either as a `List` value column or as a frame column
++        ?.takeIf { it.kind() == ColumnKind.Frame || it.isList() }
+         // 'readJson' cannot have created an all-null 'array' column, consider it a regular one
+-        ?.takeUnless { it.allNulls() }
+-        ?.takeIf { arrayCol ->
++        ?.takeIf { it.holdsAnyValue() }
++        ?.takeUnless { arrayCol ->
+             val otherCols = allColumns - arrayCol
+-            // It's a valid 'array' column only if for each non-null value,
+-            // the corresponding cells in the other columns are all null.
+-            // TODO `readJson` turns arrays into empty lists instead of `null`, issue #2048
+-            val isValidArrayColumn = this.all { row ->
+-                arrayCol[row] == null || otherCols.all { it[row] == null }
++            // It's not an 'array' column if any of the arrays it holds sits next to
++            // a value in one of the other columns.
++            val isInvalidArrayColumn = indices().any { row ->
++                arrayCol.holdsValueAt(row) && otherCols.any { it.holdsValueAt(row) }
+             }
+-            isValidArrayColumn
++
++            isInvalidArrayColumn
+         }
+ }
+ 
++/**
++ * Encodes each row of [frame] as the JSON record it was read from: the value of the unnamed "value" column,
++ * else the array of the unnamed "array" column, else an object of the remaining columns,
++ * else — when the row holds no values at all — `null`.
++ */
+ internal fun encodeFrame(frame: AnyFrame): JsonArray {
+     val valueColumn = frame.extractValueColumn()
+     val arrayColumn = frame.extractArrayColumn()
+ 
+     val arraysAreFrames = arrayColumn?.kind() == ColumnKind.Frame
+ 
++    // the unnamed `value`/`array` columns encode the record itself, all other columns encode it as an object
++    val objectColumns = frame.columns().filter { it.name != valueColumn?.name && it.name != arrayColumn?.name }
++    val hasUnnamedColumns = objectColumns.size != frame.columnsCount()
++    val objectFrame = dataFrameOf(objectColumns)
++
+     val data = frame.indices().map { rowIndex ->
+         when {
+-            valueColumn != null -> valueColumn[rowIndex]
++            valueColumn?.holdsValueAt(rowIndex) == true -> valueColumn[rowIndex]
+ 
+-            arrayColumn != null -> arrayColumn[rowIndex]?.let {
++            arrayColumn?.holdsValueAt(rowIndex) == true ->
+                 if (arraysAreFrames) {
+-                    encodeFrame(it as AnyFrame)
++                    encodeFrame(arrayColumn[rowIndex] as AnyFrame)
+                 } else {
+-                    null
++                    JsonArray((arrayColumn[rowIndex] as List<*>).map { convert(it) })
+                 }
+-            }
+ 
+-            else -> encodeRow(frame, rowIndex)
++            // a record that's neither a single value nor an array is encoded as an object,
++            // unless it holds no values at all; then the record was `null` itself
++            hasUnnamedColumns && objectColumns.none { it.holdsValueAt(rowIndex) } -> null
++
++            else -> encodeRow(objectFrame, rowIndex)
+         }
+     }
+ 
+     return buildJsonArray { addAll(data.map { convert(it) }) }
+ }
+ 
++/**
++ * Whether the value of this column at [rowIndex] carries any data;
++ * empty [FrameColumn] values and [ColumnGroup] rows filled with `null`s carry none.
++ */
++private fun AnyCol.holdsValueAt(rowIndex: Int): Boolean =
++    when (this) {
++        is ColumnGroup<*> -> columns().any { it.holdsValueAt(rowIndex) }
++        is FrameColumn<*> -> !this[rowIndex].isEmpty()
++        else -> this[rowIndex] != null
++    }
++
+ internal fun encodeDataFrameWithMetadata(
+     frame: AnyFrame,
+     rowLimit: Int,
+diff --git a/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/json.kt b/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/json.kt
+index 668e516..e3bcbd7 100644
+--- a/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/json.kt
++++ b/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/json.kt
+@@ -18,6 +18,7 @@ import org.jetbrains.kotlinx.dataframe.codeGen.AbstractDefaultReadMethod
+ import org.jetbrains.kotlinx.dataframe.codeGen.DefaultReadDfMethod
+ import org.jetbrains.kotlinx.dataframe.columns.ColumnGroup
+ import org.jetbrains.kotlinx.dataframe.columns.FrameColumn
++import org.jetbrains.kotlinx.dataframe.documentation.DocumentationUrls
+ import org.jetbrains.kotlinx.dataframe.documentation.UnifyingNumbers
+ import org.jetbrains.kotlinx.dataframe.impl.io.encodeDataFrameWithMetadata
+ import org.jetbrains.kotlinx.dataframe.impl.io.encodeFrame
+@@ -103,19 +104,36 @@ public class JSON(
+      *  ]
+      * ```
+      *
+-     * [ARRAY_AND_VALUE_COLUMNS] (default) will create a [DataFrame] looking like (including `null` and `[]` values):
++     * [ARRAY_AND_VALUE_COLUMNS] (default) will create a [DataFrame] looking like (including `null` values):
+      * ```
+-     * ⌌----------------------------------------------⌍
+-     * |  | a:{b:Int?, value:String?, array:List<Int>}|
+-     * |--|-------------------------------------------|
+-     * | 0|         { b:null, value:"text", array:[] }|
+-     * | 1|              { b:2, value:null, array:[] }|
+-     * | 2|    { b:null, value:null, array:[6, 7, 8] }|
+-     * ⌎----------------------------------------------⌏
++     * ⌌-----------------------------------------------⌍
++     * |  | a:{b:Int?, value:String?, array:List<Int>?}|
++     * |--|--------------------------------------------|
++     * | 0|        { b:null, value:"text", array:null }|
++     * | 1|             { b:2, value:null, array:null }|
++     * | 2|     { b:null, value:null, array:[6, 7, 8] }|
++     * ⌎-----------------------------------------------⌏
+      * ```
+      * So, for the type clashing argument it will create a [ColumnGroup] with the properties `value`, `array`,
+      * and the unwrapped properties of the objects the property can be.
+      *
++     * Each of these columns only holds a value for the records that actually have that shape;
++     * for all other records it holds `null`, which makes all columns nullable:
++     *
++     * - `value` holds the JSON primitive, or `null` if the record is not a primitive.
++     * - `array` holds the JSON array as a [List], or `null` if the record is not an array
++     *   (note that this is different from an empty JSON array `[]`, which is read as an empty list).
++     *   When the arrays contain objects, `array` becomes a [FrameColumn] instead, in which a record
++     *   without an array is an empty [DataFrame], as frame columns cannot hold `null`.
++     * - the unwrapped object properties hold `null` if the record is not an object,
++     *   or if the object does not have that property.
++     *
++     * A JSON `null` record, as well as a missing property, is `null` in all these columns.
++     *
++     * Note that a type clash is not the only source of `value`/`array` columns; at the top level they're created
++     * for any JSON element that isn't an object.
++     * For more information: {@include [DocumentationUrls.JsonValueAndArrayColumns]}
++     *
+      * [ANY_COLUMNS] will create a [DataFrame] looking like:
+      * ```
+      * ⌌-------------⌍
+@@ -473,6 +491,40 @@ public fun DataRow.Companion.readJsonStr(
+         unifyNumbers = unifyNumbers,
+     ).single()
+ 
++/**
++ * Converts this [DataFrame] to a JSON array; each row becomes an element of that array.
++ *
++ * By default, a row is written as a JSON object: a [ColumnGroup] becomes a nested object,
++ * a [FrameColumn] becomes a nested array of objects, and a [List] value becomes a JSON array.
++ *
++ * There's one exception, so that a [DataFrame] read from JSON with a top-level type clash can be written back
++ * to its original form (see [TypeClashTactic]). Such a clash puts the elements that aren't objects into columns
++ * named "value" and "array", beside the objects' own properties.
++ * When one of the top-level columns is detected as such a "value" or "array" column — it's named "value" or
++ * "array" and only holds a value in rows where every other column holds none — a row is written as the record
++ * it was read from:
++ * - the value of the "value" column, if the row has one;
++ * - otherwise the array of the "array" column, if the row has one;
++ * - otherwise an object of the remaining columns, if any of them holds a value;
++ * - otherwise `null`.
++ *
++ * Only a *top-level* clash is restored like this:
++ * - A clash inside a [ColumnGroup] isn't: the group is written as an object, so its "value" and "array" columns
++ *   show up as ordinary properties.
++ * - A single-column [DataFrame] isn't either, since a lone "value"/"array" column is indistinguishable from one
++ *   the user named that way. So a JSON array of non-objects, which is read into just a "value" or "array" column,
++ *   doesn't round-trip: `[1,2,3]` is written back as `[{"value":1},{"value":2},{"value":3}]`.
++ *
++ * For more information: {@include [DocumentationUrls.JsonValueAndArrayColumns]}
++ *
++ * Note too that some JSON records are read into the exact same [DataFrame], so writing it back can only produce
++ * one of them: a row without any values is written as `null`, so `[1,{"label":"record"},{"label":null}]` becomes
++ * `[1,{"label":"record"},null]`; and an empty array of objects is read as an empty nested [DataFrame], just like
++ * no array at all, so `[{"label":"record"},[{"a":1}],[]]` becomes `[{"label":"record"},[{"a":1}],null]`.
++ *
++ * @param prettyPrint Whether to format the output with indentation and line breaks. `false` by default.
++ * @return This [DataFrame] as a JSON string.
++ */
+ public fun AnyFrame.toJson(prettyPrint: Boolean = false): String {
+     val json = Json {
+         this.prettyPrint = prettyPrint
+diff --git a/dataframe-openapi/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/convertDataRowsWithOpenApi.kt b/dataframe-openapi/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/convertDataRowsWithOpenApi.kt
+index d4bac2d..bed48f4 100644
+--- a/dataframe-openapi/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/convertDataRowsWithOpenApi.kt
++++ b/dataframe-openapi/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/convertDataRowsWithOpenApi.kt
+@@ -7,6 +7,7 @@ import org.jetbrains.kotlinx.dataframe.api.convert
+ import org.jetbrains.kotlinx.dataframe.api.convertTo
+ import org.jetbrains.kotlinx.dataframe.api.with
+ import kotlin.reflect.KType
++import kotlin.reflect.full.withNullability
+ import kotlin.reflect.jvm.jvmErasure
+ import kotlin.reflect.typeOf
+ 
+@@ -33,6 +34,17 @@ public fun ConvertSchemaDsl<*>.convertDataRowsWithOpenApi() {
+             it
+         }
+     }
++
++    // A missing or `null` json array is read as `null`, so read it as an empty list
++    // when the schema requires the list to be non-nullable.
++    convertIf({ fromType, toSchema ->
++        fromType.isMarkedNullable &&
++            !toSchema.type.isMarkedNullable &&
++            fromType.jvmErasure == List::class &&
++            fromType.withNullability(false) == toSchema.type
++    }) {
++        it ?: emptyList<Any?>()
++    }
+ }
+ 
+ /**
+diff --git a/docs/StardustDocs/resources/api/read/readJsonArrayColumn.html b/docs/StardustDocs/resources/api/read/readJsonArrayColumn.html
+new file mode 100644
+index 0000000..6b7302f
+--- /dev/null
++++ b/docs/StardustDocs/resources/api/read/readJsonArrayColumn.html
+@@ -0,0 +1,510 @@
++<html>
++<head>
++<style type="text/css">
++:root {
++    --background: #fff;
++    --background-odd: #f5f5f5;
++    --background-hover: #d9edfd;
++    --header-text-color: #474747;
++    --text-color: #848484;
++    --text-color-dark: #000;
++    --text-color-medium: #737373;
++    --text-color-pale: #b3b3b3;
++    --inner-border-color: #aaa;
++    --bold-border-color: #000;
++    --link-color: #296eaa;
++    --link-color-pale: #296eaa;
++    --link-hover: #1a466c;
++}
++
++:root[theme="dark"], :root [data-jp-theme-light="false"], .dataframe_dark{
++    --background: #303030;
++    --background-odd: #3c3c3c;
++    --background-hover: #464646;
++    --header-text-color: #dddddd;
++    --text-color: #b3b3b3;
++    --text-color-dark: #dddddd;
++    --text-color-medium: #b2b2b2;
++    --text-color-pale: #737373;
++    --inner-border-color: #707070;
++    --bold-border-color: #777777;
++    --link-color: #008dc0;
++    --link-color-pale: #97e1fb;
++    --link-hover: #00688e;
++}
++
++p.dataframe_description {
++    color: var(--text-color-dark);
++}
++
++table.dataframe {
++    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
++    font-size: 12px;
++    background-color: var(--background);
++    color: var(--text-color-dark);
++    border: none;
++    border-collapse: collapse;
++}
++
++table.dataframe th, td {
++    padding: 6px;
++    border: 1px solid transparent;
++    text-align: left;
++}
++
++table.dataframe th {
++    background-color: var(--background);
++    color: var(--header-text-color);
++}
++
++table.dataframe td {
++    vertical-align: top;
++    white-space: nowrap;
++}
++
++table.dataframe th.bottomBorder {
++    border-bottom-color: var(--bold-border-color);
++}
++
++table.dataframe tbody > tr:nth-child(odd) {
++    background: var(--background-odd);
++}
++
++table.dataframe tbody > tr:nth-child(even) {
++    background: var(--background);
++}
++
++table.dataframe tbody > tr:hover {
++    background: var(--background-hover);
++}
++
++table.dataframe a {
++    cursor: pointer;
++    color: var(--link-color);
++    text-decoration: none;
++}
++
++table.dataframe tr:hover > td a {
++    color: var(--link-color-pale);
++}
++
++table.dataframe a:hover {
++    color: var(--link-hover);
++    text-decoration: underline;
++}
++
++table.dataframe img {
++    max-width: fit-content;
++}
++
++table.dataframe th.complex {
++    background-color: var(--background);
++    border: 1px solid var(--background);
++}
++
++table.dataframe .leftBorder {
++    border-left-color: var(--inner-border-color);
++}
++
++table.dataframe .rightBorder {
++    border-right-color: var(--inner-border-color);
++}
++
++table.dataframe .rightAlign {
++    text-align: right;
++}
++
++table.dataframe .expanderSvg {
++    width: 8px;
++    height: 8px;
++    margin-right: 3px;
++}
++
++table.dataframe .expander {
++    display: flex;
++    align-items: center;
++}
++
++/* formatting */
++
++table.dataframe .null {
++    color: var(--text-color-pale);
++}
++
++table.dataframe .structural {
++    color: var(--text-color-medium);
++    font-weight: bold;
++}
++
++table.dataframe .dataFrameCaption {
++    font-weight: bold;
++}
++
++table.dataframe .numbers {
++    color: var(--text-color-dark);
++}
++
++table.dataframe td:hover .formatted .structural, .null {
++    color: var(--text-color-dark);
++}
++
++table.dataframe tr:hover .formatted .structural, .null {
++    color: var(--text-color-dark);
++}
++
++
++body {
++    font-family: "JetBrains Mono",SFMono-Regular,Consolas,"Liberation Mono",Menlo,Courier,monospace;
++}       
++
++:root {
++    color: #19191C;
++    background-color: #fff;
++}
++
++:root[theme="dark"] {
++    background-color: #19191C;
++    color: #FFFFFFCC
++}
++
++details details {
++    margin-left: 20px; 
++}
++
++summary {
++    padding: 6px;
++}
++</style>
++</head>
++<body>
++<table class="dataframe" id="df_0"></table>
++
++<p class="dataframe_description"></p>
++</body>
++<script>
++(function () {
++    window.DataFrame = window.DataFrame || new (function () {
++        this.addTable = function (df) {
++            let cols = df.cols;
++            for (let i = 0; i < cols.length; i++) {
++                for (let c of cols[i].children) {
++                    cols[c].parent = i;
++                }
++            }
++            df.nrow = 0
++            for (let i = 0; i < df.cols.length; i++) {
++                if (df.cols[i].values.length > df.nrow) df.nrow = df.cols[i].values.length
++            }
++            if (df.id === df.rootId) {
++                df.expandedFrames = new Set()
++                df.childFrames = {}
++                const table = this.getTableElement(df.id)
++                table.df = df
++                for (let i = 0; i < df.cols.length; i++) {
++                    let col = df.cols[i]
++                    if (col.parent === undefined && col.children.length > 0) col.expanded = true
++                }
++            } else {
++                const rootDf = this.getTableData(df.rootId)
++                rootDf.childFrames[df.id] = df
++            }
++        }
++
++        this.computeRenderData = function (df) {
++            let result = []
++            let pos = 0
++            for (let col = 0; col < df.cols.length; col++) {
++                if (df.cols[col].parent === undefined)
++                    pos += this.computeRenderDataRec(df.cols, col, pos, 0, result, false, false)
++            }
++            for (let i = 0; i < result.length; i++) {
++                let row = result[i]
++                for (let j = 0; j < row.length; j++) {
++                    let cell = row[j]
++                    if (j === 0)
++                        cell.leftBd = false
++                    if (j < row.length - 1) {
++                        let nextData = row[j + 1]
++                        if (nextData.leftBd) cell.rightBd = true
++                        else if (cell.rightBd) nextData.leftBd = true
++                    } else cell.rightBd = false
++                }
++            }
++            return result
++        }
++
++        this.computeRenderDataRec = function (cols, colId, pos, depth, result, leftBorder, rightBorder) {
++            if (result.length === depth) {
++                const array = [];
++                if (pos > 0) {
++                    let j = 0
++                    for (let i = 0; j < pos; i++) {
++                        let c = result[depth - 1][i]
++                        j += c.span
++                        let copy = Object.assign({empty: true}, c)
++                        array.push(copy)
++                    }
++                }
++                result.push(array)
++            }
++            const col = cols[colId];
++            let size = 0;
++            if (col.expanded) {
++                let childPos = pos
++                for (let i = 0; i < col.children.length; i++) {
++                    let child = col.children[i]
++                    let childLeft = i === 0 && (col.children.length > 1 || leftBorder)
++                    let childRight = i === col.children.length - 1 && (col.children.length > 1 || rightBorder)
++                    let childSize = this.computeRenderDataRec(cols, child, childPos, depth + 1, result, childLeft, childRight)
++                    childPos += childSize
++                    size += childSize
++                }
++            } else {
++                for (let i = depth + 1; i < result.length; i++)
++                    result[i].push({id: colId, span: 1, leftBd: leftBorder, rightBd: rightBorder, empty: true})
++                size = 1
++            }
++            let left = leftBorder
++            let right = rightBorder
++            if (size > 1) {
++                left = true
++                right = true
++            }
++            result[depth].push({id: colId, span: size, leftBd: left, rightBd: right})
++            return size
++        }
++
++        this.getTableElement = function (id) {
++            return document.getElementById("df_" + id)
++        }
++
++        this.getTableData = function (id) {
++            return this.getTableElement(id).df
++        }
++
++        this.createExpander = function (isExpanded) {
++            const svgNs = "http://www.w3.org/2000/svg"
++            let svg = document.createElementNS(svgNs, "svg")
++            svg.classList.add("expanderSvg")
++            let path = document.createElementNS(svgNs, "path")
++            if (isExpanded) {
++                svg.setAttribute("viewBox", "0 -2 8 8")
++                path.setAttribute("d", "M1 0 l-1 1 4 4 4 -4 -1 -1 -3 3Z")
++            } else {
++                svg.setAttribute("viewBox", "-2 0 8 8")
++                path.setAttribute("d", "M1 0 l-1 1 3 3 -3 3 1 1 4 -4Z")
++            }
++            path.setAttribute("fill", "currentColor")
++            svg.appendChild(path)
++            return svg
++        }
++
++        this.renderTable = function (id) {
++
++            let table = this.getTableElement(id)
++
++            if (table === null) return
++
++            table.innerHTML = ""
++
++            let df = table.df
++            let rootDf = df.rootId === df.id ? df : this.getTableData(df.rootId)
++
++            // header
++            let header = document.createElement("thead")
++            table.appendChild(header)
++
++            let renderData = this.computeRenderData(df)
++            for (let j = 0; j < renderData.length; j++) {
++                let rowData = renderData[j]
++                let tr = document.createElement("tr");
++                let isLastRow = j === renderData.length - 1
++                header.appendChild(tr);
++                for (let i = 0; i < rowData.length; i++) {
++                    let cell = rowData[i]
++                    let th = document.createElement("th");
++                    th.setAttribute("colspan", cell.span)
++                    let colId = cell.id
++                    let col = df.cols[colId];
++                    if (!cell.empty) {
++                        if (col.children.length === 0) {
++                            th.innerHTML = col.name
++                        } else {
++                            let link = document.createElement("a")
++                            link.className = "expander"
++                            let that = this
++                            link.onclick = function () {
++                                col.expanded = !col.expanded
++                                that.renderTable(id)
++                            }
++                            link.appendChild(this.createExpander(col.expanded))
++                            link.innerHTML += col.name
++                            th.appendChild(link)
++                        }
++                    }
++                    let classes = (cell.leftBd ? " leftBorder" : "") + (cell.rightBd ? " rightBorder" : "")
++                    if (col.rightAlign)
++                        classes += " rightAlign"
++                    if (isLastRow)
++                        classes += " bottomBorder"
++                    if (classes.length > 0)
++                        th.setAttribute("class", classes)
++                    tr.appendChild(th)
++                }
++            }
++
++            // body
++            let body = document.createElement("tbody")
++            table.appendChild(body)
++
++            let columns = renderData.pop()
++            for (let row = 0; row < df.nrow; row++) {
++                let tr = document.createElement("tr");
++                body.appendChild(tr)
++                for (let i = 0; i < columns.length; i++) {
++                    let cell = columns[i]
++                    let td = document.createElement("td");
++                    let colId = cell.id
++                    let col = df.cols[colId]
++                    let classes = (cell.leftBd ? " leftBorder" : "") + (cell.rightBd ? " rightBorder" : "")
++                    if (col.rightAlign)
++                        classes += " rightAlign"
++                    if (classes.length > 0)
++                        td.setAttribute("class", classes)
++                    tr.appendChild(td)
++                    let value = col.values[row]
++                    if (value.frameId !== undefined) {
++                        let frameId = value.frameId
++                        let expanded = rootDf.expandedFrames.has(frameId)
++                        let link = document.createElement("a")
++                        link.className = "expander"
++                        let that = this
++                        link.onclick = function () {
++                            if (rootDf.expandedFrames.has(frameId))
++                                rootDf.expandedFrames.delete(frameId)
++                            else rootDf.expandedFrames.add(frameId)
++                            that.renderTable(id)
++                        }
++                        link.appendChild(this.createExpander(expanded))
++                        link.innerHTML += value.value
++                        if (expanded) {
++                            td.appendChild(link)
++                            td.appendChild(document.createElement("p"))
++                            const childTable = document.createElement("table")
++                            childTable.className = "dataframe"
++                            childTable.id = "df_" + frameId
++                            let childDf = rootDf.childFrames[frameId]
++                            childTable.df = childDf
++                            td.appendChild(childTable)
++                            this.renderTable(frameId)
++                            if (childDf.nrow !== childDf.totalRows) {
++                                const footer = document.createElement("p")
++                                footer.innerText = `... showing only top ${childDf.nrow} of ${childDf.totalRows} rows`
++                                td.appendChild(footer)
++                            }
++                        } else {
++                            td.appendChild(link)
++                        }
++                    } else if (value.style !== undefined) {
++                        td.innerHTML = value.value
++                        td.setAttribute("style", value.style)
++                    } else td.innerHTML = value
++                    this.nodeScriptReplace(td)
++                }
++            }
++        }
++
++        this.nodeScriptReplace = function (node) {
++            if (this.nodeScriptIs(node) === true) {
++                node.parentNode.replaceChild(this.nodeScriptClone(node), node);
++            } else {
++                let i = -1, children = node.childNodes;
++                while (++i < children.length) {
++                    this.nodeScriptReplace(children[i]);
++                }
++            }
++
++            return node;
++        }
++
++        this.nodeScriptClone = function (node) {
++            let script = document.createElement("script");
++            script.text = node.innerHTML;
++
++            let i = -1, attrs = node.attributes, attr;
++            while (++i < attrs.length) {
++                script.setAttribute((attr = attrs[i]).name, attr.value);
++            }
++            return script;
++        }
++
++        this.nodeScriptIs = function (node) {
++            return node.tagName === 'SCRIPT';
++        }
++    })()
++
++    window.call_DataFrame = function (f) {
++        return f();
++    };
++
++    let funQueue = window["kotlinQueues"] && window["kotlinQueues"]["DataFrame"];
++    if (funQueue) {
++        funQueue.forEach(function (f) {
++            f();
++        });
++        funQueue = [];
++    }
++})()
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"array: List<Int>\">array</span>", children: [], rightAlign: false, values: ["<span class=\"formatted\" title=\"1\"><span class=\"structural\">[</span><span class=\"numbers\">1</span><span class=\"structural\">]</span></span>","<span class=\"formatted\" title=\"2\"><span class=\"structural\">[</span><span class=\"numbers\">2</span><span class=\"structural\">]</span></span>"] }, 
++], id: 0, rootId: 0, totalRows: 2 } ) });
++/*-->*/
++
++call_DataFrame(function() { DataFrame.renderTable(0) });
++
++function sendHeight() {
++    const table = document.querySelector('table.dataframe');
++    if (!table) return;
++
++    let height = 0;
++    
++    const thead = table.querySelector('thead');
++    if (thead) height += thead.offsetHeight;
++    
++    const rows = table.querySelectorAll(':scope > tbody > tr');
++    rows.forEach(row => {
++        height += row.offsetHeight;
++    });
++    
++    height += getVerticalMargins(table) + 10;
++
++    window.parent.postMessage({ type: 'iframeHeight', height: Math.ceil(height) }, '*');
++}
++
++function getVerticalMargins(element) {
++    const style = getComputedStyle(element);
++    return parseFloat(style.marginTop) + parseFloat(style.marginBottom);
++}
++
++function repeatHeightCalculation(maxRetries = 10, interval = 100) {
++    let retries = 0;
++    const intervalId = setInterval(() => {
++        sendHeight();
++        retries++;
++        if (retries >= maxRetries) clearInterval(intervalId);
++    }, interval);
++}
++
++window.addEventListener('load', repeatHeightCalculation);
++
++const observer = new MutationObserver(() => repeatHeightCalculation(5, 50));
++observer.observe(document.querySelector('.dataframe'), {
++    childList: true,
++    subtree: true,
++    characterData: true,
++});
++
++
++</script>
++</html>
+diff --git a/docs/StardustDocs/resources/api/read/readJsonArrayOfObjectsColumn.html b/docs/StardustDocs/resources/api/read/readJsonArrayOfObjectsColumn.html
+new file mode 100644
+index 0000000..9ce22aa
+--- /dev/null
++++ b/docs/StardustDocs/resources/api/read/readJsonArrayOfObjectsColumn.html
+@@ -0,0 +1,520 @@
++<html>
++<head>
++<style type="text/css">
++:root {
++    --background: #fff;
++    --background-odd: #f5f5f5;
++    --background-hover: #d9edfd;
++    --header-text-color: #474747;
++    --text-color: #848484;
++    --text-color-dark: #000;
++    --text-color-medium: #737373;
++    --text-color-pale: #b3b3b3;
++    --inner-border-color: #aaa;
++    --bold-border-color: #000;
++    --link-color: #296eaa;
++    --link-color-pale: #296eaa;
++    --link-hover: #1a466c;
++}
++
++:root[theme="dark"], :root [data-jp-theme-light="false"], .dataframe_dark{
++    --background: #303030;
++    --background-odd: #3c3c3c;
++    --background-hover: #464646;
++    --header-text-color: #dddddd;
++    --text-color: #b3b3b3;
++    --text-color-dark: #dddddd;
++    --text-color-medium: #b2b2b2;
++    --text-color-pale: #737373;
++    --inner-border-color: #707070;
++    --bold-border-color: #777777;
++    --link-color: #008dc0;
++    --link-color-pale: #97e1fb;
++    --link-hover: #00688e;
++}
++
++p.dataframe_description {
++    color: var(--text-color-dark);
++}
++
++table.dataframe {
++    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
++    font-size: 12px;
++    background-color: var(--background);
++    color: var(--text-color-dark);
++    border: none;
++    border-collapse: collapse;
++}
++
++table.dataframe th, td {
++    padding: 6px;
++    border: 1px solid transparent;
++    text-align: left;
++}
++
++table.dataframe th {
++    background-color: var(--background);
++    color: var(--header-text-color);
++}
++
++table.dataframe td {
++    vertical-align: top;
++    white-space: nowrap;
++}
++
++table.dataframe th.bottomBorder {
++    border-bottom-color: var(--bold-border-color);
++}
++
++table.dataframe tbody > tr:nth-child(odd) {
++    background: var(--background-odd);
++}
++
++table.dataframe tbody > tr:nth-child(even) {
++    background: var(--background);
++}
++
++table.dataframe tbody > tr:hover {
++    background: var(--background-hover);
++}
++
++table.dataframe a {
++    cursor: pointer;
++    color: var(--link-color);
++    text-decoration: none;
++}
++
++table.dataframe tr:hover > td a {
++    color: var(--link-color-pale);
++}
++
++table.dataframe a:hover {
++    color: var(--link-hover);
++    text-decoration: underline;
++}
++
++table.dataframe img {
++    max-width: fit-content;
++}
++
++table.dataframe th.complex {
++    background-color: var(--background);
++    border: 1px solid var(--background);
++}
++
++table.dataframe .leftBorder {
++    border-left-color: var(--inner-border-color);
++}
++
++table.dataframe .rightBorder {
++    border-right-color: var(--inner-border-color);
++}
++
++table.dataframe .rightAlign {
++    text-align: right;
++}
++
++table.dataframe .expanderSvg {
++    width: 8px;
++    height: 8px;
++    margin-right: 3px;
++}
++
++table.dataframe .expander {
++    display: flex;
++    align-items: center;
++}
++
++/* formatting */
++
++table.dataframe .null {
++    color: var(--text-color-pale);
++}
++
++table.dataframe .structural {
++    color: var(--text-color-medium);
++    font-weight: bold;
++}
++
++table.dataframe .dataFrameCaption {
++    font-weight: bold;
++}
++
++table.dataframe .numbers {
++    color: var(--text-color-dark);
++}
++
++table.dataframe td:hover .formatted .structural, .null {
++    color: var(--text-color-dark);
++}
++
++table.dataframe tr:hover .formatted .structural, .null {
++    color: var(--text-color-dark);
++}
++
++
++body {
++    font-family: "JetBrains Mono",SFMono-Regular,Consolas,"Liberation Mono",Menlo,Courier,monospace;
++}       
++
++:root {
++    color: #19191C;
++    background-color: #fff;
++}
++
++:root[theme="dark"] {
++    background-color: #19191C;
++    color: #FFFFFFCC
++}
++
++details details {
++    margin-left: 20px; 
++}
++
++summary {
++    padding: 6px;
++}
++</style>
++</head>
++<body>
++<table class="dataframe" id="df_0"></table>
++
++<p class="dataframe_description"></p>
++</body>
++<script>
++(function () {
++    window.DataFrame = window.DataFrame || new (function () {
++        this.addTable = function (df) {
++            let cols = df.cols;
++            for (let i = 0; i < cols.length; i++) {
++                for (let c of cols[i].children) {
++                    cols[c].parent = i;
++                }
++            }
++            df.nrow = 0
++            for (let i = 0; i < df.cols.length; i++) {
++                if (df.cols[i].values.length > df.nrow) df.nrow = df.cols[i].values.length
++            }
++            if (df.id === df.rootId) {
++                df.expandedFrames = new Set()
++                df.childFrames = {}
++                const table = this.getTableElement(df.id)
++                table.df = df
++                for (let i = 0; i < df.cols.length; i++) {
++                    let col = df.cols[i]
++                    if (col.parent === undefined && col.children.length > 0) col.expanded = true
++                }
++            } else {
++                const rootDf = this.getTableData(df.rootId)
++                rootDf.childFrames[df.id] = df
++            }
++        }
++
++        this.computeRenderData = function (df) {
++            let result = []
++            let pos = 0
++            for (let col = 0; col < df.cols.length; col++) {
++                if (df.cols[col].parent === undefined)
++                    pos += this.computeRenderDataRec(df.cols, col, pos, 0, result, false, false)
++            }
++            for (let i = 0; i < result.length; i++) {
++                let row = result[i]
++                for (let j = 0; j < row.length; j++) {
++                    let cell = row[j]
++                    if (j === 0)
++                        cell.leftBd = false
++                    if (j < row.length - 1) {
++                        let nextData = row[j + 1]
++                        if (nextData.leftBd) cell.rightBd = true
++                        else if (cell.rightBd) nextData.leftBd = true
++                    } else cell.rightBd = false
++                }
++            }
++            return result
++        }
++
++        this.computeRenderDataRec = function (cols, colId, pos, depth, result, leftBorder, rightBorder) {
++            if (result.length === depth) {
++                const array = [];
++                if (pos > 0) {
++                    let j = 0
++                    for (let i = 0; j < pos; i++) {
++                        let c = result[depth - 1][i]
++                        j += c.span
++                        let copy = Object.assign({empty: true}, c)
++                        array.push(copy)
++                    }
++                }
++                result.push(array)
++            }
++            const col = cols[colId];
++            let size = 0;
++            if (col.expanded) {
++                let childPos = pos
++                for (let i = 0; i < col.children.length; i++) {
++                    let child = col.children[i]
++                    let childLeft = i === 0 && (col.children.length > 1 || leftBorder)
++                    let childRight = i === col.children.length - 1 && (col.children.length > 1 || rightBorder)
++                    let childSize = this.computeRenderDataRec(cols, child, childPos, depth + 1, result, childLeft, childRight)
++                    childPos += childSize
++                    size += childSize
++                }
++            } else {
++                for (let i = depth + 1; i < result.length; i++)
++                    result[i].push({id: colId, span: 1, leftBd: leftBorder, rightBd: rightBorder, empty: true})
++                size = 1
++            }
++            let left = leftBorder
++            let right = rightBorder
++            if (size > 1) {
++                left = true
++                right = true
++            }
++            result[depth].push({id: colId, span: size, leftBd: left, rightBd: right})
++            return size
++        }
++
++        this.getTableElement = function (id) {
++            return document.getElementById("df_" + id)
++        }
++
++        this.getTableData = function (id) {
++            return this.getTableElement(id).df
++        }
++
++        this.createExpander = function (isExpanded) {
++            const svgNs = "http://www.w3.org/2000/svg"
++            let svg = document.createElementNS(svgNs, "svg")
++            svg.classList.add("expanderSvg")
++            let path = document.createElementNS(svgNs, "path")
++            if (isExpanded) {
++                svg.setAttribute("viewBox", "0 -2 8 8")
++                path.setAttribute("d", "M1 0 l-1 1 4 4 4 -4 -1 -1 -3 3Z")
++            } else {
++                svg.setAttribute("viewBox", "-2 0 8 8")
++                path.setAttribute("d", "M1 0 l-1 1 3 3 -3 3 1 1 4 -4Z")
++            }
++            path.setAttribute("fill", "currentColor")
++            svg.appendChild(path)
++            return svg
++        }
++
++        this.renderTable = function (id) {
++
++            let table = this.getTableElement(id)
++
++            if (table === null) return
++
++            table.innerHTML = ""
++
++            let df = table.df
++            let rootDf = df.rootId === df.id ? df : this.getTableData(df.rootId)
++
++            // header
++            let header = document.createElement("thead")
++            table.appendChild(header)
++
++            let renderData = this.computeRenderData(df)
++            for (let j = 0; j < renderData.length; j++) {
++                let rowData = renderData[j]
++                let tr = document.createElement("tr");
++                let isLastRow = j === renderData.length - 1
++                header.appendChild(tr);
++                for (let i = 0; i < rowData.length; i++) {
++                    let cell = rowData[i]
++                    let th = document.createElement("th");
++                    th.setAttribute("colspan", cell.span)
++                    let colId = cell.id
++                    let col = df.cols[colId];
++                    if (!cell.empty) {
++                        if (col.children.length === 0) {
++                            th.innerHTML = col.name
++                        } else {
++                            let link = document.createElement("a")
++                            link.className = "expander"
++                            let that = this
++                            link.onclick = function () {
++                                col.expanded = !col.expanded
++                                that.renderTable(id)
++                            }
++                            link.appendChild(this.createExpander(col.expanded))
++                            link.innerHTML += col.name
++                            th.appendChild(link)
++                        }
++                    }
++                    let classes = (cell.leftBd ? " leftBorder" : "") + (cell.rightBd ? " rightBorder" : "")
++                    if (col.rightAlign)
++                        classes += " rightAlign"
++                    if (isLastRow)
++                        classes += " bottomBorder"
++                    if (classes.length > 0)
++                        th.setAttribute("class", classes)
++                    tr.appendChild(th)
++                }
++            }
++
++            // body
++            let body = document.createElement("tbody")
++            table.appendChild(body)
++
++            let columns = renderData.pop()
++            for (let row = 0; row < df.nrow; row++) {
++                let tr = document.createElement("tr");
++                body.appendChild(tr)
++                for (let i = 0; i < columns.length; i++) {
++                    let cell = columns[i]
++                    let td = document.createElement("td");
++                    let colId = cell.id
++                    let col = df.cols[colId]
++                    let classes = (cell.leftBd ? " leftBorder" : "") + (cell.rightBd ? " rightBorder" : "")
++                    if (col.rightAlign)
++                        classes += " rightAlign"
++                    if (classes.length > 0)
++                        td.setAttribute("class", classes)
++                    tr.appendChild(td)
++                    let value = col.values[row]
++                    if (value.frameId !== undefined) {
++                        let frameId = value.frameId
++                        let expanded = rootDf.expandedFrames.has(frameId)
++                        let link = document.createElement("a")
++                        link.className = "expander"
++                        let that = this
++                        link.onclick = function () {
++                            if (rootDf.expandedFrames.has(frameId))
++                                rootDf.expandedFrames.delete(frameId)
++                            else rootDf.expandedFrames.add(frameId)
++                            that.renderTable(id)
++                        }
++                        link.appendChild(this.createExpander(expanded))
++                        link.innerHTML += value.value
++                        if (expanded) {
++                            td.appendChild(link)
++                            td.appendChild(document.createElement("p"))
++                            const childTable = document.createElement("table")
++                            childTable.className = "dataframe"
++                            childTable.id = "df_" + frameId
++                            let childDf = rootDf.childFrames[frameId]
++                            childTable.df = childDf
++                            td.appendChild(childTable)
++                            this.renderTable(frameId)
++                            if (childDf.nrow !== childDf.totalRows) {
++                                const footer = document.createElement("p")
++                                footer.innerText = `... showing only top ${childDf.nrow} of ${childDf.totalRows} rows`
++                                td.appendChild(footer)
++                            }
++                        } else {
++                            td.appendChild(link)
++                        }
++                    } else if (value.style !== undefined) {
++                        td.innerHTML = value.value
++                        td.setAttribute("style", value.style)
++                    } else td.innerHTML = value
++                    this.nodeScriptReplace(td)
++                }
++            }
++        }
++
++        this.nodeScriptReplace = function (node) {
++            if (this.nodeScriptIs(node) === true) {
++                node.parentNode.replaceChild(this.nodeScriptClone(node), node);
++            } else {
++                let i = -1, children = node.childNodes;
++                while (++i < children.length) {
++                    this.nodeScriptReplace(children[i]);
++                }
++            }
++
++            return node;
++        }
++
++        this.nodeScriptClone = function (node) {
++            let script = document.createElement("script");
++            script.text = node.innerHTML;
++
++            let i = -1, attrs = node.attributes, attr;
++            while (++i < attrs.length) {
++                script.setAttribute((attr = attrs[i]).name, attr.value);
++            }
++            return script;
++        }
++
++        this.nodeScriptIs = function (node) {
++            return node.tagName === 'SCRIPT';
++        }
++    })()
++
++    window.call_DataFrame = function (f) {
++        return f();
++    };
++
++    let funQueue = window["kotlinQueues"] && window["kotlinQueues"]["DataFrame"];
++    if (funQueue) {
++        funQueue.forEach(function (f) {
++            f();
++        });
++        funQueue = [];
++    }
++})()
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"array: DataFrame<*>\">array</span>", children: [], rightAlign: false, values: [{ frameId: 1, value: "<b>DataFrame 1 x 1</b>" },{ frameId: 2, value: "<b>DataFrame 1 x 1</b>" }] }, 
++], id: 0, rootId: 0, totalRows: 2 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"a: Int\">a</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">1</span></span>"] }, 
++], id: 1, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"a: Int\">a</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">2</span></span>"] }, 
++], id: 2, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++call_DataFrame(function() { DataFrame.renderTable(0) });
++
++function sendHeight() {
++    const table = document.querySelector('table.dataframe');
++    if (!table) return;
++
++    let height = 0;
++    
++    const thead = table.querySelector('thead');
++    if (thead) height += thead.offsetHeight;
++    
++    const rows = table.querySelectorAll(':scope > tbody > tr');
++    rows.forEach(row => {
++        height += row.offsetHeight;
++    });
++    
++    height += getVerticalMargins(table) + 10;
++
++    window.parent.postMessage({ type: 'iframeHeight', height: Math.ceil(height) }, '*');
++}
++
++function getVerticalMargins(element) {
++    const style = getComputedStyle(element);
++    return parseFloat(style.marginTop) + parseFloat(style.marginBottom);
++}
++
++function repeatHeightCalculation(maxRetries = 10, interval = 100) {
++    let retries = 0;
++    const intervalId = setInterval(() => {
++        sendHeight();
++        retries++;
++        if (retries >= maxRetries) clearInterval(intervalId);
++    }, interval);
++}
++
++window.addEventListener('load', repeatHeightCalculation);
++
++const observer = new MutationObserver(() => repeatHeightCalculation(5, 50));
++observer.observe(document.querySelector('.dataframe'), {
++    childList: true,
++    subtree: true,
++    characterData: true,
++});
++
++
++</script>
++</html>
+diff --git a/docs/StardustDocs/resources/api/read/readJsonTopLevelTypeClash.html b/docs/StardustDocs/resources/api/read/readJsonTopLevelTypeClash.html
+new file mode 100644
+index 0000000..a2ecfaa
+--- /dev/null
++++ b/docs/StardustDocs/resources/api/read/readJsonTopLevelTypeClash.html
+@@ -0,0 +1,511 @@
++<html>
++<head>
++<style type="text/css">
++:root {
++    --background: #fff;
++    --background-odd: #f5f5f5;
++    --background-hover: #d9edfd;
++    --header-text-color: #474747;
++    --text-color: #848484;
++    --text-color-dark: #000;
++    --text-color-medium: #737373;
++    --text-color-pale: #b3b3b3;
++    --inner-border-color: #aaa;
++    --bold-border-color: #000;
++    --link-color: #296eaa;
++    --link-color-pale: #296eaa;
++    --link-hover: #1a466c;
++}
++
++:root[theme="dark"], :root [data-jp-theme-light="false"], .dataframe_dark{
++    --background: #303030;
++    --background-odd: #3c3c3c;
++    --background-hover: #464646;
++    --header-text-color: #dddddd;
++    --text-color: #b3b3b3;
++    --text-color-dark: #dddddd;
++    --text-color-medium: #b2b2b2;
++    --text-color-pale: #737373;
++    --inner-border-color: #707070;
++    --bold-border-color: #777777;
++    --link-color: #008dc0;
++    --link-color-pale: #97e1fb;
++    --link-hover: #00688e;
++}
++
++p.dataframe_description {
++    color: var(--text-color-dark);
++}
++
++table.dataframe {
++    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
++    font-size: 12px;
++    background-color: var(--background);
++    color: var(--text-color-dark);
++    border: none;
++    border-collapse: collapse;
++}
++
++table.dataframe th, td {
++    padding: 6px;
++    border: 1px solid transparent;
++    text-align: left;
++}
++
++table.dataframe th {
++    background-color: var(--background);
++    color: var(--header-text-color);
++}
++
++table.dataframe td {
++    vertical-align: top;
++    white-space: nowrap;
++}
++
++table.dataframe th.bottomBorder {
++    border-bottom-color: var(--bold-border-color);
++}
++
++table.dataframe tbody > tr:nth-child(odd) {
++    background: var(--background-odd);
++}
++
++table.dataframe tbody > tr:nth-child(even) {
++    background: var(--background);
++}
++
++table.dataframe tbody > tr:hover {
++    background: var(--background-hover);
++}
++
++table.dataframe a {
++    cursor: pointer;
++    color: var(--link-color);
++    text-decoration: none;
++}
++
++table.dataframe tr:hover > td a {
++    color: var(--link-color-pale);
++}
++
++table.dataframe a:hover {
++    color: var(--link-hover);
++    text-decoration: underline;
++}
++
++table.dataframe img {
++    max-width: fit-content;
++}
++
++table.dataframe th.complex {
++    background-color: var(--background);
++    border: 1px solid var(--background);
++}
++
++table.dataframe .leftBorder {
++    border-left-color: var(--inner-border-color);
++}
++
++table.dataframe .rightBorder {
++    border-right-color: var(--inner-border-color);
++}
++
++table.dataframe .rightAlign {
++    text-align: right;
++}
++
++table.dataframe .expanderSvg {
++    width: 8px;
++    height: 8px;
++    margin-right: 3px;
++}
++
++table.dataframe .expander {
++    display: flex;
++    align-items: center;
++}
++
++/* formatting */
++
++table.dataframe .null {
++    color: var(--text-color-pale);
++}
++
++table.dataframe .structural {
++    color: var(--text-color-medium);
++    font-weight: bold;
++}
++
++table.dataframe .dataFrameCaption {
++    font-weight: bold;
++}
++
++table.dataframe .numbers {
++    color: var(--text-color-dark);
++}
++
++table.dataframe td:hover .formatted .structural, .null {
++    color: var(--text-color-dark);
++}
++
++table.dataframe tr:hover .formatted .structural, .null {
++    color: var(--text-color-dark);
++}
++
++
++body {
++    font-family: "JetBrains Mono",SFMono-Regular,Consolas,"Liberation Mono",Menlo,Courier,monospace;
++}       
++
++:root {
++    color: #19191C;
++    background-color: #fff;
++}
++
++:root[theme="dark"] {
++    background-color: #19191C;
++    color: #FFFFFFCC
++}
++
++details details {
++    margin-left: 20px; 
++}
++
++summary {
++    padding: 6px;
++}
++</style>
++</head>
++<body>
++<table class="dataframe" id="df_0"></table>
++
++<p class="dataframe_description"></p>
++</body>
++<script>
++(function () {
++    window.DataFrame = window.DataFrame || new (function () {
++        this.addTable = function (df) {
++            let cols = df.cols;
++            for (let i = 0; i < cols.length; i++) {
++                for (let c of cols[i].children) {
++                    cols[c].parent = i;
++                }
++            }
++            df.nrow = 0
++            for (let i = 0; i < df.cols.length; i++) {
++                if (df.cols[i].values.length > df.nrow) df.nrow = df.cols[i].values.length
++            }
++            if (df.id === df.rootId) {
++                df.expandedFrames = new Set()
++                df.childFrames = {}
++                const table = this.getTableElement(df.id)
++                table.df = df
++                for (let i = 0; i < df.cols.length; i++) {
++                    let col = df.cols[i]
++                    if (col.parent === undefined && col.children.length > 0) col.expanded = true
++                }
++            } else {
++                const rootDf = this.getTableData(df.rootId)
++                rootDf.childFrames[df.id] = df
++            }
++        }
++
++        this.computeRenderData = function (df) {
++            let result = []
++            let pos = 0
++            for (let col = 0; col < df.cols.length; col++) {
++                if (df.cols[col].parent === undefined)
++                    pos += this.computeRenderDataRec(df.cols, col, pos, 0, result, false, false)
++            }
++            for (let i = 0; i < result.length; i++) {
++                let row = result[i]
++                for (let j = 0; j < row.length; j++) {
++                    let cell = row[j]
++                    if (j === 0)
++                        cell.leftBd = false
++                    if (j < row.length - 1) {
++                        let nextData = row[j + 1]
++                        if (nextData.leftBd) cell.rightBd = true
++                        else if (cell.rightBd) nextData.leftBd = true
++                    } else cell.rightBd = false
++                }
++            }
++            return result
++        }
++
++        this.computeRenderDataRec = function (cols, colId, pos, depth, result, leftBorder, rightBorder) {
++            if (result.length === depth) {
++                const array = [];
++                if (pos > 0) {
++                    let j = 0
++                    for (let i = 0; j < pos; i++) {
++                        let c = result[depth - 1][i]
++                        j += c.span
++                        let copy = Object.assign({empty: true}, c)
++                        array.push(copy)
++                    }
++                }
++                result.push(array)
++            }
++            const col = cols[colId];
++            let size = 0;
++            if (col.expanded) {
++                let childPos = pos
++                for (let i = 0; i < col.children.length; i++) {
++                    let child = col.children[i]
++                    let childLeft = i === 0 && (col.children.length > 1 || leftBorder)
++                    let childRight = i === col.children.length - 1 && (col.children.length > 1 || rightBorder)
++                    let childSize = this.computeRenderDataRec(cols, child, childPos, depth + 1, result, childLeft, childRight)
++                    childPos += childSize
++                    size += childSize
++                }
++            } else {
++                for (let i = depth + 1; i < result.length; i++)
++                    result[i].push({id: colId, span: 1, leftBd: leftBorder, rightBd: rightBorder, empty: true})
++                size = 1
++            }
++            let left = leftBorder
++            let right = rightBorder
++            if (size > 1) {
++                left = true
++                right = true
++            }
++            result[depth].push({id: colId, span: size, leftBd: left, rightBd: right})
++            return size
++        }
++
++        this.getTableElement = function (id) {
++            return document.getElementById("df_" + id)
++        }
++
++        this.getTableData = function (id) {
++            return this.getTableElement(id).df
++        }
++
++        this.createExpander = function (isExpanded) {
++            const svgNs = "http://www.w3.org/2000/svg"
++            let svg = document.createElementNS(svgNs, "svg")
++            svg.classList.add("expanderSvg")
++            let path = document.createElementNS(svgNs, "path")
++            if (isExpanded) {
++                svg.setAttribute("viewBox", "0 -2 8 8")
++                path.setAttribute("d", "M1 0 l-1 1 4 4 4 -4 -1 -1 -3 3Z")
++            } else {
++                svg.setAttribute("viewBox", "-2 0 8 8")
++                path.setAttribute("d", "M1 0 l-1 1 3 3 -3 3 1 1 4 -4Z")
++            }
++            path.setAttribute("fill", "currentColor")
++            svg.appendChild(path)
++            return svg
++        }
++
++        this.renderTable = function (id) {
++
++            let table = this.getTableElement(id)
++
++            if (table === null) return
++
++            table.innerHTML = ""
++
++            let df = table.df
++            let rootDf = df.rootId === df.id ? df : this.getTableData(df.rootId)
++
++            // header
++            let header = document.createElement("thead")
++            table.appendChild(header)
++
++            let renderData = this.computeRenderData(df)
++            for (let j = 0; j < renderData.length; j++) {
++                let rowData = renderData[j]
++                let tr = document.createElement("tr");
++                let isLastRow = j === renderData.length - 1
++                header.appendChild(tr);
++                for (let i = 0; i < rowData.length; i++) {
++                    let cell = rowData[i]
++                    let th = document.createElement("th");
++                    th.setAttribute("colspan", cell.span)
++                    let colId = cell.id
++                    let col = df.cols[colId];
++                    if (!cell.empty) {
++                        if (col.children.length === 0) {
++                            th.innerHTML = col.name
++                        } else {
++                            let link = document.createElement("a")
++                            link.className = "expander"
++                            let that = this
++                            link.onclick = function () {
++                                col.expanded = !col.expanded
++                                that.renderTable(id)
++                            }
++                            link.appendChild(this.createExpander(col.expanded))
++                            link.innerHTML += col.name
++                            th.appendChild(link)
++                        }
++                    }
++                    let classes = (cell.leftBd ? " leftBorder" : "") + (cell.rightBd ? " rightBorder" : "")
++                    if (col.rightAlign)
++                        classes += " rightAlign"
++                    if (isLastRow)
++                        classes += " bottomBorder"
++                    if (classes.length > 0)
++                        th.setAttribute("class", classes)
++                    tr.appendChild(th)
++                }
++            }
++
++            // body
++            let body = document.createElement("tbody")
++            table.appendChild(body)
++
++            let columns = renderData.pop()
++            for (let row = 0; row < df.nrow; row++) {
++                let tr = document.createElement("tr");
++                body.appendChild(tr)
++                for (let i = 0; i < columns.length; i++) {
++                    let cell = columns[i]
++                    let td = document.createElement("td");
++                    let colId = cell.id
++                    let col = df.cols[colId]
++                    let classes = (cell.leftBd ? " leftBorder" : "") + (cell.rightBd ? " rightBorder" : "")
++                    if (col.rightAlign)
++                        classes += " rightAlign"
++                    if (classes.length > 0)
++                        td.setAttribute("class", classes)
++                    tr.appendChild(td)
++                    let value = col.values[row]
++                    if (value.frameId !== undefined) {
++                        let frameId = value.frameId
++                        let expanded = rootDf.expandedFrames.has(frameId)
++                        let link = document.createElement("a")
++                        link.className = "expander"
++                        let that = this
++                        link.onclick = function () {
++                            if (rootDf.expandedFrames.has(frameId))
++                                rootDf.expandedFrames.delete(frameId)
++                            else rootDf.expandedFrames.add(frameId)
++                            that.renderTable(id)
++                        }
++                        link.appendChild(this.createExpander(expanded))
++                        link.innerHTML += value.value
++                        if (expanded) {
++                            td.appendChild(link)
++                            td.appendChild(document.createElement("p"))
++                            const childTable = document.createElement("table")
++                            childTable.className = "dataframe"
++                            childTable.id = "df_" + frameId
++                            let childDf = rootDf.childFrames[frameId]
++                            childTable.df = childDf
++                            td.appendChild(childTable)
++                            this.renderTable(frameId)
++                            if (childDf.nrow !== childDf.totalRows) {
++                                const footer = document.createElement("p")
++                                footer.innerText = `... showing only top ${childDf.nrow} of ${childDf.totalRows} rows`
++                                td.appendChild(footer)
++                            }
++                        } else {
++                            td.appendChild(link)
++                        }
++                    } else if (value.style !== undefined) {
++                        td.innerHTML = value.value
++                        td.setAttribute("style", value.style)
++                    } else td.innerHTML = value
++                    this.nodeScriptReplace(td)
++                }
++            }
++        }
++
++        this.nodeScriptReplace = function (node) {
++            if (this.nodeScriptIs(node) === true) {
++                node.parentNode.replaceChild(this.nodeScriptClone(node), node);
++            } else {
++                let i = -1, children = node.childNodes;
++                while (++i < children.length) {
++                    this.nodeScriptReplace(children[i]);
++                }
++            }
++
++            return node;
++        }
++
++        this.nodeScriptClone = function (node) {
++            let script = document.createElement("script");
++            script.text = node.innerHTML;
++
++            let i = -1, attrs = node.attributes, attr;
++            while (++i < attrs.length) {
++                script.setAttribute((attr = attrs[i]).name, attr.value);
++            }
++            return script;
++        }
++
++        this.nodeScriptIs = function (node) {
++            return node.tagName === 'SCRIPT';
++        }
++    })()
++
++    window.call_DataFrame = function (f) {
++        return f();
++    };
++
++    let funQueue = window["kotlinQueues"] && window["kotlinQueues"]["DataFrame"];
++    if (funQueue) {
++        funQueue.forEach(function (f) {
++            f();
++        });
++        funQueue = [];
++    }
++})()
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"label: String?\">label</span>", children: [], rightAlign: false, values: ["<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>","record"] }, 
++{ name: "<span title=\"value: Int?\">value</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">1</span></span>","<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>"] }, 
++], id: 0, rootId: 0, totalRows: 2 } ) });
++/*-->*/
++
++call_DataFrame(function() { DataFrame.renderTable(0) });
++
++function sendHeight() {
++    const table = document.querySelector('table.dataframe');
++    if (!table) return;
++
++    let height = 0;
++    
++    const thead = table.querySelector('thead');
++    if (thead) height += thead.offsetHeight;
++    
++    const rows = table.querySelectorAll(':scope > tbody > tr');
++    rows.forEach(row => {
++        height += row.offsetHeight;
++    });
++    
++    height += getVerticalMargins(table) + 10;
++
++    window.parent.postMessage({ type: 'iframeHeight', height: Math.ceil(height) }, '*');
++}
++
++function getVerticalMargins(element) {
++    const style = getComputedStyle(element);
++    return parseFloat(style.marginTop) + parseFloat(style.marginBottom);
++}
++
++function repeatHeightCalculation(maxRetries = 10, interval = 100) {
++    let retries = 0;
++    const intervalId = setInterval(() => {
++        sendHeight();
++        retries++;
++        if (retries >= maxRetries) clearInterval(intervalId);
++    }, interval);
++}
++
++window.addEventListener('load', repeatHeightCalculation);
++
++const observer = new MutationObserver(() => repeatHeightCalculation(5, 50));
++observer.observe(document.querySelector('.dataframe'), {
++    childList: true,
++    subtree: true,
++    characterData: true,
++});
++
++
++</script>
++</html>
+diff --git a/docs/StardustDocs/resources/api/read/readJsonTypeClash.html b/docs/StardustDocs/resources/api/read/readJsonTypeClash.html
+index 5e8693e..6f78b6e 100644
+--- a/docs/StardustDocs/resources/api/read/readJsonTypeClash.html
++++ b/docs/StardustDocs/resources/api/read/readJsonTypeClash.html
+@@ -459,7 +459,7 @@ summary {
+ /*<!--*/
+ call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"b: Int?\">b</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">2</span></span>","<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>"] }, 
+ { name: "<span title=\"value: String?\">value</span>", children: [], rightAlign: false, values: ["text","<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>","<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>"] }, 
+-{ name: "<span title=\"array: List<Int>\">array</span>", children: [], rightAlign: false, values: ["<span class=\"formatted\" title=\"\"><span class=\"null\">[ ]</span></span>","<span class=\"formatted\" title=\"\"><span class=\"null\">[ ]</span></span>","<span class=\"formatted\" title=\"6\n7\n8\"><span class=\"structural\">[</span><span class=\"numbers\">6</span><span class=\"structural\">, </span><span class=\"numbers\">7</span><span class=\"structural\">, </span><span class=\"numbers\">8</span><span class=\"structural\">]</span></span>"] }, 
++{ name: "<span title=\"array: List<Int>?\">array</span>", children: [], rightAlign: false, values: ["<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>","<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>","<span class=\"formatted\" title=\"6\n7\n8\"><span class=\"structural\">[</span><span class=\"numbers\">6</span><span class=\"structural\">, </span><span class=\"numbers\">7</span><span class=\"structural\">, </span><span class=\"numbers\">8</span><span class=\"structural\">]</span></span>"] }, 
+ { name: "<span title=\"a: DataRow<*>\">a</span>", children: [0, 1, 2], rightAlign: false, values: ["<span class=\"formatted\" title=\"value: text\"><span class=\"structural\">{ </span><span class=\"structural\">value: </span>text<span class=\"structural\"> }</span></span>","<span class=\"formatted\" title=\"b: 2\"><span class=\"structural\">{ </span><span class=\"structural\">b: </span><span class=\"numbers\">2</span><span class=\"structural\"> }</span></span>","<span class=\"formatted\" title=\"array: [6, 7, 8]\"><span class=\"structural\">{ </span><span class=\"structural\">array: </span><span class=\"structural\">[</span><span class=\"numbers\">6</span><span class=\"structural\">, </span><span class=\"numbers\">7</span><span class=\"structural\">, </span><span class=\"numbers\">8</span><span class=\"structural\">]</span><span class=\"structural\"> }</span></span>"] }, 
+ ], id: 0, rootId: 0, totalRows: 3 } ) });
+ /*-->*/
+diff --git a/docs/StardustDocs/resources/api/read/readJsonValueColumn.html b/docs/StardustDocs/resources/api/read/readJsonValueColumn.html
+new file mode 100644
+index 0000000..451a9f6
+--- /dev/null
++++ b/docs/StardustDocs/resources/api/read/readJsonValueColumn.html
+@@ -0,0 +1,510 @@
++<html>
++<head>
++<style type="text/css">
++:root {
++    --background: #fff;
++    --background-odd: #f5f5f5;
++    --background-hover: #d9edfd;
++    --header-text-color: #474747;
++    --text-color: #848484;
++    --text-color-dark: #000;
++    --text-color-medium: #737373;
++    --text-color-pale: #b3b3b3;
++    --inner-border-color: #aaa;
++    --bold-border-color: #000;
++    --link-color: #296eaa;
++    --link-color-pale: #296eaa;
++    --link-hover: #1a466c;
++}
++
++:root[theme="dark"], :root [data-jp-theme-light="false"], .dataframe_dark{
++    --background: #303030;
++    --background-odd: #3c3c3c;
++    --background-hover: #464646;
++    --header-text-color: #dddddd;
++    --text-color: #b3b3b3;
++    --text-color-dark: #dddddd;
++    --text-color-medium: #b2b2b2;
++    --text-color-pale: #737373;
++    --inner-border-color: #707070;
++    --bold-border-color: #777777;
++    --link-color: #008dc0;
++    --link-color-pale: #97e1fb;
++    --link-hover: #00688e;
++}
++
++p.dataframe_description {
++    color: var(--text-color-dark);
++}
++
++table.dataframe {
++    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
++    font-size: 12px;
++    background-color: var(--background);
++    color: var(--text-color-dark);
++    border: none;
++    border-collapse: collapse;
++}
++
++table.dataframe th, td {
++    padding: 6px;
++    border: 1px solid transparent;
++    text-align: left;
++}
++
++table.dataframe th {
++    background-color: var(--background);
++    color: var(--header-text-color);
++}
++
++table.dataframe td {
++    vertical-align: top;
++    white-space: nowrap;
++}
++
++table.dataframe th.bottomBorder {
++    border-bottom-color: var(--bold-border-color);
++}
++
++table.dataframe tbody > tr:nth-child(odd) {
++    background: var(--background-odd);
++}
++
++table.dataframe tbody > tr:nth-child(even) {
++    background: var(--background);
++}
++
++table.dataframe tbody > tr:hover {
++    background: var(--background-hover);
++}
++
++table.dataframe a {
++    cursor: pointer;
++    color: var(--link-color);
++    text-decoration: none;
++}
++
++table.dataframe tr:hover > td a {
++    color: var(--link-color-pale);
++}
++
++table.dataframe a:hover {
++    color: var(--link-hover);
++    text-decoration: underline;
++}
++
++table.dataframe img {
++    max-width: fit-content;
++}
++
++table.dataframe th.complex {
++    background-color: var(--background);
++    border: 1px solid var(--background);
++}
++
++table.dataframe .leftBorder {
++    border-left-color: var(--inner-border-color);
++}
++
++table.dataframe .rightBorder {
++    border-right-color: var(--inner-border-color);
++}
++
++table.dataframe .rightAlign {
++    text-align: right;
++}
++
++table.dataframe .expanderSvg {
++    width: 8px;
++    height: 8px;
++    margin-right: 3px;
++}
++
++table.dataframe .expander {
++    display: flex;
++    align-items: center;
++}
++
++/* formatting */
++
++table.dataframe .null {
++    color: var(--text-color-pale);
++}
++
++table.dataframe .structural {
++    color: var(--text-color-medium);
++    font-weight: bold;
++}
++
++table.dataframe .dataFrameCaption {
++    font-weight: bold;
++}
++
++table.dataframe .numbers {
++    color: var(--text-color-dark);
++}
++
++table.dataframe td:hover .formatted .structural, .null {
++    color: var(--text-color-dark);
++}
++
++table.dataframe tr:hover .formatted .structural, .null {
++    color: var(--text-color-dark);
++}
++
++
++body {
++    font-family: "JetBrains Mono",SFMono-Regular,Consolas,"Liberation Mono",Menlo,Courier,monospace;
++}       
++
++:root {
++    color: #19191C;
++    background-color: #fff;
++}
++
++:root[theme="dark"] {
++    background-color: #19191C;
++    color: #FFFFFFCC
++}
++
++details details {
++    margin-left: 20px; 
++}
++
++summary {
++    padding: 6px;
++}
++</style>
++</head>
++<body>
++<table class="dataframe" id="df_0"></table>
++
++<p class="dataframe_description"></p>
++</body>
++<script>
++(function () {
++    window.DataFrame = window.DataFrame || new (function () {
++        this.addTable = function (df) {
++            let cols = df.cols;
++            for (let i = 0; i < cols.length; i++) {
++                for (let c of cols[i].children) {
++                    cols[c].parent = i;
++                }
++            }
++            df.nrow = 0
++            for (let i = 0; i < df.cols.length; i++) {
++                if (df.cols[i].values.length > df.nrow) df.nrow = df.cols[i].values.length
++            }
++            if (df.id === df.rootId) {
++                df.expandedFrames = new Set()
++                df.childFrames = {}
++                const table = this.getTableElement(df.id)
++                table.df = df
++                for (let i = 0; i < df.cols.length; i++) {
++                    let col = df.cols[i]
++                    if (col.parent === undefined && col.children.length > 0) col.expanded = true
++                }
++            } else {
++                const rootDf = this.getTableData(df.rootId)
++                rootDf.childFrames[df.id] = df
++            }
++        }
++
++        this.computeRenderData = function (df) {
++            let result = []
++            let pos = 0
++            for (let col = 0; col < df.cols.length; col++) {
++                if (df.cols[col].parent === undefined)
++                    pos += this.computeRenderDataRec(df.cols, col, pos, 0, result, false, false)
++            }
++            for (let i = 0; i < result.length; i++) {
++                let row = result[i]
++                for (let j = 0; j < row.length; j++) {
++                    let cell = row[j]
++                    if (j === 0)
++                        cell.leftBd = false
++                    if (j < row.length - 1) {
++                        let nextData = row[j + 1]
++                        if (nextData.leftBd) cell.rightBd = true
++                        else if (cell.rightBd) nextData.leftBd = true
++                    } else cell.rightBd = false
++                }
++            }
++            return result
++        }
++
++        this.computeRenderDataRec = function (cols, colId, pos, depth, result, leftBorder, rightBorder) {
++            if (result.length === depth) {
++                const array = [];
++                if (pos > 0) {
++                    let j = 0
++                    for (let i = 0; j < pos; i++) {
++                        let c = result[depth - 1][i]
++                        j += c.span
++                        let copy = Object.assign({empty: true}, c)
++                        array.push(copy)
++                    }
++                }
++                result.push(array)
++            }
++            const col = cols[colId];
++            let size = 0;
++            if (col.expanded) {
++                let childPos = pos
++                for (let i = 0; i < col.children.length; i++) {
++                    let child = col.children[i]
++                    let childLeft = i === 0 && (col.children.length > 1 || leftBorder)
++                    let childRight = i === col.children.length - 1 && (col.children.length > 1 || rightBorder)
++                    let childSize = this.computeRenderDataRec(cols, child, childPos, depth + 1, result, childLeft, childRight)
++                    childPos += childSize
++                    size += childSize
++                }
++            } else {
++                for (let i = depth + 1; i < result.length; i++)
++                    result[i].push({id: colId, span: 1, leftBd: leftBorder, rightBd: rightBorder, empty: true})
++                size = 1
++            }
++            let left = leftBorder
++            let right = rightBorder
++            if (size > 1) {
++                left = true
++                right = true
++            }
++            result[depth].push({id: colId, span: size, leftBd: left, rightBd: right})
++            return size
++        }
++
++        this.getTableElement = function (id) {
++            return document.getElementById("df_" + id)
++        }
++
++        this.getTableData = function (id) {
++            return this.getTableElement(id).df
++        }
++
++        this.createExpander = function (isExpanded) {
++            const svgNs = "http://www.w3.org/2000/svg"
++            let svg = document.createElementNS(svgNs, "svg")
++            svg.classList.add("expanderSvg")
++            let path = document.createElementNS(svgNs, "path")
++            if (isExpanded) {
++                svg.setAttribute("viewBox", "0 -2 8 8")
++                path.setAttribute("d", "M1 0 l-1 1 4 4 4 -4 -1 -1 -3 3Z")
++            } else {
++                svg.setAttribute("viewBox", "-2 0 8 8")
++                path.setAttribute("d", "M1 0 l-1 1 3 3 -3 3 1 1 4 -4Z")
++            }
++            path.setAttribute("fill", "currentColor")
++            svg.appendChild(path)
++            return svg
++        }
++
++        this.renderTable = function (id) {
++
++            let table = this.getTableElement(id)
++
++            if (table === null) return
++
++            table.innerHTML = ""
++
++            let df = table.df
++            let rootDf = df.rootId === df.id ? df : this.getTableData(df.rootId)
++
++            // header
++            let header = document.createElement("thead")
++            table.appendChild(header)
++
++            let renderData = this.computeRenderData(df)
++            for (let j = 0; j < renderData.length; j++) {
++                let rowData = renderData[j]
++                let tr = document.createElement("tr");
++                let isLastRow = j === renderData.length - 1
++                header.appendChild(tr);
++                for (let i = 0; i < rowData.length; i++) {
++                    let cell = rowData[i]
++                    let th = document.createElement("th");
++                    th.setAttribute("colspan", cell.span)
++                    let colId = cell.id
++                    let col = df.cols[colId];
++                    if (!cell.empty) {
++                        if (col.children.length === 0) {
++                            th.innerHTML = col.name
++                        } else {
++                            let link = document.createElement("a")
++                            link.className = "expander"
++                            let that = this
++                            link.onclick = function () {
++                                col.expanded = !col.expanded
++                                that.renderTable(id)
++                            }
++                            link.appendChild(this.createExpander(col.expanded))
++                            link.innerHTML += col.name
++                            th.appendChild(link)
++                        }
++                    }
++                    let classes = (cell.leftBd ? " leftBorder" : "") + (cell.rightBd ? " rightBorder" : "")
++                    if (col.rightAlign)
++                        classes += " rightAlign"
++                    if (isLastRow)
++                        classes += " bottomBorder"
++                    if (classes.length > 0)
++                        th.setAttribute("class", classes)
++                    tr.appendChild(th)
++                }
++            }
++
++            // body
++            let body = document.createElement("tbody")
++            table.appendChild(body)
++
++            let columns = renderData.pop()
++            for (let row = 0; row < df.nrow; row++) {
++                let tr = document.createElement("tr");
++                body.appendChild(tr)
++                for (let i = 0; i < columns.length; i++) {
++                    let cell = columns[i]
++                    let td = document.createElement("td");
++                    let colId = cell.id
++                    let col = df.cols[colId]
++                    let classes = (cell.leftBd ? " leftBorder" : "") + (cell.rightBd ? " rightBorder" : "")
++                    if (col.rightAlign)
++                        classes += " rightAlign"
++                    if (classes.length > 0)
++                        td.setAttribute("class", classes)
++                    tr.appendChild(td)
++                    let value = col.values[row]
++                    if (value.frameId !== undefined) {
++                        let frameId = value.frameId
++                        let expanded = rootDf.expandedFrames.has(frameId)
++                        let link = document.createElement("a")
++                        link.className = "expander"
++                        let that = this
++                        link.onclick = function () {
++                            if (rootDf.expandedFrames.has(frameId))
++                                rootDf.expandedFrames.delete(frameId)
++                            else rootDf.expandedFrames.add(frameId)
++                            that.renderTable(id)
++                        }
++                        link.appendChild(this.createExpander(expanded))
++                        link.innerHTML += value.value
++                        if (expanded) {
++                            td.appendChild(link)
++                            td.appendChild(document.createElement("p"))
++                            const childTable = document.createElement("table")
++                            childTable.className = "dataframe"
++                            childTable.id = "df_" + frameId
++                            let childDf = rootDf.childFrames[frameId]
++                            childTable.df = childDf
++                            td.appendChild(childTable)
++                            this.renderTable(frameId)
++                            if (childDf.nrow !== childDf.totalRows) {
++                                const footer = document.createElement("p")
++                                footer.innerText = `... showing only top ${childDf.nrow} of ${childDf.totalRows} rows`
++                                td.appendChild(footer)
++                            }
++                        } else {
++                            td.appendChild(link)
++                        }
++                    } else if (value.style !== undefined) {
++                        td.innerHTML = value.value
++                        td.setAttribute("style", value.style)
++                    } else td.innerHTML = value
++                    this.nodeScriptReplace(td)
++                }
++            }
++        }
++
++        this.nodeScriptReplace = function (node) {
++            if (this.nodeScriptIs(node) === true) {
++                node.parentNode.replaceChild(this.nodeScriptClone(node), node);
++            } else {
++                let i = -1, children = node.childNodes;
++                while (++i < children.length) {
++                    this.nodeScriptReplace(children[i]);
++                }
++            }
++
++            return node;
++        }
++
++        this.nodeScriptClone = function (node) {
++            let script = document.createElement("script");
++            script.text = node.innerHTML;
++
++            let i = -1, attrs = node.attributes, attr;
++            while (++i < attrs.length) {
++                script.setAttribute((attr = attrs[i]).name, attr.value);
++            }
++            return script;
++        }
++
++        this.nodeScriptIs = function (node) {
++            return node.tagName === 'SCRIPT';
++        }
++    })()
++
++    window.call_DataFrame = function (f) {
++        return f();
++    };
++
++    let funQueue = window["kotlinQueues"] && window["kotlinQueues"]["DataFrame"];
++    if (funQueue) {
++        funQueue.forEach(function (f) {
++            f();
++        });
++        funQueue = [];
++    }
++})()
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"value: Int\">value</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">1</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">2</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">3</span></span>"] }, 
++], id: 0, rootId: 0, totalRows: 3 } ) });
++/*-->*/
++
++call_DataFrame(function() { DataFrame.renderTable(0) });
++
++function sendHeight() {
++    const table = document.querySelector('table.dataframe');
++    if (!table) return;
++
++    let height = 0;
++    
++    const thead = table.querySelector('thead');
++    if (thead) height += thead.offsetHeight;
++    
++    const rows = table.querySelectorAll(':scope > tbody > tr');
++    rows.forEach(row => {
++        height += row.offsetHeight;
++    });
++    
++    height += getVerticalMargins(table) + 10;
++
++    window.parent.postMessage({ type: 'iframeHeight', height: Math.ceil(height) }, '*');
++}
++
++function getVerticalMargins(element) {
++    const style = getComputedStyle(element);
++    return parseFloat(style.marginTop) + parseFloat(style.marginBottom);
++}
++
++function repeatHeightCalculation(maxRetries = 10, interval = 100) {
++    let retries = 0;
++    const intervalId = setInterval(() => {
++        sendHeight();
++        retries++;
++        if (retries >= maxRetries) clearInterval(intervalId);
++    }, interval);
++}
++
++window.addEventListener('load', repeatHeightCalculation);
++
++const observer = new MutationObserver(() => repeatHeightCalculation(5, 50));
++observer.observe(document.querySelector('.dataframe'), {
++    childList: true,
++    subtree: true,
++    characterData: true,
++});
++
++
++</script>
++</html>
+diff --git a/docs/StardustDocs/topics/_shadow_resources.md b/docs/StardustDocs/topics/_shadow_resources.md
+index 2b19d28..7d24412 100644
+--- a/docs/StardustDocs/topics/_shadow_resources.md
++++ b/docs/StardustDocs/topics/_shadow_resources.md
+@@ -262,11 +262,15 @@
+ <resource src="readCsvWithJsonListsColumns.html"></resource>
+ <resource src="readDatesWithSpecificDateTimeFormatter.html"></resource>
+ <resource src="readDatesWithSpecificDateTimePattern.html"></resource>
++<resource src="readJsonArrayColumn.html"></resource>
++<resource src="readJsonArrayOfObjectsColumn.html"></resource>
+ <resource src="readJsonFromString.html"></resource>
+ <resource src="readJsonFromStringWithKeyValuePairs.html"></resource>
+ <resource src="readJsonFromStringWithoutKeyValuePairs.html"></resource>
++<resource src="readJsonTopLevelTypeClash.html"></resource>
+ <resource src="readJsonTypeClash.html"></resource>
+ <resource src="readJsonTypeClashTactic.html"></resource>
++<resource src="readJsonValueColumn.html"></resource>
+ <resource src="readJsonWithJsonInstance.html"></resource>
+ <resource src="readNumbersWithColType.html"></resource>
+ <resource src="readNumbersWithSpecificLocale.html"></resource>
+diff --git a/docs/StardustDocs/topics/dataSources/JSON.md b/docs/StardustDocs/topics/dataSources/JSON.md
+index 0eac509..95a7976 100644
+--- a/docs/StardustDocs/topics/dataSources/JSON.md
++++ b/docs/StardustDocs/topics/dataSources/JSON.md
+@@ -48,6 +48,20 @@ val df = DataFrame.readJson("https://kotlin.github.io/dataframe/resources/exampl
+ 
+ <!---END-->
+ 
++A JSON `null` is read as `null`, so the corresponding column becomes nullable. A property that some records
++simply don't have is read as `null` as well — a [`DataFrame`](DataFrame.md) is rectangular, so every row needs
++a value in every column.
++
++This also holds for array columns: `[null, [123], []]` is read as a `List<Int>?` column holding `null`, `[123]`,
++and an empty list.
++
++JSON elements that aren't objects have no property name to use as a column name, so they're read into the
++special [`value` and `array` columns](read.md#value-and-array-columns). 
++The same special columns are also used
++to resolve [type clashes](read.md#manage-type-clashes) 
++when the same property contains values of different shapes
++across records.
++
+ ## Write
+ 
+ You can write a [`DataFrame`](DataFrame.md) to a JSON file using the [`writeJson()`](write.md#writing-to-json) method:
+@@ -59,3 +73,6 @@ df.writeJson("example.json")
+ ```
+ 
+ <!---END-->
++
++A [`DataFrame`](DataFrame.md) read from JSON with a top-level type clash is written back to its original form;
++see [writing to JSON](write.md#writing-to-json) for the details and for the cases that don't round-trip.
+diff --git a/docs/StardustDocs/topics/io/read.md b/docs/StardustDocs/topics/io/read.md
+index 4f00cca..b54d974 100644
+--- a/docs/StardustDocs/topics/io/read.md
++++ b/docs/StardustDocs/topics/io/read.md
+@@ -441,25 +441,72 @@ has the `Double` type because it's the smallest unified number type for `Int` an
+ 
+ ### JSON parsing options
+ 
+-#### Manage type clashes
++#### The "value" and "array" columns for standalone values {id="value-and-array-columns"}
++
++A JSON element that isn't an object has no property name to be used as a column name, so the reader falls back to
++two fixed names:
++
++* "value" holds the JSON element if it's a primitive, else it's `null`.
++* "array" holds the JSON element as a list if it's an array, else it's `null`.
++
++They're created in two situations. The first is **at the top level**, where the elements of the JSON array are the
++rows themselves and so have no name at all. This happens regardless of the `typeClashTactic` and even when there's
++no clash to begin with.
++
++* An array of primitives is read into a single "value" column:
++
++<!---FUN readJsonValueColumn-->
++
++```kotlin
++val df = DataFrame.readJsonStr("""[1, 2, 3]""")
++```
++
++<!---END-->
++<inline-frame src="./resources/readJsonValueColumn.html" width="100%" height="500px"></inline-frame>
++
++* An array of arrays, into a single "array" column of lists:
++
++<!---FUN readJsonArrayColumn-->
++
++```kotlin
++val df = DataFrame.readJsonStr("""[[1], [2]]""")
++```
++
++<!---END-->
++<inline-frame src="./resources/readJsonArrayColumn.html" width="100%" height="500px"></inline-frame>
+ 
+-By default, if a type clash occurs when reading JSON, a new [`column group`](DataColumn.md#columngroup) is created consisting of: "value", "array", and
+-any number of object properties:
++* When those arrays hold objects, "array" becomes a [`FrameColumn`](DataColumn.md#framecolumn):
+ 
+-* "value" will be set to the value of the JSON element if it's a primitive, else it will be `null`.
+-* "array" will be set to the array of values if the JSON element is an array, else it will be `[]`.
++<!---FUN readJsonArrayOfObjectsColumn-->
+ 
+-If the JSON element is an object, then each property will spread out to its own column in the group, else these columns
+-will be `null`.
++```kotlin
++val df = DataFrame.readJsonStr("""[[{ "a": 1 }], [{ "a": 2 }]]""")
++```
++
++<!---END-->
++<inline-frame src="./resources/readJsonArrayOfObjectsColumn.html" width="100%" height="500px"></inline-frame>
++
++The second situation is a **type clash**, described below.
++
++#### Manage type clashes
++
++By default, if a type clash occurs when reading JSON — the same property holds elements of different shapes across
++records (objects, values or arrays) 
++— a new [`column group`](DataColumn.md#columngroup) is created for that property.
++This column group contains a column for each children object property
++(across all records), and
++"value" and "array" columns following the logic of reading row values and arrays as 
++[described above](#value-and-array-columns).
++Each value will spread out to its own column in the group, other columns will contain `null`.
+ 
+ In this case `typeClashTactic = JSON.TypeClashTactic.ARRAY_AND_VALUE_COLUMNS`.
+ 
+-For example, this is how the following JSON will be read (including `null` and `[]` values):
++For example, this is how the following JSON will be read (including `null` values):
+ 
+ <!---FUN readJsonTypeClash-->
+ 
+ ```kotlin
+-val text = """
++val complexClashedJson = """
+     [
+         { "a": "text" },
+         { "a": { "b": 2 } },
+@@ -467,13 +514,39 @@ val text = """
+     ]
+ """.trimIndent()
+ 
+-val df = DataFrame.readJsonStr(text)
++val df = DataFrame.readJsonStr(complexClashedJson)
+ ```
+ 
+ <!---END-->
+ <inline-frame src="./resources/readJsonTypeClash.html" width="100%" height="500px"></inline-frame>
+ 
+-This makes it more convenient to work with the data, but it can be confusing if you're not expecting it or if you
++A clash at the top level has no property to group under, so there "value", "array", and the objects' properties
++become top-level columns of the [`DataFrame`](DataFrame.md) itself, 
++as in [usual standalone values reading](#value-and-array-columns):
++
++<!---FUN readJsonTopLevelTypeClash-->
++
++```kotlin
++val df = DataFrame.readJsonStr("""[1, { "label": "record" }]""")
++```
++
++<!---END-->
++<inline-frame src="./resources/readJsonTopLevelTypeClash.html" width="100%" height="500px"></inline-frame>
++
++Without a clash there's no such group: a property whose elements are all arrays simply becomes a `List` column under
++its own name, and one whose elements are all objects becomes a group of just those objects' properties.
++
++Since every one of these columns only holds a value for the elements that actually have that shape, all of them
++are nullable. A JSON `null` element, as well as a missing property, is `null` in all of them.
++
++> An empty JSON array `[]` is read as an empty list, which is different from `null`, meaning "there is no array here".
++>
++> When the arrays contain objects, "array" becomes a [`FrameColumn`](DataColumn.md#framecolumn) instead. There, an
++> element without an array is an empty [`DataFrame`](DataFrame.md), because frame columns cannot hold `null`.
++> {style="note"}
++
++Default type clash tactic makes it more convenient to work with the data, 
++but it can be confusing if you're not expecting it or if you
+ just need the type to be an `Any`.
+ 
+ For this case, you can set `typeClashTactic = JSON.TypeClashTactic.ANY_COLUMNS` to get the following:
+@@ -481,7 +554,7 @@ For this case, you can set `typeClashTactic = JSON.TypeClashTactic.ANY_COLUMNS`
+ <!---FUN readJsonTypeClashTactic-->
+ 
+ ```kotlin
+-val df = DataFrame.readJsonStr(text, typeClashTactic = JSON.TypeClashTactic.ANY_COLUMNS)
++val df = DataFrame.readJsonStr(complexClashedJson, typeClashTactic = JSON.TypeClashTactic.ANY_COLUMNS)
+ ```
+ 
+ <!---END-->
+diff --git a/docs/StardustDocs/topics/io/write.md b/docs/StardustDocs/topics/io/write.md
+new file mode 100644
+index 0000000..cbb3bde
+--- /dev/null
++++ b/docs/StardustDocs/topics/io/write.md
+@@ -0,0 +1,275 @@
++[//]: # (title: Write)
++<!---IMPORT org.jetbrains.kotlinx.dataframe.samples.api.Write-->
++
++[`DataFrame`](DataFrame.md) instances can be saved in the following formats: CSV, TSV, JSON, XLS(X) and Apache Arrow.
++
++### Writing to CSV
++
++You can write [`DataFrame`](DataFrame.md) in CSV format to file, to `String` or to `Appendable`
++(i.e. to `Writer`).
++
++Values of [`ColumnGroup`](DataColumn.md#columngroup), [`FrameColumn`](DataColumn.md#framecolumn), i.e. AnyRow, AnyFrame will be serialized as JSON objects. 
++
++<!---FUN writeCsv-->
++
++```kotlin
++df.writeCsv(file)
++```
++
++<!---END-->
++
++<!---FUN writeCsvStr-->
++
++```kotlin
++val csvStr = df.toCsvStr(delimiter = ';', recordSeparator = System.lineSeparator())
++```
++
++<!---END-->
++
++[`ColumnGroup`](DataColumn.md#columngroup) and [`FrameColumn`](DataColumn.md#framecolumn) values will be serialized as JSON strings.
++
++### Writing to JSON
++
++You can write your [`DataFrame`](DataFrame.md) in JSON format to file, to string or to `Appendable`
++(i.e. to `Writer`).
++
++<!---FUN writeJson-->
++
++```kotlin
++df.writeJson(file)
++```
++
++<!---END-->
++
++<!---FUN writeJsonStr-->
++
++```kotlin
++val jsonStr = df.toJson(prettyPrint = true)
++```
++
++<!---END-->
++
++Each row is written as an element of a JSON array: a [`ColumnGroup`](DataColumn.md#columngroup) becomes a nested
++object, a [`FrameColumn`](DataColumn.md#framecolumn) becomes a nested array of objects, and a `List` value becomes
++a JSON array.
++
++There's one exception, so that a [`DataFrame`](DataFrame.md) read from JSON with a top-level
++[type clash](read.md#manage-type-clashes) can be written back to its original form. Such a clash puts the
++elements that aren't objects into ["value" and "array" columns](read.md#value-and-array-columns), beside the
++objects' own properties. When one of the top-level columns is detected as such a "value" or "array" column —
++it's named `value` or `array` and only holds a value in rows where every other column holds none — a row is
++written as the record it was read from:
++
++* the value of the "value" column, if the row has one;
++* otherwise the array of the "array" column, if the row has one;
++* otherwise an object of the remaining columns, if any of them holds a value;
++* otherwise `null`.
++
++For example:
++
++<!---FUN readAndWriteJson-->
++
++```kotlin
++DataFrame.readJsonStr("""[1,{"label":"record"},[123],null]""").toJson()
++```
++
++Output:
++
++[1,{"label":"record"},[123],null]
++
++<!---END-->
++
++> Only a *top-level* clash is restored like this:
++> * a clash inside a [`ColumnGroup`](DataColumn.md#columngroup) isn't — the group is written as its object, so
++>   its "value" and "array" columns show up as ordinary properties: `[{"a":"text"},{"a":[6,7,8]}]` is written
++>   back as `[{"a":{"value":"text","array":null}},{"a":{"value":null,"array":[6,7,8]}}]`;
++> * a single-column [`DataFrame`](DataFrame.md) isn't either, since a lone "value"/"array" column can't be told
++>   apart from one the user named that way. So a JSON array of non-objects, which is read into just a "value" or
++>   "array" column, doesn't round-trip: `[1,2,3]` is written back as
++>   `[{"value":1},{"value":2},{"value":3}]`.
++> {style="note"}
++
++> Some JSON records are read into the exact same [`DataFrame`](DataFrame.md), 
++> so writing it back can only produce:
++> * a row without any values is written as `null`, so `[1,{"label":"record"},{"label":null}]` becomes
++>   `[1,{"label":"record"},null]`;
++> * an empty array of objects is read as an empty nested [`DataFrame`](DataFrame.md), just like no array at all,
++>   so `[{"label":"record"},[{"a":1}],[]]` becomes `[{"label":"record"},[{"a":1}],null]`.
++>
++> Arrays of primitives don't have the latter problem: they're read into a nullable `List` column, where an empty
++> list and `null` stay distinct.
++> {style="note"}
++
++### Write to Excel spreadsheet
++
++Add dependency:
++
++```kotlin
++implementation("org.jetbrains.kotlinx:dataframe-excel:%dataFrameVersion%")
++```
++
++You can write your [`DataFrame`](DataFrame.md) in XLS, XLSX format to a file, `OutputStream` or Workbook object.
++
++<!---FUN writeXls-->
++
++```kotlin
++df.writeExcel(file)
++```
++
++<!---END-->
++
++Values of [`ColumnGroup`](DataColumn.md#columngroup), [`FrameColumn`](DataColumn.md#framecolumn), i.e. AnyRow, AnyFrame will be serialized as JSON objects. 
++
++If you work directly with Apache POI, you can use created Workbook and Sheets in your code:
++
++<!---FUN writeXlsAppendAndPostProcessing-->
++
++```kotlin
++/**
++ * Do something with generated sheets. Here we set bold style for headers and italic style for first data column
++ */
++fun setStyles(sheet: Sheet) {
++    val headerFont = sheet.workbook.createFont()
++    headerFont.bold = true
++    val headerStyle = sheet.workbook.createCellStyle()
++    headerStyle.setFont(headerFont)
++
++    val indexFont = sheet.workbook.createFont()
++    indexFont.italic = true
++    val indexStyle = sheet.workbook.createCellStyle()
++    indexStyle.setFont(indexFont)
++
++    sheet.forEachIndexed { index, row ->
++        if (index == 0) {
++            for (cell in row) {
++                cell.cellStyle = headerStyle
++            }
++        } else {
++            row.first().cellStyle = indexStyle
++        }
++    }
++}
++
++// Create a workbook (or use existing)
++val wb = WorkbookFactory.create(true)
++
++// Create different sheets from different dataframes in the workbook
++val allPersonsSheet = df.writeExcel(wb, sheetName = "allPersons")
++val happyPersonsSheet =
++    df.filter { person -> person.isHappy }.remove("isHappy").writeExcel(wb, sheetName = "happyPersons")
++val unhappyPersonsSheet =
++    df.filter { person -> !person.isHappy }.remove("isHappy").writeExcel(wb, sheetName = "unhappyPersons")
++
++// Do anything you want by POI
++listOf(happyPersonsSheet, unhappyPersonsSheet).forEach { setStyles(it) }
++
++// Save the result
++file.outputStream().use { wb.write(it) }
++wb.close()
++```
++
++<!---END-->
++
++Add new sheets without using Apache POI directly by using a parameter to keep using the same file if it already exists
++
++<!---FUN writeXlsWithMultipleSheets-->
++
++```kotlin
++// Create a new Excel workbook with a single sheet called "allPersons", replacing the file if it already exists -> Current sheets: allPersons
++df.writeExcel(file, sheetName = "allPersons")
++// Add a new sheet to the previous file without replacing it, by setting keepFile = true -> Current sheets: allPersons, happyPersons
++df.filter { person -> person.isHappy }.remove("isHappy")
++    .writeExcel(file, sheetName = "happyPersons", keepFile = true)
++// Add a new sheet to the previous file without replacing it, by setting keepFile = true -> Current sheets: allPersons, happyPersons, unhappyPersons
++df.filter { person -> !person.isHappy }.remove("isHappy")
++    .writeExcel(file, sheetName = "unhappyPersons", keepFile = true)
++```
++
++<!---END-->
++
++### Writing to Apache Arrow formats
++
++Add dependency:
++
++```kotlin
++implementation("org.jetbrains.kotlinx:dataframe-arrow:%dataFrameVersion%")
++```
++
++> Make sure to follow an
++> [Apache Arrow Java compatibility](https://arrow.apache.org/docs/java/install.html#java-compatibility) 
++> guide when using Java 9+
++> {style = "warning"}
++
++[`DataFrame`](DataFrame.md) supports writing [Arrow interprocess streaming format](https://arrow.apache.org/java/current/ipc.html#writing-and-reading-streaming-format)
++and [Arrow random access format](https://arrow.apache.org/java/current/ipc.html#writing-and-reading-random-access-files)
++to raw WritableByteChannel, OutputStream, File or ByteArray.
++
++Data may be saved "as is" (like exporting to new Excel file) or converted to match some target [Schema](https://arrow.apache.org/docs/java/reference/org/apache/arrow/vector/types/pojo/Schema.html)
++if you have it (like inserting into existing SQL table).
++
++The first approach is quite easy:
++<!---FUN writeArrowFile-->
++
++```kotlin
++df.writeArrowIPC(file)
++// or
++df.writeArrowFeather(file)
++```
++
++<!---END-->
++(writing to file, opened stream or channel),
++<!---FUN writeArrowByteArray-->
++
++```kotlin
++val ipcByteArray: ByteArray = df.saveArrowIPCToByteArray()
++// or
++val featherByteArray: ByteArray = df.saveArrowFeatherToByteArray()
++```
++
++<!---END-->
++(creating byte array). Nested frames and columns with mixed or unsupported types will be saved as String.
++
++The second approach is a bit more tricky. You have to specify the schema itself and the casting behavior mode as `ArrowWriter` parameters.
++Behavior `Mode` has four independent switchers: `restrictWidening`, `restrictNarrowing`, `strictType`, `strictNullable`.
++You can use `Mode.STRICT` (this is the default), `Mode.LOYAL` or any combination you want.
++The `ArrowWriter` object should be closed after use because Arrow uses random access buffers not managed by Java GC.
++Finally, you can specify a callback to be invoked if some data is lost or can not be saved according to your schema.
++
++Here is a full example:
++<!---FUN writeArrowPerSchema-->
++
++```kotlin
++// Get schema from anywhere you want. It can be deserialized from JSON, generated from another dataset
++// (including the DataFrame.columns().toArrowSchema() method), created manually, and so on.
++val schema = Schema.fromJSON(schemaJson)
++
++df.arrowWriter(
++
++    // Specify your schema
++    targetSchema = schema,
++
++    // Specify desired behavior mode
++    mode = ArrowWriter.Mode(
++        restrictWidening = true,
++        restrictNarrowing = true,
++        strictType = true,
++        strictNullable = false,
++    ),
++
++    // Specify mismatch subscriber
++    mismatchSubscriber = writeMismatchMessage,
++
++    ).use { writer: ArrowWriter ->
++
++    // Save to any format and sink, like in the previous example
++    writer.writeArrowFeather(file)
++}
++```
++
++<!---END-->
++On executing you should get two warnings:
++>Column "city" contains nulls but expected not nullable
++
++and
++
++> Column "isHappy" is not described in the target schema and was ignored

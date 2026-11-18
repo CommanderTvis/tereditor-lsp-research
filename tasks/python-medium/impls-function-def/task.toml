@@ -1,0 +1,4 @@
+type = "impls"
+origin = "devrig find implementations"
+symbol = "astroid.nodes.scoped_nodes.scoped_nodes.FunctionDef"
+selection = "classes of non-test astroid/ modules whose name is defined once, with 5 to 20 transitive subclasses across all .py files of the repository in at least 3 files (python3 select.py <snapshot> astroid, an ast walk resolving bases by simple name), and whose name also occurs at least 5 times in comments, docstrings, strings or documentation (python3 an.py <snapshot> astroid symbols); sorted by path:line: LocalsDictNodeNG, FunctionDef (2 candidates); index random.Random(20261110).randrange(2) = 1 (CPython 3.12)."

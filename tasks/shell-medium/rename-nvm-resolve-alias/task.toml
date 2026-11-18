@@ -1,0 +1,7 @@
+type = "rename"
+origin = "synthetic: rename a shell function used across nvm.sh, the test suites and comments (devrig safe rename)"
+symbol = "nvm_resolve_alias (function, nvm.sh)"
+new_name = "nvm_follow_alias"
+selection = "Candidates: functions defined exactly once, in nvm.sh, named nvm_*, referenced (word match, not part of a longer name) in at least 4 other tracked files of which at least 2 are tests, at least 6 times in nvm.sh, and also named in a comment or in README.md; 10 candidates (nvm_ensure_default_set, nvm_get_os, nvm_has_colors, nvm_is_version_installed, nvm_ls, nvm_ls_remote, nvm_resolve_alias, nvm_version, nvm_version_greater, nvm_version_path), sorted, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk), first taken: nvm_resolve_alias. The name also names a test file, test/fast/Aliases/nvm_resolve_alias, whose name may stay."
+grade_timeout_s = 1200
+grade_note = "the project check runs the three urchin suites (about 8 minutes on 3 CPUs)"

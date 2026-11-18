@@ -1,0 +1,10 @@
+type = "pr"
+pr = 28333
+issue = 28211
+base_commit = "6bb57d29dbc1f9032005816e6bb08763bd1a8fb2"
+merged_at = "2026-11-04T13:14:08Z"
+head_commit = "9595305252792b8cbe7d007b5e979e4681b57b1c"
+origin = "mined pull request github.com/duckdb/duckdb/pull/28333"
+test_files = ["test/api/test_api.cpp", "test/configs/force_storage_restart.json"]
+grade_timeout_s = 1800
+# grade_timeout_s 1800: incremental rebuild of the unittest runner against the prebuilt build/ directory

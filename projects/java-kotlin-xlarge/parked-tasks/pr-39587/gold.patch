@@ -1,0 +1,88 @@
+diff --git a/platforms/core-runtime/logging/build.gradle.kts b/platforms/core-runtime/logging/build.gradle.kts
+index b94c7b2c0bd5b..69a4551ffb089 100644
+--- a/platforms/core-runtime/logging/build.gradle.kts
++++ b/platforms/core-runtime/logging/build.gradle.kts
+@@ -49,6 +49,7 @@ dependencies {
+     testImplementation(testFixtures(projects.testingJvm))
+     testImplementation(libs.groovyDatetime)
+     testImplementation(libs.groovyDateUtil)
++    testImplementation(testLibs.ansiControlSequenceUtil)
+ 
+     integTestImplementation(projects.problems)
+ 
+diff --git a/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/console/DefaultRedrawableLabel.java b/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/console/DefaultRedrawableLabel.java
+index b51e274380198..db9ed3cd6ce10 100644
+--- a/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/console/DefaultRedrawableLabel.java
++++ b/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/console/DefaultRedrawableLabel.java
+@@ -30,6 +30,7 @@ public class DefaultRedrawableLabel implements RedrawableLabel {
+     private int previousWriteRow = absolutePositionRow;
+     private boolean isVisible = true;
+     private boolean previousVisibility = isVisible;
++    private boolean shown;
+ 
+     DefaultRedrawableLabel(Cursor writePos) {
+         this.writePos = writePos;
+@@ -83,7 +84,8 @@ public void redraw(AnsiContext ansi) {
+ 
+         if (isVisible) {
+             if (previousWriteRow == absolutePositionRow && writtenSpans.equals(spans)) {
+-                // Does not need to be redrawn
++                // Does not need to be redrawn, but its row is part of the area, also without text
++                shown = true;
+                 return;
+             }
+ 
+@@ -93,6 +95,7 @@ public void redraw(AnsiContext ansi) {
+ 
+             writtenSpans = spans;
+             previousWriteRow = absolutePositionRow;
++            shown = true;
+         }
+     }
+ 
+@@ -106,10 +109,11 @@ private void redrawText(AnsiContext ansi, int writtenTextLength) {
+             }
+         }
+ 
+-        if (previousWriteRow == absolutePositionRow && textLength < writtenTextLength) {
++        // A label that scrolled since it was shown can be on a row with the text of another label or of the output.
++        // A new label is on an empty row, also on the row of the parking line, as this line has no text while the area can be made larger.
++        if ((shown && previousWriteRow != absolutePositionRow) || textLength < writtenTextLength) {
+             ansi.eraseForward();
+         }
+-        // Note: We can't conclude anything if the label scrolled so we leave the erasing to the parent widget.
+     }
+ 
+     private static Action<AnsiContext> writeText(final String text) {
+diff --git a/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/console/MultiLineBuildProgressArea.java b/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/console/MultiLineBuildProgressArea.java
+index 533552d3944c9..7f9c5d7413a0a 100644
+--- a/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/console/MultiLineBuildProgressArea.java
++++ b/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/console/MultiLineBuildProgressArea.java
+@@ -121,23 +121,11 @@ public void redraw(AnsiContext ansi) {
+             ansi.cursorAt(Cursor.newBottomLeft()).newLines(newLines);
+         }
+ 
+-        // Redraw every entry of this area
+-        for (int i = 0; i < entries.size(); ++i) {
+-            DefaultRedrawableLabel label = entries.get(i);
+-
+-            label.redraw(ansi);
+-
+-            // Ensure a clean end of the line when the area scrolls
+-            if (isVisible && newLines > 0 && (i + newLines) < entries.size()) {
+-                int currentLength = label.getWritePosition().col;
+-                int previousLength = entries.get(i + newLines).getWritePosition().col;
+-                if (currentLength < previousLength) {
+-                    ansi.writeAt(label.getWritePosition()).eraseForward();
+-                }
+-            }
+-        }
+-
++        // The entries are drawn while the area is visible, and erased once when it is hidden
+         if (isPreviouslyVisible || isVisible) {
++            for (DefaultRedrawableLabel label : entries) {
++                label.redraw(ansi);
++            }
+             ansi.cursorAt(parkCursor());
+         }
+         isPreviouslyVisible = isVisible;

@@ -1,0 +1,674 @@
+diff --git a/consumer/junit/README.md b/consumer/junit/README.md
+index de00846..998bff0 100644
+--- a/consumer/junit/README.md
++++ b/consumer/junit/README.md
+@@ -218,14 +218,14 @@ For an example test doing this, see [PactProviderHttpsKeystoreTest](https://gith
+ 
+ If you have a lot of tests that may share some values (like headers), you can setup default values that will be applied
+ to all the expected requests and responses for the tests. To do this, you need to create a method that takes single
+-parameter of the appropriate type (`PactDslRequestWithoutPath` or `PactDslResponse`) and annotate it with the default
++parameter of the appropriate type (`PactDslRequestNoPath` or `PactDslResponse`) and annotate it with the default
+ marker annotation (`@DefaultRequestValues` or `@DefaultResponseValues`).
+ 
+ For example:
+ 
+ ```java
+     @DefaultRequestValues
+-    public void defaultRequestValues(PactDslRequestWithoutPath request) {
++    public void defaultRequestValues(PactDslRequestNoPath request) {
+       Map<String, String> headers = new HashMap<String, String>();
+       headers.put("testreqheader", "testreqheadervalue");
+       request.headers(headers);
+diff --git a/consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/BaseProviderRule.java b/consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/BaseProviderRule.java
+index b6d000f..88b7f94 100644
+--- a/consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/BaseProviderRule.java
++++ b/consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/BaseProviderRule.java
+@@ -3,7 +3,7 @@ package au.com.dius.pact.consumer.junit;
+ import au.com.dius.pact.consumer.ConsumerPactBuilder;
+ import au.com.dius.pact.consumer.MockServer;
+ import au.com.dius.pact.consumer.PactVerificationResult;
+-import au.com.dius.pact.consumer.dsl.PactDslRequestWithoutPath;
++import au.com.dius.pact.consumer.dsl.PactDslRequestNoPath;
+ import au.com.dius.pact.consumer.dsl.PactDslResponse;
+ import au.com.dius.pact.consumer.dsl.PactDslWithProvider;
+ import au.com.dius.pact.consumer.model.MockProviderConfig;
+@@ -243,8 +243,8 @@ public class BaseProviderRule extends ExternalResource {
+ 
+   private void setupDefaultRequestValues(PactDslWithProvider dslBuilder, Method m) {
+     if (m.getParameterTypes().length == 1
+-      && m.getParameterTypes()[0].isAssignableFrom(PactDslRequestWithoutPath.class)) {
+-      PactDslRequestWithoutPath defaults = dslBuilder.uponReceiving("defaults");
++      && m.getParameterTypes()[0].isAssignableFrom(PactDslRequestNoPath.class)) {
++      PactDslRequestNoPath defaults = dslBuilder.uponReceiving("defaults");
+       try {
+         m.invoke(target, defaults);
+       } catch (IllegalAccessException| InvocationTargetException e) {
+@@ -254,7 +254,7 @@ public class BaseProviderRule extends ExternalResource {
+     } else {
+       throw new UnsupportedOperationException("Method " + m.getName() +
+         " does not conform required method signature 'public void " + m.getName() +
+-        "(PactDslRequestWithoutPath defaultRequest)'");
++        "(PactDslRequestNoPath defaultRequest)'");
+     }
+   }
+ 
+diff --git a/consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/DefaultRequestValues.java b/consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/DefaultRequestValues.java
+index 87e16a6..4910103 100644
+--- a/consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/DefaultRequestValues.java
++++ b/consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/DefaultRequestValues.java
+@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
+ 
+ /**
+  * Marker annotation for a method that will setup the default request values used in the test. The annotated
+- * method must take a single parameter of PactDslRequestWithoutPath and set the default values on that object
++ * method must take a single parameter of PactDslRequestNoPath and set the default values on that object
+  */
+ @Retention(RetentionPolicy.RUNTIME)
+ @Target(ElementType.METHOD)
+diff --git a/consumer/junit/src/test/java/au/com/dius/pact/consumer/junit/DefaultValuesTest.java b/consumer/junit/src/test/java/au/com/dius/pact/consumer/junit/DefaultValuesTest.java
+index 5752fbc..6e4cf26 100644
+--- a/consumer/junit/src/test/java/au/com/dius/pact/consumer/junit/DefaultValuesTest.java
++++ b/consumer/junit/src/test/java/au/com/dius/pact/consumer/junit/DefaultValuesTest.java
+@@ -1,6 +1,6 @@
+ package au.com.dius.pact.consumer.junit;
+ 
+-import au.com.dius.pact.consumer.dsl.PactDslRequestWithoutPath;
++import au.com.dius.pact.consumer.dsl.PactDslRequestNoPath;
+ import au.com.dius.pact.consumer.dsl.PactDslWithProvider;
+ import au.com.dius.pact.core.model.RequestResponsePact;
+ import au.com.dius.pact.core.model.annotations.Pact;
+@@ -24,7 +24,7 @@ public class DefaultValuesTest {
+     public PactProviderRule provider = new PactProviderRule("DefaultValuesProvider", this);
+ 
+     @DefaultRequestValues
+-    public void defaultRequestValues(PactDslRequestWithoutPath request) {
++    public void defaultRequestValues(PactDslRequestNoPath request) {
+       request.headers("Content-Type", "application/json").method("GET");
+     }
+ 
+diff --git a/consumer/junit/src/test/java/au/com/dius/pact/consumer/junit/pactproviderrule/PactProviderWithMultipleFragmentsTest.java b/consumer/junit/src/test/java/au/com/dius/pact/consumer/junit/pactproviderrule/PactProviderWithMultipleFragmentsTest.java
+index 23200ba..180179a 100644
+--- a/consumer/junit/src/test/java/au/com/dius/pact/consumer/junit/pactproviderrule/PactProviderWithMultipleFragmentsTest.java
++++ b/consumer/junit/src/test/java/au/com/dius/pact/consumer/junit/pactproviderrule/PactProviderWithMultipleFragmentsTest.java
+@@ -6,7 +6,7 @@ import au.com.dius.pact.core.model.annotations.Pact;
+ import au.com.dius.pact.consumer.junit.PactProviderRule;
+ import au.com.dius.pact.consumer.junit.PactVerification;
+ import au.com.dius.pact.consumer.junit.PactVerifications;
+-import au.com.dius.pact.consumer.dsl.PactDslRequestWithoutPath;
++import au.com.dius.pact.consumer.dsl.PactDslRequestNoPath;
+ import au.com.dius.pact.consumer.dsl.PactDslResponse;
+ import au.com.dius.pact.consumer.dsl.PactDslWithProvider;
+ import au.com.dius.pact.consumer.junit.exampleclients.ConsumerClient;
+@@ -40,7 +40,7 @@ public class PactProviderWithMultipleFragmentsTest {
+     public PactProviderRule mockTestProvider2 = new PactProviderRule("test_provider2", this);
+ 
+     @DefaultRequestValues
+-    public void defaultRequestValues(PactDslRequestWithoutPath request) {
++    public void defaultRequestValues(PactDslRequestNoPath request) {
+       Map<String, String> headers = new HashMap<String, String>();
+       headers.put("testreqheader", "testreqheadervalue");
+       request.headers(headers);
+diff --git a/consumer/junit/src/test/kotlin/au/com/dius/pact/consumer/junit/pactproviderrule/PactProviderWithMultipleFragmentsKotlinTest.kt b/consumer/junit/src/test/kotlin/au/com/dius/pact/consumer/junit/pactproviderrule/PactProviderWithMultipleFragmentsKotlinTest.kt
+index 29a003b..de5c808 100644
+--- a/consumer/junit/src/test/kotlin/au/com/dius/pact/consumer/junit/pactproviderrule/PactProviderWithMultipleFragmentsKotlinTest.kt
++++ b/consumer/junit/src/test/kotlin/au/com/dius/pact/consumer/junit/pactproviderrule/PactProviderWithMultipleFragmentsKotlinTest.kt
+@@ -1,6 +1,6 @@
+ package au.com.dius.pact.consumer.junit.pactproviderrule
+ 
+-import au.com.dius.pact.consumer.dsl.PactDslRequestWithoutPath
++import au.com.dius.pact.consumer.dsl.PactDslRequestNoPath
+ import au.com.dius.pact.consumer.dsl.PactDslResponse
+ import au.com.dius.pact.consumer.dsl.PactDslWithProvider
+ import au.com.dius.pact.consumer.junit.DefaultRequestValues
+@@ -31,7 +31,7 @@ class PactProviderWithMultipleFragmentsKotlinTest {
+   var mockTestProvider2 = PactProviderRule("test_provider2", this)
+ 
+   @DefaultRequestValues
+-  fun defaultRequestValues(request: PactDslRequestWithoutPath) {
++  fun defaultRequestValues(request: PactDslRequestNoPath) {
+     request.headers(mapOf("testreqheader" to "testreqheadervalue"))
+   }
+ 
+diff --git a/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestBase.kt b/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestBase.kt
+index ef0a771..2856388 100644
+--- a/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestBase.kt
++++ b/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestBase.kt
+@@ -28,7 +28,7 @@ import java.nio.charset.Charset
+ import java.util.Date
+ 
+ open class PactDslRequestBase(
+-  protected val defaultRequestValues: PactDslRequestWithoutPath?,
++  protected val defaultRequestValues: PactDslRequestNoPath?,
+   var comments: MutableList<String> = mutableListOf(),
+   var version: PactSpecVersion = PactSpecVersion.V3
+ ) {
+diff --git a/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestWithoutPath.kt b/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestNoPath.kt
+similarity index 89%
+rename from consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestWithoutPath.kt
+rename to consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestNoPath.kt
+index 57b4ad5..8ee0d53 100644
+--- a/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestWithoutPath.kt
++++ b/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestNoPath.kt
+@@ -26,11 +26,11 @@ import java.util.function.Supplier
+ import javax.xml.transform.TransformerException
+ 
+ @Suppress("TooManyFunctions", "LongParameterList")
+-open class PactDslRequestWithoutPath @JvmOverloads constructor(
++open class PactDslRequestNoPath @JvmOverloads constructor(
+     private val consumerPactBuilder: ConsumerPactBuilder,
+     private val pactDslWithState: PactDslWithState,
+     private val description: String,
+-    defaultRequestValues: PactDslRequestWithoutPath?,
++    defaultRequestValues: PactDslRequestNoPath?,
+     private val defaultResponseValues: PactDslResponse?,
+     version: PactSpecVersion = PactSpecVersion.V3,
+     private val additionalMetadata: MutableMap<String, JsonValue>
+@@ -47,7 +47,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param method Valid HTTP method
+    */
+-  fun method(method: String): PactDslRequestWithoutPath {
++  fun method(method: String): PactDslRequestNoPath {
+     requestMethod = method
+     return this
+   }
+@@ -57,7 +57,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param headers Key-value pairs
+    */
+-  fun headers(headers: Map<String, String>): PactDslRequestWithoutPath {
++  fun headers(headers: Map<String, String>): PactDslRequestNoPath {
+     for ((key, value) in headers) {
+       requestHeaders[key] = if (isKnowMultiValueHeader(key)) {
+         parseHeaderValue(value).map { headerToString(it) }
+@@ -79,7 +79,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+     firstHeaderName: String,
+     firstHeaderValue: String,
+     vararg headerNameValuePairs: String
+-  ): PactDslRequestWithoutPath {
++  ): PactDslRequestNoPath {
+     require(headerNameValuePairs.size % 2 == 0) {
+       "Pair key value should be provided, but there is one key without value."
+     }
+@@ -106,7 +106,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param query query string
+    */
+-  fun query(query: String): PactDslRequestWithoutPath {
++  fun query(query: String): PactDslRequestNoPath {
+     this.query = queryStringToMap(query, false).toMutableMap()
+     return this
+   }
+@@ -116,7 +116,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param body Request body in string form
+    */
+-  fun body(body: String): PactDslRequestWithoutPath {
++  fun body(body: String): PactDslRequestNoPath {
+     requestBody = body(body.toByteArray())
+     return this
+   }
+@@ -126,7 +126,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param body Request body in string form
+    */
+-  fun body(body: String, contentType: String): PactDslRequestWithoutPath {
++  fun body(body: String, contentType: String): PactDslRequestNoPath {
+     return body(body, ContentType.parse(contentType))
+   }
+ 
+@@ -135,7 +135,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param body Request body in string form
+    */
+-  fun body(body: String, contentType: ContentType): PactDslRequestWithoutPath {
++  fun body(body: String, contentType: ContentType): PactDslRequestNoPath {
+     val charset = BuilderUtils.charset(contentType.toString())
+     requestBody = body(body.toByteArray(charset), au.com.dius.pact.core.model.ContentType(contentType.toString()))
+     requestHeaders[CONTENT_TYPE] = listOf(contentType.toString())
+@@ -147,7 +147,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param body Request body in Java Functional Interface Supplier that must return a string
+    */
+-  fun body(body: Supplier<String>): PactDslRequestWithoutPath {
++  fun body(body: Supplier<String>): PactDslRequestNoPath {
+     requestBody = body(body.get().toByteArray())
+     return this
+   }
+@@ -157,7 +157,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param body Request body in Java Functional Interface Supplier that must return a string
+    */
+-  fun body(body: Supplier<String>, contentType: String): PactDslRequestWithoutPath {
++  fun body(body: Supplier<String>, contentType: String): PactDslRequestNoPath {
+     return this.body(body, ContentType.parse(contentType))
+   }
+ 
+@@ -166,7 +166,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param body Request body in Java Functional Interface Supplier that must return a string
+    */
+-  fun body(body: Supplier<String>, contentType: ContentType): PactDslRequestWithoutPath {
++  fun body(body: Supplier<String>, contentType: ContentType): PactDslRequestNoPath {
+     val charset = BuilderUtils.charset(contentType.toString())
+     requestBody = body(body.get().toByteArray(charset), au.com.dius.pact.core.model.ContentType(contentType.toString()))
+     requestHeaders[CONTENT_TYPE] = listOf(contentType.toString())
+@@ -179,7 +179,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param body Request body in string form
+    */
+-  fun bodyWithSingleQuotes(body: String): PactDslRequestWithoutPath {
++  fun bodyWithSingleQuotes(body: String): PactDslRequestNoPath {
+     return body(QuoteUtil.convert(body))
+   }
+ 
+@@ -189,7 +189,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param body Request body in string form
+    */
+-  fun bodyWithSingleQuotes(body: String, contentType: String): PactDslRequestWithoutPath {
++  fun bodyWithSingleQuotes(body: String, contentType: String): PactDslRequestNoPath {
+     return body(QuoteUtil.convert(body), contentType)
+   }
+ 
+@@ -199,7 +199,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param body Request body in string form
+    */
+-  fun bodyWithSingleQuotes(body: String, contentType: ContentType): PactDslRequestWithoutPath {
++  fun bodyWithSingleQuotes(body: String, contentType: ContentType): PactDslRequestNoPath {
+     return body(QuoteUtil.convert(body), contentType)
+   }
+ 
+@@ -208,7 +208,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param body Request body in JSON form
+    */
+-  fun body(body: JSONObject): PactDslRequestWithoutPath {
++  fun body(body: JSONObject): PactDslRequestNoPath {
+     if (isContentTypeHeaderNotSet) {
+       requestHeaders[CONTENT_TYPE] = listOf(ContentType.APPLICATION_JSON.toString())
+       requestBody = body(body.toString().toByteArray())
+@@ -227,7 +227,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param body Built using the Pact body DSL
+    */
+-  fun body(body: DslPart): PactDslRequestWithoutPath {
++  fun body(body: DslPart): PactDslRequestNoPath {
+     val parent = body.close()
+ 
+     requestMatchers.addCategory(parent!!.matchers)
+@@ -252,7 +252,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param body XML Document
+    */
+   @Throws(TransformerException::class)
+-  fun body(body: Document): PactDslRequestWithoutPath {
++  fun body(body: Document): PactDslRequestNoPath {
+     if (isContentTypeHeaderNotSet) {
+       requestHeaders[CONTENT_TYPE] = listOf(ContentType.APPLICATION_XML.toString())
+       requestBody = body(ConsumerPactBuilder.xmlToString(body).toByteArray())
+@@ -271,7 +271,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param xmlBuilder XML Builder used to construct the XML document
+    */
+-  fun body(xmlBuilder: PactXmlBuilder): PactDslRequestWithoutPath {
++  fun body(xmlBuilder: PactXmlBuilder): PactDslRequestNoPath {
+     requestMatchers.addCategory(xmlBuilder.matchingRules)
+     requestGenerators.addGenerators(xmlBuilder.generators)
+     if (isContentTypeHeaderNotSet) {
+@@ -292,7 +292,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    *
+    * @param body Built using MultipartEntityBuilder
+    */
+-  open fun body(body: MultipartEntityBuilder): PactDslRequestWithoutPath {
++  open fun body(body: MultipartEntityBuilder): PactDslRequestNoPath {
+     setupMultipart(body)
+     return this
+   }
+@@ -300,8 +300,8 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+   /**
+    * Sets up a content type matcher to match any body of the given content type
+    */
+-  public override fun bodyMatchingContentType(contentType: String, exampleContents: String): PactDslRequestWithoutPath {
+-    return super.bodyMatchingContentType(contentType, exampleContents) as PactDslRequestWithoutPath
++  public override fun bodyMatchingContentType(contentType: String, exampleContents: String): PactDslRequestNoPath {
++    return super.bodyMatchingContentType(contentType, exampleContents) as PactDslRequestNoPath
+   }
+ 
+   /**
+@@ -309,7 +309,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param example Example contents to use in the consumer test
+    * @param contentType Content type of the data
+    */
+-  fun withBinaryData(example: ByteArray, contentType: String): PactDslRequestWithoutPath {
++  fun withBinaryData(example: ByteArray, contentType: String): PactDslRequestNoPath {
+     requestBody = body(example, au.com.dius.pact.core.model.ContentType.fromString(contentType))
+     requestHeaders["Content-Type"] = listOf(contentType)
+     requestMatchers.addCategory("body").addRule("$", ContentTypeMatcher(contentType))
+@@ -365,10 +365,10 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+   }
+ 
+   /**
+-   * Variant of [PactDslRequestWithoutPath.matchPath] that introduces a Lambda DSL syntax to better visually separate
++   * Variant of [PactDslRequestNoPath.matchPath] that introduces a Lambda DSL syntax to better visually separate
+    * request and response in a pact.
+    *
+-   * @see PactDslRequestWithoutPath.matchPath
++   * @see PactDslRequestNoPath.matchPath
+    * @sample au.com.dius.pact.consumer.dsl.samples.PactLambdaDslSamples.requestResponse
+    */
+   @JvmOverloads
+@@ -391,7 +391,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+     fileName: String,
+     fileContentType: String?,
+     data: ByteArray
+-  ): PactDslRequestWithoutPath {
++  ): PactDslRequestNoPath {
+     setupFileUpload(partName, fileName, fileContentType, data)
+     return this
+   }
+@@ -402,7 +402,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param expression Expression to be evaluated from the provider state
+    * @param example Example value to use in the consumer test
+    */
+-  fun headerFromProviderState(name: String, expression: String, example: String): PactDslRequestWithoutPath {
++  fun headerFromProviderState(name: String, expression: String, example: String): PactDslRequestNoPath {
+     requestGenerators.addGenerator(Category.HEADER, name, ProviderStateGenerator(expression, DataType.STRING))
+     requestHeaders[name] = listOf(example)
+     return this
+@@ -414,7 +414,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param expression Expression to be evaluated from the provider state
+    * @param example Example value to use in the consumer test
+    */
+-  fun queryParameterFromProviderState(name: String, expression: String, example: String): PactDslRequestWithoutPath {
++  fun queryParameterFromProviderState(name: String, expression: String, example: String): PactDslRequestNoPath {
+     requestGenerators.addGenerator(Category.QUERY, name, ProviderStateGenerator(expression, DataType.STRING))
+     query[name] = listOf(example)
+     return this
+@@ -433,10 +433,10 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+   }
+ 
+   /**
+-   * Variant of [PactDslRequestWithoutPath.pathFromProviderState] that introduces a Lambda DSL syntax to better
++   * Variant of [PactDslRequestNoPath.pathFromProviderState] that introduces a Lambda DSL syntax to better
+    * visually separate request and response in a pact.
+    *
+-   * @see PactDslRequestWithoutPath.pathFromProviderState
++   * @see PactDslRequestNoPath.pathFromProviderState
+    * @sample au.com.dius.pact.consumer.dsl.samples.PactLambdaDslSamples.requestResponse
+    */
+   inline fun pathFromProviderState(
+@@ -451,8 +451,8 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param pattern pattern to match
+    * @param example Example value
+    */
+-  fun queryMatchingDate(field: String, pattern: String, example: String): PactDslRequestWithoutPath {
+-    return queryMatchingDateBase(field, pattern, example) as PactDslRequestWithoutPath
++  fun queryMatchingDate(field: String, pattern: String, example: String): PactDslRequestNoPath {
++    return queryMatchingDateBase(field, pattern, example) as PactDslRequestNoPath
+   }
+ 
+   /**
+@@ -460,8 +460,8 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param field field name
+    * @param pattern pattern to match
+    */
+-  fun queryMatchingDate(field: String, pattern: String): PactDslRequestWithoutPath {
+-    return queryMatchingDateBase(field, pattern, null) as PactDslRequestWithoutPath
++  fun queryMatchingDate(field: String, pattern: String): PactDslRequestNoPath {
++    return queryMatchingDateBase(field, pattern, null) as PactDslRequestNoPath
+   }
+ 
+   /**
+@@ -470,8 +470,8 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param pattern pattern to match
+    * @param example Example value
+    */
+-  fun queryMatchingTime(field: String, pattern: String, example: String): PactDslRequestWithoutPath {
+-    return queryMatchingTimeBase(field, pattern, example) as PactDslRequestWithoutPath
++  fun queryMatchingTime(field: String, pattern: String, example: String): PactDslRequestNoPath {
++    return queryMatchingTimeBase(field, pattern, example) as PactDslRequestNoPath
+   }
+ 
+   /**
+@@ -479,8 +479,8 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param field field name
+    * @param pattern pattern to match
+    */
+-  fun queryMatchingTime(field: String, pattern: String): PactDslRequestWithoutPath {
+-    return queryMatchingTimeBase(field, pattern, null) as PactDslRequestWithoutPath
++  fun queryMatchingTime(field: String, pattern: String): PactDslRequestNoPath {
++    return queryMatchingTimeBase(field, pattern, null) as PactDslRequestNoPath
+   }
+ 
+   /**
+@@ -489,8 +489,8 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param pattern pattern to match
+    * @param example Example value
+    */
+-  fun queryMatchingDatetime(field: String, pattern: String, example: String): PactDslRequestWithoutPath {
+-    return queryMatchingDatetimeBase(field, pattern, example) as PactDslRequestWithoutPath
++  fun queryMatchingDatetime(field: String, pattern: String, example: String): PactDslRequestNoPath {
++    return queryMatchingDatetimeBase(field, pattern, example) as PactDslRequestNoPath
+   }
+ 
+   /**
+@@ -499,8 +499,8 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param field field name
+    * @param pattern pattern to match
+    */
+-  fun queryMatchingDatetime(field: String, pattern: String): PactDslRequestWithoutPath {
+-    return queryMatchingDatetimeBase(field, pattern, null) as PactDslRequestWithoutPath
++  fun queryMatchingDatetime(field: String, pattern: String): PactDslRequestNoPath {
++    return queryMatchingDatetimeBase(field, pattern, null) as PactDslRequestNoPath
+   }
+ 
+   /**
+@@ -510,8 +510,8 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param example Example value
+    */
+   @JvmOverloads
+-  fun queryMatchingISODate(field: String, example: String? = null): PactDslRequestWithoutPath {
+-    return queryMatchingDateBase(field, DateFormatUtils.ISO_DATE_FORMAT.pattern, example) as PactDslRequestWithoutPath
++  fun queryMatchingISODate(field: String, example: String? = null): PactDslRequestNoPath {
++    return queryMatchingDateBase(field, DateFormatUtils.ISO_DATE_FORMAT.pattern, example) as PactDslRequestNoPath
+   }
+ 
+   /**
+@@ -519,15 +519,15 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param field field name
+    * @param example Example value
+    */
+-  fun queryMatchingISOTime(field: String, example: String?): PactDslRequestWithoutPath {
+-    return queryMatchingTimeBase(field, DateFormatUtils.ISO_TIME_FORMAT.pattern, example) as PactDslRequestWithoutPath
++  fun queryMatchingISOTime(field: String, example: String?): PactDslRequestNoPath {
++    return queryMatchingTimeBase(field, DateFormatUtils.ISO_TIME_FORMAT.pattern, example) as PactDslRequestNoPath
+   }
+ 
+   /**
+    * Matches a time field using the ISO time pattern. The current system time will be used for the example value.
+    * @param field field name
+    */
+-  fun queryMatchingTime(field: String): PactDslRequestWithoutPath {
++  fun queryMatchingTime(field: String): PactDslRequestNoPath {
+     return queryMatchingISOTime(field, null)
+   }
+ 
+@@ -538,15 +538,15 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+    * @param example Example value
+    */
+   @JvmOverloads
+-  fun queryMatchingISODatetime(field: String, example: String? = null): PactDslRequestWithoutPath {
++  fun queryMatchingISODatetime(field: String, example: String? = null): PactDslRequestNoPath {
+     return queryMatchingDatetimeBase(field, DateFormatUtils.ISO_DATETIME_FORMAT.pattern,
+-      example) as PactDslRequestWithoutPath
++      example) as PactDslRequestNoPath
+   }
+ 
+   /**
+    * Adds additional values to the metadata section of the Pact file
+    */
+-  fun addMetadataValue(key: String, value: String): PactDslRequestWithoutPath {
++  fun addMetadataValue(key: String, value: String): PactDslRequestNoPath {
+     additionalMetadata[key] = JsonValue.StringValue(value)
+     return this
+   }
+@@ -554,7 +554,7 @@ open class PactDslRequestWithoutPath @JvmOverloads constructor(
+   /**
+    * Adds additional values to the metadata section of the Pact file
+    */
+-  fun addMetadataValue(key: String, value: JsonValue): PactDslRequestWithoutPath {
++  fun addMetadataValue(key: String, value: JsonValue): PactDslRequestNoPath {
+     additionalMetadata[key] = value
+     return this
+   }
+diff --git a/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestWithPath.kt b/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestWithPath.kt
+index 0866060..02c082d 100644
+--- a/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestWithPath.kt
++++ b/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestWithPath.kt
+@@ -61,7 +61,7 @@ open class PactDslRequestWithPath : PactDslRequestBase {
+                        requestBody: OptionalBody,
+                        requestMatchers: MatchingRules,
+                        requestGenerators: Generators,
+-                       defaultRequestValues: PactDslRequestWithoutPath?,
++                       defaultRequestValues: PactDslRequestNoPath?,
+                        defaultResponseValues: PactDslResponse?,
+                        comments: MutableList<String> = mutableListOf(),
+                        version: PactSpecVersion = PactSpecVersion.V3,
+@@ -92,7 +92,7 @@ open class PactDslRequestWithPath : PactDslRequestBase {
+     consumerPactBuilder: ConsumerPactBuilder,
+     existing: PactDslRequestWithPath,
+     description: String,
+-    defaultRequestValues: PactDslRequestWithoutPath?,
++    defaultRequestValues: PactDslRequestNoPath?,
+     defaultResponseValues: PactDslResponse?,
+     comments: MutableList<String> = mutableListOf(),
+     version: PactSpecVersion = PactSpecVersion.V3,
+diff --git a/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslResponse.kt b/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslResponse.kt
+index 8f7a1e0..80eb8b3 100644
+--- a/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslResponse.kt
++++ b/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslResponse.kt
+@@ -47,7 +47,7 @@ import javax.xml.transform.TransformerException
+ open class PactDslResponse @JvmOverloads constructor(
+     private val consumerPactBuilder: ConsumerPactBuilder,
+     private val request: PactDslRequestWithPath?,
+-    private val defaultRequestValues: PactDslRequestWithoutPath? = null,
++    private val defaultRequestValues: PactDslRequestNoPath? = null,
+     private val defaultResponseValues: PactDslResponse? = null,
+     private val comments: MutableList<String> = mutableListOf(),
+     val version: PactSpecVersion = PactSpecVersion.V3,
+diff --git a/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslWithProvider.kt b/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslWithProvider.kt
+index 35817d2..9c7cc5d 100644
+--- a/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslWithProvider.kt
++++ b/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslWithProvider.kt
+@@ -10,7 +10,7 @@ open class PactDslWithProvider @JvmOverloads constructor(
+   private val providerName: String,
+   val version: PactSpecVersion = PactSpecVersion.V3
+ ) {
+-  private var defaultRequestValues: PactDslRequestWithoutPath? = null
++  private var defaultRequestValues: PactDslRequestNoPath? = null
+   private var defaultResponseValues: PactDslResponse? = null
+   private val additionalMetadata: MutableMap<String, JsonValue> = mutableMapOf()
+ 
+@@ -61,13 +61,13 @@ open class PactDslWithProvider @JvmOverloads constructor(
+    *
+    * @param description request description
+    */
+-  fun uponReceiving(description: String): PactDslRequestWithoutPath {
++  fun uponReceiving(description: String): PactDslRequestNoPath {
+     return PactDslWithState(consumerPactBuilder, consumerPactBuilder.consumerName, providerName,
+       defaultRequestValues, defaultResponseValues, version, additionalMetadata)
+       .uponReceiving(description)
+   }
+ 
+-  fun setDefaultRequestValues(defaultRequestValues: PactDslRequestWithoutPath) {
++  fun setDefaultRequestValues(defaultRequestValues: PactDslRequestNoPath) {
+     this.defaultRequestValues = defaultRequestValues
+   }
+ 
+diff --git a/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslWithState.kt b/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslWithState.kt
+index bee7313..3e4673d 100644
+--- a/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslWithState.kt
++++ b/consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslWithState.kt
+@@ -9,7 +9,7 @@ open class PactDslWithState @JvmOverloads constructor(
+   private val consumerPactBuilder: ConsumerPactBuilder,
+   var consumerName: String,
+   var providerName: String,
+-  private val defaultRequestValues: PactDslRequestWithoutPath?,
++  private val defaultRequestValues: PactDslRequestNoPath?,
+   private val defaultResponseValues: PactDslResponse?,
+   val version: PactSpecVersion = PactSpecVersion.V3,
+   private var additionalMetadata: MutableMap<String, JsonValue> = mutableMapOf()
+@@ -24,7 +24,7 @@ open class PactDslWithState @JvmOverloads constructor(
+     consumerName: String,
+     providerName: String,
+     state: ProviderState,
+-    defaultRequestValues: PactDslRequestWithoutPath?,
++    defaultRequestValues: PactDslRequestNoPath?,
+     defaultResponseValues: PactDslResponse?,
+     version: PactSpecVersion,
+     additionalMetadata: MutableMap<String, JsonValue>
+@@ -38,8 +38,8 @@ open class PactDslWithState @JvmOverloads constructor(
+    *
+    * @param description request description
+    */
+-  fun uponReceiving(description: String): PactDslRequestWithoutPath {
+-    return PactDslRequestWithoutPath(consumerPactBuilder, this, description, defaultRequestValues,
++  fun uponReceiving(description: String): PactDslRequestNoPath {
++    return PactDslRequestNoPath(consumerPactBuilder, this, description, defaultRequestValues,
+       defaultResponseValues, version, additionalMetadata)
+   }
+ 
+diff --git a/consumer/src/test/groovy/au/com/dius/pact/consumer/dsl/PactDslRequestWithPathSpec.groovy b/consumer/src/test/groovy/au/com/dius/pact/consumer/dsl/PactDslRequestWithPathSpec.groovy
+index c796582..5684193 100644
+--- a/consumer/src/test/groovy/au/com/dius/pact/consumer/dsl/PactDslRequestWithPathSpec.groovy
++++ b/consumer/src/test/groovy/au/com/dius/pact/consumer/dsl/PactDslRequestWithPathSpec.groovy
+@@ -15,7 +15,7 @@ class PactDslRequestWithPathSpec extends Specification {
+     given:
+     ConsumerPactBuilder consumerPactBuilder = ConsumerPactBuilder.consumer('spec')
+     PactDslWithState pactDslWithState = new PactDslWithState(consumerPactBuilder, 'spec', 'spec', null, null)
+-    PactDslRequestWithoutPath defaultRequestValues = new PactDslRequestWithoutPath(consumerPactBuilder,
++    PactDslRequestNoPath defaultRequestValues = new PactDslRequestNoPath(consumerPactBuilder,
+       pactDslWithState, 'test', null, null, [:])
+       .method('PATCH')
+       .headers('test', 'test')
+diff --git a/consumer/src/test/groovy/au/com/dius/pact/consumer/dsl/PactDslRequestWithoutPathSpec.groovy b/consumer/src/test/groovy/au/com/dius/pact/consumer/dsl/PactDslRequestWithoutPathSpec.groovy
+index 6d94e1e..177f17c 100644
+--- a/consumer/src/test/groovy/au/com/dius/pact/consumer/dsl/PactDslRequestWithoutPathSpec.groovy
++++ b/consumer/src/test/groovy/au/com/dius/pact/consumer/dsl/PactDslRequestWithoutPathSpec.groovy
+@@ -12,7 +12,7 @@ class PactDslRequestWithoutPathSpec extends Specification {
+     given:
+     ConsumerPactBuilder consumerPactBuilder = ConsumerPactBuilder.consumer('spec')
+     PactDslWithState pactDslWithState = new PactDslWithState(consumerPactBuilder, 'spec', 'spec', null, null)
+-    PactDslRequestWithoutPath defaultRequestValues = new PactDslRequestWithoutPath(consumerPactBuilder,
++    PactDslRequestNoPath defaultRequestValues = new PactDslRequestNoPath(consumerPactBuilder,
+       pactDslWithState, 'test', null, null, [:])
+       .method('PATCH')
+       .headers('test', 'test')
+@@ -20,7 +20,7 @@ class PactDslRequestWithoutPathSpec extends Specification {
+       .body('{"test":true}')
+ 
+     when:
+-    PactDslRequestWithoutPath subject = new PactDslRequestWithoutPath(consumerPactBuilder, pactDslWithState, 'test',
++    PactDslRequestNoPath subject = new PactDslRequestNoPath(consumerPactBuilder, pactDslWithState, 'test',
+       defaultRequestValues, null, [:])
+ 
+     then:
+@@ -37,7 +37,7 @@ class PactDslRequestWithoutPathSpec extends Specification {
+     PactDslWithState pactDslWithState = new PactDslWithState(consumerPactBuilder, 'spec', 'spec', null, null)
+ 
+     when:
+-    PactDslRequestWithoutPath request = new PactDslRequestWithoutPath(consumerPactBuilder,
++    PactDslRequestNoPath request = new PactDslRequestNoPath(consumerPactBuilder,
+       pactDslWithState, 'test', null, null, [:])
+       .headers('content-type', 'text/plain')
+       .body(new PactDslJsonBody())
+@@ -50,7 +50,7 @@ class PactDslRequestWithoutPathSpec extends Specification {
+     given:
+     ConsumerPactBuilder consumerPactBuilder = ConsumerPactBuilder.consumer('spec')
+     PactDslWithState pactDslWithState = new PactDslWithState(consumerPactBuilder, 'spec', 'spec', null, null)
+-    PactDslRequestWithoutPath subject = new PactDslRequestWithoutPath(consumerPactBuilder, pactDslWithState, 'test',
++    PactDslRequestNoPath subject = new PactDslRequestNoPath(consumerPactBuilder, pactDslWithState, 'test',
+       null, null, [:])
+ 
+     when:

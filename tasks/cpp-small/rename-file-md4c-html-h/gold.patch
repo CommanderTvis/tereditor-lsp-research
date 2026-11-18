@@ -1,0 +1,100 @@
+diff --git a/README.md b/README.md
+index 917c13a..735932a 100644
+--- a/README.md
++++ b/README.md
+@@ -74,7 +74,7 @@ it onto the screen.
+ 
+ ### Converting to HTML
+ 
+-If you need to convert Markdown to HTML, include `md4c-html.h` and link against
++If you need to convert Markdown to HTML, include `md4c-render.h` and link against
+ MD4C-HTML library (`-lmd4c-html`); or alternatively add the sources `md4c.[hc]`,
+ `md4c-html.[hc]` and `entity.[hc]` into your code base.
+ 
+@@ -236,7 +236,7 @@ preprocessor macros (as specified at the time MD4C is being built):
+ ## Documentation
+ 
+ The API of the parser is quite well documented in the comments in the `md4c.h`.
+-Similarly, the markdown-to-html API is described in its header `md4c-html.h`.
++Similarly, the markdown-to-html API is described in its header `md4c-render.h`.
+ 
+ There is also a [project wiki](https://github.com/mity/md4c/wiki) which provides
+ some more comprehensive documentation. However, note it is incomplete and some
+diff --git a/md2html/md2html.c b/md2html/md2html.c
+index f6979dd..cd0387b 100644
+--- a/md2html/md2html.c
++++ b/md2html/md2html.c
+@@ -28,7 +28,7 @@
+ #include <string.h>
+ #include <time.h>
+ 
+-#include "md4c-html.h"
++#include "md4c-render.h"
+ #include "cmdline.h"
+ 
+ 
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 8afb3e1..c8b682a 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -31,7 +31,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/md4c.pc DESTINATION ${CMAKE_INSTALL_LI
+ # Build & install rules for HTML renderer library
+ if(BUILD_HTML_LIBRARY)
+     configure_file(md4c-html.pc.in md4c-html.pc @ONLY)
+-    add_library(md4c-html md4c-html.c md4c-html.h entity.c entity.h)
++    add_library(md4c-html md4c-html.c md4c-render.h entity.c entity.h)
+     target_include_directories(md4c-html PUBLIC
+         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+@@ -39,7 +39,7 @@ if(BUILD_HTML_LIBRARY)
+     set_target_properties(md4c-html PROPERTIES
+         VERSION ${PROJECT_VERSION}
+         SOVERSION ${PROJECT_VERSION_MAJOR}
+-        PUBLIC_HEADER md4c-html.h
++        PUBLIC_HEADER md4c-render.h
+     )
+     target_link_libraries(md4c-html PUBLIC md4c)
+     install(
+diff --git a/src/md4c-html.c b/src/md4c-html.c
+index d1e1c7c..219bcec 100644
+--- a/src/md4c-html.c
++++ b/src/md4c-html.c
+@@ -26,7 +26,7 @@
+ #include <stdio.h>
+ #include <string.h>
+ 
+-#include "md4c-html.h"
++#include "md4c-render.h"
+ #include "entity.h"
+ 
+ 
+diff --git a/src/md4c-html.h b/src/md4c-render.h
+similarity index 100%
+rename from src/md4c-html.h
+rename to src/md4c-render.h
+diff --git a/test/embedded/smoke.cpp b/test/embedded/smoke.cpp
+index c46068c..c9c5e34 100644
+--- a/test/embedded/smoke.cpp
++++ b/test/embedded/smoke.cpp
+@@ -11,7 +11,7 @@
+ #endif
+ 
+ #include "md4c.h"
+-#include "md4c-html.h"
++#include "md4c-render.h"
+ 
+ /* Parser never really needs to emit anything; we only verify the library
+  * builds and links for the target. */
+diff --git a/test/fuzzers/fuzz-mdhtml.c b/test/fuzzers/fuzz-mdhtml.c
+index 4e0f601..cd3913c 100644
+--- a/test/fuzzers/fuzz-mdhtml.c
++++ b/test/fuzzers/fuzz-mdhtml.c
+@@ -1,7 +1,7 @@
+ 
+ #include <stdint.h>
+ #include <stdlib.h>
+-#include "md4c-html.h"
++#include "md4c-render.h"
+ 
+ 
+ static void

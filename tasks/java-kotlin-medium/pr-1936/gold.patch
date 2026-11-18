@@ -1,0 +1,247 @@
+diff --git a/core/model/src/main/kotlin/au/com/dius/pact/core/model/PactReader.kt b/core/model/src/main/kotlin/au/com/dius/pact/core/model/PactReader.kt
+index 4f3bf93d1..c0bc549f3 100644
+--- a/core/model/src/main/kotlin/au/com/dius/pact/core/model/PactReader.kt
++++ b/core/model/src/main/kotlin/au/com/dius/pact/core/model/PactReader.kt
+@@ -2,14 +2,12 @@ package au.com.dius.pact.core.model
+ 
+ import au.com.dius.pact.core.model.messaging.MessagePact
+ import au.com.dius.pact.core.pactbroker.PactBrokerClient
+-import au.com.dius.pact.core.pactbroker.PactBrokerClientConfig
+ import au.com.dius.pact.core.pactbroker.PactBrokerResult
+ import au.com.dius.pact.core.support.HttpClient
+ import au.com.dius.pact.core.support.HttpClientUtils
+ import au.com.dius.pact.core.support.HttpClientUtils.isJsonResponse
+ import au.com.dius.pact.core.support.Json
+ import au.com.dius.pact.core.support.Result
+-import au.com.dius.pact.core.support.Utils
+ import au.com.dius.pact.core.support.Version
+ import au.com.dius.pact.core.support.handleWith
+ import au.com.dius.pact.core.support.json.JsonException
+@@ -44,9 +42,7 @@ fun loadPactFromUrl(
+ ): Pair<JsonValue.Object, PactSource> {
+   return when (source) {
+     is BrokerUrlSource -> {
+-      val insecureTLS = Utils.lookupInMap(options, "insecureTLS", Boolean::class.java, false)
+-      val brokerClient = PactBrokerClient(source.pactBrokerUrl, options.toMutableMap(),
+-        PactBrokerClientConfig(insecureTLS = insecureTLS))
++      val brokerClient = PactBrokerClient.fromOptions(source.pactBrokerUrl, options)
+       val pactResponse = brokerClient.fetchPact(source.url, source.encodePath)
+       pactResponse.pactFile to source.copy(attributes = pactResponse.links, options = options, tag = source.tag)
+     }
+@@ -347,29 +343,19 @@ object DefaultPactReader : PactReader {
+     } else if (source is InputStream || source is Reader || source is File) {
+       return loadPactFromFile(source)
+     } else if (source is BrokerUrlSource) {
+-      val insecureTLS = Utils.lookupInMap(options, "insecureTLS", Boolean::class.java, false)
+-      return HttpClient.newHttpClient(
+-        options["authentication"],
+-        URI(source.pactBrokerUrl),
+-        insecureTLS = insecureTLS
+-      ).first.use {
++      return HttpClient.newHttpClientFromOptions(URI(source.pactBrokerUrl), options).first.use {
+         loadPactFromUrl(source, options, it)
+       }
+     } else if (source is PactBrokerResult) {
+-      val insecureTLS = Utils.lookupInMap(options, "insecureTLS", Boolean::class.java, false)
+-      return HttpClient.newHttpClient(
+-        options["authentication"],
+-        URI(source.pactBrokerUrl),
+-        insecureTLS = insecureTLS
+-      ).first.use {
++      return HttpClient.newHttpClientFromOptions(URI(source.pactBrokerUrl), options).first.use {
+         loadPactFromUrl(BrokerUrlSource.fromResult(source, options, source.tag), options, it)
+       }
+     } else if (source is URL || source is UrlPactSource) {
+       val urlSource = if (source is URL) UrlSource(source.toString()) else source as UrlPactSource
+-      return loadPactFromUrl(urlSource, options, HttpClient.newHttpClient(options["authentication"], URI(urlSource.url)).first)
++      return loadPactFromUrl(urlSource, options, HttpClient.newHttpClientFromOptions(URI(urlSource.url), options).first)
+     } else if (source is String && source.lowercase(Locale.getDefault()).matches(Regex("(https?|file)://?.*"))) {
+       val urlSource = UrlSource(source)
+-      return loadPactFromUrl(urlSource, options, HttpClient.newHttpClient(options["authentication"], URI(urlSource.url)).first)
++      return loadPactFromUrl(urlSource, options, HttpClient.newHttpClientFromOptions(URI(urlSource.url), options).first)
+     } else if (source is String && source.lowercase(Locale.getDefault()).matches(Regex("s3://.*"))) {
+       return loadPactFromS3Bucket(source)
+     } else if (source is String && source.startsWith(CLASSPATH_URI_START)) {
+diff --git a/core/pactbroker/src/main/kotlin/au/com/dius/pact/core/pactbroker/PactBrokerClient.kt b/core/pactbroker/src/main/kotlin/au/com/dius/pact/core/pactbroker/PactBrokerClient.kt
+index 7e331dd89..e032c6729 100644
+--- a/core/pactbroker/src/main/kotlin/au/com/dius/pact/core/pactbroker/PactBrokerClient.kt
++++ b/core/pactbroker/src/main/kotlin/au/com/dius/pact/core/pactbroker/PactBrokerClient.kt
+@@ -2,6 +2,7 @@ package au.com.dius.pact.core.pactbroker
+ 
+ import au.com.dius.pact.core.support.Auth
+ import au.com.dius.pact.core.support.Json
++import au.com.dius.pact.core.support.PactReaderOptionKeys
+ import au.com.dius.pact.core.support.Result
+ import au.com.dius.pact.core.support.Utils
+ import au.com.dius.pact.core.support.Utils.lookupEnvironmentValue
+@@ -1089,6 +1090,23 @@ open class PactBrokerClient(
+       )
+ 
+   companion object {
++    /**
++     * Creates a client from the untyped options map carried on a [au.com.dius.pact.core.model.BrokerUrlSource].
++     *
++     * The options and the config have to agree, so recreating a client from those options needs to go through here.
++     * Deriving the config separately is what dropped the custom headers from the pact fetch and from the publishing
++     * of verification results (see issue #1935).
++     */
++    @JvmStatic
++    fun fromOptions(pactBrokerUrl: String, options: Map<String, Any>) = PactBrokerClient(
++      pactBrokerUrl,
++      options.toMutableMap(),
++      PactBrokerClientConfig(
++        insecureTLS = Utils.lookupInMap(options, PactReaderOptionKeys.INSECURE_TLS, Boolean::class.java, false),
++        customHeaders = Utils.lookupStringMapInMap(options, PactReaderOptionKeys.CUSTOM_HEADERS)
++      )
++    )
++
+     const val LATEST_PROVIDER_PACTS_WITH_NO_TAG = "pb:latest-untagged-pact-version"
+     const val LATEST_PROVIDER_PACTS = "pb:latest-provider-pacts"
+     const val LATEST_PROVIDER_PACTS_WITH_TAG = "pb:latest-provider-pacts-with-tag"
+diff --git a/core/support/src/main/kotlin/au/com/dius/pact/core/support/HttpClient.kt b/core/support/src/main/kotlin/au/com/dius/pact/core/support/HttpClient.kt
+index 845fbc59a..b6bc2b4d2 100644
+--- a/core/support/src/main/kotlin/au/com/dius/pact/core/support/HttpClient.kt
++++ b/core/support/src/main/kotlin/au/com/dius/pact/core/support/HttpClient.kt
+@@ -96,6 +96,21 @@ private class RetryAnyMethod(
+  */
+ object HttpClient {
+ 
++  /**
++   * Creates a new HTTP client from the untyped options map that is passed to `PactReader.loadPact`.
++   *
++   * Anywhere a client is built from those options needs to go through here, otherwise the transport settings
++   * (authentication, insecure TLS and any custom headers) are silently dropped from the resulting requests.
++   */
++  fun newHttpClientFromOptions(uri: URI, options: Map<String, Any?>): Pair<CloseableHttpClient, CredentialsProvider?> {
++    return newHttpClient(
++      options[PactReaderOptionKeys.AUTHENTICATION],
++      uri,
++      insecureTLS = Utils.lookupInMap(options, PactReaderOptionKeys.INSECURE_TLS, Boolean::class.java, false),
++      customHeaders = Utils.lookupStringMapInMap(options, PactReaderOptionKeys.CUSTOM_HEADERS)
++    )
++  }
++
+   /**
+    * Creates a new HTTP client
+    */
+diff --git a/core/support/src/main/kotlin/au/com/dius/pact/core/support/PactReaderOptionKeys.kt b/core/support/src/main/kotlin/au/com/dius/pact/core/support/PactReaderOptionKeys.kt
+new file mode 100644
+index 000000000..45786f341
+--- /dev/null
++++ b/core/support/src/main/kotlin/au/com/dius/pact/core/support/PactReaderOptionKeys.kt
+@@ -0,0 +1,26 @@
++package au.com.dius.pact.core.support
++
++/**
++ * Keys used in the untyped options map that is passed to `PactReader.loadPact` and on to the HTTP clients that
++ * fetch pact files.
++ *
++ * These are defined here (rather than as literals at each use site) because the map is populated in one module
++ * (for instance the JUnit `PactBrokerLoader`) and consumed in another (`PactReader`), so a typo in either place
++ * silently drops the setting.
++ */
++object PactReaderOptionKeys {
++  /**
++   * Authentication to use when fetching pacts. Either an [Auth] value or the legacy list form.
++   */
++  const val AUTHENTICATION = "authentication"
++
++  /**
++   * Boolean controlling whether TLS errors are ignored when fetching pacts.
++   */
++  const val INSECURE_TLS = "insecureTLS"
++
++  /**
++   * Additional HTTP headers (`Map<String, String>`) to send with every request made while fetching pacts.
++   */
++  const val CUSTOM_HEADERS = "customHeaders"
++}
+diff --git a/core/support/src/main/kotlin/au/com/dius/pact/core/support/Utils.kt b/core/support/src/main/kotlin/au/com/dius/pact/core/support/Utils.kt
+index b5f22bf89..49abeebfb 100644
+--- a/core/support/src/main/kotlin/au/com/dius/pact/core/support/Utils.kt
++++ b/core/support/src/main/kotlin/au/com/dius/pact/core/support/Utils.kt
+@@ -53,6 +53,20 @@ object Utils {
+     }
+   }
+ 
++  /**
++   * Looks up a key in a map, expecting a map of strings to strings as the value. If the key does not exist, or the
++   * value is not a map with only string keys and values, returns an empty map.
++   */
++  @Suppress("UNCHECKED_CAST")
++  fun lookupStringMapInMap(map: Map<String, Any?>, key: String): Map<String, String> {
++    val value = map[key]
++    return if (value is Map<*, *> && value.all { it.key is String && it.value is String }) {
++      value as Map<String, String>
++    } else {
++      emptyMap()
++    }
++  }
++
+   /**
+    * Finds a random open port between the min and max port values
+    */
+diff --git a/provider/src/main/kotlin/au/com/dius/pact/provider/VerificationReporter.kt b/provider/src/main/kotlin/au/com/dius/pact/provider/VerificationReporter.kt
+index ac5b8f9db..0dd60fd8f 100644
+--- a/provider/src/main/kotlin/au/com/dius/pact/provider/VerificationReporter.kt
++++ b/provider/src/main/kotlin/au/com/dius/pact/provider/VerificationReporter.kt
+@@ -4,7 +4,6 @@ import au.com.dius.pact.core.model.BrokerUrlSource
+ import au.com.dius.pact.core.model.Pact
+ import au.com.dius.pact.core.pactbroker.IPactBrokerClient
+ import au.com.dius.pact.core.pactbroker.PactBrokerClient
+-import au.com.dius.pact.core.pactbroker.PactBrokerClientConfig
+ import au.com.dius.pact.core.pactbroker.TestResult
+ import au.com.dius.pact.core.support.Result
+ import au.com.dius.pact.core.support.expressions.SystemPropertyResolver
+@@ -84,8 +83,7 @@ object DefaultVerificationReporter : VerificationReporter, KLogging() {
+   ): Result<Boolean, List<String>> {
+     return when (val source = pact.source) {
+       is BrokerUrlSource -> {
+-        val brokerClient = client ?: PactBrokerClient(source.pactBrokerUrl, source.options.toMutableMap(),
+-          PactBrokerClientConfig())
++        val brokerClient = client ?: PactBrokerClient.fromOptions(source.pactBrokerUrl, source.options)
+         publishResult(brokerClient, source, result, version, pact, tags, branch)
+       }
+       else -> {
+diff --git a/provider/src/main/kotlin/au/com/dius/pact/provider/junitsupport/loader/PactBrokerLoader.kt b/provider/src/main/kotlin/au/com/dius/pact/provider/junitsupport/loader/PactBrokerLoader.kt
+index ca8c14aa2..d3b884cc1 100644
+--- a/provider/src/main/kotlin/au/com/dius/pact/provider/junitsupport/loader/PactBrokerLoader.kt
++++ b/provider/src/main/kotlin/au/com/dius/pact/provider/junitsupport/loader/PactBrokerLoader.kt
+@@ -13,6 +13,7 @@ import au.com.dius.pact.core.pactbroker.IPactBrokerClient
+ import au.com.dius.pact.core.pactbroker.PactBrokerClient
+ import au.com.dius.pact.core.pactbroker.PactBrokerClientConfig
+ import au.com.dius.pact.core.pactbroker.RequestFailedException
++import au.com.dius.pact.core.support.PactReaderOptionKeys
+ import au.com.dius.pact.core.support.Result
+ import au.com.dius.pact.core.support.Utils.permutations
+ import au.com.dius.pact.core.support.expressions.DataType
+@@ -366,7 +367,7 @@ open class PactBrokerLoader(
+       if (username.isNotEmpty()) {
+         logger.debug { "Authentication: Basic" }
+         options = mapOf(
+-          "authentication" to listOf(
++          PactReaderOptionKeys.AUTHENTICATION to listOf(
+             "basic", username,
+             ep.parseExpression(authentication!!.password, DataType.RAW, resolver)
+           )
+@@ -374,12 +375,18 @@ open class PactBrokerLoader(
+       // Check if token is set. If yes, use bearer auth.
+       } else if (token.isNotEmpty()) {
+         logger.debug { "Authentication: Bearer" }
+-        options = mapOf("authentication" to listOf("bearer", token, headerName))
++        options = mapOf(PactReaderOptionKeys.AUTHENTICATION to listOf("bearer", token, headerName))
+       }
+     }
+ 
+     if (insecureTls) {
+-      options = options + ("insecureTLS" to insecureTls)
++      options = options + (PactReaderOptionKeys.INSECURE_TLS to insecureTls)
++    }
++
++    // The options map is what gets passed to PactReader.loadPact for each pact, and is the only way the custom
++    // headers reach the request that fetches the pact contents from the broker
++    if (resolvedCustomHeaders.isNotEmpty()) {
++      options = options + (PactReaderOptionKeys.CUSTOM_HEADERS to resolvedCustomHeaders)
+     }
+ 
+     return PactBrokerClient(url.toString(), options.toMutableMap(), config)

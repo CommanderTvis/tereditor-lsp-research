@@ -1,0 +1,4 @@
+{"task": "tasks/java-xlarge/pr-16706", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 41, "fresh_lines": 41, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.00158039}
+{"task": "tasks/java-xlarge/pr-16706", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 41, "fresh_lines": 41, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0181169}
+{"task": "tasks/java-xlarge/pr-16706", "model": "claude-opus-5-5", "answered": true, "gold_lines": 41, "fresh_lines": 41, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0695858}
+SCORE tasks/java-xlarge/pr-16706 worst verbatim share 0.00 (gold lines 41)

@@ -1,1 +1,0 @@
-toolz/tests/test_itertoolz.py::test_partition_all

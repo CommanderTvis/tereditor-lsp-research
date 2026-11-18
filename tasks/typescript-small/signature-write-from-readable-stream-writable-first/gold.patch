@@ -1,0 +1,66 @@
+diff --git a/src/listener.ts b/src/listener.ts
+index cf49fc1..0b7014d 100644
+--- a/src/listener.ts
++++ b/src/listener.ts
+@@ -246,7 +246,7 @@ const responseViaCache = async (
+     } else {
+       outgoing.writeHead(status, { 'Content-Type': defaultContentType })
+       flushHeaders(outgoing)
+-      await writeFromReadableStream(body, outgoing)?.catch(
++      await writeFromReadableStream(outgoing, body)?.catch(
+         (e) => handleResponseError(e, outgoing) as undefined
+       )
+     }
+@@ -310,7 +310,7 @@ const responseViaCache = async (
+     outgoing.end(new Uint8Array(await body.arrayBuffer()))
+   } else {
+     flushHeaders(outgoing)
+-    await writeFromReadableStream(body, outgoing)?.catch(
++    await writeFromReadableStream(outgoing, body)?.catch(
+       (e) => handleResponseError(e, outgoing) as undefined
+     )
+   }
+diff --git a/src/utils.ts b/src/utils.ts
+index 5008bb1..dcf27fe 100644
+--- a/src/utils.ts
++++ b/src/utils.ts
+@@ -61,7 +61,7 @@ export function writeFromReadableStreamDefaultReader(
+   }
+ }
+ 
+-export function writeFromReadableStream(stream: ReadableStream<Uint8Array>, writable: Writable) {
++export function writeFromReadableStream(writable: Writable, stream: ReadableStream<Uint8Array>) {
+   if (stream.locked) {
+     throw new TypeError('ReadableStream is locked.')
+   } else if (writable.destroyed) {
+diff --git a/test/utils.test.ts b/test/utils.test.ts
+index 7796988..b0dc6b8 100644
+--- a/test/utils.test.ts
++++ b/test/utils.test.ts
+@@ -127,7 +127,7 @@ describe('writeFromReadableStream', () => {
+       writable.destroy()
+     }, 50)
+ 
+-    await writeFromReadableStream(stream, writable)
++    await writeFromReadableStream(writable, stream)
+ 
+     expect(enqueueCalled).toBe(false) // enqueue should not be called
+     expect(cancelCalled).toBe(true) // cancel should be called
+@@ -145,7 +145,7 @@ describe('writeFromReadableStream', () => {
+     writable.destroy()
+     await new Promise((resolve) => writable.once('close', resolve))
+ 
+-    await writeFromReadableStream(stream, writable)
++    await writeFromReadableStream(writable, stream)
+ 
+     expect(cancelCalled).toBe(true)
+   })
+@@ -212,7 +212,7 @@ describe('writeFromReadableStream with a paced source', () => {
+       },
+     })
+ 
+-    await writeFromReadableStream(stream, writable)
++    await writeFromReadableStream(writable, stream)
+ 
+     expect(baseline).toBeGreaterThan(0)
+     // before the fix, about one promise per chunk (~900) stayed alive between the two samples

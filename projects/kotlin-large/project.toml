@@ -1,13 +1,22 @@
-# kotlin, large: chosen by size, see docs/PROJECTS.md. Curated: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# kotlin, large: Kotlin/dataframe, a pure-JVM Gradle build (replaces ktor, which has too few modern pull requests that close an issue).
 lang = "kotlin"
 size = "large"
 status = "curated"
-repo = "https://github.com/ktorio/ktor"
-tag = "3.6.1"
-commit = "26cc0037c9f671bbd090633aa2880badb7045855"
-loc = 211290
-loc_by_language = { "Kotlin" = 211290 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-task_types = ["rename", "rename-file", "dispatch", "move", "signature", "impls"]
-pr_fallback = "Assigned PR slots filled by documented synthetic fallback task directories; full project validation remains pending."
+repo = "https://github.com/Kotlin/dataframe"
+tag = "master-2026-11-17"
+commit = "2b425634957a0e974ee1d45896a42e420c261328"
+loc = 155341
+loc_by_language = { "Kotlin" = 155341, "Java" = 131 }
+loc_method = "scc 3.5.0 code lines (harness/size/measure.sh), 2026-11-17"
+size_note = "155k Kotlin code lines, inside the large band (140k to 450k) at its lower edge; owner-accepted. No release tag is checked, so the commit of master on 2026-11-17 is pinned."
+stripped = ["CLAUDE.md", "AGENTS.md", ".idea"]
+task_types = ["rename", "rename-file", "dispatch"]
+grade_note = "Gradle 9.9, JDK 21 (the sandbox's; the project's daemon JVM criteria ask for 21). Library modules only: core, dataframe-json, -csv, -arrow, -excel, samples, common-test-utils; the JDBC module (Testcontainers), the compiler plugin and the Jupyter/geo/openapi modules are not tested. The kotlinlang bootstrap Maven repository is reached at prepare and grade-setup time (network on). The project's gradle.properties asks for a 5 GB heap; check.sh and prepare.sh pass 2.5 GB on the command line (nothing is written to the shared Gradle home). Cold prepare plus grade-setup of one commit takes about 10 minutes on 3 CPUs (later commits reuse the downloads, about 5 minutes); a grade run of a task takes 20 to 60 seconds with the grade home's build cache warm. Tests that read from the network (samples Schemas.useInferredSchema and the QuickStartGuide class) fail in the sandbox for every patch; they are listed in each mined task's p2p-exclude.txt, taken from a run of the reference solution. The repository commits KoDEx-processed copies of the sources under core/generated-sources (not compiled; the build regenerates them): the synthetic tasks leave them alone and say so."
+
+[probe]
+ok = false
+note = "Kotlin server (arm enforced), tereditor nightly-2026-11-17: every navigation call fails with 'Language server disconnected ... This build of kotlin-server has expired.' (first call 304 s of retries, second 302 s; the probe was then stopped). The new pin does not fix the expiry (results/probe/kotlin-large-enforced)."
+
+[probe_intellij]
+ok = false
+note = "IntelliJ server: licence accepted, server answering within 3 s, but 30 minutes after server start the project is not resolved: references of ParserOptions at its declaration returned only the declaration (parse.kt:72 and :96 missing, 902 s), and definition of rename from a call site returned the call site itself instead of ColumnReference.kt:28 (900 s). Gradle import of the pure-JVM project did not produce usable semantic results in the time allowed; the remaining three calls were not run (results/probe/kotlin-large-intellij-enforced)."

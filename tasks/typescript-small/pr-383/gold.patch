@@ -1,0 +1,17 @@
+diff --git a/src/listener.ts b/src/listener.ts
+index ae2991c1..c8c27639 100644
+--- a/src/listener.ts
++++ b/src/listener.ts
+@@ -65,7 +65,11 @@ const drainIncoming = (incoming: IncomingMessage | Http2ServerRequest): void =>
+     cleanup()
+     const socket = incoming.socket
+     if (socket && !socket.destroyed) {
+-      socket.destroySoon()
++      if (typeof socket.destroySoon === 'function') {
++        socket.destroySoon()
++      } else if (typeof socket.destroy === 'function') {
++        socket.destroy()
++      }
+     }
+   }
+ 

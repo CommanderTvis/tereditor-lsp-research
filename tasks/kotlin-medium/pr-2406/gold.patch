@@ -1,0 +1,25 @@
+diff --git a/docs/changelog.md b/docs/changelog.md
+index 7a00ec99..387be627 100644
+--- a/docs/changelog.md
++++ b/docs/changelog.md
+@@ -3,6 +3,7 @@ Change Log
+ 
+ ## Unreleased
+ 
++ * New: Support for companion extensions. (#2406)
+  * Fix: Carriage returns are no longer lost in `%S` and `%P` string literals. (#2380)
+  * Fix: `Class.asClassName()` no longer drops the package slot of a class in the default package. (#2382)
+  * Fix: A trailing newline in a `%S` or `%P` string argument that ends a `CodeBlock` is no longer trimmed or added. (#2391)
+diff --git a/kotlinpoet/src/commonMain/kotlin/com/squareup/kotlinpoet/KModifier.kt b/kotlinpoet/src/commonMain/kotlin/com/squareup/kotlinpoet/KModifier.kt
+index 83af256a..183f38c0 100644
+--- a/kotlinpoet/src/commonMain/kotlin/com/squareup/kotlinpoet/KModifier.kt
++++ b/kotlinpoet/src/commonMain/kotlin/com/squareup/kotlinpoet/KModifier.kt
+@@ -49,7 +49,7 @@ public enum class KModifier(internal val keyword: String, private vararg val tar
+   ANNOTATION("annotation", Target.CLASS),
+   VALUE("value", Target.CLASS),
+   FUN("fun", Target.INTERFACE),
+-  COMPANION("companion", Target.CLASS),
++  COMPANION("companion", Target.CLASS, Target.FUNCTION, Target.PROPERTY),
+ 
+   // Call-site compiler tips.
+   INLINE("inline", Target.FUNCTION),

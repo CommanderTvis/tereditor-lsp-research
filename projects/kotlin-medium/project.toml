@@ -1,5 +1,6 @@
-# kotlin, medium: chosen by size, see docs/PROJECTS.md. Curated: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# Kotlin, medium: square/kotlinpoet (Gradle, Kotlin Multiplatform with a JVM-only study build: kotlinpoet's JVM, JS and Wasm
+# code and the JVM interop modules); chosen by size, see docs/PROJECTS.md. Pinned release 2.4.0 carries the synthetic
+# tasks; the mined pull requests start from their own base commits on main.
 lang = "kotlin"
 size = "medium"
 status = "curated"
@@ -7,7 +8,20 @@ repo = "https://github.com/square/kotlinpoet"
 tag = "2.4.0"
 commit = "97e504bbcece8100b653c5d7d7cd1bba0a55b0b3"
 loc = 32758
+stripped = []
 loc_by_language = { "Kotlin" = 32758 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-task_types = ["move", "signature", "impls", "rename", "rename-file", "dispatch"]
-pr_fallback = "No qualifying/current-toolchain PRs; three assigned pr slots are synthetic fallbacks (see tasks/kotlin-medium/pr-log.md)."
+# Assigned (docs/TASKS.md): move, signature, impls + 3 pr (modern pull requests, tasks/kotlin-medium/pr-log.md).
+task_types = ["move", "signature", "impls", "pr", "pr", "pr"]
+substitutions = []
+
+[probe]
+ok = false
+seconds_to_first_answer = 3
+note = "the Kotlin server (arm enforced) answered every call with 'This build of kotlin-server has expired' (language server disconnected), so references and definitions were empty for the whole 600 s of the first call (the run was stopped after it); a finding about the pinned tereditor build, not about the project (results/probe/kotlin-medium-enforced)."
+
+[probe_intellij]
+ok = false
+seconds_to_first_answer = 3
+licence = "intellij server state ready"
+note = "IntelliJ reported ready but did not give the cross-file answers of this Kotlin Multiplatform Gradle project: references of CodeBlock.Builder.addNamed at its declaration returned only the declaration within 900 s (and within 600 s in a second run), and definition from the call site at FunSpec.kt:524 found nothing within 3000 s (first run under heavy host load); the run stopped answering at the third call (references by name) and was stopped by hand, so diagnostics and lsp_status were not reached (results/probe/kotlin-medium-intellij-enforced). The pinned snapshot's Gradle build itself imports and runs offline in the grading sandbox. A finding about IntelliJ's Gradle import of KMP projects, consistent with the upstream note on kotlin-result."

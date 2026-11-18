@@ -1,0 +1,8 @@
+type = "pr"
+origin = "mined pull request (modern, docs/MEMORIZATION.md)"
+pr = 5423
+issue = 5422
+base_commit = "52febbcc30bc509d5e4987577e63906fe08fc471"
+merge_commit = "08807ce12aa3aa27c8c5adf63e677bbab6bceda9"
+merged_at = "2026-10-16T10:01:28Z"
+test_files = ["src/hono.test.ts","src/router/common.case.test.ts","src/router/pattern-router/router.test.ts","src/router/trie-router/node.test.ts"]

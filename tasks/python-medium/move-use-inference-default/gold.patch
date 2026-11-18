@@ -1,0 +1,234 @@
+diff --git a/astroid/__init__.py b/astroid/__init__.py
+index abb45cf5..5a40ad44 100644
+--- a/astroid/__init__.py
++++ b/astroid/__init__.py
+@@ -66,8 +66,8 @@ from astroid.exceptions import (
+     SuperError,
+     TooManyLevelsError,
+     UnresolvableName,
+-    UseInferenceDefault,
+ )
++from astroid.use_inference_default import UseInferenceDefault
+ from astroid.inference_tip import _inference_tip_cached, inference_tip
+ from astroid.objects import ExceptionInstance
+ 
+diff --git a/astroid/brain/brain_argparse.py b/astroid/brain/brain_argparse.py
+index 6bde22f2..f17761b8 100644
+--- a/astroid/brain/brain_argparse.py
++++ b/astroid/brain/brain_argparse.py
+@@ -6,7 +6,7 @@ from __future__ import annotations
+ 
+ from astroid import arguments, nodes
+ from astroid.context import InferenceContext
+-from astroid.exceptions import UseInferenceDefault
++from astroid.use_inference_default import UseInferenceDefault
+ from astroid.inference_tip import inference_tip
+ from astroid.manager import AstroidManager
+ 
+diff --git a/astroid/brain/brain_builtin_inference.py b/astroid/brain/brain_builtin_inference.py
+index 1a82c4e5..517eca7b 100644
+--- a/astroid/brain/brain_builtin_inference.py
++++ b/astroid/brain/brain_builtin_inference.py
+@@ -21,8 +21,8 @@ from astroid.exceptions import (
+     AttributeInferenceError,
+     InferenceError,
+     MroError,
+-    UseInferenceDefault,
+ )
++from astroid.use_inference_default import UseInferenceDefault
+ from astroid.inference_tip import inference_tip
+ from astroid.manager import AstroidManager
+ from astroid.nodes import scoped_nodes
+diff --git a/astroid/brain/brain_dataclasses.py b/astroid/brain/brain_dataclasses.py
+index beaf81ee..d8931aeb 100644
+--- a/astroid/brain/brain_dataclasses.py
++++ b/astroid/brain/brain_dataclasses.py
+@@ -21,12 +21,8 @@ from astroid import bases, context, nodes
+ from astroid.brain.helpers import is_class_var
+ from astroid.builder import parse
+ from astroid.const import PY313_PLUS
+-from astroid.exceptions import (
+-    AstroidSyntaxError,
+-    InferenceError,
+-    MroError,
+-    UseInferenceDefault,
+-)
++from astroid.exceptions import AstroidSyntaxError, InferenceError, MroError
++from astroid.use_inference_default import UseInferenceDefault
+ from astroid.inference_tip import inference_tip
+ from astroid.manager import AstroidManager
+ from astroid.typing import InferenceResult
+diff --git a/astroid/brain/brain_functools.py b/astroid/brain/brain_functools.py
+index 90c2042b..90fba557 100644
+--- a/astroid/brain/brain_functools.py
++++ b/astroid/brain/brain_functools.py
+@@ -13,7 +13,8 @@ from itertools import chain
+ from astroid import BoundMethod, arguments, nodes, objects
+ from astroid.builder import extract_node
+ from astroid.context import InferenceContext
+-from astroid.exceptions import InferenceError, UseInferenceDefault
++from astroid.exceptions import InferenceError
++from astroid.use_inference_default import UseInferenceDefault
+ from astroid.inference_tip import inference_tip
+ from astroid.interpreter import objectmodel
+ from astroid.manager import AstroidManager
+diff --git a/astroid/brain/brain_namedtuple_enum.py b/astroid/brain/brain_namedtuple_enum.py
+index 09523d53..eefb9d33 100644
+--- a/astroid/brain/brain_namedtuple_enum.py
++++ b/astroid/brain/brain_namedtuple_enum.py
+@@ -22,8 +22,8 @@ from astroid.exceptions import (
+     AstroidValueError,
+     InferenceError,
+     MroError,
+-    UseInferenceDefault,
+ )
++from astroid.use_inference_default import UseInferenceDefault
+ from astroid.inference_tip import inference_tip
+ from astroid.manager import AstroidManager
+ from astroid.nodes.scoped_nodes.scoped_nodes import SYNTHETIC_ROOT
+diff --git a/astroid/brain/brain_pathlib.py b/astroid/brain/brain_pathlib.py
+index d1d1bda7..b4afe3cd 100644
+--- a/astroid/brain/brain_pathlib.py
++++ b/astroid/brain/brain_pathlib.py
+@@ -9,7 +9,8 @@ from collections.abc import Iterator
+ from astroid import bases, context, nodes
+ from astroid.builder import _extract_single_node
+ from astroid.const import PY313
+-from astroid.exceptions import InferenceError, UseInferenceDefault
++from astroid.exceptions import InferenceError
++from astroid.use_inference_default import UseInferenceDefault
+ from astroid.inference_tip import inference_tip
+ from astroid.manager import AstroidManager
+ 
+diff --git a/astroid/brain/brain_random.py b/astroid/brain/brain_random.py
+index d2c67310..8ac19cab 100644
+--- a/astroid/brain/brain_random.py
++++ b/astroid/brain/brain_random.py
+@@ -9,7 +9,7 @@ import random
+ 
+ from astroid import nodes
+ from astroid.context import InferenceContext
+-from astroid.exceptions import UseInferenceDefault
++from astroid.use_inference_default import UseInferenceDefault
+ from astroid.inference_tip import inference_tip
+ from astroid.manager import AstroidManager
+ from astroid.util import UninferableBase, safe_infer
+diff --git a/astroid/brain/brain_type.py b/astroid/brain/brain_type.py
+index 8391e599..8d4f0d46 100644
+--- a/astroid/brain/brain_type.py
++++ b/astroid/brain/brain_type.py
+@@ -25,7 +25,7 @@ from __future__ import annotations
+ from astroid import nodes
+ from astroid.builder import extract_node
+ from astroid.context import InferenceContext
+-from astroid.exceptions import UseInferenceDefault
++from astroid.use_inference_default import UseInferenceDefault
+ from astroid.inference_tip import inference_tip
+ from astroid.manager import AstroidManager
+ 
+diff --git a/astroid/brain/brain_typing.py b/astroid/brain/brain_typing.py
+index 55ae384b..7c9c283f 100644
+--- a/astroid/brain/brain_typing.py
++++ b/astroid/brain/brain_typing.py
+@@ -20,8 +20,8 @@ from astroid.exceptions import (
+     AstroidSyntaxError,
+     AttributeInferenceError,
+     InferenceError,
+-    UseInferenceDefault,
+ )
++from astroid.use_inference_default import UseInferenceDefault
+ from astroid.inference_tip import inference_tip
+ from astroid.manager import AstroidManager
+ 
+diff --git a/astroid/exceptions.py b/astroid/exceptions.py
+index 6eb1fde0..862d0696 100644
+--- a/astroid/exceptions.py
++++ b/astroid/exceptions.py
+@@ -38,7 +38,6 @@ __all__ = (
+     "SuperError",
+     "TooManyLevelsError",
+     "UnresolvableName",
+-    "UseInferenceDefault",
+ )
+ 
+ 
+@@ -332,12 +331,6 @@ class AttributeInferenceError(ResolveError):
+         super().__init__(message, **kws)
+ 
+ 
+-class UseInferenceDefault(Exception):
+-    """Exception to be raised in custom inference function to indicate that it
+-    should go back to the default behaviour.
+-    """
+-
+-
+ class _NonDeducibleTypeHierarchy(Exception):
+     """Raised when is_subtype / is_supertype can't deduce the relation between two
+     types.
+diff --git a/astroid/inference_tip.py b/astroid/inference_tip.py
+index 9284bf1a..972a15a6 100644
+--- a/astroid/inference_tip.py
++++ b/astroid/inference_tip.py
+@@ -11,7 +11,8 @@ from collections.abc import Generator
+ from typing import Any, TypeVar
+ 
+ from astroid.context import InferenceContext
+-from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
++from astroid.exceptions import InferenceOverwriteError
++from astroid.use_inference_default import UseInferenceDefault
+ from astroid.nodes import NodeNG
+ from astroid.typing import (
+     InferenceResult,
+diff --git a/astroid/nodes/node_ng.py b/astroid/nodes/node_ng.py
+index d15d253a..3c47401b 100644
+--- a/astroid/nodes/node_ng.py
++++ b/astroid/nodes/node_ng.py
+@@ -23,8 +23,8 @@ from astroid.exceptions import (
+     InferenceError,
+     ParentMissingError,
+     StatementMissing,
+-    UseInferenceDefault,
+ )
++from astroid.use_inference_default import UseInferenceDefault
+ from astroid.manager import AstroidManager
+ from astroid.nodes.as_string import AsStringVisitor
+ from astroid.nodes.const import OP_PRECEDENCE
+diff --git a/astroid/use_inference_default.py b/astroid/use_inference_default.py
+new file mode 100644
+index 00000000..01520a61
+--- /dev/null
++++ b/astroid/use_inference_default.py
+@@ -0,0 +1,15 @@
++# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
++# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
++# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
++
++"""This module contains the exception that custom inference functions raise to fall back to the default inference."""
++
++from __future__ import annotations
++
++__all__ = ["UseInferenceDefault"]
++
++
++class UseInferenceDefault(Exception):
++    """Exception to be raised in custom inference function to indicate that it
++    should go back to the default behaviour.
++    """
+diff --git a/tests/brain/test_brain.py b/tests/brain/test_brain.py
+index d9d8ebc9..0d449709 100644
+--- a/tests/brain/test_brain.py
++++ b/tests/brain/test_brain.py
+@@ -17,11 +17,8 @@ from astroid import MANAGER, builder, nodes, objects, test_utils, util
+ from astroid.bases import Instance
+ from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
+ from astroid.const import PY312_PLUS, PY313_PLUS, PY315_PLUS
+-from astroid.exceptions import (
+-    AttributeInferenceError,
+-    InferenceError,
+-    UseInferenceDefault,
+-)
++from astroid.exceptions import AttributeInferenceError, InferenceError
++from astroid.use_inference_default import UseInferenceDefault
+ 
+ 
+ def assertEqualMro(klass: nodes.ClassDef, expected_mro: list[str]) -> None:

@@ -1,0 +1,13 @@
+diff --git a/core/scss/_variables.scss b/core/scss/_variables.scss
+index 0f4770f4..17d8c66f 100644
+--- a/core/scss/_variables.scss
++++ b/core/scss/_variables.scss
+@@ -874,7 +874,7 @@ $hr-opacity: $border-opacity !default;
+ $vr-border-width: var(--#{$prefix}border-width) !default;
+ 
+ // Caret
+-$caret-width: 0.3em !default;
++$caret-width: 0.36em !default;
+ $caret-vertical-align: $caret-width * 0.85 !default;
+ $caret-spacing: $caret-width * 0.85 !default;
+ 

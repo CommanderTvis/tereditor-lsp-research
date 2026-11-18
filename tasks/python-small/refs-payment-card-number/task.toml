@@ -1,0 +1,4 @@
+type = "refs"
+origin = "devrig find-usages; Barber text-retrieval baseline"
+symbol = "pydantic_extra_types.payment.PaymentCardNumber"
+selection = "public top-level classes and functions of non-test pydantic_extra_types/ modules whose name is defined once, used in code in at least 3 other .py files with at least 10 code occurrences, excluding the rename task's subject (python3 an.py <snapshot> pydantic_extra_types symbols); sorted by path:line: Color, ISBN, PaymentCardNumber, DateTime, PhoneNumber, TimeZoneName (6 candidates); index random.Random(20261110).randrange(6) = 2 (CPython 3.12)."

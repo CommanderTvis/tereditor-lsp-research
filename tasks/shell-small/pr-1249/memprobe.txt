@@ -1,0 +1,4 @@
+{"task": "tasks/shell-small/pr-1249", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 5, "fresh_lines": 4, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.00162779}
+{"task": "tasks/shell-small/pr-1249", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 5, "fresh_lines": 4, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.0232729}
+{"task": "tasks/shell-small/pr-1249", "model": "claude-opus-5-5", "answered": true, "gold_lines": 5, "fresh_lines": 4, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.0512618}
+SCORE tasks/shell-small/pr-1249 worst verbatim share 0.00 (gold lines 5)

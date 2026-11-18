@@ -1,0 +1,10 @@
+type = "pr"
+pr = 27967
+issue = 27966
+base_commit = "d5e42169812ce73ea8242a0a13eeea3e7ea7032f"
+merged_at = "2026-10-28T10:05:15Z"
+head_commit = "03c83fc6611842d717a72d249257e6e7c4610795"
+origin = "mined pull request github.com/duckdb/duckdb/pull/27967"
+test_files = ["test/common/test_http_transport_manager.cpp"]
+grade_timeout_s = 1800
+# grade_timeout_s 1800: incremental rebuild of the unittest runner against the prebuilt build/ directory

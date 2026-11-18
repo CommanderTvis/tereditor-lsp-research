@@ -1,4 +1,0 @@
-type = "callers"
-origin = "synthetic, transitive callers among the public API"
-symbol = "shiftIterator"
-selection = "Functions of src/utils.ts (the internal module that src/index.ts does not re-export) reached by between 3 and 20 public entry points under the call rules of the prompt; 3 candidates (isNonArrayObject 7, run 14, shiftIterator 14; isObject, print, toFailure, toFailures and isIterable are reached by 45 or more, isPlainObject by 1), sorted by name, seeded shuffle awk srand(20261110), first taken."

@@ -1,0 +1,52 @@
+diff --git a/core/scss/bootstrap/_navbar.scss b/core/scss/bootstrap/_navbar.scss
+index 37456bf0..ebb11885 100644
+--- a/core/scss/bootstrap/_navbar.scss
++++ b/core/scss/bootstrap/_navbar.scss
+@@ -262,7 +262,7 @@
+ // Styles for switching between navbars with light or dark background.
+ 
+ .navbar-light {
+-  @include deprecate('`.navbar-light`', 'v5.2.0', 'v6.0.0', true);
++  @include deprecate('v5.2.0', '`.navbar-light`', 'v6.0.0', true);
+ }
+ 
+ .navbar-dark,
+diff --git a/core/scss/bootstrap/_tooltip.scss b/core/scss/bootstrap/_tooltip.scss
+index 32a21ce5..9a7fbb13 100644
+--- a/core/scss/bootstrap/_tooltip.scss
++++ b/core/scss/bootstrap/_tooltip.scss
+@@ -20,7 +20,7 @@
+   z-index: var(--tooltip-zindex);
+   display: block;
+   margin: var(--tooltip-margin);
+-  @include deprecate('`$tooltip-margin`', 'v5', 'v5.x', true);
++  @include deprecate('v5', '`$tooltip-margin`', 'v5.x', true);
+   // Our parent element can be arbitrary since tooltips are by default inserted as a sibling of their target element.
+   // So reset our font and text properties to avoid inheriting weird values.
+   @include reset-text();
+diff --git a/core/scss/mixins/_deprecated.scss b/core/scss/mixins/_deprecated.scss
+index 1d070cf3..a0ff8288 100644
+--- a/core/scss/mixins/_deprecated.scss
++++ b/core/scss/mixins/_deprecated.scss
+@@ -90,7 +90,7 @@
+ 
+ // deprecated(2.0): use `media-breakpoint-down()` with the breakpoint one step down
+ @mixin media-breakpoint-down-than($name, $breakpoints: $grid-breakpoints) {
+-  @include deprecate('media-breakpoint-down-than()', '1.6', '2.0');
++  @include deprecate('1.6', 'media-breakpoint-down-than()', '2.0');
+   $n: list.index(map.keys($breakpoints), $name);
+   $prev: if(sass($n and $n > 1): list.nth(map.keys($breakpoints), $n - 1); else: null);
+ 
+diff --git a/core/scss/mixins/bootstrap/_deprecate.scss b/core/scss/mixins/bootstrap/_deprecate.scss
+index f4b5b6ed..63fe287e 100644
+--- a/core/scss/mixins/bootstrap/_deprecate.scss
++++ b/core/scss/mixins/bootstrap/_deprecate.scss
+@@ -7,7 +7,7 @@
+ // This mixin can be used to deprecate mixins or functions.
+ // `$enable-deprecation-messages` is a global variable, `$ignore-warning` is a variable that can be passed to
+ // some deprecated mixins to suppress the warning (for example if the mixin is still be used in the current version of Bootstrap)
+-@mixin deprecate($name, $deprecate-version, $remove-version, $ignore-warning: false) {
++@mixin deprecate($deprecate-version, $name, $remove-version, $ignore-warning: false) {
+   @if ($enable-deprecation-messages != false and $ignore-warning != true) {
+     @warn "#{$name} has been deprecated as of #{$deprecate-version}. It will be removed entirely in #{$remove-version}.";
+   }

@@ -1,7 +1,0 @@
-type = "pr"
-pr = 0
-issue = 0
-base_commit = "807da6498377ee5e0cf43a78091f46f12dc59a89"
-origin = "documented fallback PR: no qualifying offline testable candidate"
-fallback = true
-symbol = "_resethttp"

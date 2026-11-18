@@ -1,0 +1,5 @@
+tests/test_cron.py::test_cron_str_is_validated_via_model
+tests/test_cron.py::test_cron_str_rejects_invalid_components
+tests/test_cron.py::test_cron_str_rejects_invalid_expression
+tests/test_cron.py::test_cron_str_next_after
+tests/test_cron.py::test_cron_str_strips_whitespace

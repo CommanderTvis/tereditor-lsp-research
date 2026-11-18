@@ -1,7 +1,0 @@
-type = "pr"
-moved = "kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/On.kt -> .../result/on/On.kt (package com.github.michaelbull.result.on)"
-selection = "Files of kotlin-result/src/commonMain in the root package, except Result.kt and files with expect declarations, whose public top-level names occur (whole word, comment lines excluded) in at least 3 other .kt files; sorted: And, Factory, Get, Iterable, Map, On, Try (7 candidates); k = 1 + int(rand() * 7) after srand(20261110) = 6; the target package is the root package plus the lower-cased file name. A first count that included comment lines (English 'or', 'and' in KDoc) was a measurement error and was corrected before the pick was used."
-origin = "documented synthetic fallback PR; no qualifying/current-toolchain mined candidate was available"
-fallback_for = "move"
-pr = "fallback-kotlin-small-move-on-package"
-issue = "fallback-kotlin-small-move-on-package"

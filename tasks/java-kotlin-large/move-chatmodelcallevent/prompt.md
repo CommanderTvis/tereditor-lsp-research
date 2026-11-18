@@ -1,0 +1,5 @@
+`ChatModelCallEvent` is the process event emitted when the instrumented chat model is called. It lives in the package `com.embabel.agent.spi.support.springai` (`embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/springai/ChatModelCallEvent.kt`), next to the Spring AI adapters, but it is a platform event that the logging listener also handles, and we want it in `com.embabel.agent.spi.support` with the other support types.
+
+Move the class `ChatModelCallEvent` into the package `com.embabel.agent.spi.support`: its source file goes to `embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/`, its `package` declaration changes, and everything that refers to it must follow: imports, classes of the old package that used it without an import, and KDoc references. The file also declares a top-level function that belongs with the class and moves with it. Nothing else moves, and no copy or alias is left in the old package.
+
+The project must still build and the existing tests must pass.

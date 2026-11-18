@@ -1,0 +1,66 @@
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/logging/LoggingAgenticEventListener.kt b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/logging/LoggingAgenticEventListener.kt
+index d0050e4..d8aa7c5 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/logging/LoggingAgenticEventListener.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/logging/LoggingAgenticEventListener.kt
+@@ -47,7 +47,7 @@ import com.embabel.agent.api.event.ToolLoopStartEvent
+ import com.embabel.agent.core.AgentProcessStatusCode
+ import com.embabel.agent.core.EarlyTermination
+ import com.embabel.agent.spi.logging.personality.severance.LumonColorPalette
+-import com.embabel.agent.spi.support.springai.ChatModelCallEvent
++import com.embabel.agent.spi.support.ChatModelCallEvent
+ import com.embabel.common.util.AnsiColor
+ import com.embabel.common.util.color
+ import com.embabel.common.util.indentLines
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/springai/ChatModelCallEvent.kt b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ChatModelCallEvent.kt
+similarity index 97%
+rename from embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/springai/ChatModelCallEvent.kt
+rename to embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ChatModelCallEvent.kt
+index 0be345c..a3c9195 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/springai/ChatModelCallEvent.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ChatModelCallEvent.kt
+@@ -13,7 +13,7 @@
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-package com.embabel.agent.spi.support.springai
++package com.embabel.agent.spi.support
+ 
+ import com.embabel.agent.api.event.AbstractAgentProcessEvent
+ import com.embabel.agent.api.event.LlmRequestEvent
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/springai/ChatClientLlmOperations.kt b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/springai/ChatClientLlmOperations.kt
+index 7155f46..8d48bbf 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/springai/ChatClientLlmOperations.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/springai/ChatClientLlmOperations.kt
+@@ -18,6 +18,7 @@
+ package com.embabel.agent.spi.support.springai
+ 
+ import com.embabel.agent.api.common.Asyncer
++import com.embabel.agent.spi.support.ChatModelCallEvent
+ import com.embabel.common.util.EmbabelObjectMapperHolder
+ import com.embabel.agent.api.event.LlmRequestEvent
+ import com.embabel.agent.api.event.observation.AgentInstrumentation
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/springai/InstrumentedChatModel.kt b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/springai/InstrumentedChatModel.kt
+index 58c3fff..3830847 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/springai/InstrumentedChatModel.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/springai/InstrumentedChatModel.kt
+@@ -16,6 +16,8 @@
+ package com.embabel.agent.spi.support.springai
+ 
+ import com.embabel.agent.api.event.LlmRequestEvent
++import com.embabel.agent.spi.support.ChatModelCallEvent
++import com.embabel.agent.spi.support.chatModelCallEvent
+ import com.embabel.common.util.loggerFor
+ import org.springframework.ai.chat.model.ChatModel
+ import org.springframework.ai.chat.model.ChatResponse
+diff --git a/embabel-agent-api/src/test/kotlin/com/embabel/agent/spi/support/springai/InstrumentedChatModelTest.kt b/embabel-agent-api/src/test/kotlin/com/embabel/agent/spi/support/springai/InstrumentedChatModelTest.kt
+index c1826e3..265f2fe 100644
+--- a/embabel-agent-api/src/test/kotlin/com/embabel/agent/spi/support/springai/InstrumentedChatModelTest.kt
++++ b/embabel-agent-api/src/test/kotlin/com/embabel/agent/spi/support/springai/InstrumentedChatModelTest.kt
+@@ -20,6 +20,7 @@ import com.embabel.agent.api.event.LlmRequestEvent
+ import com.embabel.agent.core.AgentProcess
+ import com.embabel.agent.core.ProcessContext
+ import com.embabel.agent.core.support.LlmInteraction
++import com.embabel.agent.spi.support.ChatModelCallEvent
+ import com.embabel.common.ai.model.LlmMetadata
+ import io.mockk.*
+ import org.assertj.core.api.Assertions.assertThat

@@ -1,0 +1,9 @@
+type = "pr"
+pr = 4962
+issue = 4961
+base_commit = "5da4e9a3fb15626ba92969199061e0169ebc8a00"
+merged_at = "2026-10-04T14:59:05Z"
+head_commit = "3f3dbe879c94ef37c7a5243eeb28f68d988522d6"
+origin = "mined pull request github.com/fmtlib/fmt/pull/4962"
+test_files = ["test/ranges-test.cc"]
+grade_timeout_s = 2400

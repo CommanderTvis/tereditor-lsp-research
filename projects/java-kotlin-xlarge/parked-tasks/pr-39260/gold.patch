@@ -1,0 +1,44 @@
+diff --git a/platforms/core-runtime/native/src/main/java/org/gradle/internal/nativeintegration/console/ConsoleMetaData.java b/platforms/core-runtime/native/src/main/java/org/gradle/internal/nativeintegration/console/ConsoleMetaData.java
+index b422460e55687..8103cbd1d0e36 100644
+--- a/platforms/core-runtime/native/src/main/java/org/gradle/internal/nativeintegration/console/ConsoleMetaData.java
++++ b/platforms/core-runtime/native/src/main/java/org/gradle/internal/nativeintegration/console/ConsoleMetaData.java
+@@ -119,7 +119,7 @@ default boolean supportsUnicode() {
+      * <p>This sequence (ESC ] 9 ; 4 ; state ; progress ST) allows applications to control
+      * progress indicators in the Windows taskbar or terminal window decorations.</p>
+      *
+-     * <p>Supported by: ConEmu, Ghostty, and potentially other terminals.</p>
++     * <p>Supported by: ConEmu, Windows Terminal, Ghostty, kitty, iTerm2 and potentially other terminals.</p>
+      *
+      * @return true if OSC 9;4 sequences are supported, false otherwise
+      */
+@@ -133,6 +133,13 @@ static boolean evaluateTaskBarProgressSupport() {
+             return true;
+         }
+ 
++        // Windows Terminal supports OSC 9;4 sequences since version 1.6 (early 2021).
++        // It sets WT_SESSION for every shell it hosts, including WSL distributions,
++        // but does not expose its version, so any WT_SESSION is treated as supported.
++        if (System.getenv("WT_SESSION") != null) {
++            return true;
++        }
++
+         // Ghostty and kitty support OSC 9;4 sequences
+         String term = System.getenv("TERM");
+         if (term != null) {
+diff --git a/platforms/documentation/docs/src/docs/release/notes.md b/platforms/documentation/docs/src/docs/release/notes.md
+index 66926c1e1aa39..443a8397b7968 100644
+--- a/platforms/documentation/docs/src/docs/release/notes.md
++++ b/platforms/documentation/docs/src/docs/release/notes.md
+@@ -80,6 +80,13 @@ Gradle provides a [set of features and abstractions](userguide/java_testing.html
+ ### CLI, logging, and problem reporting
+ Gradle provides an intuitive [command-line interface](userguide/command_line_interface.html), detailed [logs](userguide/logging.html), and a structured [problems report](userguide/reporting_problems.html#sec:generated_html_report) that helps developers quickly identify and resolve build issues.
+ 
++#### Taskbar progress in Windows Terminal
++
++The build progress shown in the terminal is now also reported to the Windows taskbar when running in [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/) 1.6 or later, in addition to ConEmu, Ghostty, kitty and iTerm2.
++This makes it easy to see how far a long-running build has progressed while the terminal window is in the background, and it also works in WSL shells hosted by Windows Terminal.
++
++See the [Rich console](userguide/command_line_interface.html#sec:rich_console) section in the Gradle User Manual for more details.
++
+ ### Build authoring improvements
+ Gradle provides [rich APIs](userguide/getting_started_dev.html) for build engineers and plugin authors, enabling the creation of custom, reusable build logic and better maintainability.

@@ -1,12 +1,24 @@
-# java, small: chosen by size, see docs/PROJECTS.md. Curated: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# Java, small: quarkiverse/quarkus-http-problem, RFC 9457 problem responses for Quarkus (RESTEasy Reactive and classic).
+# Exception mappers, a problem hierarchy with builders, processors discovered through CDI, many same-named types in
+# the runtime, deployment and integration-test modules. Replaces javapoet (no modern pull requests that close
+# issues, docs/MEMORIZATION.md).
 lang = "java"
 size = "small"
 status = "curated"
-repo = "https://github.com/square/javapoet"
-tag = "javapoet-1.13.0"
-commit = "714e05ca60179285746604452324262b126dcb2d"
-loc = 9621
-loc_by_language = { "Java" = 9621 }
+repo = "https://github.com/quarkiverse/quarkus-http-problem"
+tag = "3.38.2"
+commit = "eca6d29c9040a023c56587685413f4c766a82405"
+loc = 6958
+stripped = []
+loc_by_language = { "Java" = 6958 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+# Assigned (docs/TASKS.md): move, signature, callers + 3 pr (modern pull requests, tasks/java-small/pr-log.md).
 task_types = ["move", "signature", "callers", "pr", "pr", "pr"]
+substitutions = []
+
+[probe_intellij]
+ok = true
+seconds_to_first_answer = 3
+seconds_to_complete = 146
+licence = "intellij server state ready (version 263.7084.0), 7 of 7 calls succeeded"
+note = "references across modules, definition, references by name, diagnostics and lsp_status all complete (results/probe/java-small-intellij-enforced); the first references call needed 146 s until the project graph was loaded. Java has no tereditor server outside IntelliJ, so there is no [probe]."

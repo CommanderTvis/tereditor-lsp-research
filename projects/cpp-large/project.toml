@@ -11,4 +11,8 @@ loc = 260738
 loc_by_language = { "C" = 225475, "C++" = 402, "C Header" = 34856, "C++ Header" = 5 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 task_types = ["rename", "rename-file", "inspect", "pr", "pr", "pr"]
-substitutions = ["three unavailable mined slots use documented fallback PR task directories; the assigned synthetic tasks are preserved"]
+# Mined: 29 qualifying pull requests, tasks/cpp-large/pr-log.md. check.sh skips the util unit suite (page cache).
+
+[probe]
+ok = false
+note = "clangd unavailable on arm64; probe deferred to the x64 cloud VM"

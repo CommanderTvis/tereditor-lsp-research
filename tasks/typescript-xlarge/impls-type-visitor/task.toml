@@ -1,4 +1,0 @@
-type = "impls"
-origin = "synthetic, transitive implementations of an interface"
-symbol = "TypeVisitor (packages/compiler/src/output/output_ast.ts)"
-selection = "Exported interfaces and abstract classes declared in non-test files under packages/**/src with 5 to 30 transitive implementing or extending classes (syntactic scan with the TypeScript compiler API, heritage resolved by simple name, names declared more than once dropped as ambiguous): 25 candidates. The first seeded pick (Statement) had all its subclasses in its own file, so before any task was written the rule was tightened to require the classes to lie in at least 5 files and at least one to be indirect: 6 candidates (AbstractControlDirective, ControlContainer, HttpHandler, OnChanges, TemplateCheck, TypeVisitor), sorted, seeded shuffle awk srand(20261110), first taken. The oracle covers the whole repository, tests included."

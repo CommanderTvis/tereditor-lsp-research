@@ -1,0 +1,277 @@
+diff --git a/compose-lint-checks/src/main/java/slack/lint/compose/CodeFlowAnalysis.kt b/compose-lint-checks/src/main/java/slack/lint/compose/CodeFlowAnalysis.kt
+index bd5152c..0ee2c68 100644
+--- a/compose-lint-checks/src/main/java/slack/lint/compose/CodeFlowAnalysis.kt
++++ b/compose-lint-checks/src/main/java/slack/lint/compose/CodeFlowAnalysis.kt
+@@ -32,7 +32,7 @@ import slack.lint.compose.util.ownerCall
+ 
+ /**
+  * **Code flow analysis** that identifies execution paths within a method that read the `modifier`
+- * parameter multiple times. This is the machinery behind [ModifierReusedDetector]; it is kept in
++ * parameter multiple times. This is the machinery behind [ModifierReusedCheck]; it is kept in
+  * its own file because the simplified-AST/graph construction adds a fair amount of complexity that
+  * is orthogonal to the lint check itself.
+  *
+diff --git a/compose-lint-checks/src/main/java/slack/lint/compose/ComposeLintsIssueRegistry.kt b/compose-lint-checks/src/main/java/slack/lint/compose/ComposeLintsIssueRegistry.kt
+index 8deddeb..9115caa 100644
+--- a/compose-lint-checks/src/main/java/slack/lint/compose/ComposeLintsIssueRegistry.kt
++++ b/compose-lint-checks/src/main/java/slack/lint/compose/ComposeLintsIssueRegistry.kt
+@@ -29,7 +29,7 @@ class ComposeLintsIssueRegistry : IssueRegistry() {
+       ContentEmitterReturningValuesDetector.ISSUE,
+       ItemKeyHashCodeDetector.ISSUE,
+       ModifierMissingDetector.ISSUE,
+-      ModifierReusedDetector.ISSUE,
++      ModifierReusedCheck.ISSUE,
+       ModifierWithoutDefaultDetector.ISSUE,
+       M2ApiDetector.ISSUE,
+       MultipleContentEmittersDetector.ISSUE,
+diff --git a/compose-lint-checks/src/main/java/slack/lint/compose/ModifierReusedDetector.kt b/compose-lint-checks/src/main/java/slack/lint/compose/ModifierReusedCheck.kt
+similarity index 99%
+rename from compose-lint-checks/src/main/java/slack/lint/compose/ModifierReusedDetector.kt
+rename to compose-lint-checks/src/main/java/slack/lint/compose/ModifierReusedCheck.kt
+index 0fef539..c7292ed 100644
+--- a/compose-lint-checks/src/main/java/slack/lint/compose/ModifierReusedDetector.kt
++++ b/compose-lint-checks/src/main/java/slack/lint/compose/ModifierReusedCheck.kt
+@@ -69,7 +69,7 @@ import slack.lint.compose.util.unwrapReturnExpression
+  *
+  * See https://slackhq.github.io/compose-lints/rules/#dont-re-use-modifiers
+  */
+-class ModifierReusedDetector
++class ModifierReusedCheck
+ @JvmOverloads
+ constructor(
+   contentEmitterOption: ContentEmitterLintOption = ContentEmitterLintOption(CONTENT_EMITTER_OPTION)
+@@ -125,7 +125,7 @@ constructor(
+           category = Category.PRODUCTIVITY,
+           priority = Priorities.NORMAL,
+           severity = Severity.ERROR,
+-          implementation = sourceImplementation<ModifierReusedDetector>(),
++          implementation = sourceImplementation<ModifierReusedCheck>(),
+         )
+         .setOptions(listOf(CONTENT_EMITTER_OPTION))
+   }
+diff --git a/compose-lint-checks/src/test/java/slack/lint/compose/ModifierReusedBranchTest.kt b/compose-lint-checks/src/test/java/slack/lint/compose/ModifierReusedBranchTest.kt
+index 7abbbd2..618b5a9 100644
+--- a/compose-lint-checks/src/test/java/slack/lint/compose/ModifierReusedBranchTest.kt
++++ b/compose-lint-checks/src/test/java/slack/lint/compose/ModifierReusedBranchTest.kt
+@@ -76,9 +76,9 @@ class ModifierReusedBranchTest : BaseComposeLintTest() {
+         .to("src/compiled/Content.kt"),
+     )
+ 
+-  override fun getDetector(): Detector = ModifierReusedDetector()
++  override fun getDetector(): Detector = ModifierReusedCheck()
+ 
+-  override fun getIssues(): List<Issue> = listOf(ModifierReusedDetector.ISSUE)
++  override fun getIssues(): List<Issue> = listOf(ModifierReusedCheck.ISSUE)
+ 
+   // https://github.com/slackhq/compose-lints/issues/466
+   @Test
+diff --git a/compose-lint-checks/src/test/java/slack/lint/compose/ModifierReusedDetectorTest.kt b/compose-lint-checks/src/test/java/slack/lint/compose/ModifierReusedDetectorTest.kt
+index 6cf5ee5..df2b2d8 100644
+--- a/compose-lint-checks/src/test/java/slack/lint/compose/ModifierReusedDetectorTest.kt
++++ b/compose-lint-checks/src/test/java/slack/lint/compose/ModifierReusedDetectorTest.kt
+@@ -14,13 +14,13 @@ import org.junit.Test
+ 
+ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+ 
+-  override fun getDetector(): Detector = ModifierReusedDetector()
++  override fun getDetector(): Detector = ModifierReusedCheck()
+ 
+-  override fun getIssues(): List<Issue> = listOf(ModifierReusedDetector.ISSUE)
++  override fun getIssues(): List<Issue> = listOf(ModifierReusedCheck.ISSUE)
+ 
+   override fun tearDown() {
+-    ModifierReusedDetector.testCodeGraph = false
+-    ModifierReusedDetector.codeFlowGraph = emptyMap()
++    ModifierReusedCheck.testCodeGraph = false
++    ModifierReusedCheck.codeFlowGraph = emptyMap()
+   }
+ 
+   @Test
+@@ -675,7 +675,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+ 
+   @Test
+   fun `code flow analysis - simple linear code`() {
+-    ModifierReusedDetector.testCodeGraph = true
++    ModifierReusedCheck.testCodeGraph = true
+     lint()
+       .testModes(TestMode.DEFAULT)
+       .files(
+@@ -698,7 +698,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+       )
+       .runIgnoringResult()
+ 
+-    ModifierReusedDetector.codeFlowGraph.assertEqualTo(
++    ModifierReusedCheck.codeFlowGraph.assertEqualTo(
+       // "Node start" and "Node end" represent method enter and method exit respectively
+       // "Node 8" means - there was @Composable call on line 8 that used modifier parameter
+       "Node start" to setOf("Node 8"),
+@@ -708,7 +708,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+ 
+   @Test
+   fun `code flow analysis - if-else`() {
+-    ModifierReusedDetector.testCodeGraph = true
++    ModifierReusedCheck.testCodeGraph = true
+     lint()
+       .testModes(TestMode.DEFAULT)
+       .files(
+@@ -733,7 +733,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+       )
+       .runIgnoringResult()
+ 
+-    ModifierReusedDetector.codeFlowGraph.assertEqualTo(
++    ModifierReusedCheck.codeFlowGraph.assertEqualTo(
+       "Node start" to setOf("Switch 6"),
+       // if statement turns into Switch node, and it always has multiple edges that represent
+       // branches
+@@ -745,7 +745,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+ 
+   @Test
+   fun `code flow analysis - if-else without call`() {
+-    ModifierReusedDetector.testCodeGraph = true
++    ModifierReusedCheck.testCodeGraph = true
+     lint()
+       .testModes(TestMode.DEFAULT)
+       .files(
+@@ -770,7 +770,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+       )
+       .runIgnoringResult()
+ 
+-    ModifierReusedDetector.codeFlowGraph.assertEqualTo(
++    ModifierReusedCheck.codeFlowGraph.assertEqualTo(
+       "Node start" to setOf("Switch 6"),
+       // Because true branch doesn't have @Composable call, graph skips to the next node, which is
+       // method exit
+@@ -781,7 +781,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+ 
+   @Test
+   fun `code flow analysis - guard-if`() {
+-    ModifierReusedDetector.testCodeGraph = true
++    ModifierReusedCheck.testCodeGraph = true
+     lint()
+       .testModes(TestMode.DEFAULT)
+       .files(
+@@ -806,7 +806,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+       )
+       .runIgnoringResult()
+ 
+-    ModifierReusedDetector.codeFlowGraph.assertEqualTo(
++    ModifierReusedCheck.codeFlowGraph.assertEqualTo(
+       "Node start" to setOf("Switch 6"),
+       "Switch 6" to setOf("Node 7", "Node 10"),
+       // Because of return, after branch method execution goes straight to method end
+@@ -817,7 +817,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+ 
+   @Test
+   fun `code flow analysis - if-elseif-else`() {
+-    ModifierReusedDetector.testCodeGraph = true
++    ModifierReusedCheck.testCodeGraph = true
+     lint()
+       .testModes(TestMode.DEFAULT)
+       .files(
+@@ -843,7 +843,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+       )
+       .runIgnoringResult()
+ 
+-    ModifierReusedDetector.codeFlowGraph.assertEqualTo(
++    ModifierReusedCheck.codeFlowGraph.assertEqualTo(
+       "Node start" to setOf("Switch 6"),
+       // First if contains second if
+       "Switch 6" to setOf("Node 7", "Switch 8"),
+@@ -857,7 +857,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+ 
+   @Test
+   fun `code flow analysis - when inside when`() {
+-    ModifierReusedDetector.testCodeGraph = true
++    ModifierReusedCheck.testCodeGraph = true
+     lint()
+       .testModes(TestMode.DEFAULT)
+       .files(
+@@ -888,7 +888,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+       )
+       .runIgnoringResult()
+ 
+-    ModifierReusedDetector.codeFlowGraph.assertEqualTo(
++    ModifierReusedCheck.codeFlowGraph.assertEqualTo(
+       "Node start" to setOf("Switch 6"),
+       // Note that this Switch has three branches, even though "when" has two and it's exhaustive.
+       // We cannot check for exhaustiveness, so there's always an edge that skips "when" entirely.
+@@ -905,7 +905,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+ 
+   @Test
+   fun `code flow analysis - modifier reassigned`() {
+-    ModifierReusedDetector.testCodeGraph = true
++    ModifierReusedCheck.testCodeGraph = true
+     lint()
+       .testModes(TestMode.DEFAULT)
+       .files(
+@@ -939,7 +939,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+       )
+       .runIgnoringResult()
+ 
+-    ModifierReusedDetector.codeFlowGraph.assertEqualTo(
++    ModifierReusedCheck.codeFlowGraph.assertEqualTo(
+       "Node start" to setOf("Node 13"),
+       *(13..19).map { "Node $it" }.zipWithNext().map { (n1, n2) -> n1 to setOf(n2) }.toTypedArray(),
+       "Node 19" to setOf("Node end"),
+@@ -948,7 +948,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+ 
+   @Test
+   fun `code flow analysis - lambda argument`() {
+-    ModifierReusedDetector.testCodeGraph = true
++    ModifierReusedCheck.testCodeGraph = true
+     lint()
+       .testModes(TestMode.DEFAULT)
+       .files(
+@@ -977,7 +977,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+       )
+       .runIgnoringResult()
+ 
+-    ModifierReusedDetector.codeFlowGraph.assertEqualTo(
++    ModifierReusedCheck.codeFlowGraph.assertEqualTo(
+       "Node start" to setOf("Node 10"),
+       "Node 10" to setOf("Node 13"),
+       "Node 13" to setOf("Node end"),
+@@ -986,7 +986,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+ 
+   @Test
+   fun `code flow analysis - other language constructs don't interfere`() {
+-    ModifierReusedDetector.testCodeGraph = true
++    ModifierReusedCheck.testCodeGraph = true
+     lint()
+       .testModes(TestMode.DEFAULT)
+       .files(
+@@ -1017,7 +1017,7 @@ class ModifierReusedDetectorTest : BaseComposeLintTest() {
+       )
+       .runIgnoringResult()
+ 
+-    ModifierReusedDetector.codeFlowGraph.assertEqualTo("Node start" to setOf("Node end"))
++    ModifierReusedCheck.codeFlowGraph.assertEqualTo("Node start" to setOf("Node end"))
+   }
+ 
+   fun Map<GraphNode, Set<GraphNode>>.assertEqualTo(vararg list: Pair<String, Set<String>>) {
+diff --git a/config/license-excludes-kt.txt b/config/license-excludes-kt.txt
+index d6b4065..95ea2bf 100644
+--- a/config/license-excludes-kt.txt
++++ b/config/license-excludes-kt.txt
+@@ -4,7 +4,7 @@ compose-lint-checks/src/main/java/slack/lint/compose/ComposableFunctionNamingDet
+ compose-lint-checks/src/main/java/slack/lint/compose/CompositionLocalUsageDetector.kt
+ compose-lint-checks/src/main/java/slack/lint/compose/ContentEmitterReturningValuesDetector.kt
+ compose-lint-checks/src/main/java/slack/lint/compose/ModifierMissingDetector.kt
+-compose-lint-checks/src/main/java/slack/lint/compose/ModifierReusedDetector.kt
++compose-lint-checks/src/main/java/slack/lint/compose/ModifierReusedCheck.kt
+ compose-lint-checks/src/main/java/slack/lint/compose/ModifierWithoutDefaultDetector.kt
+ compose-lint-checks/src/main/java/slack/lint/compose/MultipleContentEmittersDetector.kt
+ compose-lint-checks/src/main/java/slack/lint/compose/MutableParametersDetector.kt
+diff --git a/docs/rules.md b/docs/rules.md
+index a3f52ba..5098a39 100644
+--- a/docs/rules.md
++++ b/docs/rules.md
+@@ -439,7 +439,7 @@ fun Content(state: State, modifier: Modifier = Modifier) {
+ 
+ Branches that call composables without a modifier parameter are allowed. The rule also checks modifier arguments passed to composable function parameters. It does not require the function parameter itself to be called in every branch.
+ 
+-Related rule: [`ComposeModifierReused`](https://github.com/slackhq/compose-lints/blob/main/compose-lint-checks/src/main/java/slack/lint/compose/ModifierReusedDetector.kt)
++Related rule: [`ComposeModifierReused`](https://github.com/slackhq/compose-lints/blob/main/compose-lint-checks/src/main/java/slack/lint/compose/ModifierReusedCheck.kt)
+ 
+ ### Modifiers should have default parameters
+ 

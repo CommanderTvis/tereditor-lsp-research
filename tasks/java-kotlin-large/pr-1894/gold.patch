@@ -1,0 +1,1329 @@
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/agent/api/common/Asyncer.kt b/embabel-agent-api/src/main/kotlin/com/embabel/agent/api/common/Asyncer.kt
+index ad03799..7c22f5d 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/agent/api/common/Asyncer.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/agent/api/common/Asyncer.kt
+@@ -19,6 +19,23 @@ import java.util.concurrent.CompletableFuture
+ 
+ /**
+  * Simple Java-friendly async interface.
++ *
++ * An implementation is a supported extension point, and one obligation comes with it: **capture
++ * the calling thread's context and re-establish it on the worker**. Three things travel that way
++ * today - the [com.embabel.agent.core.AgentProcess], the current Micrometer observation, and the
++ * [com.embabel.common.ai.model.ModelSelectionContext] - and
++ * [com.embabel.agent.spi.support.ExecutorAsyncer] is the reference for how.
++ *
++ * On the way out, restore what the worker held before rather than clearing. It matters only when
++ * the worker IS the submitting thread, which an executor is free to arrange - a direct executor
++ * always does, and a bounded pool with `CallerRunsPolicy` does once saturated. The model selection
++ * context does this already. `AgentProcess` still clears, which is #1911 and is fixed in #1912;
++ * this doc states the obligation for new implementations either way.
++ *
++ * Dropping them does not fail loudly, which is what makes this worth stating. A lost model
++ * selection context means role resolution quietly falls back to deployment configuration and
++ * serves a model the deployment is billed for, on a call the user brought their own key for. A
++ * lost `AgentProcess` breaks the platform's own bookkeeping just as silently.
+  */
+ interface Asyncer {
+ 
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/config/spring/AgentPlatformConfiguration.kt b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/config/spring/AgentPlatformConfiguration.kt
+index 9ea1596..0b1e8d8 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/config/spring/AgentPlatformConfiguration.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/config/spring/AgentPlatformConfiguration.kt
+@@ -36,8 +36,10 @@ import com.embabel.common.util.EmbabelObjectMapperHolder
+ import com.embabel.common.ai.autoconfig.ProviderInitialization
+ import com.embabel.common.ai.model.ConfigurableModelProvider
+ import com.embabel.common.ai.model.ConfigurableModelProviderProperties
++import com.embabel.common.ai.model.CredentialLlmServiceFactory
+ import com.embabel.common.ai.model.EmbeddingService
+ import com.embabel.common.ai.model.ModelProvider
++import com.embabel.common.ai.model.RoleResolver
+ import com.embabel.common.core.MobyNameGenerator
+ import com.embabel.common.core.NameGenerator
+ import com.embabel.common.textio.template.JinjavaTemplateRenderer
+@@ -194,6 +196,12 @@ class AgentPlatformConfiguration(
+             llms = applicationContext.getBeansOfType(LlmService::class.java).values.toList(),
+             embeddingServices = applicationContext.getBeansOfType(EmbeddingService::class.java).values.toList(),
+             properties = properties,
++            // Ordered, so that one application resolver can take precedence over another
++            roleResolvers = applicationContext.getBeanProvider(RoleResolver::class.java)
++                .orderedStream().toList(),
++            credentialLlmServiceFactories = applicationContext
++                .getBeanProvider(CredentialLlmServiceFactory::class.java)
++                .orderedStream().toList(),
+         )
+     }
+ 
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/AbstractLlmOperations.kt b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/AbstractLlmOperations.kt
+index 27cdab5..ac08305 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/AbstractLlmOperations.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/AbstractLlmOperations.kt
+@@ -34,6 +34,7 @@ import com.embabel.agent.spi.validation.ValidationPromptGenerator
+ import com.embabel.chat.Message
+ import com.embabel.chat.UserMessage
+ import com.embabel.common.ai.model.AutoModelSelectionCriteria
++import com.embabel.common.ai.model.ByRoleModelSelectionCriteria
+ import com.embabel.common.ai.model.LlmOptions
+ import com.embabel.common.ai.model.ModelProvider
+ import com.embabel.common.ai.model.ModelSelectionCriteria
+@@ -144,6 +145,14 @@ abstract class AbstractLlmOperations(
+         agentProcess: AgentProcess,
+         action: Action?,
+     ): O {
++        // Shadowed deliberately. After this line the resolved interaction IS the interaction for
++        // the rest of the method, and shadowing makes the unresolved one unreachable. A distinct
++        // name would leave both in scope, differing only in whether a role has become a concrete
++        // model plus its hyperparameters - and picking the wrong one is not a compile error, it is
++        // a call that silently skips role resolution and runs on the default model.
++        @Suppress("NAME_SHADOWING")
++        val interaction = withRoleResolved(interaction)
++
+         val (allTools, llmRequestEvent) = getToolsAndEvent(
+             agentProcess = agentProcess,
+             interaction = interaction,
+@@ -260,6 +269,14 @@ abstract class AbstractLlmOperations(
+         agentProcess: AgentProcess,
+         action: Action?,
+     ): Result<O> {
++        // Shadowed deliberately. After this line the resolved interaction IS the interaction for
++        // the rest of the method, and shadowing makes the unresolved one unreachable. A distinct
++        // name would leave both in scope, differing only in whether a role has become a concrete
++        // model plus its hyperparameters - and picking the wrong one is not a compile error, it is
++        // a call that silently skips role resolution and runs on the default model.
++        @Suppress("NAME_SHADOWING")
++        val interaction = withRoleResolved(interaction)
++
+         val (allTools, llmRequestEvent) = getToolsAndEvent(
+             agentProcess = agentProcess,
+             interaction = interaction,
+@@ -312,6 +329,14 @@ abstract class AbstractLlmOperations(
+         agentProcess: AgentProcess,
+         action: Action?,
+     ): ThinkingResponse<O> {
++        // Shadowed deliberately. After this line the resolved interaction IS the interaction for
++        // the rest of the method, and shadowing makes the unresolved one unreachable. A distinct
++        // name would leave both in scope, differing only in whether a role has become a concrete
++        // model plus its hyperparameters - and picking the wrong one is not a compile error, it is
++        // a call that silently skips role resolution and runs on the default model.
++        @Suppress("NAME_SHADOWING")
++        val interaction = withRoleResolved(interaction)
++
+         val (allTools, llmRequestEvent) = getToolsAndEvent(
+             agentProcess = agentProcess,
+             interaction = interaction,
+@@ -364,6 +389,14 @@ abstract class AbstractLlmOperations(
+         agentProcess: AgentProcess,
+         action: Action?,
+     ): Result<ThinkingResponse<O>> {
++        // Shadowed deliberately. After this line the resolved interaction IS the interaction for
++        // the rest of the method, and shadowing makes the unresolved one unreachable. A distinct
++        // name would leave both in scope, differing only in whether a role has become a concrete
++        // model plus its hyperparameters - and picking the wrong one is not a compile error, it is
++        // a call that silently skips role resolution and runs on the default model.
++        @Suppress("NAME_SHADOWING")
++        val interaction = withRoleResolved(interaction)
++
+         val (allTools, llmRequestEvent) = getToolsAndEvent(
+             agentProcess = agentProcess,
+             interaction = interaction,
+@@ -409,6 +442,33 @@ abstract class AbstractLlmOperations(
+         return response
+     }
+ 
++    /**
++     * Resolve any role named by this interaction before anything reads its options: a role can
++     * carry hyperparameters, and which model it means depends on the provider active for this call.
++     *
++     * Interactions naming no role are returned untouched, so the common path costs nothing.
++     *
++     * Idempotent, so a subclass may call it on a path this class has already resolved: resolution
++     * replaces the role criteria with a pre-resolved one, and a second call sees no role and does
++     * nothing. That is what lets the low-level `doTransform` entry points resolve for themselves
++     * without double-resolving the `createObject` path that reaches them.
++     */
++    protected fun withRoleResolved(interaction: LlmInteraction): LlmInteraction {
++        val resolved = withRoleResolved(interaction.llm)
++        return if (resolved === interaction.llm) interaction else interaction.copy(llm = resolved)
++    }
++
++    /**
++     * As above, for the paths that carry options rather than a whole interaction - streaming,
++     * and the capability queries that pick a model without running a prompt.
++     */
++    private fun withRoleResolved(options: LlmOptions): LlmOptions =
++        if (options.criteria is ByRoleModelSelectionCriteria) {
++            modelProvider.resolveLlmOptions(options)
++        } else {
++            options
++        }
++
+     protected fun chooseLlm(
+         llmOptions: LlmOptions,
+     ): LlmService<*> {
+@@ -426,18 +486,22 @@ abstract class AbstractLlmOperations(
+     }
+ 
+     override fun supportsStreaming(options: LlmOptions): Boolean {
+-        val llmService = chooseLlm(options)
++        val llmService = chooseLlm(withRoleResolved(options))
+         return llmService.supportsStreaming()
+     }
+ 
+     override fun supportsThinking(options: LlmOptions): Boolean {
+-        val llmService = chooseLlm(options)
++        val llmService = chooseLlm(withRoleResolved(options))
+         return llmService.supportsThinking()
+     }
+ 
+     override fun createStreamingOperations(options: LlmOptions): StreamingLlmOperations {
+-        val llmService = chooseLlm(options)
+-        val messageStreamer = llmService.createMessageStreamer(options)
++        // Resolve once and stream with the SAME options. The streamer reads hyperparameters, so
++        // resolving only far enough to pick a model would silently drop the tuning a role carries -
++        // and streaming is the chat path, where that tuning matters most.
++        val resolved = withRoleResolved(options)
++        val llmService = chooseLlm(resolved)
++        val messageStreamer = llmService.createMessageStreamer(resolved)
+         return StreamingLlmOperationsImpl(
+             messageStreamer = messageStreamer,
+             objectMapper = objectMapper,
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ExecutorAsyncer.kt b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ExecutorAsyncer.kt
+index 7ce67b1..19555e8 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ExecutorAsyncer.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ExecutorAsyncer.kt
+@@ -16,6 +16,7 @@
+ package com.embabel.agent.spi.support
+ 
+ import com.embabel.agent.api.common.Asyncer
++import com.embabel.common.ai.model.ModelSelectionContextHolder
+ import io.micrometer.context.ContextSnapshotFactory
+ import javax.annotation.concurrent.ThreadSafe
+ import java.util.concurrent.CompletableFuture
+@@ -24,9 +25,16 @@ import java.util.concurrent.Semaphore
+ 
+ /**
+  * Asyncer implementation that uses an Executor for async operations, propagating to worker
+- * threads the [AgentProcess] (a domain concern, via [AgentProcessAccessor]) and the current
+- * Micrometer Observation (via the official [ContextSnapshotFactory], so spans nest across
+- * threads; a no-op when no observation is current, e.g. a NOOP registry).
++ * threads the [AgentProcess] (a domain concern, via [AgentProcessAccessor]), the
++ * [com.embabel.common.ai.model.ModelSelectionContext] (so a user's own provider key still
++ * decides model selection off the request thread), and the current Micrometer Observation
++ * (via the official [ContextSnapshotFactory], so spans nest across threads; a no-op when no
++ * observation is current, e.g. a NOOP registry).
++ *
++ * The model selection context matters here because the platform itself moves work off the
++ * calling thread - `AgentPlatform.start`, parallel actions, `OperationContext.parallelMap`.
++ * Losing it does not fail: role resolution quietly falls back to deployment configuration and
++ * serves a model the deployment pays for, on a call the user brought their own key for.
+  */
+ @ThreadSafe
+ class ExecutorAsyncer(
+@@ -36,21 +44,32 @@ class ExecutorAsyncer(
+     private val contextSnapshotFactory = ContextSnapshotFactory.builder().clearMissing(true).build()
+ 
+     override fun <T> async(block: () -> T): CompletableFuture<T> {
+-        // Capture AgentProcess and the current observation from the calling thread
++        // Capture AgentProcess, model selection context and the current observation from the calling thread
+         val agentProcess = AgentProcessAccessor.getValue()
++        val modelSelectionContext = ModelSelectionContextHolder.get()
+         val contextSnapshot = contextSnapshotFactory.captureAll()
+ 
+         return CompletableFuture.supplyAsync({
+             contextSnapshot.setThreadLocals().use {
+-                if (agentProcess != null) {
+-                    AgentProcessAccessor.setValue(agentProcess)
+-                    try {
++                // Lifecycle, in full. The application sets the context once at its request boundary
++                // - a filter or interceptor - and it lives for that request. Nothing here creates
++                // or owns it: this only carries the calling thread's value onto the worker and puts
++                // the worker's own value back afterwards. A worker that arrived with nothing is
++                // left with nothing, and one that was already inside a request keeps what it had,
++                // which is what makes an executor that runs on the submitting thread safe. There is
++                // no close or dispose step, and none is needed - the value is immutable, holds no
++                // resources, and its lifetime ends with the request that set it.
++                ModelSelectionContextHolder.with(modelSelectionContext) {
++                    if (agentProcess != null) {
++                        AgentProcessAccessor.setValue(agentProcess)
++                        try {
++                            block()
++                        } finally {
++                            AgentProcessAccessor.reset() // cleanup
++                        }
++                    } else {
+                         block()
+-                    } finally {
+-                        AgentProcessAccessor.reset() // cleanup
+                     }
+-                } else {
+-                    block()
+                 }
+             }
+         }, executor)
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ToolLoopLlmOperations.kt b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ToolLoopLlmOperations.kt
+index cdaa080..d919753 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ToolLoopLlmOperations.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ToolLoopLlmOperations.kt
+@@ -151,6 +151,14 @@ open class ToolLoopLlmOperations(
+         outputClass: Class<O>,
+         llmRequestEvent: LlmRequestEvent<O>?,
+     ): O {
++        // Shadowed deliberately, on the same terms as AbstractLlmOperations: after this line the
++        // resolved interaction IS the interaction. These are the low-level entry points on
++        // LlmOperations - reachable directly, not only through createObject - so a role named here
++        // has to resolve here too, or it silently runs on the default model. Idempotent, so the
++        // createObject path that already resolved pays nothing.
++        @Suppress("NAME_SHADOWING")
++        val interaction = withRoleResolved(interaction)
++
+         val llm = chooseLlm(interaction.llm)
+         val promptContributions = buildPromptContributions(interaction, llm)
+ 
+@@ -239,6 +247,14 @@ open class ToolLoopLlmOperations(
+         outputClass: Class<O>,
+         llmRequestEvent: LlmRequestEvent<O>,
+     ): Result<O> {
++        // Shadowed deliberately, on the same terms as AbstractLlmOperations: after this line the
++        // resolved interaction IS the interaction. These are the low-level entry points on
++        // LlmOperations - reachable directly, not only through createObject - so a role named here
++        // has to resolve here too, or it silently runs on the default model. Idempotent, so the
++        // createObject path that already resolved pays nothing.
++        @Suppress("NAME_SHADOWING")
++        val interaction = withRoleResolved(interaction)
++
+         val llm = chooseLlm(interaction.llm)
+         val promptContributions = buildPromptContributions(interaction, llm)
+ 
+@@ -344,6 +360,14 @@ open class ToolLoopLlmOperations(
+         outputClass: Class<O>,
+         llmRequestEvent: LlmRequestEvent<O>?,
+     ): ThinkingResponse<O> {
++        // Shadowed deliberately, on the same terms as AbstractLlmOperations: after this line the
++        // resolved interaction IS the interaction. These are the low-level entry points on
++        // LlmOperations - reachable directly, not only through createObject - so a role named here
++        // has to resolve here too, or it silently runs on the default model. Idempotent, so the
++        // createObject path that already resolved pays nothing.
++        @Suppress("NAME_SHADOWING")
++        val interaction = withRoleResolved(interaction)
++
+         val llm = chooseLlm(interaction.llm)
+         val promptContributions = buildPromptContributions(interaction, llm)
+ 
+@@ -446,6 +470,14 @@ open class ToolLoopLlmOperations(
+         outputClass: Class<O>,
+         llmRequestEvent: LlmRequestEvent<O>?,
+     ): Result<ThinkingResponse<O>> {
++        // Shadowed deliberately, on the same terms as AbstractLlmOperations: after this line the
++        // resolved interaction IS the interaction. These are the low-level entry points on
++        // LlmOperations - reachable directly, not only through createObject - so a role named here
++        // has to resolve here too, or it silently runs on the default model. Idempotent, so the
++        // createObject path that already resolved pays nothing.
++        @Suppress("NAME_SHADOWING")
++        val interaction = withRoleResolved(interaction)
++
+         return try {
+             val llm = chooseLlm(interaction.llm)
+             val promptContributions = buildPromptContributions(interaction, llm)
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableModelProvider.kt b/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableModelProvider.kt
+index b190ac0..fe11090 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableModelProvider.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableModelProvider.kt
+@@ -21,6 +21,9 @@ import com.embabel.common.util.indent
+ import com.embabel.common.util.loggerFor
+ import org.springframework.boot.context.properties.ConfigurationProperties
+ import org.springframework.validation.annotation.Validated
++import java.nio.charset.StandardCharsets
++import java.security.MessageDigest
++import java.util.Collections
+ 
+ /**
+  * Configuration properties for the model provider
+@@ -44,12 +47,71 @@ data class ConfigurableModelProviderProperties(
+      *  Default embedding model name. Must be an embedding model name. Need not be set, in which case it defaults to null.
+      */
+     var defaultEmbeddingModel: String? = null,
++    /**
++     * Map of role to provider to options, for deployments whose provider is not fixed - a
++     * bring-your-own-key application, or one configured for failover across providers.
++     *
++     * ```yaml
++     * embabel:
++     *   models:
++     *     roles:
++     *       cheapest:
++     *         openai:    { model: gpt-4.1-nano }
++     *         anthropic: { model: claude-haiku-4-5 }
++     * ```
++     *
++     * Takes precedence over [llms] for the active provider.
++     *
++     * Whether an unregistered model here is an error depends on WHOSE provider it is under. Under
++     * the deployment's own provider the rule is the same as [llms] - fatal at startup, because it
++     * is a typo. Under any other provider it is not checked at all: that entry exists for a user
++     * who brings a key for that provider, so its model is not expected to be registered here.
++     *
++     * A deployment awaiting a key is the exception to both, and warns rather than failing - nothing
++     * is registered yet, so no name can resolve and none of it is a typo.
++     *
++     * Declared last, despite belonging with [llms], so that adding it does not renumber the
++     * existing parameters for anyone constructing this positionally.
++     */
++    var roles: Map<String, Map<String, LlmOptions>> = emptyMap(),
++    /**
++     * Upper bound on LLM services built from user-supplied keys and held for reuse.
++     *
++     * A cache bound is an operational concern: it trades memory against how often a deployment
++     * rebuilds a service for a key it has seen before, and the right number depends on how many
++     * distinct keys are concurrently active — which only the deployment knows. The default suits
++     * a deployment with tens to low hundreds of concurrent users; raise it if yours has more, and
++     * expect roughly one thin chat-client wrapper per entry.
++     *
++     * Exceeding it is not an error. Least-recently-used entries are dropped and rebuilt on next
++     * use, so the only cost of setting it too low is repeated construction.
++     *
++     * Must be at least 1, checked at startup. Zero or negative would evict every entry as soon as
++     * it was inserted, so the cache would silently never hold anything and every call would rebuild
++     * a service over the network - indistinguishable from a caching bug, and only visible as
++     * latency. Rejected rather than tolerated for that reason.
++     */
++    var credentialServiceCacheSize: Int = 500,
+ ) {
+ 
++    /**
++     * Every LLM name this configuration mentions, across all three places one can appear: the flat
++     * `llms` role map, the nested `roles` map (one model per provider), and `default-llm`.
++     *
++     * "Well known" means named in configuration, NOT registered or reachable. A BYOK deployment
++     * names models for providers it holds no key for, and that is the point of the nested shape -
++     * so this set is a superset of what [listModelNames] reports, and asking for one of these can
++     * still fail. Used to decide which model names a deployment is entitled to talk about, not
++     * which it can serve.
++     */
+     fun allWellKnownLlmNames(): Set<String> {
+-        return llms.values.toSet() + defaultLlm
++        return llms.values.toSet() + roles.values.flatMap { it.values }.mapNotNull { it.modelName } + defaultLlm
+     }
+ 
++    /**
++     * The embedding counterpart of [allWellKnownLlmNames]. Shorter because embedding roles have no
++     * nested per-provider shape: a role maps to one name, and there is `default-embedding-model`.
++     */
+     fun allWellKnownEmbeddingServiceNames(): Set<String> {
+         return embeddingServices.values.toSet() + setOfNotNull(defaultEmbeddingModel)
+     }
+@@ -58,14 +120,36 @@ data class ConfigurableModelProviderProperties(
+ /**
+  * Take LLM definitions from configuration
+  */
+-class ConfigurableModelProvider(
++class ConfigurableModelProvider @JvmOverloads constructor(
+     private val llms: List<LlmService<*>>,
+     private val embeddingServices: List<EmbeddingService>,
+     private val properties: ConfigurableModelProviderProperties,
++    roleResolvers: List<RoleResolver> = emptyList(),
++    private val credentialLlmServiceFactories: List<CredentialLlmServiceFactory> = emptyList(),
+ ) : ModelProvider {
+ 
+     private val logger = loggerFor<ConfigurableModelProvider>()
+ 
++    private val configurableRoleResolver =
++        ConfigurableRoleResolver(properties) { defaultLlm.provider }
++
++    /**
++     * Application resolvers first, the configuration-driven one last, so an application can
++     * override any role and ignore the rest.
++     */
++    private val roleResolvers: List<RoleResolver> = roleResolvers + configurableRoleResolver
++
++    /**
++     * Services built from user keys, which are per-user and so cannot be Spring beans.
++     * Bounded, and least-recently-used entries are dropped: an unbounded map here would retain a
++     * service for every key the deployment has ever seen.
++     */
++    private val credentialLlmServices: MutableMap<CredentialModelKey, LlmService<*>> =
++        object : LinkedHashMap<CredentialModelKey, LlmService<*>>(16, 0.75f, true) {
++            override fun removeEldestEntry(eldest: Map.Entry<CredentialModelKey, LlmService<*>>) =
++                size > properties.credentialServiceCacheSize
++        }.let { Collections.synchronizedMap(it) }
++
+     private val defaultLlm =
+         if (llms.isNotEmpty())
+             llms.firstOrNull { it.name == properties.defaultLlm }
+@@ -164,15 +248,17 @@ class ConfigurableModelProvider(
+         resolveDefaultEmbeddingService(warnOnFallback = false)?.awaitingProviderKey == true
+ 
+     init {
++        require(properties.credentialServiceCacheSize >= 1) {
++            "embabel.models.credential-service-cache-size must be at least 1, was ${properties.credentialServiceCacheSize}. " +
++                "Zero or negative evicts every entry on insert, so nothing is ever cached and every call rebuilds a service."
++        }
+         properties.llms.forEach { (role, model) ->
+             if (llms.none { it.name == model }) {
+-                /*
+-                 * Fatal, unless this deployment is waiting for a key. A name that resolves to
+-                 * nothing is a typo in a deployment that has one, and letting it start would move
+-                 * the failure to whichever unrelated call first asks for that role. A deployment in
+-                 * setup-required mode has no models registered yet by definition, so the same name
+-                 * is expected there and only worth reporting.
+-                 */
++                // Fatal, unless this deployment is waiting for a key. A name that resolves to
++                // nothing is a typo in a deployment that has one, and letting it start would move
++                // the failure to whichever unrelated call first asks for that role. A deployment in
++                // setup-required mode has no models registered yet by definition, so the same name
++                // is expected there and only worth reporting.
+                 if (setupRequired) {
+                     logger.warn(
+                         "LLM '{}' for role '{}' is not registered. This deployment is awaiting a key, so that is expected; " +
+@@ -184,6 +270,7 @@ class ConfigurableModelProvider(
+                 }
+             }
+         }
++        checkNestedRoles()
+         logger.info(infoString(verbose = true))
+ 
+         properties.embeddingServices.forEach { (role, model) ->
+@@ -217,6 +304,56 @@ class ConfigurableModelProvider(
+         }
+     }
+ 
++    /**
++     * Warn about `embabel.models.roles` entries that cannot be satisfied, on the same terms as
++     * the flat map above.
++     *
++     * Only entries for the deployment's own provider are checked. An entry for a provider this
++     * deployment is not keyed for is the point of the nested shape - it applies when a user
++     * brings a key for that provider, and its model is not expected to be registered here, so
++     * warning about it would train people to ignore the warning.
++     *
++     * Without this, a typo under `roles` is silent until something asks for the role: the entry
++     * is found, its model is not registered, and resolution throws rather than falling back to
++     * the flat map - which is the one case where the nested shape can take a role AWAY.
++     */
++    private fun checkNestedRoles() {
++        val deploymentProvider = defaultLlm.provider
++        properties.roles.forEach { (role, byProvider) ->
++            byProvider
++                .filterKeys { it.equals(deploymentProvider, ignoreCase = true) }
++                .forEach { (provider, options) ->
++                    val model = options.modelName
++                    if (model == null) {
++                        reportUnsatisfiableRole(
++                            "Role '$role' under provider '$provider' names no model, so anything asking for that role will fail",
++                        )
++                    } else if (llms.none { it.name == model }) {
++                        reportUnsatisfiableRole(
++                            """
++                            LLM '$model' for role '$role' under provider '$provider' - this deployment's own provider - is not available. Available: ${llms.map { it.name }}
++                            """.trimIndent(),
++                        )
++                    }
++                }
++        }
++    }
++
++    /**
++     * Report a role this deployment cannot satisfy, on the same terms as the flat map: fatal in a
++     * deployment that holds a key, expected in one that is waiting for one.
++     *
++     * Shared so the two shapes cannot drift. Applying the rule to only one of them was the original
++     * defect here - a typo under `roles` warned and booted while the same typo under `llms` did not.
++     */
++    private fun reportUnsatisfiableRole(message: String) {
++        if (setupRequired) {
++            logger.warn("{}. This deployment is awaiting a key, so that is expected", message)
++        } else {
++            error(message)
++        }
++    }
++
+     private fun showModel(model: LlmService<*>): String {
+         val roles = properties.llms.filter { it.value == model.name }.keys
+         val maybeRoles = if (roles.isNotEmpty()) " - Roles: ${roles.joinToString(", ")}" else ""
+@@ -266,9 +403,126 @@ class ConfigurableModelProvider(
+         )
+     }
+ 
++    override fun resolveLlmOptions(llmOptions: LlmOptions): LlmOptions {
++        val criteria = llmOptions.criteria
++        if (criteria !is ByRoleModelSelectionCriteria) {
++            return llmOptions
++        }
++        val resolved = resolveRole(criteria.role, ModelSelectionContextHolder.get())
++        return llmOptions
++            .withDefaultsFrom(resolved.llmOptions)
++            .copy(
++                modelSelectionCriteria = ModelSelectionCriteria.preResolved(resolved.llmService),
++                // Keep the role that was asked for. Selection no longer consults it - the
++                // pre-resolved criteria decide - but events, logs and cost attribution all want to
++                // know a call was made "as cheapest", which is otherwise lost the moment it resolves.
++                role = criteria.role,
++            )
++    }
++
++    override fun configuredOptionsForRole(role: String): LlmOptions? =
++        configurableRoleResolver.configuredOptionsFor(role, defaultLlm.provider)
++
++    /**
++     * Ask each resolver in turn what the role means, and materialize the answer.
++     *
++     * A role that cannot be satisfied throws, rather than quietly resolving to something else.
++     * Falling back to the default LLM would mean a role like "cheapest" silently becoming the most
++     * capable - and most expensive - model in the deployment, which is exactly the kind of thing
++     * nobody notices until the bill arrives.
++     *
++     * Booting is a separate question: an unsatisfiable role only warns at startup, so a deployment
++     * keyed for one provider still starts and still serves every role that does work.
++     */
++    private fun resolveRole(role: String, context: ModelSelectionContext): ResolvedRole {
++        val resolution = roleResolvers.firstNotNullOfOrNull { it.resolve(role, context) }
++        val resolved = when (resolution) {
++            is RoleResolution.Service -> ResolvedRole(resolution.llmService, LlmOptions.withDefaults())
++
++            is RoleResolution.Options -> byName(resolution.llmOptions)
++                ?.let { ResolvedRole(it, resolution.llmOptions) }
++
++            is RoleResolution.Credential -> fromCredential(role, resolution.credential)
++
++            null -> null
++        }
++        if (resolved != null) {
++            return resolved
++        }
++        if (setupRequired) {
++            // No key has arrived yet, so no role can name a registered model and this is not a
++            // misconfiguration. Hand back the placeholder rather than throwing: the caller then
++            // fails with the same actionable "no LLM configured" error that the default LLM already
++            // gives, instead of a NoSuitableModelException listing the placeholder as a choice.
++            //
++            // Not a silent substitution of the kind this method otherwise refuses. The objection to
++            // falling back is that "cheapest" would quietly become a real, expensive model; the
++            // placeholder answers nothing and bills nothing.
++            logger.debug(
++                "Role '{}' has no registered model and this deployment is awaiting a key; using the placeholder",
++                role,
++            )
++            return ResolvedRole(defaultLlm, LlmOptions.withDefaults())
++        }
++        logger.warn(
++            "No model available for role '{}' (provider: {})",
++            role, context.provider ?: "deployment default",
++        )
++        throw NoSuitableModelException(ByRoleModelSelectionCriteria(role), llms.map { it.name })
++    }
++
++    /**
++     * Build - or reuse - a service for the model this role names under the user's own provider.
++     */
++    private fun fromCredential(
++        role: String,
++        credential: ProviderCredential,
++    ): ResolvedRole? {
++        val options = configurableRoleResolver.optionsFor(role, credential.provider)
++        val model = options?.modelName
++        if (model == null) {
++            logger.warn(
++                "Role '{}' has no model configured for provider '{}' under embabel.models.roles",
++                role, credential.provider,
++            )
++            return null
++        }
++        // Read then put rather than computeIfAbsent: building a service can validate the key over
++        // the network, and computeIfAbsent would hold the map's lock for the duration. A race here
++        // costs one redundant build, never a wrong service.
++        //
++        // Concretely. Two requests for the same user arrive together, both resolving "cheapest"
++        // under the same key, and neither finds a cached entry. With computeIfAbsent, the first
++        // holds the map's lock across a network round trip to validate the key, and the second
++        // blocks on it - as does every unrelated lookup for every other user, because it is one
++        // map. Reading first, both build a service, both put, and the second put wins. The key
++        // and model are identical, so the two services are interchangeable; the loser is dropped
++        // and the cost is one wasted validation call.
++        val key = CredentialModelKey.of(credential, model)
++        val llmService = credentialLlmServices[key]
++            ?: credentialLlmServiceFactories
++                .firstNotNullOfOrNull { it.createLlmService(credential, model) }
++                ?.also { credentialLlmServices[key] = it }
++        if (llmService == null) {
++            logger.warn(
++                "No CredentialLlmServiceFactory handles provider '{}', needed for role '{}'",
++                credential.provider, role,
++            )
++            return null
++        }
++        return ResolvedRole(llmService, options)
++    }
++
++    /**
++     * The registered service named by these options, or null if it names none.
++     */
++    private fun byName(llmOptions: LlmOptions): LlmService<*>? =
++        llmOptions.modelName?.let { name -> llms.firstOrNull { it.name == name } }
++
+     override fun listRoles(modelClass: Class<*>): List<String> {
+         return when {
+-            LlmService::class.java.isAssignableFrom(modelClass) -> properties.llms.keys.toList()
++            LlmService::class.java.isAssignableFrom(modelClass) ->
++                (properties.llms.keys + properties.roles.keys).toList()
+             EmbeddingService::class.java.isAssignableFrom(modelClass) -> properties.embeddingServices.keys.toList()
+             else -> throw IllegalArgumentException("Unsupported model class: $modelClass")
+         }
+@@ -285,8 +539,7 @@ class ConfigurableModelProvider(
+     override fun getLlm(criteria: ModelSelectionCriteria): LlmService<*> =
+         when (criteria) {
+             is ByRoleModelSelectionCriteria -> {
+-                val modelName = properties.llms[criteria.role] ?: throw NoSuitableModelException(criteria, llms.map { it.name })
+-                llms.firstOrNull { it.name == modelName } ?: throw NoSuitableModelException(criteria, llms.map { it.name })
++                resolveRole(criteria.role, ModelSelectionContextHolder.get()).llmService
+             }
+ 
+             is ByNameModelSelectionCriteria -> {
+@@ -349,4 +602,46 @@ class ConfigurableModelProvider(
+                 defaultEmbeddingService()
+             }
+         }
++
++    /**
++     * A role, materialized: the service to call, and the options configured alongside it.
++     */
++    private data class ResolvedRole(
++        val llmService: LlmService<*>,
++        val llmOptions: LlmOptions,
++    )
++
++    /**
++     * Cache key for a service built from a user's key.
++     *
++     * Identifies the key by SHA-256 rather than holding it, so the plaintext is not duplicated
++     * into a map that lives as long as the platform does. The cached [LlmService] was built from
++     * the key and still holds it, so this narrows the exposure rather than removing it - but it
++     * removes the copy that exists purely for lookup, and keeps keys out of any heap dump taken
++     * of the cache itself.
++     *
++     * A digest cannot collide in practice, and two users would have to share a provider AND a
++     * model AND a SHA-256 collision to reach one another's service.
++     */
++    private data class CredentialModelKey(
++        val provider: String,
++        val apiKeyDigest: String,
++        val model: String,
++    ) {
++
++        companion object {
++
++            fun of(credential: ProviderCredential, model: String) = CredentialModelKey(
++                provider = credential.provider.lowercase(),
++                apiKeyDigest = digest(credential.apiKey),
++                model = model,
++            )
++
++            private fun digest(apiKey: String): String =
++                MessageDigest.getInstance("SHA-256")
++                    .digest(apiKey.toByteArray(StandardCharsets.UTF_8))
++                    .joinToString("") { "%02x".format(it) }
++        }
++    }
++
+ }
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableRoleResolver.kt b/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableRoleResolver.kt
+new file mode 100644
+index 0000000..4fe7c6d
+--- /dev/null
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableRoleResolver.kt
+@@ -0,0 +1,125 @@
++/*
++ * Copyright 2024-2026 Embabel Pty Ltd.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.embabel.common.ai.model
++
++import org.springframework.core.Ordered
++
++/**
++ * The platform's own [RoleResolver], consulted after any the application registers.
++ *
++ * Reads `embabel.models.roles` - role, then provider, then options:
++ *
++ * ```yaml
++ * embabel:
++ *   models:
++ *     roles:
++ *       cheapest:
++ *         openai:    { model: gpt-4.1-nano }
++ *         anthropic: { model: claude-haiku-4-5, temperature: 0.3 }
++ * ```
++ *
++ * The active provider comes from [ModelSelectionContext.provider] when a user key is in play, and
++ * otherwise from whichever provider supplies the default LLM - so a single-provider deployment gets
++ * the right column without setting a context at all.
++ *
++ * Falls back to the flat `embabel.models.llms` map, which remains the right shape for a deployment
++ * that will only ever have one provider.
++ *
++ * @param properties the bound `embabel.models` configuration
++ * @param defaultProviderName provider of the default LLM, used when no key is active. A function
++ * because the default LLM is resolved by [ConfigurableModelProvider] against registered beans.
++ */
++class ConfigurableRoleResolver(
++    private val properties: ConfigurableModelProviderProperties,
++    private val defaultProviderName: () -> String?,
++) : RoleResolver, Ordered {
++
++    override fun getOrder(): Int = Ordered.LOWEST_PRECEDENCE
++
++    override fun resolve(role: String, context: ModelSelectionContext): RoleResolution? {
++        val activeProvider = context.provider ?: defaultProviderName()
++        val configuredForProvider = optionsFor(role, activeProvider)
++        if (configuredForProvider != null) {
++            // A user key beats deployment credentials: hand the key back and let the platform
++            // build a service for the model this role names under that provider.
++            return context.credential
++                ?.let { RoleResolution.Credential(it) }
++                ?: RoleResolution.Options(configuredForProvider)
++        }
++        if (context.credential != null) {
++            // The flat map names models the deployment is keyed for. Serving them to a user who
++            // brought their own key would quietly bill the deployment for a call the user meant to
++            // pay for, so leave it alone and let the role fail for this user.
++            return null
++        }
++        return flatOptionsFor(role)?.let { RoleResolution.Options(it) }
++    }
++
++    /**
++     * What configuration says [role] means for [provider] - the nested entry if there is one,
++     * otherwise the flat map.
++     *
++     * This is the read side of [resolve], for callers that want to *show* a role's model rather
++     * than use it: a settings UI, a diagnostic endpoint, an application with its own per-user
++     * override layer on top. Sharing the lookup means such a caller cannot drift from what
++     * resolution would actually pick.
++     *
++     * It is deliberately narrower than resolution in two ways. It does not consult application
++     * [RoleResolver] beans, so a resolver that overrides a role per user is not reflected here.
++     * And it takes the provider as an argument rather than reading the active
++     * [ModelSelectionContext], so the answer does not depend on which thread asks.
++     */
++    fun configuredOptionsFor(role: String, provider: String?): LlmOptions? =
++        optionsFor(role, provider) ?: flatOptionsFor(role)
++
++    /**
++     * Options configured for [role] under [provider], or null if the role says nothing about it.
++     *
++     * Reads the nested shape, in which a role names a different model per provider:
++     *
++     * ```yaml
++     * embabel:
++     *   models:
++     *     roles:
++     *       cheapest:
++     *         openai:
++     *           model: gpt-4.1-nano
++     *         anthropic:
++     *           model: claude-haiku-4-5
++     *           temperature: 0.0
++     * ```
++     *
++     * `optionsFor("cheapest", "anthropic")` returns those Anthropic options, temperature included.
++     * `optionsFor("cheapest", "mistral")` returns null - the role is configured, but says nothing
++     * about that provider, so the caller falls back to the flat `embabel.models.llms` map.
++     *
++     * A null [provider] returns null rather than guessing: with no active credential there is no
++     * provider to select within, and the flat map is the right answer. Provider names are matched
++     * case-insensitively, because they arrive from user-supplied credentials as often as from yaml.
++     */
++    fun optionsFor(role: String, provider: String?): LlmOptions? {
++        if (provider == null) {
++            return null
++        }
++        return properties.roles[role]
++            ?.entries
++            ?.firstOrNull { it.key.equals(provider, ignoreCase = true) }
++            ?.value
++    }
++
++    private fun flatOptionsFor(role: String): LlmOptions? =
++        properties.llms[role]?.let { LlmOptions.withModel(it) }
++}
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ModelProvider.kt b/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ModelProvider.kt
+index 7dbae60..512fcab 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ModelProvider.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ModelProvider.kt
+@@ -29,6 +29,38 @@ interface ModelProvider : HasInfoString {
+     @Throws(NoSuitableModelException::class)
+     fun getEmbeddingService(criteria: ModelSelectionCriteria): EmbeddingService
+ 
++    /**
++     * Resolve any role in these options to a concrete model, applying whatever hyperparameters are
++     * configured against that role.
++     *
++     * Hyperparameters the caller set explicitly are kept - a role may say `temperature: 0.3`, but a
++     * caller that passed its own temperature still gets that one. Model selection is the exception
++     * and comes from the role wholesale: deciding which model a role means is the entire point of
++     * resolving it, so a `model` set alongside a role is replaced rather than preserved.
++     *
++     * Called once per LLM operation, before the model is chosen, so that a role can carry more than
++     * a model name. Options naming no role are returned unchanged.
++     */
++    fun resolveLlmOptions(llmOptions: LlmOptions): LlmOptions = llmOptions
++
++    /**
++     * What configuration says [role] means for this deployment, or null if it says nothing.
++     *
++     * The read side of role configuration, for callers that want to *show* a role's model rather
++     * than use it - a settings screen, a diagnostic endpoint, or an application layering its own
++     * per-user overrides on top. Without it such a caller has to read the raw properties and
++     * reimplement the precedence between the flat and nested shapes, which is how a settings
++     * screen ends up disagreeing with what actually runs.
++     *
++     * Narrower than [resolveLlmOptions] on purpose: it answers for the deployment's own provider
++     * and ignores both user keys and application [RoleResolver] beans, so the answer does not
++     * depend on who is asking or on which thread. Use [resolveLlmOptions] to find out what a
++     * particular call will really do.
++     *
++     * Returns null by default, meaning "this implementation cannot say".
++     */
++    fun configuredOptionsForRole(role: String): LlmOptions? = null
++
+     /**
+      * List the roles available for this class of model
+      */
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ModelSelectionContext.kt b/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ModelSelectionContext.kt
+new file mode 100644
+index 0000000..3f38dd6
+--- /dev/null
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ModelSelectionContext.kt
+@@ -0,0 +1,100 @@
++/*
++ * Copyright 2024-2026 Embabel Pty Ltd.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.embabel.common.ai.model
++
++/**
++ * An API key for a named provider, supplied by a user rather than by deployment configuration.
++ *
++ * @param provider provider name, matching [ModelMetadata.provider] - for example "openai".
++ * Compared case-insensitively wherever the platform matches on it.
++ * @param apiKey the key itself. Never logged.
++ */
++data class ProviderCredential(
++    val provider: String,
++    val apiKey: String,
++) {
++
++    /**
++     * Deliberately hides the key: these objects end up in log lines and exception messages.
++     */
++    override fun toString(): String = "ProviderCredential(provider=$provider, apiKey=***)"
++}
++
++/**
++ * What a [RoleResolver] gets to decide with, beyond the role name itself.
++ *
++ * A role such as "cheapest" cannot be resolved to a model without knowing which provider is
++ * active, and in a bring-your-own-key deployment that is a property of the request rather than
++ * of the deployment. Set it for the duration of a request with [ModelSelectionContextHolder.with].
++ *
++ * @param userId identity of the user on whose behalf the call is made, if any
++ * @param credential the provider key active for this call, if any
++ */
++data class ModelSelectionContext(
++    val userId: String? = null,
++    val credential: ProviderCredential? = null,
++) {
++
++    /**
++     * Name of the active provider, or null if the deployment default should be used.
++     */
++    val provider: String? get() = credential?.provider
++
++    companion object {
++
++        /**
++         * No user, no key: resolution falls back to deployment configuration.
++         */
++        @JvmField
++        val EMPTY = ModelSelectionContext()
++    }
++}
++
++/**
++ * Makes the [ModelSelectionContext] for the current call available to model resolution without
++ * threading it through every LLM API. Applications set it at their request boundary - a servlet
++ * filter, an interceptor, or around the code that starts an agent process.
++ *
++ * The platform propagates the context across the threads it starts itself - a background agent run,
++ * parallel actions, `OperationContext.parallelMap` - because losing it there does not fail loudly:
++ * role resolution would quietly fall back to deployment configuration and serve a model the
++ * deployment is billed for. It does not reach threads the application spawns on its own. Capture it
++ * with [get] and re-establish it with [with] inside such a thread.
++ */
++object ModelSelectionContextHolder {
++
++    private val current = ThreadLocal.withInitial { ModelSelectionContext.EMPTY }
++
++    /**
++     * The context for the current thread, or [ModelSelectionContext.EMPTY] if none was set.
++     */
++    @JvmStatic
++    fun get(): ModelSelectionContext = current.get()
++
++    /**
++     * Run [block] with [context] active, restoring the previous context afterwards.
++     */
++    @JvmStatic
++    fun <T> with(context: ModelSelectionContext, block: () -> T): T {
++        val previous = current.get()
++        current.set(context)
++        try {
++            return block()
++        } finally {
++            current.set(previous)
++        }
++    }
++}
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/RoleResolver.kt b/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/RoleResolver.kt
+new file mode 100644
+index 0000000..3398e1d
+--- /dev/null
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/RoleResolver.kt
+@@ -0,0 +1,118 @@
++/*
++ * Copyright 2024-2026 Embabel Pty Ltd.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.embabel.common.ai.model
++
++import com.embabel.agent.spi.LlmService
++
++/**
++ * What a role resolved to.
++ *
++ * Three cases, in increasing order of how much the resolver does itself. Most applications need
++ * only [Credential]: say whose key is active and let the platform do the rest.
++ */
++sealed interface RoleResolution {
++
++    /**
++     * Configured options - a model name, and optionally hyperparameters that travel with the role.
++     * Values the caller set explicitly still win.
++     *
++     * The wrapper is what makes this a case rather than a payload. Returning a bare [LlmOptions]
++     * would leave the platform unable to tell "resolved to options" from the other two answers in
++     * a `when`, and would rule out ever adding a third field to this case without changing every
++     * resolver's signature. The other two wrap for the same reason; the cost is one `.llmOptions`
++     * at the use site.
++     */
++    data class Options(
++        val llmOptions: LlmOptions,
++    ) : RoleResolution
++
++    /**
++     * A provider key. The platform looks the role up for that provider and builds the service
++     * through a [CredentialLlmServiceFactory], caching it.
++     */
++    data class Credential(
++        val credential: ProviderCredential,
++    ) : RoleResolution
++
++    /**
++     * An already-built service, for callers that construct their own.
++     */
++    data class Service(
++        val llmService: LlmService<*>,
++    ) : RoleResolution
++}
++
++/**
++ * Decides what a role means for a given call.
++ *
++ * Register as many as you like. The platform takes the first non-null answer, so a resolver can
++ * handle the roles it cares about and delegate the rest by returning null.
++ *
++ * Ordering, in full, because it decides who wins:
++ *
++ * - **Application resolvers always precede the platform's own.** [ConfigurableRoleResolver] is not
++ *   in the bean stream at all - it is appended after the ordered beans - so configuration is
++ *   always the last word, whatever an application registers.
++ * - **Between application resolvers**, Spring's [org.springframework.core.Ordered] applies:
++ *   lowest value first, via `@Order` or by implementing `Ordered`. A resolver that does neither is
++ *   `LOWEST_PRECEDENCE` and sorts after any that do.
++ * - **Ties** fall back to bean registration order, which is not something to depend on. If two of
++ *   your resolvers can answer the same role, order them explicitly.
++ *
++ * Implementations must be thread-safe: one instance serves every call, on any thread.
++ */
++fun interface RoleResolver {
++
++    /**
++     * @param role the role requested, for example "cheapest"
++     * @param context who the call is for and which provider key is active
++     * @return how to satisfy the role, or null to let the next resolver decide
++     */
++    fun resolve(role: String, context: ModelSelectionContext): RoleResolution?
++}
++
++/**
++ * Builds an [LlmService] from a user-supplied key.
++ *
++ * No implementation ships with the platform yet, so an application returning
++ * [RoleResolution.Credential] must register one - otherwise the role fails with
++ * [NoSuitableModelException] and a log line naming the provider nothing handled. It is a one-liner
++ * over the provider's own BYOK factory:
++ *
++ * ```kotlin
++ * @Bean
++ * fun openAiCredentialFactory() = CredentialLlmServiceFactory { credential, model ->
++ *     if (!credential.provider.equals(OpenAiModels.PROVIDER, ignoreCase = true)) null
++ *     else OpenAiCompatibleModelFactory(baseUrl = null, apiKey = credential.apiKey)
++ *         .openAiCompatibleLlm(model = model, provider = OpenAiModels.PROVIDER)
++ * }
++ * ```
++ *
++ * The platform caches what this returns, per (provider, key, model), so an implementation should
++ * build rather than maintain a cache of its own.
++ *
++ * Provider-supplied implementations are follow-up work: they belong with the provider modules, and
++ * a pure bring-your-own-key deployment deliberately has no provider autoconfiguration on the
++ * classpath to carry them.
++ */
++fun interface CredentialLlmServiceFactory {
++
++    /**
++     * @return a service for [model] authenticated with [credential], or null if this factory does
++     * not handle that provider
++     */
++    fun createLlmService(credential: ProviderCredential, model: String): LlmService<*>?
++}
+diff --git a/embabel-agent-common/embabel-agent-ai/src/main/kotlin/com/embabel/common/ai/model/LlmOptions.kt b/embabel-agent-common/embabel-agent-ai/src/main/kotlin/com/embabel/common/ai/model/LlmOptions.kt
+index fdb32aa..61f850b 100644
+--- a/embabel-agent-common/embabel-agent-ai/src/main/kotlin/com/embabel/common/ai/model/LlmOptions.kt
++++ b/embabel-agent-common/embabel-agent-ai/src/main/kotlin/com/embabel/common/ai/model/LlmOptions.kt
+@@ -21,6 +21,7 @@ import com.embabel.common.ai.model.ModelSelectionCriteria.Companion.byRole
+ import com.embabel.common.ai.model.spi.InternalExtensionApi
+ import com.embabel.common.core.types.HasInfoString
+ import com.embabel.common.util.indent
++import com.fasterxml.jackson.annotation.JsonIgnore
+ import com.fasterxml.jackson.annotation.JsonProperty
+ import io.swagger.v3.oas.annotations.media.Schema
+ import java.time.Duration
+@@ -189,6 +190,42 @@ data class LlmOptions @JvmOverloads constructor(
+         return copy(timeout = timeout)
+     }
+ 
++    /**
++     * The model these options name, however they name it.
++     *
++     * [withModel] records the choice as a [ByNameModelSelectionCriteria] while configuration
++     * binding sets the [model] field, so neither one alone answers the question.
++     */
++    @get:JsonIgnore
++    val modelName: String?
++        get() = model ?: (criteria as? ByNameModelSelectionCriteria)?.name
++
++    /**
++     * Fill in anything this instance leaves unset from [defaults], keeping every value set here.
++     *
++     * Used to apply the hyperparameters configured against a role without overriding what the
++     * caller asked for: a role may say `temperature: 0.3`, but a caller that passed its own
++     * temperature still gets that one.
++     *
++     * Model selection is taken from [defaults] wholesale, since the point of resolving a role is
++     * to decide which model it means.
++     */
++    fun withDefaultsFrom(defaults: LlmOptions): LlmOptions =
++        copy(
++            modelSelectionCriteria = defaults.modelSelectionCriteria,
++            model = defaults.model,
++            role = defaults.role,
++            temperature = temperature ?: defaults.temperature,
++            frequencyPenalty = frequencyPenalty ?: defaults.frequencyPenalty,
++            maxTokens = maxTokens ?: defaults.maxTokens,
++            presencePenalty = presencePenalty ?: defaults.presencePenalty,
++            topK = topK ?: defaults.topK,
++            topP = topP ?: defaults.topP,
++            thinking = thinking ?: defaults.thinking,
++            timeout = timeout ?: defaults.timeout,
++            extensions = defaults.extensions + extensions,
++        )
++
+     /**
+      * Get a provider-specific extension value by key.
+      * Returns null if the extension is not present or cannot be cast to type T.
+diff --git a/embabel-agent-docs/src/main/asciidoc/reference/llms/page.adoc b/embabel-agent-docs/src/main/asciidoc/reference/llms/page.adoc
+index d9367ec..07773f6 100644
+--- a/embabel-agent-docs/src/main/asciidoc/reference/llms/page.adoc
++++ b/embabel-agent-docs/src/main/asciidoc/reference/llms/page.adoc
+@@ -598,6 +598,139 @@ ai.withLlmByRole("best")
+ 
+ NOTE: If no LLM is specified in `@LlmCall` or `withLlm()`, the `default-llm` from configuration is used.
+ 
++===== Roles across providers
++
++The flat `llms` map above names one model per role, and a model belongs to one provider. That is the
++right shape when a deployment will only ever be keyed for one provider. When it will not - a
++bring-your-own-key application, or one that fails over between providers - give the role a provider
++dimension with `roles`:
++
++[source,yaml]
++----
++embabel:
++  models:
++    default-llm: gpt-4.1-mini
++    roles:
++      cheapest:
++        openai:
++          model: gpt-4.1-nano       # <1>
++        anthropic:
++          model: claude-haiku-4-5
++          temperature: 0.3          # <2>
++      best:
++        openai:
++          model: gpt-4.1
++        anthropic:
++          model: claude-sonnet-4-6
++----
++<1> The model this role means when OpenAI is the active provider
++<2> Tuning configured against the role, applied whenever this role resolves to this provider
++
++Call sites do not change: `ai.withLlmByRole("cheapest")` resolves against whichever provider is
++active for the call. With no user key in play, that is the provider supplying the `default-llm`, so
++a single-provider deployment needs nothing further.
++
++Anything the caller sets explicitly still wins over what the role configures, so
++`ai.withLlmByRole("cheapest").withTemperature(0.9)` keeps `0.9`.
++
++A role that cannot be satisfied - because the active provider has no entry for it, or the model it
++names is not registered - throws `NoSuitableModelException` at the point of use. It does not quietly
++resolve to something else: falling back to the `default-llm` would let a role like `cheapest` become
++the most capable, and most expensive, model in the deployment without anyone noticing.
++
++Startup is a separate question, and the answer depends on whether the deployment holds a key. A
++deployment that has one is expected to name models it has: an unresolvable name there is a typo,
++and letting it boot would move the failure to whichever unrelated call first asks for that role.
++A deployment still waiting for a key has no models registered yet by definition, so the same name
++is expected and only worth reporting.
++
++[cols="2,1,3", options="header", frame="all", grid="all"]
++|===
++|Configuration |At startup |Notes
++
++|Keyed deployment, `embabel.models.llms` names an unregistered model
++|Fails
++|A typo, and fatal. The message names the role and the models that were available.
++
++|Keyed deployment, `embabel.models.roles` names an unregistered model *under the deployment's own provider*
++|Fails
++|Same rule as the flat map. Applying it to only one of the two shapes was the original defect here.
++
++|Keyed deployment, `embabel.models.roles` names a model under *any other* provider
++|Not checked
++|The point of the nested shape. That entry applies when a user brings a key for that provider, so its model is not expected to be registered here - warning about it would train people to ignore the warning.
++
++|Deployment awaiting a key (BYOK, `default-llm` resolving to the placeholder)
++|Warns
++|Nothing is registered yet, so every role is unresolvable and none of it is a typo. Roles resolve to the placeholder, which fails with an actionable "no LLM configured" error until a key arrives.
++
++|A role reached through a user's own credential
++|n/a
++|Resolved per call against that provider's entry only. It never falls back to the flat `embabel.models.llms` map - a user's key must not silently select a model the deployment pays for.
++|===
++
++Whichever way startup goes, asking for a role that cannot be satisfied still throws at the point of
++use, and the message names the role, the active provider, and the models that were available.
++
++===== Resolving roles in code
++
++To decide what a role means per user rather than per deployment, register a `RoleResolver` bean.
++Resolvers are consulted in `Ordered` order, ahead of the configuration above, and returning `null`
++delegates to the next one.
++
++[source,kotlin]
++----
++@Component
++class ByokRoleResolver(
++    private val userKeyStore: UserKeyStore,
++) : RoleResolver {
++
++    override fun resolve(role: String, context: ModelSelectionContext): RoleResolution? =
++        context.userId
++            ?.let { userKeyStore.activeKeyFor(it) }
++            ?.let { RoleResolution.Credential(ProviderCredential(it.provider, it.apiKey)) }
++}
++----
++
++`RoleResolution.Credential` hands back a key and lets the platform do the rest: it looks up what the
++role means under that provider, builds the service through a `CredentialLlmServiceFactory`, and
++caches it so the service is not rebuilt on every call. Return `RoleResolution.Options` to name a
++model and its tuning directly, or `RoleResolution.Service` to supply an `LlmService` you built
++yourself.
++
++The `ModelSelectionContext` a resolver receives comes from `ModelSelectionContextHolder`, which the
++application sets at its request boundary:
++
++[source,kotlin]
++----
++ModelSelectionContextHolder.with(ModelSelectionContext(userId = currentUserId)) {
++    agentPlatform.runAgent(...)
++}
++----
++
++The platform carries the context across the threads it starts itself — a background agent run,
++parallel actions, `OperationContext.parallelMap` — so setting it once at the request boundary is
++enough. It does not reach threads your own code spawns: capture it there with
++`ModelSelectionContextHolder.get()` and re-establish it inside the new thread.
++
++===== Reading what a role is configured to mean
++
++Resolution answers "what will this call use", which depends on the active key and on any
++`RoleResolver` beans. A settings screen or diagnostic endpoint wants a different question — "what
++does this deployment declare this role to be" — and answering it by reading `embabel.models`
++directly means reimplementing the precedence between the flat and nested shapes, which is how a
++settings screen ends up disagreeing with what actually runs.
++
++`ModelProvider.configuredOptionsForRole` answers that question against the deployment's own
++provider, ignoring user keys and application resolvers:
++
++[source,kotlin]
++----
++val declared: String? = modelProvider.configuredOptionsForRole("cheapest")?.modelName
++----
++
++Use `resolveLlmOptions` instead when you need to know what a specific call will really do.
++
+ ===== Using Your Custom Implementation (Alternative)
+ 
+ If you need more control over the LLM operations layer itself, you can extend `ToolLoopLlmOperations`:

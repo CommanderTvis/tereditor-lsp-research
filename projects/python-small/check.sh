@@ -1,6 +1,9 @@
 #!/bin/sh
-# Build-and-test for toolz: import the package (catches syntax and name errors at import) and run the test suite.
-# test_has_version needs an installed distribution (package metadata), which a source tree does not have.
+# Build-and-test for pydantic-extra-types: byte-compile, import the package, run the test suite with the grading home's
+# virtual environment (grade-setup.sh).
 set -e
-python -c "import toolz, toolz.curried, tlz"
-python -m pytest -q -p no:cacheprovider toolz --deselect toolz/tests/test_package.py::test_has_version
+export TZ=UTC
+PY=$HOME/venv/bin/python
+$PY -m compileall -q pydantic_extra_types > /dev/null
+$PY -c "import pydantic_extra_types, pydantic_extra_types.country, pydantic_extra_types.color"
+$PY -m pytest -q -p no:cacheprovider tests

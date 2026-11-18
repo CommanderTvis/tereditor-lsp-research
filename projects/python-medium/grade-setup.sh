@@ -1,9 +1,8 @@
 #!/bin/sh
-# Grading dependencies of rich, fetched once per commit with network: a virtual environment in the grading home with
-# rich's runtime and test dependencies at the versions of v15.0.0's poetry.lock, plus commonmark (what rich used before
-# markdown-it-py) and pprintpp (a dependency of rich 3.x), for the base commits of mined pull requests, and a pinned pytest.
+# astroid's test tools and the optional packages its brain tests import, into the grading home's virtual environment
+# (CPython 3.12). PyQt6 is left out (large, needs system libraries); its brain test skips. astroid itself is imported
+# from the work tree.
 set -e
 python -m venv "$HOME/venv"
 "$HOME/venv/bin/python" -m pip install -q --disable-pip-version-check --no-input \
-  pytest==8.3.5 pygments==2.19.2 markdown-it-py==3.0.0 mdurl==0.1.2 attrs==21.4.0 typing-extensions==4.13.2 \
-  commonmark==0.9.1 colorama==0.4.6 pprintpp==0.4.0
+  pytest coverage pytest-cov attrs numpy python-dateutil regex 'setuptools<82' six 'urllib3>1,<2' 'typing_extensions>=4.4.0'

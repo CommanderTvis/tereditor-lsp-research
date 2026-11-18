@@ -9,6 +9,8 @@ set -e
 export npm_config_manage_package_manager_versions=false npm_config_package_manager_strict=false
 export pnpm_config_manage_package_manager_versions=false pnpm_config_package_manager_strict=false
 export COREPACK_ENABLE_STRICT=0
+# Modern base commits declare devEngines.packageManager (pnpm ^10); the toolchain's pnpm is newer: warn only.
+export pnpm_config_pm_on_fail=ignore npm_config_pm_on_fail=ignore
 if [ -f pnpm-lock.yaml ]; then
   pnpm install --frozen-lockfile --ignore-scripts --config.manage-package-manager-versions=false --config.package-manager-strict=false
 else

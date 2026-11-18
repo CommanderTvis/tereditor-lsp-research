@@ -1,0 +1,66 @@
+diff --git a/src/Illuminate/Routing/EncodedParameter.php b/src/Illuminate/Routing/EncodedParameter.php
+new file mode 100644
+index 000000000000..df972cf92291
+--- /dev/null
++++ b/src/Illuminate/Routing/EncodedParameter.php
+@@ -0,0 +1,38 @@
++<?php
++
++namespace Illuminate\Routing;
++
++use Stringable;
++
++class EncodedParameter implements Stringable
++{
++    /**
++     * Create a new encoded parameter instance.
++     *
++     * @param  string  $value
++     */
++    public function __construct(protected string $value)
++    {
++        //
++    }
++
++    /**
++     * Get the encoded parameter value.
++     *
++     * @return string
++     */
++    public function value()
++    {
++        return $this->value;
++    }
++
++    /**
++     * Get the encoded parameter value.
++     *
++     * @return string
++     */
++    public function __toString()
++    {
++        return $this->value;
++    }
++}
+diff --git a/src/Illuminate/Routing/RouteUrlGenerator.php b/src/Illuminate/Routing/RouteUrlGenerator.php
+index a8e4b304f891..8f8df901ad18 100644
+--- a/src/Illuminate/Routing/RouteUrlGenerator.php
++++ b/src/Illuminate/Routing/RouteUrlGenerator.php
+@@ -372,11 +372,17 @@ protected function replaceNamedParameters($path, &$parameters)
+     /**
+      * Encode a parameter value that is being substituted into a route URI.
+      *
++     * Values wrapped in an EncodedParameter are already URL encoded and are used as-is.
++     *
+      * @param  mixed  $value
+      * @return mixed
+      */
+     protected function encodeParameter($value)
+     {
++        if ($value instanceof EncodedParameter) {
++            return $value->value();
++        }
++
+         return is_string($value) || $value instanceof Stringable
+             ? strtr((string) $value, ['%' => '%25', '?' => '%3F', '#' => '%23'])
+             : $value;

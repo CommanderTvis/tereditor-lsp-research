@@ -1,0 +1,27 @@
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet renders the component
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet renders the header content correctly
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet renders influencer
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet renders main content and form fields
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet renders summaryContent
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet calls onClose when Cancel is clicked
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet calls handlePrevious when Back button is clicked
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet opens influencer and summary panels on icon button clicks
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet does not render when open is false
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet renders footer buttons correctly
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet check stacking tearsheet is rendered properly
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet check header collapse functionality
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet does not show menu button when hidden items do not exist (via onChange)
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet shows menu button when hidden items exist (via onChange)
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet portal behavior renders into document.body by default (portal active)
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet portal behavior renders inline when disablePortal is true
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet portal behavior renders into a custom portalTarget
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet portal behavior renders exactly once on first open (no double-mount)
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet keepMounted keeps the tearsheet in the DOM when closed
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet keepMounted removes the tearsheet from the DOM when closed without keepMounted
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet accessibility applies aria-label when provided
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet accessibility falls back to aria-labelledby when ariaLabel is not provided
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet variant applies narrow modifier class when variant is narrow
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet variant applies wide modifier class by default
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet applies containerClassName to the modal container
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet launcherButtonRef focus return returns focus to the launcher button after close
+packages/react/src/components/Tearsheet/__tests__/Tearsheet-test.js :: Tearsheet does not render menu button when actions not wrapped with HeaderActionItem

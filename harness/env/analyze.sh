@@ -1,4 +1,4 @@
-# analyze.sh <plan>: extraction and the pre-registered analysis with the environment's pinned Python packages.
+# analyze.sh <plan>: extraction and the analysis with the environment's pinned Python packages.
 set -eu
 "$STUDY_ANALYSIS/bin/python3" "$STUDY_ROOT/analysis/extract.py" "$1"
 "$STUDY_ANALYSIS/bin/python3" "$STUDY_ROOT/analysis/report.py" "$1"

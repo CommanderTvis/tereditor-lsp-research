@@ -1,0 +1,9 @@
+type = "pr"
+origin = "mined pull request (modern, docs/MEMORIZATION.md)"
+pr = 17441
+issue = 16043
+base_commit = "d6c7e374fd545abe9da69447c01e8525ea0ad5d5"
+merge_commit = "7ae0cda45a99de2816f39be62bd2a79cd2a54f3d"
+merged_at = "2026-07-23T18:36:25Z"
+test_files = ["test/queues/int.spec.ts","test/queues/payload-types.ts","test/queues/postgres-logs.int.spec.ts"]
+grade_timeout_s = 1200

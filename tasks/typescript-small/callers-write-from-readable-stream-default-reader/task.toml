@@ -1,0 +1,4 @@
+type = "callers"
+origin = "synthetic, transitive callers among the public API"
+symbol = "writeFromReadableStreamDefaultReader"
+selection = "Top-level functions of src/ that are not themselves package entry points, reached by at least 3 public entry points through a call chain of at least 2 calls (a static call graph by name, under the call rules of the prompt); 13 candidates (buildOutgoingHttpHeaders, buildUrl, flushHeaders, isByteExactEncoding, isRecoverableDisconnectedIncoming, normalizeIncomingMethod, readWithoutBlocking, recordBodyBufferedBeforeDisconnect, trySetContentLength, validateRequestTarget, writeDefaultHeaders, writeFromReadableStream, writeFromReadableStreamDefaultReader), sorted by name, seeded shuffle awk srand(20261110), first taken."

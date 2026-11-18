@@ -26,7 +26,7 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
   Nix (used to define the environments, docs/NIX.md) must never be a requirement for a reproducer; it runs inside a
   builder container, or self-bootstrapped in the native backend.
 - The owner's `~/.claude/CLAUDE.md` (and any other user configuration) must not contaminate the study.
-- Budget about USD 2,000 for the confirmatory run, which is ON HOLD: the owner asked to wait for the IntelliJ
+- Budget about USD 400 (API-equivalent, as Claude Code reports it; the Max 5x plan allows about USD 100 per 5-hour window) for the confirmatory run. It is an indicative price level, not a hard spending cap: the owner's subscription covers roughly USD 1,000 to 2,000 a month, so a moderate overshoot to buy power is acceptable, but ask before going far past it. The run is ON HOLD: the owner asked to wait for the IntelliJ
   contestant. IntelliJ works in the harness, but get an explicit go from the owner
   before launching anything beyond small smoke or calibration runs.
 
@@ -57,20 +57,25 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
 - Tasks: half synthetic (refactorings: rename, rename file, move to another package or module, change signature;
   plus navigation questions), half mined pull requests selected as SWE-bench selects them, opened after 2026-07-01 (after
   every model's training cutoff; pre-2022 PRs are memorized, measured in docs/MEMORIZATION.md, and never compared with a
-  gold patch), runnable with the current toolchains. Provisional count: 6 per small to large project (3 + 3), 3 per
-  xlarge; the calibration pilot fixes repetitions to fit USD 2,000 (docs/TASKS.md, docs/ANALYSIS_PLAN.md).
+  gold patch), runnable with the current toolchains. Curated count: 6 per project (3 + 3); the confirmatory run uses 3 per project (`./study plan --keep 3`, seeded,
+  docs/ANALYSIS_PLAN.md); the calibration pilot fixed the repetitions to fit USD 400 (docs/TASKS.md, docs/ANALYSIS_PLAN.md).
 - Effort: every model at Claude Code's default, `medium` for Haiku, Sonnet and Opus 5.5; nothing in the harness sets
   an effort level (docs/DESIGN.md). Success is averaged arithmetically, cost and time geometrically (ratios).
 - Oracles never come from a language server: compiler mutation (rename the declaration, compile, collect errors),
   another analyser, or hand-classified exhaustive candidate lists. Every task must pass `./study validate`.
-- The analysis is pre-registered in `docs/ANALYSIS_PLAN.md` (30 primary tests, Holm; includes a Haiku-reviewed quality-flaw count; mixed models, task-clustered
-  bootstrap, sign-flip tests). Changes after the first confirmatory run go in its "Changes after registration".
+- The analysis is described in `docs/ANALYSIS_PLAN.md` (a descriptive paired comparison on the tasks with a task-resampling interval for spread; includes a
+  Haiku-reviewed quality-flaw count).
 
 ## Findings so far (smoke only, not evidence)
 
 - Toolz (Python small) and gson (Java medium) tasks: every arm succeeds with Haiku; tasks of this size are at
   ceiling, so success cannot separate arms. Harder tasks on larger projects are needed.
 - Offered but not pushed, Haiku used the LSP tools in 0 of 6 runs; enforced, always, at 1.2 to 4.4x the cost.
+- BLOCKER for the Kotlin tereditor arms (found 2026-11-17, pins nightly-2026-11-16 and -17): the bundled JetBrains
+  kotlin-lsp pre-release answers every call with "This build of kotlin-server has expired ... download a new build from
+  github.com/kotlin/kotlin-lsp". optional and enforced then have no working tool on Kotlin and mixed projects (the
+  IntelliJ arms and the Java projects are unaffected). Needs a tereditor build that bundles a newer kotlin-lsp; check
+  it before any confirmatory run (docs/CLOUD_RUN.md preflight).
 - For tereditor upstream (report, do not fix from here): headless IntelliJ cannot import Maven projects without
   `mvn` on PATH and may write `mavenPluginInstall-pom*.xml` into the workspace; with IntelliJ, lookup by name
   (`Gson/getAdapter`) returns nothing while lookup at a position works; Gradle import of a Kotlin Multiplatform
@@ -91,18 +96,18 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
 - Upstream checkout (read-only from this repo): `~/TereditorProjects/tereditor`, remote
   `github.com/CommanderTvis/tereditor` (formerly `CommanderTvis/sharprail`); headless archives on its nightly releases.
 - Local secrets live git-ignored in the repository root: `study.env` (`CLAUDE_CODE_OAUTH_TOKEN=` or
-  `ANTHROPIC_API_KEY=`), `license.zip`/`license.txt`, `deploy_key`. Nothing goes into `~`.
+  `ANTHROPIC_API_KEY=`), `license.zip`/`license.txt`. Nothing goes into `~`.
 
 ## Running the study (cloud)
 
 The study runs in ONE Claude Code cloud session, unattended, following `docs/CLOUD_RUN.md`: projects one at a time
 (set up, curate if a stub, validate, probe, run, grade, archive, prune), a calibration pilot fixing the allocation
-before the confirmatory run, and at the end `REPORT.md`, signed with the date. The session needs no GitHub account and
-no environment configuration beyond Full network access: it clones this public repository, uses its own login, and
-sends its work to the owner as downloads (a git bundle of its branch after every project, then the report and a
-results tarball). The owner attaches the JetBrains activation code (zip or txt) to the first message. The canonical
-starting message is `docs/CLOUD_PROMPT.md`; starting a session with it is the owner's go for the confirmatory run. Local runs on this Mac
-are for development.
+before the confirmatory run, and at the end `REPORT.md`, signed with the date. The session works on this public repository with its own login and sends
+its work to the owner as downloads (a git bundle of its branch after every project, then the report and a results
+tarball). The owner sets up one cloud environment (Full network access, the JetBrains activation code as the variable
+`STUDY_LICENSE_B64`) and starts it with the `claude --cloud` command of `docs/CLOUD_PROMPT.md`, which is the owner's go
+for the confirmatory run; an outside reproducer with a Claude subscription does the same. Local runs on this Mac are for
+development.
 
 ## Working here
 
@@ -124,3 +129,4 @@ are for development.
 3. Calibration pilot (Haiku on small projects, a few Opus runs on large ones) to fix repetitions per model under
    the budget; record the allocation in `docs/ANALYSIS_PLAN.md`.
 4. With the owner's go: the confirmatory run, then `./study analyze`.
+5. Before the confirmatory run: bump `harness/tereditor.env` to the first nightly that contains the fix of tereditor issue #66 (Maven import without `mvn`, no `mavenPluginInstall-pom*.xml` in the workspace; closed 2026-11-17, check that the nightly postdates the fix), re-probe the JVM projects with the IntelliJ arms, and check that no stray files land in the agent's workspace.

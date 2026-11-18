@@ -1,5 +1,0 @@
-type = "rename-file"
-origin = "synthetic: rename a sourced hook file, the hook functions named after it, and its loaders (devrig rename file)"
-from = "dnsapi/dns_ali.sh"
-to = "dnsapi/dns_aliyun.sh"
-selection = "Candidates: hook files that another script loads by a literal hook name through _findHook; 1 candidate at the pinned commit (dnsapi/dns_ali.sh, loaded by deploy/ali_cdn.sh and deploy/ali_dcdn.sh), so no shuffle was needed."

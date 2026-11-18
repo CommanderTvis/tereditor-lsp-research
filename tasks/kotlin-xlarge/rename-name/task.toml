@@ -1,4 +1,0 @@
-type = "rename"
-origin = "synthetic fallback; fixed xlarge assignment"
-symbol = "org.jetbrains.kotlin.name.Name"
-selection = "First public Kotlin compiler symbol in the pinned xlarge snapshot with cross-module references, selected before any run; fallback retained because the xlarge project was not built."

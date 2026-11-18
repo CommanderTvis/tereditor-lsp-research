@@ -1,3 +1,0 @@
-type = "move"
-origin = "devrig move class; package-private helper used through static imports"
-selection = "top-level types of src/main/java that reference no other JavaPoet type (only JDK imports, so a move needs only package, visibility and import changes) and are referenced in at least 3 other files: 1 candidate (Util, 20 files), so k = 1; the rule was written after seeing that JavaPoet has a single package; target package chosen by hand"

@@ -1,9 +1,7 @@
 [
-  {"name": "references TypeVisitor (cross-package)", "args": {"operation": "references", "query": "TypeVisitor", "path": "packages/compiler/src/output/output_ast.ts"},
-   "expect": ["packages/compiler/src/output/abstract_emitter.ts:238", "packages/compiler-cli/src/ngtsc/translator/src/translator.ts:86"]},
-  {"name": "definition of AbstractJsEmitterVisitor", "args": {"operation": "definition", "query": "AbstractJsEmitterVisitor"},
-   "expect": ["packages/compiler/src/output/abstract_js_emitter.ts:27"]},
-  {"name": "implementation of TypeVisitor", "args": {"operation": "implementation", "query": "TypeVisitor", "path": "packages/compiler/src/output/output_ast.ts"},
-   "expect": ["packages/compiler/src/output/abstract_emitter.ts:237"]},
-  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["packages/compiler/src/output/abstract_js_emitter.ts"]}, "expect": []}
+  {"name": "references getPayload (cross-file)", "args": {"operation": "references", "query": "getPayload", "path": "packages/payload/src/index.ts"},
+   "expect": ["packages/payload/src/auth/serverFunctions/login.ts:43", "packages/payload/src/auth/serverFunctions/logout.ts:25"]},
+  {"name": "definition of ValidationError from another module", "args": {"operation": "definition", "query": "ValidationError"},
+   "expect": ["packages/payload/src/errors/ValidationError.ts:27"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["packages/payload/src/errors/APIError.ts"]}, "expect": []}
 ]

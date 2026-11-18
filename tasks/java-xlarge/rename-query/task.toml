@@ -1,4 +1,0 @@
-type = "rename"
-origin = "synthetic fallback; fixed xlarge assignment"
-symbol = "org.apache.lucene.search.Query"
-selection = "Fixed xlarge synthetic rename slot selected before any run from the Lucene search API."

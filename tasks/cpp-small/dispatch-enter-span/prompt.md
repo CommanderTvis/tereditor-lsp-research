@@ -1,0 +1,3 @@
+In MD4C, `src/md4c.c` reports the start of every inline span (emphasis, links, code spans, ...) to its client by calling the parser's `enter_span` function pointer: the call `ctx->parser.enter_span(...)` on line 477 of `src/md4c.c`. I want to know which function actually runs there when the `md2html` command line program converts a Markdown document.
+
+Write the answer to `ANSWER.txt` in the repository root as one line, `path:line`: the path of the source file that defines that function, relative to the repository root, and the line of its definition on which the function's name appears (the definition, not a declaration).

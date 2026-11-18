@@ -1,5 +1,5 @@
 type = "rename"
-origin = "synthetic fallback: rename a widely used interface method"
+origin = "synthetic refactoring: rename a widely used interface method"
 symbol = "GetSupportedImages"
 new_name = "GetAvailableImages"
-selection = "Fallback selected deterministically from the pinned snapshot because mined candidates were unavailable or unvalidated; seed = 20261110. The substitution is recorded in project.toml."
+selection = "Chosen deterministically from the pinned snapshot with seed 20261110 (docs/CURATION.md); the earlier note calling this a fallback for an unavailable mined slot is obsolete: mined slots are now modern pull requests (pr-log.md)."

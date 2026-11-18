@@ -3,9 +3,10 @@
 
 For each mined task, give each model only the repository and the issue text (prompt.md), no tools, and ask it to
 reproduce the upstream fix from memory; score the answer against the task's gold.patch (read only to score). Prints one
-line per task and model and a verdict per task under the thresholds fixed in docs/MEMORIZATION.md:
-  DROP if any model reproduces >= 25% of the gold's added lines (>= 25 characters, whitespace-normalised, not already in
-  the issue text) verbatim, or names every changed file while reproducing >= 10%.
+line per task and model and a final line per task: SCORE (the worst verbatim share over the models; a covariate, never
+a reason to drop a task) and, when the gold patch has at least 15 added lines and any model reproduces >= 25% of them,
+CUTOFF-CHECK, the sign that a task presumed unseen may have been (docs/MEMORIZATION.md). Verbatim = added lines of
+>= 25 characters, whitespace-normalised, not already in the issue text.
 Spends model money (about USD 0.01 to 0.05 per task and model); run it from the host, outside the study's sandboxes.
 """
 import argparse, json, os, re, subprocess, sys, tempfile
@@ -71,7 +72,8 @@ def main():
             row = {"task": t, "model": m, "answered": bool(ans), "gold_lines": len(g), "fresh_lines": len(fresh),
                    "verbatim_share": round(share, 3), "names_all_files": names, "cost_usd": cost}
             print(json.dumps(row)); out and out.write(json.dumps(row) + "\n")
-        print(f"{'DROP' if worst >= 0.25 or named_all else 'KEEP'} {t} (worst verbatim share {worst:.2f})")
+        flag = "  CUTOFF-CHECK" if len(g) >= 15 and worst >= 0.25 else ""
+        print(f"SCORE {t} worst verbatim share {worst:.2f} (gold lines {len(g)}){flag}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,410 @@
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/validation/GoapPathToCompletionValidator.kt b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/validation/GoapPathToCompletionValidator.kt
+index f00ffa1..53373d5 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/validation/GoapPathToCompletionValidator.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/validation/GoapPathToCompletionValidator.kt
+@@ -215,7 +215,7 @@ class GoapPathToCompletionValidator : PathToCompletionAgentValidator {
+             )
+ 
+             // Try to find a plan to this goal
+-            val plan = planner.planToGoal(goapActions, conditionGoal)
++            val plan = planner.planToGoal(conditionGoal, goapActions)
+ 
+             if (plan == null || plan.actions.isEmpty()) {
+                 allGoalsAchievable = false
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt b/embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt
+index 2afdd53..b023255 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt
+@@ -50,8 +50,8 @@ interface Planner<S : PlanningSystem, W : WorldState, P : Plan> {
+      * @param goal The goal to plan to
+      */
+     fun planToGoal(
+-        actions: Collection<Action>,
+         goal: Goal,
++        actions: Collection<Action>,
+     ): P?
+ 
+     /**
+@@ -61,7 +61,7 @@ interface Planner<S : PlanningSystem, W : WorldState, P : Plan> {
+     fun plansToGoals(system: PlanningSystem): List<P> {
+         val state = worldState()
+         return system.goals.mapNotNull { goal ->
+-            val plan = planToGoal(system.actions, goal)
++            val plan = planToGoal(goal, system.actions)
+             if (plan != null) {
+                 LoggerFactory.getLogger(javaClass).debug(
+                     "Found plan to goal {}: {}",
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/plan/goap/OptimizingGoapPlanner.kt b/embabel-agent-api/src/main/kotlin/com/embabel/plan/goap/OptimizingGoapPlanner.kt
+index ec6a6f4..be05014 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/plan/goap/OptimizingGoapPlanner.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/plan/goap/OptimizingGoapPlanner.kt
+@@ -28,8 +28,8 @@ abstract class OptimizingGoapPlanner(
+ ) : AbstractConditionPlanner(worldStateDeterminer) {
+ 
+     final override fun planToGoal(
+-        actions: Collection<Action>,
+         goal: Goal,
++        actions: Collection<Action>,
+     ): ConditionPlan? {
+         goal as ConditionGoal
+         val startState = worldState()
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/plan/utility/HybridUtilityPlanner.kt b/embabel-agent-api/src/main/kotlin/com/embabel/plan/utility/HybridUtilityPlanner.kt
+index 6657bd3..31114f1 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/plan/utility/HybridUtilityPlanner.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/plan/utility/HybridUtilityPlanner.kt
+@@ -79,8 +79,8 @@ class HybridUtilityPlanner(
+ ) : AbstractConditionPlanner(worldStateDeterminer) {
+ 
+     override fun planToGoal(
+-        actions: Collection<Action>,
+         goal: Goal,
++        actions: Collection<Action>,
+     ): ConditionPlan? {
+         val currentState = worldStateDeterminer.determineWorldState()
+         val availableActions = actions
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/plan/utility/UtilityPlanner.kt b/embabel-agent-api/src/main/kotlin/com/embabel/plan/utility/UtilityPlanner.kt
+index a57dd72..9c7ad1c 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/plan/utility/UtilityPlanner.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/plan/utility/UtilityPlanner.kt
+@@ -32,8 +32,8 @@ class UtilityPlanner(
+ ) : AbstractConditionPlanner(worldStateDeterminer) {
+ 
+     override fun planToGoal(
+-        actions: Collection<Action>,
+         goal: Goal,
++        actions: Collection<Action>,
+     ): ConditionPlan? {
+         val currentState = worldStateDeterminer.determineWorldState()
+         val availableActions = actions
+diff --git a/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/GoapPlannerTest.kt b/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/GoapPlannerTest.kt
+index 853fe84..a715654 100644
+--- a/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/GoapPlannerTest.kt
++++ b/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/GoapPlannerTest.kt
+@@ -118,7 +118,7 @@ class GoapPlannerTest {
+         @Test
+         fun `single plan`() {
+             val planner = AStarGoapPlanner(EmptyWorldStateDeterminer)
+-            val plan = planner.planToGoal(actions, getAwayWithMurderGoal)
++            val plan = planner.planToGoal(getAwayWithMurderGoal, actions)
+             assertTrue(plan != null)
+             assertEquals(
+                 bestPlanActions,
+@@ -168,7 +168,7 @@ class GoapPlannerTest {
+                     ConditionDetermination.UNKNOWN
+             }
+             val planner = AStarGoapPlanner(touchyWorldStateDeterminer)
+-            val plan = planner.planToGoal(actions, getAwayWithMurderGoal)
++            val plan = planner.planToGoal(getAwayWithMurderGoal, actions)
+             assertTrue(
+                 plan!!.actions.map { it.name }.containsAll(bestPlanActions.drop(2))
+             )
+@@ -198,8 +198,8 @@ class GoapPlannerTest {
+             }
+             val planner = AStarGoapPlanner(touchyWorldStateDeterminer)
+             val plan = planner.planToGoal(
+-                actions,
+-                getAwayWithMurderGoal
++                getAwayWithMurderGoal,
++                actions
+             )
+             assertNotNull(plan)
+             assertEquals(0, plan!!.actions.size)
+@@ -231,7 +231,7 @@ class GoapPlannerTest {
+             val planner = AStarGoapPlanner(EmptyWorldStateDeterminer)
+             val paddedActions = actions + generateRandomActions(300)
+             val (plan, ms) = time {
+-                planner.planToGoal(paddedActions, getAwayWithMurderGoal)
++                planner.planToGoal(getAwayWithMurderGoal, paddedActions)
+             }
+             assertTrue(plan != null)
+         }
+diff --git a/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/IrrelevantActionsTest.kt b/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/IrrelevantActionsTest.kt
+index 0d0b511..852a32e 100644
+--- a/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/IrrelevantActionsTest.kt
++++ b/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/IrrelevantActionsTest.kt
+@@ -56,7 +56,7 @@ class IrrelevantActionsTest {
+             (0..10).forEach { i -> worldStateMap["noise$i"] = ConditionDetermination.TRUE }
+             val planner = AStarGoapPlanner(WorldStateDeterminer.fromMap(worldStateMap))
+             val allActions = realChain + irrelevantChain
+-            val plan = planner.planToGoal(allActions, goal)
++            val plan = planner.planToGoal(goal, allActions)
+             assertNotNull(plan, "Should find a plan despite irrelevant chains")
+             assertEquals(chainLength, plan!!.actions.size, "Should only use the real chain actions")
+             (1..chainLength).forEach { i ->
+@@ -93,7 +93,7 @@ class IrrelevantActionsTest {
+                 )
+             )
+             val planner = AStarGoapPlanner(worldState)
+-            val plan = planner.planToGoal(listOf(actionA, actionB, actionGoal), goal)
++            val plan = planner.planToGoal(goal, listOf(actionA, actionB, actionGoal))
+             assertNotNull(plan, "Should find a plan")
+             // Should not undo progress by including unsetA
+             assertFalse(
+@@ -132,7 +132,7 @@ class IrrelevantActionsTest {
+                 )
+             )
+             val planner = AStarGoapPlanner(worldState)
+-            val plan = planner.planToGoal(listOf(actionA, misleading, actionGoal), goal)
++            val plan = planner.planToGoal(goal, listOf(actionA, misleading, actionGoal))
+             assertNotNull(plan)
+             // Accept either minimal plan (setA, reachGoal) or (misleadA, reachGoal), but not both
+             assertTrue(
+@@ -176,7 +176,7 @@ class IrrelevantActionsTest {
+                 )
+             )
+             val planner = AStarGoapPlanner(worldState)
+-            val plan = planner.planToGoal(listOf(actionA, actionGoal, irrelevant), goal)
++            val plan = planner.planToGoal(goal, listOf(actionA, actionGoal, irrelevant))
+             assertNotNull(plan)
+             assertFalse(
+                 plan!!.actions.any { it.name == "irrelevantNoise" },
+@@ -217,7 +217,7 @@ class IrrelevantActionsTest {
+             }
+             val planner = AStarGoapPlanner(WorldStateDeterminer.fromMap(worldStateMap))
+             val allActions = realChain + irrelevantChains
+-            val plan = planner.planToGoal(allActions, goal)
++            val plan = planner.planToGoal(goal, allActions)
+             assertNotNull(plan, "Should find a plan despite multiple irrelevant chains")
+             assertEquals(chainLength, plan!!.actions.size, "Should only use the real chain actions")
+             (1..chainLength).forEach { i ->
+@@ -262,7 +262,7 @@ class IrrelevantActionsTest {
+                 )
+             )
+             val planner = AStarGoapPlanner(worldState)
+-            val plan = planner.planToGoal(listOf(setA, unsetA, setAagain, reachGoal), goal)
++            val plan = planner.planToGoal(goal, listOf(setA, unsetA, setAagain, reachGoal))
+             assertNotNull(plan, "Should find a plan")
+             // Should not loop between setA/unsetA/setAagain unnecessarily
+             val actionNames = plan!!.actions.map { it.name }
+@@ -312,7 +312,7 @@ class IrrelevantActionsTest {
+                 )
+             )
+             val planner = AStarGoapPlanner(worldState)
+-            val plan = planner.planToGoal(listOf(setA, distract, undoNoise, reachGoal), goal)
++            val plan = planner.planToGoal(goal, listOf(setA, distract, undoNoise, reachGoal))
+             assertNotNull(plan, "Should find a plan")
+             val names = plan!!.actions.map { it.name }
+             assertFalse(names.contains("distract"), "Plan should not include irrelevant distract action")
+diff --git a/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/OptimizingGoapPlannerTest.kt b/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/OptimizingGoapPlannerTest.kt
+index d3b3894..5150661 100644
+--- a/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/OptimizingGoapPlannerTest.kt
++++ b/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/OptimizingGoapPlannerTest.kt
+@@ -74,7 +74,7 @@ class OptimizingGoapPlannerTest {
+             )
+ 
+             val actions: List<ConditionAction> = listOf(action1, action2, action3, cycleAction)
+-            val plan = planner.planToGoal(actions, goal)
++            val plan = planner.planToGoal(goal, actions)
+ 
+             assertNotNull(plan, "Should find a plan despite potential cycles")
+             assertFalse(plan!!.actions.contains(cycleAction), "Plan should not include the cycle-creating action")
+@@ -134,7 +134,7 @@ class OptimizingGoapPlannerTest {
+             )
+ 
+             val actions: List<ConditionAction> = listOf(actionA1, actionB1, actionX2, actionY2)
+-            val plan = planner.planToGoal(actions, goal)
++            val plan = planner.planToGoal(goal, actions)
+ 
+             assertNotNull(plan, "Should find a plan")
+             assertEquals(
+@@ -197,7 +197,7 @@ class OptimizingGoapPlannerTest {
+             )
+ 
+             val actions: List<ConditionAction> = listOf(actionA, actionB, misleadingAction, misleadingAction2)
+-            val plan = planner.planToGoal(actions, goal)
++            val plan = planner.planToGoal(goal, actions)
+ 
+             assertNotNull(plan, "Should find a plan")
+ 
+@@ -287,7 +287,7 @@ class OptimizingGoapPlannerTest {
+ 
+             val allActions = actionChain + irrelevantActions + misleadingActions
+             val actions: List<ConditionAction> = allActions
+-            val plan = planner.planToGoal(actions, goal)
++            val plan = planner.planToGoal(goal, actions)
+ 
+             assertNotNull(plan, "Should find a plan despite many irrelevant actions")
+             assertEquals(10, plan!!.actions.size, "Should include exactly the 10 actions in the chain")
+@@ -355,7 +355,7 @@ class OptimizingGoapPlannerTest {
+             )
+ 
+             val actions: List<ConditionAction> = listOf(actionSetA, actionUnsetA, actionNeedsAandB, actionNeedsOnlyB)
+-            val plan = planner.planToGoal(actions, goal)
++            val plan = planner.planToGoal(goal, actions)
+ 
+ 
+             assertNotNull(plan, "Should find a plan despite conflicting effects")
+diff --git a/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt b/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt
+index 7d89fab..5b6cb6c 100644
+--- a/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt
++++ b/embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt
+@@ -71,7 +71,7 @@ class AStarGoapPlannerTest {
+             )
+ 
+             val actions = listOf(simpleAction, specificAction)
+-            val plan = planner.planToGoal(actions, goal)
++            val plan = planner.planToGoal(goal, actions)
+ 
+             Assertions.assertNotNull(plan, "Should find a plan")
+             Assertions.assertEquals(1, plan!!.actions.size, "Should have exactly one action")
+@@ -132,10 +132,10 @@ class AStarGoapPlannerTest {
+ 
+             // Test with actions in different orders
+             val actions1 = listOf(action1, action2, action3)
+-            val plan1 = planner.planToGoal(actions1, goal)
++            val plan1 = planner.planToGoal(goal, actions1)
+ 
+             val actions2 = listOf(action3, action1, action2)
+-            val plan2 = planner.planToGoal(actions2, goal)
++            val plan2 = planner.planToGoal(goal, actions2)
+ 
+             Assertions.assertNotNull(plan1, "Should find a plan with first ordering")
+             Assertions.assertNotNull(plan2, "Should find a plan with second ordering")
+@@ -191,7 +191,7 @@ class AStarGoapPlannerTest {
+             )
+ 
+             val actions = listOf(expensiveSpecificAction, cheapSimpleAction)
+-            val plan = planner.planToGoal(actions, goal)
++            val plan = planner.planToGoal(goal, actions)
+ 
+             Assertions.assertNotNull(plan, "Should find a plan")
+             Assertions.assertEquals(1, plan!!.actions.size, "Should have exactly one action")
+@@ -246,7 +246,7 @@ class AStarGoapPlannerTest {
+             )
+ 
+             val actions = listOf(simpleStep1, specificStep1, step2)
+-            val plan = planner.planToGoal(actions, goal)
++            val plan = planner.planToGoal(goal, actions)
+ 
+             Assertions.assertNotNull(plan, "Should find a plan")
+             Assertions.assertEquals(2, plan!!.actions.size, "Should have exactly two actions")
+@@ -295,7 +295,7 @@ class AStarGoapPlannerTest {
+             )
+ 
+             val actions = listOf(actionWithNoPreconditions, actionWithOnePrecondition)
+-            val plan = planner.planToGoal(actions, goal)
++            val plan = planner.planToGoal(goal, actions)
+ 
+             Assertions.assertNotNull(plan, "Should find a plan")
+             Assertions.assertEquals(1, plan!!.actions.size, "Should have exactly one action")
+@@ -344,7 +344,7 @@ class AStarGoapPlannerTest {
+             )
+ 
+             val actions = listOf(action1, action2)
+-            val plan = planner.planToGoal(actions, goal)
++            val plan = planner.planToGoal(goal, actions)
+ 
+             Assertions.assertNotNull(plan, "Should find a plan")
+             Assertions.assertEquals(1, plan!!.actions.size, "Should have exactly one action")
+@@ -383,7 +383,7 @@ class AStarGoapPlannerTest {
+             )
+ 
+             val startTime = System.currentTimeMillis()
+-            val plan = planner.planToGoal(listOf(action), goal)
++            val plan = planner.planToGoal(goal, listOf(action))
+             val elapsedTime = System.currentTimeMillis() - startTime
+ 
+             Assertions.assertNull(plan, "Should return null for unreachable goal")
+@@ -425,7 +425,7 @@ class AStarGoapPlannerTest {
+             )
+ 
+             val startTime = System.currentTimeMillis()
+-            val plan = planner.planToGoal(listOf(action1, action2), goal)
++            val plan = planner.planToGoal(goal, listOf(action1, action2))
+             val elapsedTime = System.currentTimeMillis() - startTime
+ 
+             Assertions.assertNull(plan, "Should return null for unreachable goal")
+@@ -463,7 +463,7 @@ class AStarGoapPlannerTest {
+                 )
+             )
+ 
+-            val plan = planner.planToGoal(listOf(action1, action2), goal)
++            val plan = planner.planToGoal(goal, listOf(action1, action2))
+ 
+             Assertions.assertNotNull(plan, "Should find a plan for reachable goal")
+             Assertions.assertEquals(2, plan!!.actions.size)
+@@ -492,7 +492,7 @@ class AStarGoapPlannerTest {
+                 )
+             )
+ 
+-            val plan = planner.planToGoal(listOf(action), goal)
++            val plan = planner.planToGoal(goal, listOf(action))
+ 
+             Assertions.assertNotNull(plan, "Should return a plan when goal is already satisfied")
+             Assertions.assertEquals(0, plan!!.actions.size, "Plan should be empty when goal already satisfied")
+@@ -546,7 +546,7 @@ class AStarGoapPlannerTest {
+             )
+ 
+             val actions = listOf(unnecessaryAction, simpleGoalAction, specificGoalAction)
+-            val plan = planner.planToGoal(actions, goal)
++            val plan = planner.planToGoal(goal, actions)
+ 
+             Assertions.assertNotNull(plan, "Should find a plan")
+             Assertions.assertEquals(
+diff --git a/embabel-agent-api/src/test/kotlin/com/embabel/plan/utility/HybridUtilityPlannerTest.kt b/embabel-agent-api/src/test/kotlin/com/embabel/plan/utility/HybridUtilityPlannerTest.kt
+index 89dea7e..883d359 100644
+--- a/embabel-agent-api/src/test/kotlin/com/embabel/plan/utility/HybridUtilityPlannerTest.kt
++++ b/embabel-agent-api/src/test/kotlin/com/embabel/plan/utility/HybridUtilityPlannerTest.kt
+@@ -72,7 +72,7 @@ class HybridUtilityPlannerTest {
+                 ),
+             )
+ 
+-            val plan = planner.planToGoal(listOf(noopAction), goal)
++            val plan = planner.planToGoal(goal, listOf(noopAction))
+ 
+             assertNotNull(plan, "Expected an empty plan, not null")
+             assertTrue(plan!!.actions.isEmpty(), "Plan should be empty when goal already satisfied")
+@@ -90,7 +90,7 @@ class HybridUtilityPlannerTest {
+                 ),
+             )
+ 
+-            val plan = planner.planToGoal(emptyList(), goal)
++            val plan = planner.planToGoal(goal, emptyList())
+ 
+             assertNotNull(plan)
+             assertTrue(plan!!.actions.isEmpty())
+@@ -124,7 +124,7 @@ class HybridUtilityPlannerTest {
+                 WorldStateDeterminer.fromMap(mapOf("ready" to ConditionDetermination.TRUE)),
+             )
+ 
+-            val plan = planner.planToGoal(listOf(cheapAction, highValueAction), nirvana)
++            val plan = planner.planToGoal(nirvana, listOf(cheapAction, highValueAction))
+ 
+             assertNotNull(plan)
+             assertEquals(1, plan!!.actions.size)
+@@ -144,7 +144,7 @@ class HybridUtilityPlannerTest {
+             )
+             val planner = HybridUtilityPlanner(WorldStateDeterminer.fromMap(emptyMap()))
+ 
+-            val plan = planner.planToGoal(listOf(unreachable), nirvana)
++            val plan = planner.planToGoal(nirvana, listOf(unreachable))
+ 
+             assertNull(plan)
+         }
+@@ -175,7 +175,7 @@ class HybridUtilityPlannerTest {
+                 ),
+             )
+ 
+-            val plan = planner.planToGoal(listOf(finisher), goal)
++            val plan = planner.planToGoal(goal, listOf(finisher))
+ 
+             assertNotNull(plan)
+             assertEquals(1, plan!!.actions.size)
+@@ -217,7 +217,7 @@ class HybridUtilityPlannerTest {
+                 ),
+             )
+ 
+-            val plan = planner.planToGoal(listOf(step1, step2), goal)
++            val plan = planner.planToGoal(goal, listOf(step1, step2))
+ 
+             assertNull(plan, "Single-step lookahead can't reach a 2-step goal")
+         }
+@@ -330,7 +330,7 @@ class HybridUtilityPlannerTest {
+                 WorldStateDeterminer.fromMap(mapOf("goal" to ConditionDetermination.FALSE)),
+             )
+ 
+-            val plan = planner.planToGoal(listOf(blocked), goal)
++            val plan = planner.planToGoal(goal, listOf(blocked))
+ 
+             assertNull(plan)
+         }

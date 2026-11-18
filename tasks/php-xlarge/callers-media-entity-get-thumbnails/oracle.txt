@@ -1,0 +1,6 @@
+Shopware\Core\Content\Media\File\FileSaver::doRenameMedia
+Shopware\Core\Content\Media\File\FileSaver::getNewThumbnailPaths
+Shopware\Core\Content\Media\Subscriber\MediaDeletionSubscriber::handleMediaDeletion
+Shopware\Core\Content\Media\Thumbnail\ThumbnailService::deleteAssociatedThumbnails
+Shopware\Core\Content\Media\Thumbnail\ThumbnailService::generate
+Shopware\Core\Content\Media\Thumbnail\ThumbnailService::updateThumbnails

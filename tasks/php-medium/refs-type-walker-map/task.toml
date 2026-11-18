@@ -1,0 +1,4 @@
+type = "refs"
+origin = "synthetic: find all usages of a method whose name other, unrelated types also declare (docs/TASKS.md)"
+symbol = "Dedoc\\Scramble\\Support\\Type\\TypeWalker::map"
+selection = "Every public method (not magic) declared in a class or interface under src/ whose name is declared ('function name(') in at least 2 files under src/ and called ('->name(' or '::name(') at least 10 times under src/: 658 Type::method candidates, sorted. Seeded shuffle awk 'BEGIN{srand(20261110)}' (macOS awk 20200816, printf %.12f rand(), sort -n), first item with at least 10 references of its own counted by the PHPStan mutation of oracle.md (scope src/, the Pest tests have untyped receivers). The first 83 shuffled candidates had fewer than 10 typed references (mostly polymorphic methods called through interfaces); the 84th, TypeWalker::map, has 21, and ArgumentTypeBag::map is an unrelated homonym."

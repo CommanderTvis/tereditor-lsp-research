@@ -1,0 +1,5 @@
+type = "rename"
+origin = "devrig safe rename (macro constant)"
+symbol = "MD_FLAG_SUPERSCRIPTS -> MD_FLAG_SUPERSCRIPT_SPANS"
+selection = "names declared in src/md4c.h as a typedef (typedef ... NAME; or } NAME;), or as a macro MD_FLAG_* or MD_DIALECT_*: 51 names, of which 17 occur as whole words in at least 5 tracked files (git ls-files | grep -lw), in README.md or md2html/md2html.1 and in at least one comment line of src/*.c, src/*.h or md2html/*.c; sorted by name; index awk 'BEGIN{srand(20261110); print int(rand()*17)+1}' = 13 (MD_FLAG_SUPERSCRIPTS: src/md4c.h, src/md4c.c, md2html/md2html.c, README.md, CHANGELOG.md, test/spec-superscripts.txt, plus comment and prose mentions)"
+grade_timeout_s = 1200

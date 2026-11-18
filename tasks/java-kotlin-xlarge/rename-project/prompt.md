@@ -1,1 +1,0 @@
-Rename the mixed-language API type `org.gradle.api.Project` to `BuildProject` throughout the Gradle repository. Update Java and Kotlin declarations, imports, and references while leaving unrelated identifiers unchanged.

@@ -1,0 +1,30 @@
+diff --git a/src/driver/sqljs/SqljsQueryRunner.ts b/src/driver/sqljs/SqljsQueryRunner.ts
+index 1baea7b59bd..906cdfeb198 100644
+--- a/src/driver/sqljs/SqljsQueryRunner.ts
++++ b/src/driver/sqljs/SqljsQueryRunner.ts
+@@ -111,6 +111,12 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
+                 statement.bind(parameters)
+             }
+ 
++            const records: any[] = []
++
++            while (statement.step()) {
++                records.push(statement.getAsObject())
++            }
++
+             // log slow queries if maxQueryExecution time is set
+             const maxQueryExecutionTime =
+                 this.driver.options.maxQueryExecutionTime
+@@ -128,12 +134,6 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
+                     this,
+                 )
+ 
+-            const records: any[] = []
+-
+-            while (statement.step()) {
+-                records.push(statement.getAsObject())
+-            }
+-
+             this.broadcaster.broadcastAfterQueryEvent(
+                 broadcasterResult,
+                 query,

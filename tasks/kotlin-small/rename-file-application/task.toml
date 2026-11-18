@@ -1,5 +1,0 @@
-type = "rename-file"
-origin = "file rename: the JVM file facade (ApplicationKt) is named by the build script, while io.ktor's Application class keeps its name"
-old_path = "example/src/main/kotlin/com/github/michaelbull/result/example/Application.kt"
-new_path = "example/src/main/kotlin/com/github/michaelbull/result/example/Main.kt"
-selection = "Kotlin source files of the main source sets whose JVM file facade class (<File>Kt) or path is named outside the file itself (code, build scripts, resources); one candidate (Application.kt: example/build.gradle.kts and application.conf name ApplicationKt), so the seeded pick k = 1 + int(rand() * 1) after srand(20261110) = 1. The stale application.conf reference (not loaded: main() uses embeddedServer) is updated by gold.patch but not graded."

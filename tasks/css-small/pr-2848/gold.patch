@@ -1,0 +1,61 @@
+diff --git a/core/scss/mixins/_functions.scss b/core/scss/mixins/_functions.scss
+index b276a113..9176033f 100644
+--- a/core/scss/mixins/_functions.scss
++++ b/core/scss/mixins/_functions.scss
+@@ -19,7 +19,7 @@
+ // "Bootstrap functions" section below.
+ 
+ @mixin media-breakpoint-down-than($name, $breakpoints: $grid-breakpoints) {
+-  $prev: breakpoint-prev($name);
++  $prev: breakpoint-prev($name, $breakpoints);
+ 
+   @if $prev == null {
+     @content;
+diff --git a/core/scss/mixins/bootstrap/_caret.scss b/core/scss/mixins/bootstrap/_caret.scss
+index 7fd6c4df..3b601e1d 100644
+--- a/core/scss/mixins/bootstrap/_caret.scss
++++ b/core/scss/mixins/bootstrap/_caret.scss
+@@ -33,7 +33,7 @@
+ @mixin caret($direction: down, $width: $caret-width, $spacing: $caret-spacing, $vertical-align: $caret-vertical-align) {
+   $selector: 'after';
+ 
+-  @if $direction == 'left' {
++  @if $direction == 'start' {
+     $selector: 'before';
+   }
+ 
+@@ -47,7 +47,7 @@
+     border-inline-start: 1px var(--border-style);
+     margin-inline-end: 0.1em;
+ 
+-    @if $direction != 'left' {
++    @if $direction != 'start' {
+       margin-inline-start: $caret-spacing;
+     } @else {
+       margin-inline-end: $caret-spacing;
+@@ -64,7 +64,7 @@
+     }
+   }
+ 
+-  @if $direction == 'left' {
++  @if $direction == 'start' {
+     &::after {
+       content: none;
+     }
+diff --git a/core/scss/ui/_type.scss b/core/scss/ui/_type.scss
+index 4ba9d86e..2ef211c2 100644
+--- a/core/scss/ui/_type.scss
++++ b/core/scss/ui/_type.scss
+@@ -9,10 +9,10 @@
+ 
+ a {
+   text-decoration-skip-ink: auto;
+-  color: color-mix(in sRGB, transparent, var(--link-color) var(--link-opacity, 100%));
++  color: color-mix(in sRGB, transparent, var(--link-color) calc(var(--link-opacity, 1) * 100%));
+ 
+   &:hover {
+-    color: color-mix(in sRGB, transparent, var(--link-hover-color) var(--link-opacity, 100%));
++    color: color-mix(in sRGB, transparent, var(--link-hover-color) calc(var(--link-opacity, 1) * 100%));
+   }
+ }
+ 

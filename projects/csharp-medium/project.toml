@@ -10,4 +10,11 @@ loc = 56611
 loc_by_language = { "C#" = 56611 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 task_types = ["move", "signature", "dispatch", "pr", "pr", "pr"]
-substitutions = ["all three mined slots use explicit `pr-fallback-*` tasks after the candidate pool failed validation; the three original synthetic tasks are preserved"]
+substitutions = []
+pr_shortfall = 1
+pr_shortfall_reason = "only 2 modern pull requests qualify (closing issue, tests plus source): tasks/csharp-medium/pr-log.md"
+
+[probe]
+ok = true
+seconds_to_first_answer = 36
+note = "references (cross-project, cross-file), definition and diagnostics all correct (results/probe/csharp-medium-enforced)"

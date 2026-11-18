@@ -1,0 +1,4 @@
+{"task": "tasks/kotlin-small/pr-624", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 16, "fresh_lines": 16, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.00143719}
+{"task": "tasks/kotlin-small/pr-624", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 16, "fresh_lines": 16, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0153129}
+{"task": "tasks/kotlin-small/pr-624", "model": "claude-opus-5-5", "answered": true, "gold_lines": 16, "fresh_lines": 16, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0470818}
+SCORE tasks/kotlin-small/pr-624 worst verbatim share 0.00 (gold lines 16)

@@ -1,0 +1,4 @@
+{"task": "tasks/java-large/pr-6171", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 111, "fresh_lines": 111, "verbatim_share": 0.009, "names_all_files": false, "cost_usd": 0.00164949}
+{"task": "tasks/java-large/pr-6171", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 111, "fresh_lines": 111, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.027070900000000002}
+{"task": "tasks/java-large/pr-6171", "model": "claude-opus-5-5", "answered": true, "gold_lines": 111, "fresh_lines": 111, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.056433800000000006}
+SCORE tasks/java-large/pr-6171 worst verbatim share 0.01 (gold lines 111)

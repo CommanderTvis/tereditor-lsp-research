@@ -1,6 +1,0 @@
-type = "pr"
-origin = "documented synthetic fallback PR; no qualifying/current-toolchain mined candidate was available"
-base_commit = "4ae946e5a9b99d1e22c23865c99e561b8dcc9d71"
-pr = "fallback-java-xlarge-pr-fallback-query"
-issue = "fallback-java-xlarge-pr-fallback-query"
-selection = "Synthetic fallback occupies the assigned mined slot; it is explicitly not an upstream pull request."

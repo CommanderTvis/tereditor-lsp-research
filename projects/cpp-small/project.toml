@@ -1,26 +1,20 @@
-# C++, small: tinyxml2, a DOM XML parser. One header, one implementation file, one test program; a node class hierarchy
-# with virtual dispatch and const/non-const overload pairs, and a visitor hierarchy (XMLVisitor, XMLPrinter, contrib's
-# XMLPrinterHTML5).
+# C, small: MD4C, a CommonMark Markdown parser. A SAX-style parser (src/md4c.c) driving callbacks, an HTML renderer
+# (src/md4c-html.c, src/entity.c) and the md2html command line program; tests are Python 3 suites over spec files
+# (test/*.txt) run through md2html.
 lang = "cpp"
 size = "small"
 status = "ready"
-repo = "https://github.com/leethomason/tinyxml2"
-tag = "11.0.0"
-commit = "9148bdf719e997d1f474be6bcc7943881046dba1"
-loc = 5820
-loc_by_language = { "C++" = 4556, "C Header" = 1264 }
+repo = "https://github.com/mity/md4c"
+tag = "v0.6.0"
+commit = "7fc1815a5eeba2af7d6120a76202bf59f3b6e6e4"
+loc = 8942
+loc_by_language = { "C" = 8668, "C Header" = 233, "C++" = 41 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 stripped = []
 task_types = ["rename", "rename-file", "dispatch", "pr", "pr", "pr"]
 # clangd's compile_commands.json is written by prepare.sh with jq (no compiler in the server sandbox).
-# Mined candidates: harness/gen/mine-prs.sh finds none, because its test-file pattern does not match xmltest.cpp (the
-# project's only test file); tasks/cpp-small/pr-candidates.jsonl was produced by a copy of the script whose pattern
-# also accepts (^|/)[a-z0-9]*test\.(c|cc|cpp)$ (see tasks/cpp-small/pr-log.md). All 3 qualifying candidates validate.
+# Mined: 8 qualifying pull requests; 421 was skipped (does not validate), 388, 416 and 439 taken (tasks/cpp-small/pr-log.md).
 
 [probe]
-# ./study probe cpp-small (enforced), tereditor c6b343bd, clangd 23.1.5, 2026-11-14.
-ok = true
-seconds_to_first_answer = 0.10
-references = "complete: ErrorIDToName from tinyxml2.h finds its uses in tinyxml2.cpp and xmltest.cpp"
-definition = "complete: LoadFile(const char*) declaration in tinyxml2.h resolves to tinyxml2.cpp:2344"
-diagnostics = "wrong: every translation unit reports false errors, starting with \"In included file: 'cctype' file not found\" (pp_file_not_found), then unknown va_list, undeclared assert, and fatal_too_many_errors: the server sandbox has no C or C++ standard library headers, so clangd cannot see the system headers; cross-file navigation over project symbols still works"
+ok = false
+note = "clangd unavailable on arm64; probe deferred to the x64 cloud VM"

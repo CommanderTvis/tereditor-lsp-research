@@ -1,0 +1,7 @@
+stratum,outcome,contrast,estimate,ci_lo,ci_hi,better,same,worse,tasks,cells
+all,success (pp),baseline-review - baseline,0.0,,,0,24,0,8,24
+all,cost ratio,baseline-review / baseline,2.594718039697087,,,0,0,24,8,24
+all,success (pp),enforced - baseline,0.0,,,0,24,0,8,24
+all,cost ratio,enforced / baseline,2.0133563118085007,,,2,0,22,8,24
+all,success (pp),enforced - baseline-review,0.0,,,0,24,0,8,24
+all,cost ratio,enforced / baseline-review,0.7759441607934959,,,18,0,6,8,24

@@ -1,5 +1,0 @@
-toolz/dicttoolz/tests/test_core.py::test_assoc
-toolz/dicttoolz/tests/test_core.py::test_keymap
-toolz/dicttoolz/tests/test_core.py::test_merge
-toolz/dicttoolz/tests/test_core.py::test_update_in
-toolz/dicttoolz/tests/test_core.py::test_valmap

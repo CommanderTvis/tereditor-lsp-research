@@ -1,0 +1,151 @@
+diff --git a/src/main/java/tools/jackson/databind/deser/bean/BeanAsArrayBuilderDeserializer.java b/src/main/java/tools/jackson/databind/deser/bean/BeanAsArrayBuilderDeserializer.java
+index f9ca3a167..46b40226e 100644
+--- a/src/main/java/tools/jackson/databind/deser/bean/BeanAsArrayBuilderDeserializer.java
++++ b/src/main/java/tools/jackson/databind/deser/bean/BeanAsArrayBuilderDeserializer.java
+@@ -326,7 +326,7 @@ public class BeanAsArrayBuilderDeserializer
+                 // Last creator property to set?
+                 if (buffer.assignParameter(creatorProp, creatorProp.deserialize(p, ctxt))) {
+                     try {
+-                        builder = creator.build(ctxt, buffer);
++                        builder = creator.build(ctxt, buffer, true);
+                     } catch (Exception e) {
+                         throw wrapAndThrow(e, _beanType.getRawClass(), propName, ctxt);
+                     }
+@@ -351,7 +351,7 @@ public class BeanAsArrayBuilderDeserializer
+         // In case we didn't quite get all the creator properties, we may have to do this:
+         if (builder == null) {
+             try {
+-                builder = creator.build(ctxt, buffer);
++                builder = creator.build(ctxt, buffer, true);
+             } catch (Exception e) {
+                 return wrapInstantiationProblem(ctxt, e);
+             }
+diff --git a/src/main/java/tools/jackson/databind/deser/bean/BuilderBasedDeserializer.java b/src/main/java/tools/jackson/databind/deser/bean/BuilderBasedDeserializer.java
+index ad81b0ca7..f6be6a906 100644
+--- a/src/main/java/tools/jackson/databind/deser/bean/BuilderBasedDeserializer.java
++++ b/src/main/java/tools/jackson/databind/deser/bean/BuilderBasedDeserializer.java
+@@ -494,7 +494,7 @@ public class BuilderBasedDeserializer
+                     p.nextToken(); // to move to following PROPERTY_NAME/END_OBJECT
+                     Object builder;
+                     try {
+-                        builder = creator.build(ctxt, buffer);
++                        builder = creator.build(ctxt, buffer, true);
+                     } catch (Exception e) {
+                         throw wrapAndThrow(e, _beanType.getRawClass(), propName, ctxt);
+                     }
+@@ -556,7 +556,7 @@ public class BuilderBasedDeserializer
+         // We hit END_OBJECT, so:
+         Object builder;
+         try {
+-            builder = creator.build(ctxt, buffer);
++            builder = creator.build(ctxt, buffer, true);
+         } catch (Exception e) {
+             builder = wrapInstantiationProblem(ctxt, e);
+         }
+@@ -895,7 +895,7 @@ public class BuilderBasedDeserializer
+                     t = p.nextToken(); // to move to following FIELD_NAME/END_OBJECT
+                     Object builder = null;
+                     try {
+-                        builder = creator.build(ctxt, buffer);
++                        builder = creator.build(ctxt, buffer, true);
+                     } catch (Exception e) {
+                         throw wrapAndThrow(e, _beanType.getRawClass(), propName, ctxt);
+                     }
+@@ -952,7 +952,7 @@ public class BuilderBasedDeserializer
+         // We hit END_OBJECT, so:
+         Object builder = null;
+         try {
+-            builder = creator.build(ctxt, buffer);
++            builder = creator.build(ctxt, buffer, true);
+         } catch (Exception e) {
+             return wrapInstantiationProblem(ctxt, e);
+ 
+diff --git a/src/main/java/tools/jackson/databind/deser/bean/PropertyBasedCreator.java b/src/main/java/tools/jackson/databind/deser/bean/PropertyBasedCreator.java
+index 36a23e734..f502235bd 100644
+--- a/src/main/java/tools/jackson/databind/deser/bean/PropertyBasedCreator.java
++++ b/src/main/java/tools/jackson/databind/deser/bean/PropertyBasedCreator.java
+@@ -437,8 +437,32 @@ public final class PropertyBasedCreator
+                 _injectablePropIndexes, mayRebind);
+     }
+ 
++    /**
++     * Method called to construct the instance and assign buffered properties;
++     * equivalent to {@code build(ctxt, buffer, false)}.
++     * Builder-based deserializers should instead call
++     * {@link #build(DeserializationContext, PropertyValueBuffer, boolean)}
++     * with {@code true}.
++     */
+     public Object build(DeserializationContext ctxt, PropertyValueBuffer buffer)
+         throws JacksonException
++    {
++        return build(ctxt, buffer, false);
++    }
++
++    /**
++     * Method called to construct the instance and assign buffered properties.
++     *
++     * @param useSetterReturn Whether the value returned by the setter of a
++     *    buffered property replaces the instance for subsequent assignments
++     *    (and as the return value): needed for immutable Builders whose
++     *    "with"-methods return a new instance ([databind#6397]).
++     *
++     * @since 3.4
++     */
++    public Object build(DeserializationContext ctxt, PropertyValueBuffer buffer,
++            boolean useSetterReturn)
++        throws JacksonException
+     {
+         Object bean = _valueInstantiator.createFromObjectWith(ctxt,
+                 _propertiesInOrder, buffer);
+@@ -449,7 +473,11 @@ public final class PropertyBasedCreator
+ 
+             // Anything buffered?
+             for (PropertyValue pv = buffer.buffered(); pv != null; pv = pv.next) {
+-                pv.assign(ctxt, bean);
++                if (useSetterReturn) {
++                    bean = pv.assignAndReturn(ctxt, bean);
++                } else {
++                    pv.assign(ctxt, bean);
++                }
+             }
+         }
+         return bean;
+diff --git a/src/main/java/tools/jackson/databind/deser/bean/PropertyValue.java b/src/main/java/tools/jackson/databind/deser/bean/PropertyValue.java
+index b19e37dc8..1766c2882 100644
+--- a/src/main/java/tools/jackson/databind/deser/bean/PropertyValue.java
++++ b/src/main/java/tools/jackson/databind/deser/bean/PropertyValue.java
+@@ -37,6 +37,21 @@ public abstract class PropertyValue
+      */
+     public abstract void assign(DeserializationContext ctxt, Object bean) throws JacksonException;
+ 
++    /**
++     * Variant of {@link #assign} that returns the instance to use for further
++     * assignments: for (possibly immutable) Builders this is the value
++     * returned by the setter ("with"-method), which may differ from
++     * the instance passed in.
++     * Default implementation calls {@link #assign} and returns {@code bean}.
++     *
++     * @since 3.4
++     */
++    public Object assignAndReturn(DeserializationContext ctxt, Object bean) throws JacksonException
++    {
++        assign(ctxt, bean);
++        return bean;
++    }
++
+     /**
+      * Method called to assign stored value of this property to specified
+      * parameter object.
+@@ -74,6 +89,12 @@ public abstract class PropertyValue
+         {
+             _property.set(ctxt, bean, value);
+         }
++
++        @Override
++        public Object assignAndReturn(DeserializationContext ctxt, Object bean) throws JacksonException
++        {
++            return _property.setAndReturn(ctxt, bean, value);
++        }
+     }
+ 
+     /**

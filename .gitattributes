@@ -1,0 +1,4 @@
+# Task files are exact bytes (patches and held-out tests of CRLF sources must not be normalised).
+tasks/** -text
+projects/** -text
+results/memprobe-pre2022/** -text

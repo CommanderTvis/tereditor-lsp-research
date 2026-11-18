@@ -1,0 +1,3 @@
+# Oracle: move ChatModelCallEvent
+
+No navigation answer. Grading (grade.sh) is the build and tests (check.sh), a hidden test that loads the new class and not the old, and checks that the old file and the old qualified name are gone. The reference solution (gold.patch) is a scripted move proven by `./study validate`; no language server is involved. Traps: the file also declares the extension function `chatModelCallEvent` (lower case), which is called without an import from `InstrumentedChatModel` in the old package and needs one after the move; the name occurs in KDoc and comments of the old package.

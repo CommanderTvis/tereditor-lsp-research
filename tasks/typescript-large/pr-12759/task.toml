@@ -1,0 +1,8 @@
+type = "pr"
+origin = "mined pull request (modern, docs/MEMORIZATION.md)"
+pr = 12759
+issue = 12758
+base_commit = "04ff4daedcf60fa4ffd0d5d33bbafaac1a9bbc96"
+merge_commit = "bb1ddea3c08f3f92df2d16589040a675905da124"
+merged_at = "2026-08-26T13:50:18Z"
+test_files = ["test/functional/driver/sqljs/query-execution-time.test.ts","test/functional/driver/sqljs/subscribers/QueryExecutionTimeSubscriber.ts"]

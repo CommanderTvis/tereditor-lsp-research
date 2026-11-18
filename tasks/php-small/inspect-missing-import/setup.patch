@@ -1,103 +1,101 @@
-diff --git a/src/Argument/Literal/IntegerArgument.php b/src/Argument/Literal/IntegerArgument.php
-index 0aa1563..a7bd6e0 100644
---- a/src/Argument/Literal/IntegerArgument.php
-+++ b/src/Argument/Literal/IntegerArgument.php
-@@ -4,12 +4,11 @@ declare(strict_types=1);
+diff --git a/src/DataTables.php b/src/DataTables.php
+index 3b9c154..140608b 100644
+--- a/src/DataTables.php
++++ b/src/DataTables.php
+@@ -4,7 +4,6 @@ namespace Yajra\DataTables;
  
- namespace League\Container\Argument\Literal;
+ use Illuminate\Contracts\Database\Eloquent\Builder as EloquentBuilder;
+ use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
+-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+ use Illuminate\Support\Collection;
+ use Illuminate\Support\Facades\Config;
+ use Illuminate\Support\Traits\Macroable;
+@@ -144,7 +143,7 @@ class DataTables
+     /**
+      * DataTables using Collection.
+      *
+-     * @param  AnonymousResourceCollection<array-key, array>|array  $resource
++     * @param  \Illuminate\Http\Resources\Json\AnonymousResourceCollection<array-key, array>|array  $resource
+      * @return ApiResourceDataTable|DataTableAbstract
+      */
+     public function resource($resource)
+diff --git a/src/EloquentDataTable.php b/src/EloquentDataTable.php
+index 3b57c31..e4e2c1d 100644
+--- a/src/EloquentDataTable.php
++++ b/src/EloquentDataTable.php
+@@ -5,7 +5,6 @@ namespace Yajra\DataTables;
+ use Illuminate\Contracts\Database\Eloquent\Builder as EloquentBuilder;
+ use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
+ use Illuminate\Database\Eloquent\Builder as BaseEloquentBuilder;
+-use Illuminate\Database\Eloquent\Model;
+ use Illuminate\Database\Eloquent\Relations\BelongsTo;
+ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+ use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
+diff --git a/src/Facades/DataTables.php b/src/Facades/DataTables.php
+index 7fbf7c7..6e0dec0 100644
+--- a/src/Facades/DataTables.php
++++ b/src/Facades/DataTables.php
+@@ -2,7 +2,6 @@
  
--use League\Container\Argument\LiteralArgument;
+ namespace Yajra\DataTables\Facades;
  
--class IntegerArgument extends LiteralArgument
-+class IntegerArgument extends \League\Container\Argument\LiteralArgument
- {
-     public function __construct(int $value)
+-use Illuminate\Support\Facades\Facade;
+ 
+ /**
+  * @mixin \Yajra\DataTables\DataTables
+diff --git a/src/Processors/RowProcessor.php b/src/Processors/RowProcessor.php
+index b402b41..6172bff 100644
+--- a/src/Processors/RowProcessor.php
++++ b/src/Processors/RowProcessor.php
+@@ -2,7 +2,6 @@
+ 
+ namespace Yajra\DataTables\Processors;
+ 
+-use Illuminate\Support\Arr;
+ use Yajra\DataTables\Utilities\Helper;
+ 
+ class RowProcessor
+@@ -24,8 +23,8 @@ class RowProcessor
+     public function rowValue($attribute, $template)
      {
--        parent::__construct($value, LiteralArgument::TYPE_INT);
-+        parent::__construct($value, \League\Container\Argument\LiteralArgument::TYPE_INT);
-     }
- }
-diff --git a/src/ContainerAwareTrait.php b/src/ContainerAwareTrait.php
-index d4e7711..8454e04 100644
---- a/src/ContainerAwareTrait.php
-+++ b/src/ContainerAwareTrait.php
-@@ -5,7 +5,6 @@ declare(strict_types=1);
- namespace League\Container;
+         if (! empty($template)) {
+-            if (! is_callable($template) && Arr::get($this->data, $template)) {
+-                $this->data[$attribute] = Arr::get($this->data, $template);
++            if (! is_callable($template) && \Illuminate\Support\Arr::get($this->data, $template)) {
++                $this->data[$attribute] = \Illuminate\Support\Arr::get($this->data, $template);
+             } else {
+                 $this->data[$attribute] = Helper::compileContent($template, $this->data, $this->row);
+             }
+diff --git a/src/QueryDataTable.php b/src/QueryDataTable.php
+index de32e23..54a4eb4 100644
+--- a/src/QueryDataTable.php
++++ b/src/QueryDataTable.php
+@@ -2,7 +2,6 @@
  
- use BadMethodCallException;
--use League\Container\Exception\ContainerException;
+ namespace Yajra\DataTables;
  
- trait ContainerAwareTrait
- {
-diff --git a/src/Definition/Definition.php b/src/Definition/Definition.php
-index 9014e95..c43862f 100644
---- a/src/Definition/Definition.php
-+++ b/src/Definition/Definition.php
-@@ -4,7 +4,6 @@ declare(strict_types=1);
+-use Algolia\AlgoliaSearch\SearchClient;
+ use Illuminate\Contracts\Database\Eloquent\Builder as EloquentBuilder;
+ use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
+ use Illuminate\Database\Connection;
+@@ -1195,7 +1194,7 @@ class QueryDataTable extends DataTableAbstract
+                 ->pluck($this->scoutKey)
+                 ->all();
+         } elseif ($engine instanceof AlgoliaEngine) {
+-            /** @var SearchClient $engine */
++            /** @var \Algolia\AlgoliaSearch\SearchClient $engine */
+             $algolia = $engine->initIndex($this->scoutIndex);
  
- namespace League\Container\Definition;
+             $search_results = $algolia->search($searchKeyword, [
+diff --git a/src/Utilities/Helper.php b/src/Utilities/Helper.php
+index 2b72108..a9c3aeb 100644
+--- a/src/Utilities/Helper.php
++++ b/src/Utilities/Helper.php
+@@ -4,7 +4,6 @@ namespace Yajra\DataTables\Utilities;
  
--use League\Container\Argument\ArgumentInterface;
- use League\Container\Argument\ArgumentResolverInterface;
- use League\Container\Argument\ArgumentResolverTrait;
- use League\Container\Argument\LiteralArgumentInterface;
-diff --git a/src/Event/DefinitionResolvedEvent.php b/src/Event/DefinitionResolvedEvent.php
-index b222ca0..8a79bb6 100644
---- a/src/Event/DefinitionResolvedEvent.php
-+++ b/src/Event/DefinitionResolvedEvent.php
-@@ -4,25 +4,24 @@ declare(strict_types=1);
- 
- namespace League\Container\Event;
- 
--use League\Container\Definition\DefinitionInterface;
- 
- final class DefinitionResolvedEvent extends ContainerEvent
- {
-     public function __construct(
-         string $id,
--        DefinitionInterface $definition,
-+        \League\Container\Definition\DefinitionInterface $definition,
-         array $tags = [],
-         protected bool $new = false,
-     ) {
-         parent::__construct($id, $definition, $tags);
-     }
- 
--    public function getDefinition(): DefinitionInterface
-+    public function getDefinition(): \League\Container\Definition\DefinitionInterface
-     {
-         return $this->definition;
-     }
- 
--    public function setDefinition(DefinitionInterface $definition): void
-+    public function setDefinition(\League\Container\Definition\DefinitionInterface $definition): void
-     {
-         $this->definition = $definition;
-     }
-diff --git a/src/Event/OnDefineEvent.php b/src/Event/OnDefineEvent.php
-index f177627..9376534 100644
---- a/src/Event/OnDefineEvent.php
-+++ b/src/Event/OnDefineEvent.php
-@@ -4,7 +4,6 @@ declare(strict_types=1);
- 
- namespace League\Container\Event;
- 
--use League\Container\Definition\DefinitionInterface;
- 
- final class OnDefineEvent extends ContainerEvent
- {
-diff --git a/src/Exception/ContainerException.php b/src/Exception/ContainerException.php
-index 747ec6d..22bc2d7 100644
---- a/src/Exception/ContainerException.php
-+++ b/src/Exception/ContainerException.php
-@@ -4,9 +4,8 @@ declare(strict_types=1);
- 
- namespace League\Container\Exception;
- 
--use Psr\Container\ContainerExceptionInterface;
- use RuntimeException;
- 
--class ContainerException extends RuntimeException implements ContainerExceptionInterface
-+class ContainerException extends RuntimeException implements \Psr\Container\ContainerExceptionInterface
- {
- }
+ use Closure;
+ use DateTime;
+-use Illuminate\Contracts\Support\Arrayable;
+ use Illuminate\Support\Arr;
+ use Illuminate\Support\Facades\Blade;
+ use Illuminate\Support\Facades\Config;

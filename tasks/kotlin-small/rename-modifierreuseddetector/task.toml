@@ -1,0 +1,8 @@
+type = "rename"
+origin = "devrig safe rename"
+symbol = "slack.lint.compose.ModifierReusedDetector"
+new_name = "slack.lint.compose.ModifierReusedCheck"
+selection = "seed 20261110. Candidates: classes, objects, interfaces and functions that are not private, declared at the top level or one level down in compose-lint-checks/src/main, with a name of at least 8 characters that occurs (whole word) on at least 8 lines in at least 4 files of the repository (sources, tests and documentation) and at least once in a comment, a string or a Markdown file; sorted by name (ASCII): ComposableFunctionDetector, ComposableFunctionNamingDetector, CompositionLocalUsageDetector, M2ApiDetector, ModifierMissingDetector, ModifierReusedDetector, Priorities, ownerCall (8 candidates; a scripted scan with a regular expression, cand_kt.py in the curation notes); index int(rand()*8)+1 after srand(20261110) = 6 (ModifierReusedDetector). The new name is fixed by rule: the suffix Detector becomes Check. Fixed after seeing candidates: the new-name rule (Detector becomes Check) was set after the draw."
+gold = "scripted: git mv of ModifierReusedDetector.kt to ModifierReusedCheck.kt, then every whole-word occurrence of ModifierReusedDetector replaced in all text files (sources, tests, KDoc, docs/rules.md, config/license-excludes-kt.txt); built and tested"
+# the lint-check test suite is slow on a cold Gradle build (several minutes with 3 CPUs)
+grade_timeout_s = 1200

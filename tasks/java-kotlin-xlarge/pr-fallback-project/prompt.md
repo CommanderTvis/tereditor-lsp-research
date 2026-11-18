@@ -1,1 +1,0 @@
-Issue: the pinned Gradle mixed Java/Kotlin snapshot needs the maintenance fix represented by this fallback PR. Implement the focused regression fix across production sources and tests, preserving existing behavior and keeping the affected module buildable. This is a documented synthetic fallback occupying a mined-PR slot; do not infer a real upstream PR.

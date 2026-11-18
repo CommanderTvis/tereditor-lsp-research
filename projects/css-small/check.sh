@@ -1,20 +1,12 @@
 #!/bin/sh
-# Build-and-test for primer/css: compile every bundle (src/**/index.scss, as script/dist.js does) with dart-sass,
-# then require the compiled CSS to be identical to that of the task's starting state (the snapshot with the grading
-# overlay and the task's setup.patch), since every task on this project is a behaviour-preserving refactoring.
+# Build-and-test for tabler (Sass): every top-level entry point of core/scss compiles to the same CSS as at the
+# project's pinned commit (grade-setup.sh stored it in node_modules/.study-ref; every synthetic task is a
+# behaviour-preserving refactoring), then the repository's SCSS unit tests (sass-true and the compile tests, vitest) pass.
+# Mined tasks run their own tests (their grade.sh).
 set -e
-compile() { # <tree> <out-dir>
-  rm -rf "$2"; mkdir -p "$2"
-  (cd "$1" && find src -name index.scss | sort) | while IFS= read -r f; do
-    o="$2/$(echo "${f#src/}" | tr / _).css"
-    (cd "$1" && sass --no-source-map --style=expanded --quiet --load-path=node_modules "$f" "$o") || { echo "check: $f does not compile" >&2; exit 1; }
-  done
-}
-ref=/tmp/check-ref; rm -rf "$ref"; cp -a /study/snapshot "$ref"
-[ -d /grade-overlay ] && cp -a /grade-overlay/. "$ref/"
-if [ -s "${TASK_DIR:-/task}/setup.patch" ]; then (cd "$ref" && git apply --whitespace=nowarn "${TASK_DIR:-/task}/setup.patch"); fi
-compile "$ref" /tmp/check-out-ref
-compile "$PWD" /tmp/check-out-work
-# The set of bundles must stay the same, and each must compile to the same CSS.
-diff -r /tmp/check-out-ref /tmp/check-out-work > /tmp/check.diff || { head -80 /tmp/check.diff; echo "check: compiled CSS differs" >&2; exit 1; }
-echo "check: $(ls /tmp/check-out-work | wc -l) bundles compile to identical CSS"
+sh /project/compile.sh /tmp/check-out
+ref=node_modules/.study-ref
+[ -d "$ref" ] || { echo "check: no reference compilation (grade-setup.sh)" >&2; exit 1; }
+diff -r "$ref" /tmp/check-out > /tmp/check.diff || { head -80 /tmp/check.diff; echo "check: compiled CSS differs" >&2; exit 1; }
+echo "check: $(ls /tmp/check-out | grep -c '\.css$') entry points compile to identical CSS"
+cd core && CI=1 node_modules/.bin/vitest run --config vitest.scss.config.mjs

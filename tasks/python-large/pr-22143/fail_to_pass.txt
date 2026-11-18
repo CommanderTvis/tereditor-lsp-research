@@ -1,0 +1,3 @@
+mypyc/test/test_irbuild.py::TestGenOps::irbuild-float.test::testFloatAndComplexRealImag
+mypyc/test/test_irbuild.py::TestGenOps::irbuild-float.test::testNumberUnionRealImag
+mypyc/test/test_irbuild.py::TestGenOps::irbuild-int.test::testIntRealImag

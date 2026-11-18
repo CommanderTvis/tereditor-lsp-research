@@ -1,0 +1,1 @@
+:process-services-base org.gradle.process.internal.jvm.StudyHiddenRenameTest

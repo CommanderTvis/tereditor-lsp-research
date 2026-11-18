@@ -1,24 +1,12 @@
-# Mined pull requests: log
+# Mined pull requests: kotlin-large (Kotlin/dataframe)
 
-Candidates in the seeded order of `pr-candidates.jsonl`. The file was produced by a scratch copy of
-`harness/gen/mine-prs.sh` whose only change accepts base branch `master` (or `main`) besides the repository's
-current default branch: the default branch was renamed after the cutoff, so the unchanged script keeps
-2 of 5 qualifying pull requests.
+Modern pull requests (opened on or after 2026-07-01, merged, closing a linked issue, not by a bot; docs/MEMORIZATION.md). `harness/gen/mine-prs.sh kotlin-large` found 62 that qualify (the first 40 in `pr-candidates.jsonl`). Candidates were taken strictly in the seeded order (seed 20261110). The base commit is the first parent of the merge commit (squash merges). `hidden/` holds the pull request's test files at the merge commit; `gold.patch` is its non-test change (instruction files that the snapshot strips are left out), used only by `./study validate`. The fail-to-pass set (`f2p.txt`) is every test class in the changed test files; the pass-to-pass set is every test of the modules those tests live in.
 
-Every candidate is skipped for the same measured reason: the Gradle wrapper at its base commit cannot run on the
-study's JDK 21, the only JDK in `grade-jvm` and in the server sandbox. Measured in the grading sandbox with scratch
-projects using the newest wrapper among the candidates of each project (7.5.1: "Unsupported class file major version
-65"; 6.8.2: "Could not compile settings file ... startup failed"); Gradle runs on Java 21 from 8.5 on, and the builds
-of that time (Kotlin Gradle plugin 1.3 to 1.7) do not run on Gradle 8.5 or later. No candidate was set up, and none
-was rewritten to a newer build.
+The pass-to-pass set excludes the tests listed in each task's `p2p-exclude.txt`: the samples `Schemas.useInferredSchema` and the `QuickStartGuide` class read from the network, which the sandbox lacks, and fail for any patch (taken from a run of the reference solution).
 
-| # | Pull request | Merged | Base commit | Gradle wrapper at base | Outcome |
-| --- | --- | --- | --- | --- | --- |
-| 1 | #2137 | 2020-10-23 | `10481b725681f39cfae7503d3fbe45accea0e4fb` | 6.6.1 | skipped: wrapper needs a JDK older than 21 |
-| 2 | #2268 | 2020-12-29 | `f565c9c03afb3eceb8aa0acc987b6bbeb6f023b1` | 6.7.1 | skipped: wrapper needs a JDK older than 21 |
-| 3 | #2453 | 2021-05-12 | `c2f4302b69b21bdbc434ad5806a33aa22675149d` | 6.8.2 | skipped: wrapper needs a JDK older than 21 |
-| 4 | #2459 | 2021-05-14 | `fcbe555737d7e8a373ea83e7ef4fd94266157dc5` | 6.8.2 | skipped: wrapper needs a JDK older than 21 |
-| 5 | #2131 | 2020-10-23 | `c01ab1a2cf3a867a118403b4f7044a79262501c7` | 6.6.1 | skipped: wrapper needs a JDK older than 21 |
-
-Valid mined tasks: 0. The three `pr` places are filled with synthetic tasks of the next types in the rotation
-(recorded in `projects/kotlin-large/project.toml`).
+| Order | PR | Issue | Outcome |
+| --- | --- | --- | --- |
+| 1 | #2056 | toJson() drops row objects when a real "value" column contains only nulls | task `pr-2056`, VALID; memorization probe worst verbatim share 0.00 |
+| 2 | #2176 | Make GroupBy.sortBy and sortByDesc sort rows within groups only | task `pr-2176`, VALID; probe 0.00 |
+| 3 | #2190 | Add column selector overload to GroupBy.sortByKey | task `pr-2190`, VALID; probe 0.01 |
+| 4 onward | | | not needed |

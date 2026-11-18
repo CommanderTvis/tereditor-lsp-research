@@ -1,0 +1,224 @@
+diff --git a/README.md b/README.md
+index 171983a..1cdf78f 100644
+--- a/README.md
++++ b/README.md
+@@ -252,6 +252,25 @@ Content-Type: application/problem+json
+ }
+ ```
+ 
++- (Build time) Include raw exception messages in the detail field of JSON parsing/binding error responses. Disabled by default to prevent leaking internal class names and implementation details.
++
++```
++quarkus.http-problem.include-details=false
++```
++
++Result (malformed JSON POST):
++
++```json
++HTTP/1.1 400 Bad Request
++Content-Type: application/problem+json
++
++{
++    "status": 400,
++    "title": "Bad Request",
++    "detail": "Malformed request body"
++}
++```
++
+ - (Build time) Disable specific built-in exception mappers. The key is the exception class simple name in kebab-case.
+ 
+ ```
+diff --git a/deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemBuildConfig.java b/deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemBuildConfig.java
+index 2e07121..d5123f3 100644
+--- a/deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemBuildConfig.java
++++ b/deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemBuildConfig.java
+@@ -13,6 +13,14 @@ import io.smallrye.config.WithName;
+ @ConfigRoot(phase = ConfigPhase.BUILD_TIME)
+ public interface ProblemBuildConfig {
+ 
++    /**
++     * When enabled, JSON parsing/binding exception mappers include the raw exception message
++     * in the problem detail field. When disabled (the default), a generic message is used
++     * to avoid leaking internal class names and implementation details.
++     */
++    @WithDefault("false")
++    boolean includeDetails();
++
+     /**
+      * MDC properties that should be included in problem responses.
+      */
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/InvalidFormatExceptionMapper.java b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/InvalidFormatExceptionMapper.java
+index 1e72271..63096c9 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/InvalidFormatExceptionMapper.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/InvalidFormatExceptionMapper.java
+@@ -8,6 +8,8 @@ import jakarta.inject.Inject;
+ import jakarta.ws.rs.Priorities;
+ import jakarta.ws.rs.core.Response;
+ 
++import org.eclipse.microprofile.config.inject.ConfigProperty;
++
+ import com.fasterxml.jackson.databind.JsonMappingException;
+ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+ 
+@@ -21,20 +23,30 @@ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+ @Priority(Priorities.USER)
+ public final class InvalidFormatExceptionMapper extends ExceptionMapperBase<InvalidFormatException> {
+ 
++    static final String SANITIZED_DETAIL = "Malformed request body";
++
++    private final boolean includeDetails;
++
+     public InvalidFormatExceptionMapper() {
++        this.includeDetails = false;
+     }
+ 
+     @Inject
+-    public InvalidFormatExceptionMapper(PostProcessorsRegistry postProcessorsRegistry) {
++    public InvalidFormatExceptionMapper(PostProcessorsRegistry postProcessorsRegistry,
++            @ConfigProperty(name = "quarkus.http-problem.include-details", defaultValue = "false") boolean includeDetails) {
+         super(postProcessorsRegistry);
++        this.includeDetails = includeDetails;
+     }
+ 
+     @Override
+     protected HttpProblem toProblem(InvalidFormatException exception) {
++        String detail = includeDetails
++                ? exception.getOriginalMessage()
++                : SANITIZED_DETAIL;
+         return HttpProblem.builder()
+                 .withStatus(Response.Status.BAD_REQUEST)
+                 .withTitle(Response.Status.BAD_REQUEST.getReasonPhrase())
+-                .withDetail(exception.getOriginalMessage())
++                .withDetail(detail)
+                 .with("field", serializePath(exception.getPath()))
+                 .build();
+     }
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/JsonProcessingExceptionMapper.java b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/JsonProcessingExceptionMapper.java
+index 21b4ece..8e35636 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/JsonProcessingExceptionMapper.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/JsonProcessingExceptionMapper.java
+@@ -6,6 +6,8 @@ import jakarta.annotation.Priority;
+ import jakarta.inject.Inject;
+ import jakarta.ws.rs.Priorities;
+ 
++import org.eclipse.microprofile.config.inject.ConfigProperty;
++
+ import com.fasterxml.jackson.core.JsonProcessingException;
+ 
+ import io.quarkiverse.httpproblem.ExceptionMapperBase;
+@@ -18,16 +20,26 @@ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+ @Priority(Priorities.USER)
+ public final class JsonProcessingExceptionMapper extends ExceptionMapperBase<JsonProcessingException> {
+ 
++    static final String SANITIZED_DETAIL = "Malformed request body";
++
++    private final boolean includeDetails;
++
+     public JsonProcessingExceptionMapper() {
++        this.includeDetails = false;
+     }
+ 
+     @Inject
+-    public JsonProcessingExceptionMapper(PostProcessorsRegistry postProcessorsRegistry) {
++    public JsonProcessingExceptionMapper(PostProcessorsRegistry postProcessorsRegistry,
++            @ConfigProperty(name = "quarkus.http-problem.include-details", defaultValue = "false") boolean includeDetails) {
+         super(postProcessorsRegistry);
++        this.includeDetails = includeDetails;
+     }
+ 
+     @Override
+     protected HttpProblem toProblem(JsonProcessingException exception) {
+-        return HttpProblem.valueOf(BAD_REQUEST, exception.getOriginalMessage());
++        String detail = includeDetails
++                ? exception.getOriginalMessage()
++                : SANITIZED_DETAIL;
++        return HttpProblem.valueOf(BAD_REQUEST, detail);
+     }
+ }
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/JsonbExceptionMapper.java b/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/JsonbExceptionMapper.java
+index e8328c3..91be48f 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/JsonbExceptionMapper.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/JsonbExceptionMapper.java
+@@ -7,6 +7,8 @@ import jakarta.inject.Inject;
+ import jakarta.json.bind.JsonbException;
+ import jakarta.ws.rs.Priorities;
+ 
++import org.eclipse.microprofile.config.inject.ConfigProperty;
++
+ import io.quarkiverse.httpproblem.ExceptionMapperBase;
+ import io.quarkiverse.httpproblem.HttpProblem;
+ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+@@ -14,16 +16,26 @@ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+ @Priority(Priorities.USER)
+ public final class JsonbExceptionMapper extends ExceptionMapperBase<JsonbException> {
+ 
++    static final String SANITIZED_DETAIL = "Malformed request body";
++
++    private final boolean includeDetails;
++
+     public JsonbExceptionMapper() {
++        this.includeDetails = false;
+     }
+ 
+     @Inject
+-    public JsonbExceptionMapper(PostProcessorsRegistry postProcessorsRegistry) {
++    public JsonbExceptionMapper(PostProcessorsRegistry postProcessorsRegistry,
++            @ConfigProperty(name = "quarkus.http-problem.include-details", defaultValue = "false") boolean includeDetails) {
+         super(postProcessorsRegistry);
++        this.includeDetails = includeDetails;
+     }
+ 
+     @Override
+     protected HttpProblem toProblem(JsonbException exception) {
++        if (!includeDetails) {
++            return HttpProblem.valueOf(BAD_REQUEST, SANITIZED_DETAIL);
++        }
+         return HttpProblem.valueOf(BAD_REQUEST, exception.getCause() == null ? null : exception.getCause().getMessage());
+     }
+ }
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/RestEasyClassicJsonbExceptionMapper.java b/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/RestEasyClassicJsonbExceptionMapper.java
+index b86e5a0..e894ccd 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/RestEasyClassicJsonbExceptionMapper.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/RestEasyClassicJsonbExceptionMapper.java
+@@ -8,6 +8,8 @@ import jakarta.inject.Inject;
+ import jakarta.ws.rs.Priorities;
+ import jakarta.ws.rs.ProcessingException;
+ 
++import org.eclipse.microprofile.config.inject.ConfigProperty;
++
+ import io.quarkiverse.httpproblem.ExceptionMapperBase;
+ import io.quarkiverse.httpproblem.HttpProblem;
+ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+@@ -15,12 +17,19 @@ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+ @Priority(Priorities.USER)
+ public final class RestEasyClassicJsonbExceptionMapper extends ExceptionMapperBase<ProcessingException> {
+ 
++    static final String SANITIZED_DETAIL = "Malformed request body";
++
++    private final boolean includeDetails;
++
+     public RestEasyClassicJsonbExceptionMapper() {
++        this.includeDetails = false;
+     }
+ 
+     @Inject
+-    public RestEasyClassicJsonbExceptionMapper(PostProcessorsRegistry postProcessorsRegistry) {
++    public RestEasyClassicJsonbExceptionMapper(PostProcessorsRegistry postProcessorsRegistry,
++            @ConfigProperty(name = "quarkus.http-problem.include-details", defaultValue = "false") boolean includeDetails) {
+         super(postProcessorsRegistry);
++        this.includeDetails = includeDetails;
+     }
+ 
+     /**
+@@ -33,7 +42,10 @@ public final class RestEasyClassicJsonbExceptionMapper extends ExceptionMapperBa
+     protected HttpProblem toProblem(ProcessingException exception) {
+         if (exception.getCause() != null
+                 && exception.getCause().getClass().getName().equals("jakarta.json.bind.JsonbException")) {
+-            return HttpProblem.valueOf(BAD_REQUEST, exception.getCause().getMessage());
++            String detail = includeDetails
++                    ? exception.getCause().getMessage()
++                    : SANITIZED_DETAIL;
++            return HttpProblem.valueOf(BAD_REQUEST, detail);
+         } else {
+             return HttpProblem.valueOf(INTERNAL_SERVER_ERROR);
+         }

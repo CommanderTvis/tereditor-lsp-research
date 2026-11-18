@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic: which definition runs when two Sass modules define a function of the same name and one of them hides it from the forwarding chain; Sass modules have namespaces, so the indirection is the module graph"
+symbol = "divide (core/scss/mixins/_functions.scss and core/scss/mixins/bootstrap/_rfs.scss)"
+selection = "Candidates: calls of divide that are evaluated when their module loads (top-level declarations, including the ones in a top-level @if) in core/scss/_variables.scss and core/scss/mixins/bootstrap/_rfs.scss; 9 call sites (_variables.scss lines 430 to 433, _rfs.scss lines 104, 106, 114, 116, 120), sorted by path and line, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk), first taken: core/scss/mixins/bootstrap/_rfs.scss:114. divide is the only function name defined twice in core/scss."

@@ -1,0 +1,7 @@
+type = "rename-file"
+origin = "synthetic: rename a script that the installer downloads, copies and marks executable, that nvm.sh runs and that tests, the CI workflow and docs name (devrig rename file)"
+from = "nvm-exec"
+to = "nvm-runner"
+selection = "Candidates: tracked files at the repository root that are not nvm.sh or install.sh, are referenced by name from at least 5 other tracked files; 2 candidates (nvm-exec, bash_completion), sorted, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk), first taken: nvm-exec. The name also occurs in the install method name script-nvm-exec (a public setting value that keeps its name), in test file names and in the program's own error prefix 'nvm-exec: ...' (kept)."
+grade_timeout_s = 1200
+grade_note = "the project check runs the three urchin suites (about 8 minutes on 3 CPUs)"

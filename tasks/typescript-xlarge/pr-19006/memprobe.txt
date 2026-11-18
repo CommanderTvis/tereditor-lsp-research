@@ -1,0 +1,4 @@
+{"task": "tasks/typescript-xlarge/pr-19006", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 20, "fresh_lines": 20, "verbatim_share": 0.2, "names_all_files": true, "cost_usd": 0.00178099}
+{"task": "tasks/typescript-xlarge/pr-19006", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 20, "fresh_lines": 20, "verbatim_share": 0.05, "names_all_files": false, "cost_usd": 0.025274900000000003}
+{"task": "tasks/typescript-xlarge/pr-19006", "model": "claude-opus-5-5", "answered": true, "gold_lines": 20, "fresh_lines": 20, "verbatim_share": 0.05, "names_all_files": true, "cost_usd": 0.0682538}
+SCORE tasks/typescript-xlarge/pr-19006 worst verbatim share 0.20 (gold lines 20)

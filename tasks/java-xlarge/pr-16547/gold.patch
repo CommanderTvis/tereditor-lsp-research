@@ -1,0 +1,28 @@
+diff --git a/lucene/CHANGES.txt b/lucene/CHANGES.txt
+index 43a3c58452b9..d70c53abb1f0 100644
+--- a/lucene/CHANGES.txt
++++ b/lucene/CHANGES.txt
+@@ -474,6 +474,8 @@ Optimizations
+ Bug Fixes
+ ---------------------
+ 
++* GITHUB#16546: Prevent RangeBulkScorer from passing empty ranges to LeafCollector. (jxy)
++
+ * GITHUB#16450: Fix DocValuesRangeIterator.docIDRunEnd() returning incorrect run boundaries,
+   causing bulk-scoring to skip or mis-score documents in range and ordinal set queries.
+   (Parker Timmins)
+diff --git a/lucene/core/src/java/org/apache/lucene/document/RangeBulkScorer.java b/lucene/core/src/java/org/apache/lucene/document/RangeBulkScorer.java
+index a7011fc738c2..065db4de0986 100644
+--- a/lucene/core/src/java/org/apache/lucene/document/RangeBulkScorer.java
++++ b/lucene/core/src/java/org/apache/lucene/document/RangeBulkScorer.java
+@@ -75,7 +75,9 @@ public int score(LeafCollector collector, Bits acceptDocs, int min, int max) thr
+       final int filteredMax = Math.min(max, maxDocID);
+       iterator.advance(filteredMin);
+       if (acceptDocs == null) {
+-        collector.collectRange(filteredMin, filteredMax);
++        if (filteredMin < filteredMax) {
++          collector.collectRange(filteredMin, filteredMax);
++        }
+       } else {
+         int rangeStart = -1;
+         for (int doc = filteredMin; doc < filteredMax; doc++) {

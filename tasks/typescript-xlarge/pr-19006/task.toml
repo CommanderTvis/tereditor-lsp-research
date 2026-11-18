@@ -1,0 +1,9 @@
+type = "pr"
+origin = "mined pull request (modern, docs/MEMORIZATION.md)"
+pr = 19006
+issue = 18823
+base_commit = "4bc505c2ae43b90b7f2c4b7e5439ce3916da831e"
+merge_commit = "0c74c7700cb8923ccce21855952a5e192dbc463b"
+merged_at = "2026-10-23T19:26:38Z"
+test_files = ["test/auth/config.ts","test/auth/int.spec.ts","test/auth/shared.ts"]
+grade_timeout_s = 1200

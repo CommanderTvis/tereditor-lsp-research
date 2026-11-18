@@ -1,0 +1,4 @@
+type = "rename"
+origin = "devrig safe rename"
+symbol = "pydantic_extra_types.pendulum_dt.Time -> PendulumTime"
+selection = "public top-level classes and functions of non-test pydantic_extra_types/ modules whose name is defined once in the repository, used in code in at least 2 other .py files with at least 8 code occurrences, and that also occur at least 5 times in comments, docstrings, strings or documentation (python3 an.py <snapshot> pydantic_extra_types symbols, an ast walk plus a word count); sorted by path:line: Color, Coordinate, CronStr, ISBN, ISIN, MimeType, MongoObjectId, PaymentCardNumber, DateTime, Time, Date, Duration, Interval, PhoneNumber, PhoneNumberValidator, TimeZoneName (16 candidates); index random.Random(20261110).randrange(16) = 9 (CPython 3.12). New name rule: the module's subject as a prefix (Pendulum). The name also occurs as pendulum.Time (the base class), _Time, and in prose (Time zone), so a text replace is wrong."

@@ -1,0 +1,5 @@
+type = "move"
+origin = "synthetic: move a class to another namespace (docs/TASKS.md)"
+symbol = "Yajra\\DataTables\\Utilities\\Request"
+target = "Yajra\\DataTables\\Request"
+selection = "Rule fixed before the draw: every class, interface, trait or enum declared in a sub-namespace of Yajra\\DataTables under src/ whose short name occurs as a whole word in at least 3 other .php files under src/ and tests/ (rg -lw) and at least once in a comment, docblock, string or markdown file (so a review can count stale mentions): 7 candidates (Contracts\\DataTable, Contracts\\Formatter, Exceptions\\Exception, Facades\\DataTables, Utilities\\Config, Utilities\\Helper, Utilities\\Request), sorted by fully qualified name. Seeded shuffle awk 'BEGIN{srand(20261110)}' (macOS awk 20200816, printf %.12f rand(), sort -n), first item. Target rule: the type moves one namespace level up (its file one directory up). The short name Request also names Illuminate\\Http\\Request, which the package imports in several files, and it occurs in docblocks (@mixin, @param)."

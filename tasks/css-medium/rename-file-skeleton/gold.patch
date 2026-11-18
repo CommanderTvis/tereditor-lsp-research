@@ -1,0 +1,541 @@
+diff --git a/docs/migration/v11.md b/docs/migration/v11.md
+index 1a638b789..d2bd5a18d 100644
+--- a/docs/migration/v11.md
++++ b/docs/migration/v11.md
+@@ -244,7 +244,7 @@ that details to which files a particular helper has been moved.
+ | `@mixin rotate`             | `scss/utilities/_rotate.scss`             |
+ | `@mixin hidden`             | `scss/utilities/_visually-hidden.scss`    |
+ | `@mixin button-reset`       | `scss/utilities/_button-reset.scss`       |
+-| `@mixin skeleton`           | `scss/utilities/_skeleton.scss`           |
++| `@mixin skeleton`           | `scss/utilities/_skeleton-animation.scss`           |
+ | `@keyframes skeleton`       | `scss/utilities/_keyframes.scss`          |
+ | `@mixin high-contrast-mode` | `scss/utilities/_high-contrast-mode.scss` |
+ 
+diff --git a/packages/carbon-components-react/scss/utilities/_skeleton.scss b/packages/carbon-components-react/scss/utilities/_skeleton.scss
+index 3292d107d..047eb1425 100644
+--- a/packages/carbon-components-react/scss/utilities/_skeleton.scss
++++ b/packages/carbon-components-react/scss/utilities/_skeleton.scss
+@@ -6,4 +6,4 @@
+ // LICENSE file in the root directory of this source tree.
+ //
+ 
+-@forward '@carbon/styles/scss/utilities/skeleton';
++@forward '@carbon/styles/scss/utilities/skeleton-animation';
+diff --git a/packages/carbon-components/scss/utilities/_skeleton.scss b/packages/carbon-components/scss/utilities/_skeleton.scss
+index fdcdade34..2b156b782 100644
+--- a/packages/carbon-components/scss/utilities/_skeleton.scss
++++ b/packages/carbon-components/scss/utilities/_skeleton.scss
+@@ -6,4 +6,4 @@
+ // LICENSE file in the root directory of this source tree.
+ //
+ 
+-@forward '@carbon/styles/scss/utilities/skeleton';
++@forward '@carbon/styles/scss/utilities/skeleton-animation';
+diff --git a/packages/react/scss/utilities/_skeleton.scss b/packages/react/scss/utilities/_skeleton.scss
+index 985bf7905..3f9155886 100644
+--- a/packages/react/scss/utilities/_skeleton.scss
++++ b/packages/react/scss/utilities/_skeleton.scss
+@@ -6,4 +6,4 @@
+ // LICENSE file in the root directory of this source tree.
+ //
+ 
+-@forward '@carbon/styles/scss/utilities/skeleton';
++@forward '@carbon/styles/scss/utilities/skeleton-animation';
+diff --git a/packages/styles/docs/sass.md b/packages/styles/docs/sass.md
+index ae572499b..97de55b11 100644
+--- a/packages/styles/docs/sass.md
++++ b/packages/styles/docs/sass.md
+@@ -554,7 +554,7 @@ $button-tokens: utilities.merge(
+ | `@use '@carbon/styles/scss/utilities/layout';`             | [_(preview)_ Use contextual layout tokens](#contextual-layout-tokens)  |
+ | `@use '@carbon/styles/scss/utilities/placeholder-colors';` | Sets the Carbon defined placeholder styles                             |
+ | `@use '@carbon/styles/scss/utilities/rotate';`             | Adds rotational transformation                                         |
+-| `@use '@carbon/styles/scss/utilities/skeleton';`           | Adds Carbon defined skeleton styles                                    |
++| `@use '@carbon/styles/scss/utilities/skeleton-animation';`           | Adds Carbon defined skeleton styles                                    |
+ | `@use '@carbon/styles/scss/utilities/text-overflow';`      | Adds text overflow styling                                             |
+ | `@use '@carbon/styles/scss/utilities/text-truncate';`      | Truncates text at beginning or end of text                             |
+ | `@use '@carbon/styles/scss/utilities/tooltip';`            | Shared Tooltip styles                                                  |
+diff --git a/packages/styles/files.js b/packages/styles/files.js
+index 8dfd1002b..ca1d76c53 100644
+--- a/packages/styles/files.js
++++ b/packages/styles/files.js
+@@ -231,7 +231,7 @@ const files = [
+   'scss/utilities/_layout.scss',
+   'scss/utilities/_placeholder-colors.scss',
+   'scss/utilities/_rotate.scss',
+-  'scss/utilities/_skeleton.scss',
++  'scss/utilities/_skeleton-animation.scss',
+   'scss/utilities/_text-overflow.scss',
+   'scss/utilities/_text-truncate.scss',
+   'scss/utilities/_visually-hidden.scss',
+diff --git a/packages/styles/scss/components/breadcrumb/_breadcrumb.scss b/packages/styles/scss/components/breadcrumb/_breadcrumb.scss
+index e4b1cb8ab..88dd98308 100644
+--- a/packages/styles/scss/components/breadcrumb/_breadcrumb.scss
++++ b/packages/styles/scss/components/breadcrumb/_breadcrumb.scss
+@@ -18,7 +18,7 @@
+ @use '../../layer' as *;
+ @use '../../utilities/component-reset';
+ @use '../../utilities/convert';
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ 
+ @mixin breadcrumb {
+   .#{$prefix}--breadcrumb {
+diff --git a/packages/styles/scss/components/button/_button.scss b/packages/styles/scss/components/button/_button.scss
+index bf5a4148c..fdc358e51 100644
+--- a/packages/styles/scss/components/button/_button.scss
++++ b/packages/styles/scss/components/button/_button.scss
+@@ -21,7 +21,7 @@
+ @use '../../utilities/convert';
+ @use '../../utilities/focus-outline';
+ @use '../../utilities/high-contrast-mode' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/visually-hidden' as *;
+ @use '../../utilities/layout';
+ 
+diff --git a/packages/styles/scss/components/checkbox/_checkbox.scss b/packages/styles/scss/components/checkbox/_checkbox.scss
+index 0e9ae1658..bd4516f49 100644
+--- a/packages/styles/scss/components/checkbox/_checkbox.scss
++++ b/packages/styles/scss/components/checkbox/_checkbox.scss
+@@ -13,7 +13,7 @@
+ @use '../../utilities/component-reset';
+ @use '../../utilities/convert';
+ @use '../../utilities/high-contrast-mode' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/visually-hidden' as *;
+ 
+ @mixin checkbox {
+diff --git a/packages/styles/scss/components/code-snippet/_code-snippet.scss b/packages/styles/scss/components/code-snippet/_code-snippet.scss
+index e7e1c0e21..985cc95a1 100644
+--- a/packages/styles/scss/components/code-snippet/_code-snippet.scss
++++ b/packages/styles/scss/components/code-snippet/_code-snippet.scss
+@@ -21,7 +21,7 @@
+ @use '../../utilities/high-contrast-mode' as *;
+ @use '../../utilities/keyframes' as *;
+ @use '../../utilities/layout' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/tooltip' as *;
+ @use '../../utilities/z-index' as *;
+ 
+diff --git a/packages/styles/scss/components/data-table/skeleton/_data-table-skeleton.scss b/packages/styles/scss/components/data-table/skeleton/_data-table-skeleton.scss
+index 05709a903..ed621edc9 100644
+--- a/packages/styles/scss/components/data-table/skeleton/_data-table-skeleton.scss
++++ b/packages/styles/scss/components/data-table/skeleton/_data-table-skeleton.scss
+@@ -9,7 +9,7 @@
+ @use '../../../spacing' as *;
+ @use '../../../theme' as *;
+ @use '../../../utilities/convert';
+-@use '../../../utilities/skeleton' as *;
++@use '../../../utilities/skeleton-animation' as *;
+ 
+ /// Data table skeleton styles
+ /// @access public
+diff --git a/packages/styles/scss/components/date-picker/_date-picker-next.scss b/packages/styles/scss/components/date-picker/_date-picker-next.scss
+index 5c71f07db..f79c4f666 100644
+--- a/packages/styles/scss/components/date-picker/_date-picker-next.scss
++++ b/packages/styles/scss/components/date-picker/_date-picker-next.scss
+@@ -10,7 +10,7 @@
+ @use '../../theme' as *;
+ @use '../../utilities/ai-gradient' as *;
+ @use '../../utilities/convert' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../feature-flags' as *;
+ @use '../../border-radius' as *;
+ 
+diff --git a/packages/styles/scss/components/date-picker/_date-picker.scss b/packages/styles/scss/components/date-picker/_date-picker.scss
+index 5fecce10f..efed2cd89 100644
+--- a/packages/styles/scss/components/date-picker/_date-picker.scss
++++ b/packages/styles/scss/components/date-picker/_date-picker.scss
+@@ -20,7 +20,7 @@
+ @use '../../utilities/convert';
+ @use '../../utilities/focus-outline' as *;
+ @use '../../utilities/placeholder-colors' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ 
+ /// Date picker styles
+ /// @access public
+diff --git a/packages/styles/scss/components/dropdown/_dropdown.scss b/packages/styles/scss/components/dropdown/_dropdown.scss
+index fe7c6acfe..e4abba6f6 100644
+--- a/packages/styles/scss/components/dropdown/_dropdown.scss
++++ b/packages/styles/scss/components/dropdown/_dropdown.scss
+@@ -18,7 +18,7 @@
+ @use '../../utilities/convert';
+ @use '../../utilities/focus-outline' as *;
+ @use '../../utilities/high-contrast-mode' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/z-index' as *;
+ 
+ /// Dropdown styles
+diff --git a/packages/styles/scss/components/fluid-list-box/_fluid-list-box.scss b/packages/styles/scss/components/fluid-list-box/_fluid-list-box.scss
+index 5a36194f3..4e4817a89 100644
+--- a/packages/styles/scss/components/fluid-list-box/_fluid-list-box.scss
++++ b/packages/styles/scss/components/fluid-list-box/_fluid-list-box.scss
+@@ -16,7 +16,7 @@
+ @use '../../feature-flags' as *;
+ @use '../../utilities/convert';
+ @use '../../utilities/focus-outline' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ 
+ @mixin fluid-list-box {
+   .#{$prefix}--list-box__wrapper--fluid.#{$prefix}--list-box__wrapper {
+diff --git a/packages/styles/scss/components/form/_form.scss b/packages/styles/scss/components/form/_form.scss
+index 6109abcf8..4b9dd1007 100644
+--- a/packages/styles/scss/components/form/_form.scss
++++ b/packages/styles/scss/components/form/_form.scss
+@@ -13,7 +13,7 @@
+ @use '../../utilities/component-reset';
+ @use '../../utilities/convert';
+ @use '../../utilities/focus-outline' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../..//utilities/button-reset';
+ 
+ /// @type Number
+diff --git a/packages/styles/scss/components/number-input/_number-input.scss b/packages/styles/scss/components/number-input/_number-input.scss
+index eaf206bc0..80f6cc337 100644
+--- a/packages/styles/scss/components/number-input/_number-input.scss
++++ b/packages/styles/scss/components/number-input/_number-input.scss
+@@ -15,7 +15,7 @@
+ @use '../../theme' as *;
+ @use '../../type' as *;
+ @use '../../utilities/ai-gradient' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/button-reset';
+ @use '../../utilities/high-contrast-mode' as *;
+ @use '../../utilities/focus-outline' as *;
+diff --git a/packages/styles/scss/components/progress-indicator/_progress-indicator.scss b/packages/styles/scss/components/progress-indicator/_progress-indicator.scss
+index 756cf51dd..b744326f9 100644
+--- a/packages/styles/scss/components/progress-indicator/_progress-indicator.scss
++++ b/packages/styles/scss/components/progress-indicator/_progress-indicator.scss
+@@ -14,7 +14,7 @@
+ @use '../../type' as *;
+ @use '../../utilities/focus-outline' as *;
+ @use '../../utilities/convert';
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/button-reset';
+ @use '../../utilities/component-reset';
+ @use '../../utilities/tooltip' as *;
+diff --git a/packages/styles/scss/components/radio-button/_radio-button.scss b/packages/styles/scss/components/radio-button/_radio-button.scss
+index 06accc4ff..cea995b8c 100644
+--- a/packages/styles/scss/components/radio-button/_radio-button.scss
++++ b/packages/styles/scss/components/radio-button/_radio-button.scss
+@@ -19,7 +19,7 @@
+ @use '../../utilities/component-reset' as *;
+ @use '../../utilities/visually-hidden' as *;
+ @use '../../utilities/high-contrast-mode' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/convert';
+ 
+ /// @type Number
+diff --git a/packages/styles/scss/components/search/_search.scss b/packages/styles/scss/components/search/_search.scss
+index 25a639fb2..0bad72b46 100644
+--- a/packages/styles/scss/components/search/_search.scss
++++ b/packages/styles/scss/components/search/_search.scss
+@@ -21,7 +21,7 @@
+ @use '../../utilities/focus-outline' as *;
+ @use '../../utilities/visually-hidden' as *;
+ @use '../../utilities/component-reset' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/convert';
+ @use '../../utilities/button-reset';
+ @use '../../utilities/layout';
+diff --git a/packages/styles/scss/components/select/_select.scss b/packages/styles/scss/components/select/_select.scss
+index 9bd04123f..278a8d239 100644
+--- a/packages/styles/scss/components/select/_select.scss
++++ b/packages/styles/scss/components/select/_select.scss
+@@ -20,7 +20,7 @@
+ @use '../../utilities/convert';
+ @use '../../utilities/focus-outline' as *;
+ @use '../../utilities/layout';
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ 
+ /// Select styles
+ /// @access public
+diff --git a/packages/styles/scss/components/skeleton-styles/_skeleton-styles.scss b/packages/styles/scss/components/skeleton-styles/_skeleton-styles.scss
+index b3408f0c8..f9c474960 100644
+--- a/packages/styles/scss/components/skeleton-styles/_skeleton-styles.scss
++++ b/packages/styles/scss/components/skeleton-styles/_skeleton-styles.scss
+@@ -6,7 +6,7 @@
+ //
+ 
+ @use '../../config' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/convert';
+ @use '../../spacing' as *;
+ 
+diff --git a/packages/styles/scss/components/slider/_slider.scss b/packages/styles/scss/components/slider/_slider.scss
+index 300dce527..8299c4f72 100644
+--- a/packages/styles/scss/components/slider/_slider.scss
++++ b/packages/styles/scss/components/slider/_slider.scss
+@@ -18,7 +18,7 @@
+ @use '../../theme' as *;
+ @use '../../type' as *;
+ @use '../../utilities/focus-outline' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/high-contrast-mode' as *;
+ @use '../../utilities/convert';
+ @use '../../utilities/custom-property';
+diff --git a/packages/styles/scss/components/structured-list/_structured-list.scss b/packages/styles/scss/components/structured-list/_structured-list.scss
+index bdb0bf1fe..0e449212c 100644
+--- a/packages/styles/scss/components/structured-list/_structured-list.scss
++++ b/packages/styles/scss/components/structured-list/_structured-list.scss
+@@ -14,7 +14,7 @@
+ @use '../../type' as *;
+ @use '../../spacing' as *;
+ @use '../../utilities/focus-outline' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/convert';
+ @use '../../utilities/component-reset';
+ 
+diff --git a/packages/styles/scss/components/tabs/_tabs.scss b/packages/styles/scss/components/tabs/_tabs.scss
+index 68d011009..13a8d7d3d 100644
+--- a/packages/styles/scss/components/tabs/_tabs.scss
++++ b/packages/styles/scss/components/tabs/_tabs.scss
+@@ -27,7 +27,7 @@
+ @use '../../utilities/component-reset';
+ @use '../../utilities/component-tokens' as *;
+ @use '../../utilities/custom-property';
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/visually-hidden' as *;
+ @use '../../utilities/button-reset';
+ @use '../../utilities/high-contrast-mode' as *;
+diff --git a/packages/styles/scss/components/tag/_tag.scss b/packages/styles/scss/components/tag/_tag.scss
+index 6ebdf821e..8bf0e87a0 100644
+--- a/packages/styles/scss/components/tag/_tag.scss
++++ b/packages/styles/scss/components/tag/_tag.scss
+@@ -19,7 +19,7 @@
+ @use '../../spacing' as *;
+ @use './tokens' as *;
+ @use './mixins' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ 
+ /// Tag styles
+ /// @access public
+diff --git a/packages/styles/scss/components/text-area/_text-area.scss b/packages/styles/scss/components/text-area/_text-area.scss
+index 1c24599ea..b0f3027c2 100644
+--- a/packages/styles/scss/components/text-area/_text-area.scss
++++ b/packages/styles/scss/components/text-area/_text-area.scss
+@@ -17,7 +17,7 @@
+ @use '../../utilities/convert';
+ @use '../../utilities/focus-outline' as *;
+ @use '../../utilities/placeholder-colors' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/layout';
+ @use '../../utilities/visually-hidden' as *;
+ @use '../../utilities/high-contrast-mode' as *;
+diff --git a/packages/styles/scss/components/text-input/_text-input.scss b/packages/styles/scss/components/text-input/_text-input.scss
+index a1b6bfbe6..d7a287cae 100644
+--- a/packages/styles/scss/components/text-input/_text-input.scss
++++ b/packages/styles/scss/components/text-input/_text-input.scss
+@@ -20,7 +20,7 @@
+ @use '../../utilities/ai-gradient' as *;
+ @use '../../utilities/component-reset';
+ @use '../../utilities/placeholder-colors' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ @use '../../utilities/convert';
+ @use '../../utilities/layout';
+ @use '../../utilities/focus-outline' as *;
+diff --git a/packages/styles/scss/components/toggle/_toggle.scss b/packages/styles/scss/components/toggle/_toggle.scss
+index 72cb09ef7..4ec9c2d3f 100644
+--- a/packages/styles/scss/components/toggle/_toggle.scss
++++ b/packages/styles/scss/components/toggle/_toggle.scss
+@@ -15,7 +15,7 @@
+ @use '../../utilities/convert';
+ @use '../../utilities/high-contrast-mode' as *;
+ @use '../../utilities/visually-hidden' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ 
+ /// Toggle styles
+ /// @access public
+diff --git a/packages/styles/scss/components/treeview/_treeview.scss b/packages/styles/scss/components/treeview/_treeview.scss
+index b073aa4a9..48974dd2d 100644
+--- a/packages/styles/scss/components/treeview/_treeview.scss
++++ b/packages/styles/scss/components/treeview/_treeview.scss
+@@ -14,7 +14,7 @@
+ @use '../../utilities/convert';
+ @use '../../utilities/component-reset';
+ @use '../../utilities/focus-outline' as *;
+-@use '../../utilities/skeleton' as *;
++@use '../../utilities/skeleton-animation' as *;
+ 
+ /// Treeview styles
+ /// @access public
+diff --git a/packages/styles/scss/utilities/_index.scss b/packages/styles/scss/utilities/_index.scss
+index 05fe747c6..f4530ebb6 100644
+--- a/packages/styles/scss/utilities/_index.scss
++++ b/packages/styles/scss/utilities/_index.scss
+@@ -17,7 +17,7 @@
+ @forward 'layout';
+ @forward 'placeholder-colors';
+ @forward 'rotate';
+-@forward 'skeleton';
++@forward 'skeleton-animation';
+ @forward 'text-overflow';
+ @forward 'text-truncate';
+ @forward 'tooltip';
+diff --git a/packages/styles/scss/utilities/_skeleton.scss b/packages/styles/scss/utilities/_skeleton-animation.scss
+similarity index 100%
+rename from packages/styles/scss/utilities/_skeleton.scss
+rename to packages/styles/scss/utilities/_skeleton-animation.scss
+diff --git a/packages/web-components/src/components/fluid-combo-box/fluid-combo-box.scss b/packages/web-components/src/components/fluid-combo-box/fluid-combo-box.scss
+index 542d8bf0a..358f417fb 100644
+--- a/packages/web-components/src/components/fluid-combo-box/fluid-combo-box.scss
++++ b/packages/web-components/src/components/fluid-combo-box/fluid-combo-box.scss
+@@ -16,7 +16,7 @@ $css--plex: true !default;
+ @use '@carbon/styles/scss/border-radius' as *;
+ @use '@carbon/styles/scss/theme' as *;
+ @use '@carbon/styles/scss/type' as *;
+-@use '@carbon/styles/scss/utilities/skeleton' as *;
++@use '@carbon/styles/scss/utilities/skeleton-animation' as *;
+ @use '@carbon/styles/scss/utilities' as *;
+ @use '@carbon/styles/scss/colors';
+ @use '@carbon/styles/scss/utilities/convert' as *;
+diff --git a/packages/web-components/src/components/fluid-date-picker/fluid-date-picker.scss b/packages/web-components/src/components/fluid-date-picker/fluid-date-picker.scss
+index 3b5e89c34..9361ce16c 100644
+--- a/packages/web-components/src/components/fluid-date-picker/fluid-date-picker.scss
++++ b/packages/web-components/src/components/fluid-date-picker/fluid-date-picker.scss
+@@ -13,7 +13,7 @@ $css--plex: true !default;
+ @use '@carbon/styles/scss/border-radius' as *;
+ @use '@carbon/styles/scss/layout' as *;
+ @use '@carbon/styles/scss/utilities/convert';
+-@use '@carbon/styles/scss/utilities/skeleton' as *;
++@use '@carbon/styles/scss/utilities/skeleton-animation' as *;
+ @use '@carbon/styles/scss/components/fluid-date-picker' as *;
+ @use '@carbon/styles/scss/components/date-picker/index';
+ @use '@carbon/styles/scss/utilities/focus-outline' as *;
+diff --git a/packages/web-components/src/components/fluid-dropdown/fluid-dropdown.scss b/packages/web-components/src/components/fluid-dropdown/fluid-dropdown.scss
+index c2819900e..fcc7d0cd8 100644
+--- a/packages/web-components/src/components/fluid-dropdown/fluid-dropdown.scss
++++ b/packages/web-components/src/components/fluid-dropdown/fluid-dropdown.scss
+@@ -16,7 +16,7 @@ $css--plex: true !default;
+ @use '@carbon/styles/scss/border-radius' as *;
+ @use '@carbon/styles/scss/theme' as *;
+ @use '@carbon/styles/scss/type' as *;
+-@use '@carbon/styles/scss/utilities/skeleton' as *;
++@use '@carbon/styles/scss/utilities/skeleton-animation' as *;
+ @use '@carbon/styles/scss/utilities' as *;
+ @use '@carbon/styles/scss/colors';
+ @use '@carbon/styles/scss/utilities/convert' as *;
+diff --git a/packages/web-components/src/components/fluid-number-input/fluid-number-input.scss b/packages/web-components/src/components/fluid-number-input/fluid-number-input.scss
+index 648605785..ac6e054e9 100644
+--- a/packages/web-components/src/components/fluid-number-input/fluid-number-input.scss
++++ b/packages/web-components/src/components/fluid-number-input/fluid-number-input.scss
+@@ -14,7 +14,7 @@ $css--plex: true !default;
+ @use '@carbon/styles/scss/spacing' as *;
+ @use '@carbon/styles/scss/theme' as *;
+ @use '@carbon/styles/scss/type' as *;
+-@use '@carbon/styles/scss/utilities/skeleton' as *;
++@use '@carbon/styles/scss/utilities/skeleton-animation' as *;
+ @use '@carbon/styles/scss/utilities/ai-gradient' as *;
+ @use '@carbon/styles/scss/components/number-input/index' as *;
+ 
+diff --git a/packages/web-components/src/components/fluid-text-input/fluid-text-input.scss b/packages/web-components/src/components/fluid-text-input/fluid-text-input.scss
+index 0f6c8bc9e..1d7a032b4 100644
+--- a/packages/web-components/src/components/fluid-text-input/fluid-text-input.scss
++++ b/packages/web-components/src/components/fluid-text-input/fluid-text-input.scss
+@@ -12,7 +12,7 @@ $css--plex: true !default;
+ @use '@carbon/styles/scss/spacing' as *;
+ @use '@carbon/styles/scss/theme';
+ @use '@carbon/styles/scss/type' as *;
+-@use '@carbon/styles/scss/utilities/skeleton' as *;
++@use '@carbon/styles/scss/utilities/skeleton-animation' as *;
+ 
+ :host(#{$prefix}-fluid-text-input) {
+   @include emit-layout-tokens();
+diff --git a/packages/web-components/src/components/number-input/number-input.scss b/packages/web-components/src/components/number-input/number-input.scss
+index 1c3964986..c9bb29cf3 100644
+--- a/packages/web-components/src/components/number-input/number-input.scss
++++ b/packages/web-components/src/components/number-input/number-input.scss
+@@ -12,7 +12,7 @@ $css--plex: true !default;
+ @use '@carbon/styles/scss/theme' as *;
+ @use '@carbon/styles/scss/utilities/convert' as *;
+ @use '@carbon/styles/scss/utilities';
+-@use '@carbon/styles/scss/utilities/skeleton' as *;
++@use '@carbon/styles/scss/utilities/skeleton-animation' as *;
+ @use '@carbon/styles/scss/border-radius' as *;
+ @use '@carbon/styles/scss/components/form';
+ @use '@carbon/styles/scss/components/number-input/index';
+diff --git a/packages/web-components/src/components/password-input/password-input.scss b/packages/web-components/src/components/password-input/password-input.scss
+index 5bba19083..46ed3e528 100644
+--- a/packages/web-components/src/components/password-input/password-input.scss
++++ b/packages/web-components/src/components/password-input/password-input.scss
+@@ -12,7 +12,7 @@ $css--plex: true !default;
+ @use '@carbon/styles/scss/feature-flags' as flags;
+ @use '@carbon/styles/scss/components/text-input/index';
+ @use '@carbon/styles/scss/utilities/layout' as *;
+-@use '@carbon/styles/scss/utilities/skeleton' as *;
++@use '@carbon/styles/scss/utilities/skeleton-animation' as *;
+ @use '@carbon/styles/scss/utilities/convert';
+ @use '@carbon/styles/scss/utilities/focus-outline' as *;
+ 
+diff --git a/packages/web-components/src/components/progress-indicator/progress-indicator.scss b/packages/web-components/src/components/progress-indicator/progress-indicator.scss
+index d94fcb087..03f514a3e 100644
+--- a/packages/web-components/src/components/progress-indicator/progress-indicator.scss
++++ b/packages/web-components/src/components/progress-indicator/progress-indicator.scss
+@@ -10,7 +10,7 @@ $css--plex: true !default;
+ @use '@carbon/styles/scss/config' as *;
+ @use '@carbon/styles/scss/spacing' as *;
+ @use '@carbon/styles/scss/theme' as *;
+-@use '@carbon/styles/scss/utilities/skeleton' as *;
++@use '@carbon/styles/scss/utilities/skeleton-animation' as *;
+ @use '@carbon/styles/scss/components/progress-indicator/progress-indicator' as *;
+ @use '@carbon/styles/scss/utilities/convert' as *;
+ 
+diff --git a/packages/web-components/src/components/select/select.scss b/packages/web-components/src/components/select/select.scss
+index 041b1e3d3..cacb2d591 100644
+--- a/packages/web-components/src/components/select/select.scss
++++ b/packages/web-components/src/components/select/select.scss
+@@ -15,7 +15,7 @@ $css--plex: true !default;
+ @use '@carbon/styles/scss/components/select';
+ @use '@carbon/styles/scss/colors';
+ @use '@carbon/styles/scss/utilities/convert' as *;
+-@use '@carbon/styles/scss/utilities/skeleton' as *;
++@use '@carbon/styles/scss/utilities/skeleton-animation' as *;
+ @use '@carbon/styles/scss/components/fluid-select' as *;
+ @use '@carbon/styles/scss/utilities/visually-hidden' as *;
+ @use '@carbon/styles/scss/utilities/layout' as *;
+diff --git a/packages/web-components/src/components/skeleton-icon/skeleton-icon.scss b/packages/web-components/src/components/skeleton-icon/skeleton-icon.scss
+index ee8d2a363..c7b86df8f 100644
+--- a/packages/web-components/src/components/skeleton-icon/skeleton-icon.scss
++++ b/packages/web-components/src/components/skeleton-icon/skeleton-icon.scss
+@@ -7,7 +7,7 @@
+ 
+ @use '@carbon/styles/scss/config' as *;
+ @use '@carbon/styles/scss/components/skeleton-styles';
+-@use '@carbon/styles/scss/utilities/skeleton' as *;
++@use '@carbon/styles/scss/utilities/skeleton-animation' as *;
+ 
+ :host(#{$prefix}-skeleton-icon) {
+   @include skeleton;
+diff --git a/packages/web-components/src/components/tabs/tabs.scss b/packages/web-components/src/components/tabs/tabs.scss
+index b53acaeb9..213f6d95b 100644
+--- a/packages/web-components/src/components/tabs/tabs.scss
++++ b/packages/web-components/src/components/tabs/tabs.scss
+@@ -22,7 +22,7 @@
+ @use '@carbon/styles/scss/utilities/layout' as *;
+ @use '@carbon/styles/scss/utilities/layout';
+ @use '@carbon/styles/scss/utilities/convert';
+-@use '@carbon/styles/scss/utilities/skeleton' as *;
++@use '@carbon/styles/scss/utilities/skeleton-animation' as *;
+ @use '@carbon/styles/scss/utilities/update_fields_on_layer' as *;
+ 
+ @include emit-layout-context-classes();

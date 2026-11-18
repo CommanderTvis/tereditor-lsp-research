@@ -1,0 +1,11 @@
+type = "pr"
+origin = "mined: laravel/framework#61659 (issue #61514), docs/TASKS.md \"Mined pull requests\""
+pr = 61659
+issue = 61514
+base_commit = "606f3594d5a319d38a7c5dd45cad1233ff648c72"
+merge_commit = "983730ed836bc771298079250b27bb1104035431"
+merged_at = "2026-09-21T13:37:50Z"
+fail_to_pass = ["Illuminate\\Tests\\Support\\SupportCollectionTest::testTakeLastWithLimitGreaterThanCollectionSize (data set with LazyCollection)"]
+pass_to_pass = "the other tests of tests/Support/SupportCollectionTest.php"
+loc_base = 356271
+loc_base_method = "scc 3.5.0 PHP code lines at base_commit (vendor/ excluded, tests included)"

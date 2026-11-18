@@ -1,4 +1,0 @@
-type = "dispatch"
-origin = "virtual dispatch with const overloads; inherited default implementation"
-call = "const XMLNode* p (dynamic type XMLText); p->ToComment()"
-selection = "pairs (D, F) from clang's AST of tinyxml2.cpp, xmltest.cpp and contrib/html5-printer.cpp (uv run python select.py <snapshot> tinyxml2.cpp xmltest.cpp contrib/html5-printer.cpp): D a non-abstract project class with a base class, F a virtual member function signature D inherits without declaring it, with at least two definitions among the classes derived from F's first declarer; 71 candidates sorted by class then signature; index awk 'BEGIN{srand(20261110); print int(rand()*71)+1}' = 53: (XMLText, const XMLComment *ToComment() const)"

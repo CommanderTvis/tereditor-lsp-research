@@ -8,6 +8,8 @@ set -e
 if [ -f jest.config.js ]; then
   npx jest --ci "$@"
 else
+  [ $# -gt 0 ] || set -- src
   npx tsc -p tsconfig.spec.json
-  npx vitest run --coverage.enabled=false --project main --project jsx-runtime-default --project jsx-runtime-dom
+  # A task's grade.sh may pass the test files of the affected modules; with none, the whole Node-hosted suite runs.
+  npx vitest run --coverage.enabled=false --project main --project jsx-runtime-default --project jsx-runtime-dom "$@"
 fi

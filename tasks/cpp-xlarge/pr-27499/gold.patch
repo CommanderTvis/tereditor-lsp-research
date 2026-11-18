@@ -1,0 +1,12 @@
+diff --git a/src/planner/binder/statement/bind_export.cpp b/src/planner/binder/statement/bind_export.cpp
+index 336889f24494..1ee1414a1d97 100644
+--- a/src/planner/binder/statement/bind_export.cpp
++++ b/src/planner/binder/statement/bind_export.cpp
+@@ -157,6 +157,7 @@ BoundStatement Binder::Bind(ExportStatement &stmt) {
+ 	result.names = {"Success"};
+ 
+ 	BindCopyFormat(*stmt.info);
++	stmt.info->format = StringUtil::Lower(stmt.info->format);
+ 
+ 	// lookup the format in the catalog
+ 	auto &copy_function = Catalog::GetEntry<CopyFunctionCatalogEntry>(

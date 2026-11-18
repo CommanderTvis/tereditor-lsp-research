@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic: which definition runs when the install script has sourced nvm.sh over its own copies of helper functions; replaces impls, which Shell cannot express"
+symbol = "nvm_echo (install.sh and nvm.sh)"
+selection = "Candidates: calls of the helper functions defined in both install.sh and nvm.sh (nvm_download, nvm_echo, nvm_grep, nvm_has, nvm_has_executable) that sit in a function which install.sh's nvm_do_install runs after it has sourced nvm.sh (nvm_install_node, nvm_check_global_modules); 11 call sites (install.sh lines 249, 255, 257, 426, 428, 430, 432, 436, 438, 440, 441), sorted by line, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk), first taken: install.sh:432. Question: the call at that line."

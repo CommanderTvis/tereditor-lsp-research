@@ -1,0 +1,3 @@
+{"task": "tasks/typescript-large/pr-12711", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 2, "fresh_lines": 2, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.0013656900000000001}
+{"task": "tasks/typescript-large/pr-12711", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 2, "fresh_lines": 2, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.0207769}
+{"task": "tasks/typescript-large/pr-12711", "model": "claude-opus-5-5", "answered": true, "gold_lines": 2, "fresh_lines": 2, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.041645800000000004}

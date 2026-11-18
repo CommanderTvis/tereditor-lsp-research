@@ -1,0 +1,1 @@
+tests/test_cron.py::test_cron_str_preserves_explicit_slash_step

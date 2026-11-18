@@ -1,0 +1,14 @@
+platforms/observability/problems-api/src/main/java/org/gradle/api/problems/internal/DefaultLineInFileLocation.java:52
+platforms/observability/problems-api/src/main/java/org/gradle/api/problems/internal/DefaultLineInFileLocation.java:56
+platforms/observability/problems-api/src/main/java/org/gradle/api/problems/internal/DefaultLineInFileLocation.java:60
+platforms/observability/problems-api/src/main/java/org/gradle/api/problems/internal/DefaultLineInFileLocation.java:65
+platforms/observability/problems-api/src/main/java/org/gradle/api/problems/internal/DefaultLineInFileLocation.java:68
+platforms/observability/problems-api/src/main/java/org/gradle/api/problems/internal/DefaultProblemBuilder.java:183
+platforms/observability/problems-api/src/main/java/org/gradle/api/problems/internal/DefaultProblemBuilder.java:252
+platforms/observability/problems-api/src/main/java/org/gradle/api/problems/internal/DefaultProblemBuilder.java:271
+platforms/observability/problems-api/src/main/java/org/gradle/api/problems/internal/DefaultProblemBuilder.java:283
+platforms/observability/problems-rendering/src/test/groovy/org/gradle/problems/internal/rendering/SimpleProblemWriterTest.groovy:23
+platforms/observability/problems-rendering/src/test/groovy/org/gradle/problems/internal/rendering/SimpleProblemWriterTest.groovy:260
+platforms/observability/problems-reporting/src/test/groovy/org/gradle/api/problems/internal/DefaultProblemReporterTest.groovy:77
+platforms/extensibility/plugin-development/src/main/java/org/gradle/plugin/devel/tasks/internal/ValidationProblemSerialization.java:40
+platforms/extensibility/plugin-development/src/main/java/org/gradle/plugin/devel/tasks/internal/ValidationProblemSerialization.java:319

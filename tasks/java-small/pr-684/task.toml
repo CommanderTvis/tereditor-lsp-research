@@ -1,8 +1,0 @@
-type = "pr"
-pr = 684
-issue = 552
-base_commit = "ea7a02ee88f8a3aa9afd3a9268390f4f9fee4b59"
-head_commit = "bf1630cee6c4b2bc9ca3b147564fcb97a8184386"
-merged_at = "2020-01-02T13:18:32Z"
-fail_to_pass = ["CodeWriterTest.emptyLineInJavaDocDosEndings"]
-pass_to_pass = "every other test of the module (check.sh)"

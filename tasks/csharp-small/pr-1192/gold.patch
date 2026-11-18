@@ -1,0 +1,224 @@
+diff --git a/README.md b/README.md
+index 686e850e..4cb5df00 100644
+--- a/README.md
++++ b/README.md
+@@ -126,6 +126,17 @@ services.AddMediatR(cfg =>
+ })
+ ```
+ 
++If the key comes from a service in the container, such as a secret store client, use a factory:
++
++```csharp
++services.AddMediatR(cfg => 
++{
++    cfg.LicenseKeyFactory = sp => sp.GetRequiredService<ISecretStore>().GetSecret("MediatR-License-Key");
++})
++```
++
++The factory runs on a background thread after the first `Mediator` is created, so slow work won't delay startup or block `Mediator` construction. It receives the root service provider, so it can't resolve scoped services. If it throws, the exception is logged under the license log category. `AddOptions<MediatRServiceConfiguration>()` isn't supported, because MediatR needs its configuration while registering services, before a service provider exists.
++
+ Or if not using Microsoft.Extensions.DependencyInjection:
+ 
+ ```csharp
+@@ -146,7 +157,7 @@ If no license key is set in code, MediatR looks for one in environment variables
+ 
+ The license key is resolved in the following order of precedence, using the first value found:
+ 
+-1. An explicit value set in code (`cfg.LicenseKey` or `Mediator.LicenseKey`).
++1. An explicit value set in code (`cfg.LicenseKeyFactory`, `cfg.LicenseKey`, then `Mediator.LicenseKey`).
+ 2. The `MEDIATR_LICENSE_KEY` environment variable.
+ 3. The `LUCKYPENNY_LICENSE_KEY` environment variable.
+ 
+diff --git a/src/MediatR/Licensing/LicenseAccessor.cs b/src/MediatR/Licensing/LicenseAccessor.cs
+index b833bfb8..519e9913 100644
+--- a/src/MediatR/Licensing/LicenseAccessor.cs
++++ b/src/MediatR/Licensing/LicenseAccessor.cs
+@@ -24,14 +24,21 @@ internal class LicenseAccessor
+     internal const string IdentityModelVersionsLink = "https://luckypennysoftware.com/go/mediatr-identitymodel-versions";
+ 
+     private readonly MediatRServiceConfiguration? _configuration;
++    private readonly IServiceProvider? _serviceProvider;
+     private readonly ILogger _logger;
+ 
++    public LicenseAccessor(MediatRServiceConfiguration configuration, IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
++        : this(configuration, loggerFactory)
++    {
++        _serviceProvider = serviceProvider;
++    }
++
+     public LicenseAccessor(MediatRServiceConfiguration configuration, ILoggerFactory loggerFactory)
+     {
+         _configuration = configuration;
+         _logger = loggerFactory.CreateLogger("LuckyPennySoftware.MediatR.License");
+-    }   
+-    
++    }
++
+     public LicenseAccessor(ILoggerFactory loggerFactory)
+     {
+         _logger = loggerFactory.CreateLogger("LuckyPennySoftware.MediatR.License");
+@@ -43,40 +50,49 @@ public LicenseAccessor(ILoggerFactory loggerFactory)
+ 
+     internal bool IsValidationUnsupported => _validationUnsupported;
+ 
+-    public License Current => _license ??= Initialize();
++    public License Current => _license ?? Initialize();
+ 
+     private License Initialize()
+     {
+         lock (_lock)
+         {
+-            if (_license != null)
+-            {
+-                return _license;
+-            }
++            // Assign inside the lock, so a thread waiting on it can't create the license a second time.
++            return _license ??= CreateLicense();
++        }
++    }
+ 
+-            var key = ResolveLicenseKey(_configuration?.LicenseKey, Mediator.LicenseKey);
++    private License CreateLicense()
++    {
++        // Current is only read on the dedicated background validation thread (see
++        // MediatRServiceCollectionExtensions.CheckLicense), so a factory that does slow work, such as
++        // reading a secret store, can't block Mediator construction. If it throws, CheckLicense logs it.
++        var factoryKey = _serviceProvider is null
++            ? null
++            : _configuration?.LicenseKeyFactory?.Invoke(_serviceProvider);
+ 
+-            if (string.IsNullOrWhiteSpace(key))
+-            {
+-                return new License();
+-            }
++        var key = ResolveLicenseKey(factoryKey, _configuration?.LicenseKey, Mediator.LicenseKey);
+ 
+-            var licenseClaims = ValidateKey(key!);
+-            if (_validationUnsupported)
+-            {
+-                return new License { IsValidationUnsupported = true };
+-            }
++        if (string.IsNullOrWhiteSpace(key))
++        {
++            return new License();
++        }
+ 
+-            return licenseClaims.Any() 
+-                ? new License(new ClaimsPrincipal(new ClaimsIdentity(licenseClaims))) 
+-                : new License();
++        var licenseClaims = ValidateKey(key!);
++        if (_validationUnsupported)
++        {
++            return new License { IsValidationUnsupported = true };
+         }
++
++        return licenseClaims.Any()
++            ? new License(new ClaimsPrincipal(new ClaimsIdentity(licenseClaims)))
++            : new License();
+     }
+-    
++
+     /// <summary>
+     /// Resolves the license key using the first non-blank value, in order of precedence: the
+-    /// explicitly configured keys (the <see cref="MediatRServiceConfiguration.LicenseKey"/> then the
+-    /// static <see cref="Mediator.LicenseKey"/>), the product-specific <c>MEDIATR_LICENSE_KEY</c>
++    /// explicitly configured keys (the <see cref="MediatRServiceConfiguration.LicenseKeyFactory"/> result,
++    /// the <see cref="MediatRServiceConfiguration.LicenseKey"/>, then the static
++    /// <see cref="Mediator.LicenseKey"/>), the product-specific <c>MEDIATR_LICENSE_KEY</c>
+     /// environment variable, then the shared <c>LUCKYPENNY_LICENSE_KEY</c> environment variable
+     /// (usable across Lucky Penny products). Whitespace is removed from each value, and empty values
+     /// are treated as unset.
+diff --git a/src/MediatR/MicrosoftExtensionsDI/MediatRServiceCollectionExtensions.cs b/src/MediatR/MicrosoftExtensionsDI/MediatRServiceCollectionExtensions.cs
+index a6204a91..af5f273d 100644
+--- a/src/MediatR/MicrosoftExtensionsDI/MediatRServiceCollectionExtensions.cs
++++ b/src/MediatR/MicrosoftExtensionsDI/MediatRServiceCollectionExtensions.cs
+@@ -72,7 +72,15 @@ internal static void CheckLicense(this IServiceProvider serviceProvider)
+         var licenseAccessor = serviceProvider.GetRequiredService<LicenseAccessor>();
+         var licenseValidator = serviceProvider.GetRequiredService<LicenseValidator>();
+ 
+-        LicenseChecked = true;
++        // The first Mediator is often created from a request scope, which may be disposed before validation
++        // finishes, so get the logger now rather than from that provider when an error occurs.
++        var logger = serviceProvider.GetService<ILoggerFactory>()?.CreateLogger("LuckyPennySoftware.MediatR.License");
++
++        // Concurrent first resolutions can all get here, but only one may validate.
++        if (Interlocked.Exchange(ref _licenseChecked, 1) == 1)
++        {
++            return;
++        }
+ 
+         // License validation is logging-only — it gates no Mediator behavior. Running it on the
+         // Mediator construction path is unsafe: under a lazily-built DI singleton the container
+@@ -80,13 +88,13 @@ internal static void CheckLicense(this IServiceProvider serviceProvider)
+         // app (same root cause as AutoMapper #4640, which used Task.Run(...).GetResult() under a
+         // singleton-build lock). Offload the JWT validation to a dedicated background thread.
+         _ = Task.Factory.StartNew(
+-            () => ValidateLicense(serviceProvider, licenseAccessor, licenseValidator),
++            () => ValidateLicense(logger, licenseAccessor, licenseValidator),
+             CancellationToken.None,
+             TaskCreationOptions.LongRunning, // dedicated thread, never the (possibly starved) pool
+             TaskScheduler.Default);          // honor LongRunning regardless of the ambient scheduler
+     }
+ 
+-    private static void ValidateLicense(IServiceProvider serviceProvider, LicenseAccessor licenseAccessor, LicenseValidator licenseValidator)
++    private static void ValidateLicense(ILogger? logger, LicenseAccessor licenseAccessor, LicenseValidator licenseValidator)
+     {
+         try
+         {
+@@ -96,11 +104,15 @@ private static void ValidateLicense(IServiceProvider serviceProvider, LicenseAcc
+         catch (Exception ex)
+         {
+             // Never let a fire-and-forget failure surface as an unobserved task exception.
+-            serviceProvider.GetService<ILoggerFactory>()?
+-                .CreateLogger("LuckyPennySoftware.MediatR.License")
+-                .LogError(ex, "Error validating the Lucky Penny software license key");
++            logger?.LogError(ex, "Error validating the Lucky Penny software license key");
+         }
+     }
+ 
+-    internal static bool LicenseChecked { get; set; }
++    private static int _licenseChecked;
++
++    internal static bool LicenseChecked
++    {
++        get => Volatile.Read(ref _licenseChecked) == 1;
++        set => Volatile.Write(ref _licenseChecked, value ? 1 : 0);
++    }
+ }
+\ No newline at end of file
+diff --git a/src/MediatR/MicrosoftExtensionsDI/MediatrServiceConfiguration.cs b/src/MediatR/MicrosoftExtensionsDI/MediatrServiceConfiguration.cs
+index b5d875ac..7d90e54b 100644
+--- a/src/MediatR/MicrosoftExtensionsDI/MediatrServiceConfiguration.cs
++++ b/src/MediatR/MicrosoftExtensionsDI/MediatrServiceConfiguration.cs
+@@ -107,6 +107,18 @@ public class MediatRServiceConfiguration
+     /// </summary>
+     public string? LicenseKey { get; set; }
+ 
++    /// <summary>
++    /// Gets or sets a factory that supplies the license key from a service in the container, for keys that aren't
++    /// available when calling <c>AddMediatR</c>. It takes precedence over <see cref="LicenseKey"/>; returning a null
++    /// or blank value falls through to the other license key sources.
++    /// </summary>
++    /// <remarks>
++    /// The factory is called at most once, on a background thread, after the first <see cref="Mediator"/> is created.
++    /// It receives the root service provider, so it can't resolve scoped services. Any exception it throws is logged
++    /// and doesn't affect <see cref="Mediator"/> behavior.
++    /// </remarks>
++    public Func<IServiceProvider, string?>? LicenseKeyFactory { get; set; }
++
+     /// <summary>
+     /// Register various handlers from assembly containing given type
+     /// </summary>
+diff --git a/src/MediatR/Registration/ServiceRegistrar.cs b/src/MediatR/Registration/ServiceRegistrar.cs
+index d8e358ac..96adb21b 100644
+--- a/src/MediatR/Registration/ServiceRegistrar.cs
++++ b/src/MediatR/Registration/ServiceRegistrar.cs
+@@ -788,7 +788,7 @@ public static void AddRequiredServices(IServiceCollection services, MediatRServi
+                     "Call services.AddLogging() before services.AddMediatR().");
+             var config = sp.GetService<MediatRServiceConfiguration>();
+             return config != null
+-                ? new LicenseAccessor(config, loggerFactory)
++                ? new LicenseAccessor(config, sp, loggerFactory)
+                 : new LicenseAccessor(loggerFactory);
+         });
+         services.TryAddSingleton<LicenseValidator>(static sp =>

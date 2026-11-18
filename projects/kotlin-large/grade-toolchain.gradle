@@ -1,8 +1,0 @@
-// Grading only: the build asks for a JDK 8 toolchain (jvmToolchain(8)), which Gradle would download, but a downloaded
-// JDK cannot run in the grading sandbox (no FHS loader). Every JVM compilation and test uses the sandbox's JDK 21.
-gradle.projectsEvaluated {
-  allprojects {
-    def java = extensions.findByType(JavaPluginExtension)
-    if (java != null) java.toolchain.languageVersion.set(JavaLanguageVersion.of(21))
-  }
-}

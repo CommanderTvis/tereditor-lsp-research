@@ -1,22 +1,22 @@
-# shell, medium: chosen by size, see docs/PROJECTS.md. acme.sh has no offline project test suite; grading parses all
-# scripts and exercises the command dispatcher and task-specific checks.
+# shell, medium: nvm (docs/PROJECTS.md lists it among the considered shell projects, 19.3k code lines). The owner accepted the deviation from the
+# band (25k to 80k): acme.sh was replaced because almost none of its pull requests close an issue and it has no tests.
 lang = "shell"
 size = "medium"
 status = "curated"
-repo = "https://github.com/acmesh-official/acme.sh"
-tag = "3.1.6"
-commit = "807da6498377ee5e0cf43a78091f46f12dc59a89"
-loc = 52686
-loc_by_language = { "Shell" = 52686 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-task_types = ["rename", "rename-file", "impls", "pr", "pr", "pr"]
-fallback_synthetic = ["rename", "rename-file", "dispatch"]
-substitutions = ["the unavailable impls slot uses the documented dispatch synthetic replacement; three unavailable mined slots use documented fallback PR task directories"]
-size_note = "largest credible shell project in the study; no larger shell repository was practical to grade"
+repo = "https://github.com/nvm-sh/nvm"
+tag = "v0.41.0"
+commit = "4e8758a801eea9479b32a904f31093e410ddaba4"
+loc = 19324
+loc_by_language = { "Shell" = 19117, "BASH" = 165, "Zsh" = 42 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md, harness/size/measure.sh"
+size_note = "19.3k code lines, 23% below the medium band (25k to 80k); owner-accepted deviation, the largest shell project with a test suite and modern pull requests that close issues"
+task_types = ["rename", "rename-file", "dispatch"]
+substitutions = ["the impls slot is replaced by dispatch (Shell has no impls)"]
+removed = ["AGENTS.md"]
 
 [probe]
 ok = true
-seconds_to_first_answer = 0.13
-references = "recorded in probe.json; acme.sh helper references resolve across sourced dnsapi hooks"
-definition = "recorded in probe.json; _getIdType resolves in acme.sh"
-diagnostics = "clean for acme.sh"
+seconds_to_first_answer = 0.75
+references = "recorded in probe.json; nvm_version_greater (position) and nvm_get_os (by name) resolve to every call in nvm.sh"
+definition = "nvm_download_artifact resolves to nvm.sh:3813"
+diagnostics = "clean for nvm.sh"

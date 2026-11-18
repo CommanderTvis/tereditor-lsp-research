@@ -1,5 +1,0 @@
-type = "signature"
-origin = "synthetic task; fixed seeded selection"
-selection = "First qualifying stable public symbol in the pinned snapshot after the pre-registered rotation; no post-run selection."
-symbol = "Component"
-path = "core/src/main/java/dagger/Component.java"

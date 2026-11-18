@@ -1,0 +1,236 @@
+diff --git a/platforms/core-runtime/gradle-cli/src/main/java/org/gradle/launcher/cli/BuildActionsFactory.java b/platforms/core-runtime/gradle-cli/src/main/java/org/gradle/launcher/cli/BuildActionsFactory.java
+index 95d3d7cf508e7..513a2a8b9683e 100644
+--- a/platforms/core-runtime/gradle-cli/src/main/java/org/gradle/launcher/cli/BuildActionsFactory.java
++++ b/platforms/core-runtime/gradle-cli/src/main/java/org/gradle/launcher/cli/BuildActionsFactory.java
+@@ -40,6 +40,7 @@
+ import org.gradle.internal.instrumentation.agent.AgentStatus;
+ import org.gradle.internal.jvm.Jvm;
+ import org.gradle.internal.logging.console.GlobalUserInputReceiver;
++import org.gradle.internal.logging.events.OutputEventListener;
+ import org.gradle.internal.nativeintegration.services.NativeServices;
+ import org.gradle.internal.service.ServiceRegistry;
+ import org.gradle.internal.service.ServiceRegistryBuilder;
+@@ -262,7 +263,7 @@ private ServiceRegistry createGlobalClientServices() {
+     private Runnable runBuildAndCloseServices(StartParameterInternal startParameter, DaemonParameters daemonParameters, BuildActionExecutor<BuildActionParameters, ClientBuildRequestContext> executor, ServiceRegistry sharedServices, Object... stopBeforeSharedServices) {
+         BuildActionParameters parameters = createBuildActionParameters(startParameter, daemonParameters);
+         Stoppable stoppable = new CompositeStoppable().add(stopBeforeSharedServices).add(sharedServices);
+-        return new RunBuildAction(executor, startParameter, clientMetaData(), getBuildStartTime(), parameters, sharedServices, stoppable);
++        return new RunBuildAction(executor, startParameter, clientMetaData(), getBuildStartTime(), parameters, sharedServices, loggingServices.get(OutputEventListener.class), stoppable);
+     }
+ 
+     private BuildActionParameters createBuildActionParameters(StartParameter startParameter, DaemonParameters daemonParameters) {
+diff --git a/platforms/core-runtime/gradle-cli/src/main/java/org/gradle/launcher/cli/RunBuildAction.java b/platforms/core-runtime/gradle-cli/src/main/java/org/gradle/launcher/cli/RunBuildAction.java
+index c64e59d7a555d..eeee550f35376 100644
+--- a/platforms/core-runtime/gradle-cli/src/main/java/org/gradle/launcher/cli/RunBuildAction.java
++++ b/platforms/core-runtime/gradle-cli/src/main/java/org/gradle/launcher/cli/RunBuildAction.java
+@@ -22,6 +22,8 @@
+ import org.gradle.initialization.ReportedException;
+ import org.gradle.internal.concurrent.Stoppable;
+ import org.gradle.internal.daemon.client.execution.ClientBuildRequestContext;
++import org.gradle.internal.logging.events.BuildStartTimeEvent;
++import org.gradle.internal.logging.events.OutputEventListener;
+ import org.gradle.internal.nativeintegration.console.ConsoleDetector;
+ import org.gradle.internal.service.ServiceRegistry;
+ import org.gradle.launcher.exec.BuildActionExecutor;
+@@ -36,23 +38,26 @@ public class RunBuildAction implements Runnable {
+     private final long startTime;
+     private final BuildActionParameters buildActionParameters;
+     private final ServiceRegistry sharedServices;
++    private final OutputEventListener outputEventListener;
+     private final Stoppable stoppable;
+ 
+     public RunBuildAction(
+         BuildActionExecutor<BuildActionParameters, ClientBuildRequestContext> executor, StartParameterInternal startParameter, GradleLauncherMetaData clientMetaData, long startTime,
+-        BuildActionParameters buildActionParameters, ServiceRegistry sharedServices, Stoppable stoppable) {
++        BuildActionParameters buildActionParameters, ServiceRegistry sharedServices, OutputEventListener outputEventListener, Stoppable stoppable) {
+         this.executor = executor;
+         this.startParameter = startParameter;
+         this.clientMetaData = clientMetaData;
+         this.startTime = startTime;
+         this.buildActionParameters = buildActionParameters;
+         this.sharedServices = sharedServices;
++        this.outputEventListener = outputEventListener;
+         this.stoppable = stoppable;
+     }
+ 
+     @Override
+     public void run() {
+         try {
++            outputEventListener.onOutput(new BuildStartTimeEvent(startTime));
+             BuildActionResult result = executor.execute(
+                 new ExecuteBuildAction(startParameter),
+                 buildActionParameters,
+diff --git a/platforms/core-runtime/launcher/src/main/java/org/gradle/tooling/internal/provider/LoggingBridgingBuildActionExecuter.java b/platforms/core-runtime/launcher/src/main/java/org/gradle/tooling/internal/provider/LoggingBridgingBuildActionExecuter.java
+index 43c2da1b57867..9b9db9cabdeb4 100644
+--- a/platforms/core-runtime/launcher/src/main/java/org/gradle/tooling/internal/provider/LoggingBridgingBuildActionExecuter.java
++++ b/platforms/core-runtime/launcher/src/main/java/org/gradle/tooling/internal/provider/LoggingBridgingBuildActionExecuter.java
+@@ -21,6 +21,7 @@
+ import org.gradle.internal.invocation.BuildAction;
+ import org.gradle.internal.io.NullOutputStream;
+ import org.gradle.internal.logging.LoggingManagerInternal;
++import org.gradle.internal.logging.events.BuildStartTimeEvent;
+ import org.gradle.internal.logging.events.OutputEvent;
+ import org.gradle.internal.logging.events.OutputEventListener;
+ import org.gradle.internal.logging.events.ProgressCompleteEvent;
+@@ -37,12 +38,14 @@
+  */
+ public class LoggingBridgingBuildActionExecuter implements BuildActionExecutor<ConnectionOperationParameters, ClientBuildRequestContext> {
+     private final LoggingManagerInternal loggingManager;
++    private final OutputEventListener outputEventListener;
+     private final Stoppable stoppable;
+     private final BuildActionExecutor<ConnectionOperationParameters, ClientBuildRequestContext> delegate;
+ 
+-    public LoggingBridgingBuildActionExecuter(BuildActionExecutor<ConnectionOperationParameters, ClientBuildRequestContext> delegate, LoggingManagerInternal loggingManager, Stoppable stoppable) {
++    public LoggingBridgingBuildActionExecuter(BuildActionExecutor<ConnectionOperationParameters, ClientBuildRequestContext> delegate, LoggingManagerInternal loggingManager, OutputEventListener outputEventListener, Stoppable stoppable) {
+         this.delegate = delegate;
+         this.loggingManager = loggingManager;
++        this.outputEventListener = outputEventListener;
+         this.stoppable = stoppable;
+     }
+ 
+@@ -56,6 +59,7 @@ public BuildActionResult execute(BuildAction action, ConnectionOperationParamete
+         loggingManager.setLevelInternal(actionParameters.getBuildLogLevel());
+         loggingManager.start();
+         try {
++            outputEventListener.onOutput(new BuildStartTimeEvent(buildRequestContext.getStartTime()));
+             return delegate.execute(action, parameters, buildRequestContext);
+         } finally {
+             loggingManager.stop();
+diff --git a/platforms/core-runtime/launcher/src/main/java/org/gradle/tooling/internal/provider/ProviderConnection.java b/platforms/core-runtime/launcher/src/main/java/org/gradle/tooling/internal/provider/ProviderConnection.java
+index 6cea1e19d1786..a3841200caeef 100644
+--- a/platforms/core-runtime/launcher/src/main/java/org/gradle/tooling/internal/provider/ProviderConnection.java
++++ b/platforms/core-runtime/launcher/src/main/java/org/gradle/tooling/internal/provider/ProviderConnection.java
+@@ -37,6 +37,7 @@
+ import org.gradle.internal.logging.LoggingManagerFactory;
+ import org.gradle.internal.logging.LoggingManagerInternal;
+ import org.gradle.internal.logging.console.GlobalUserInputReceiver;
++import org.gradle.internal.logging.events.OutputEventListener;
+ import org.gradle.internal.logging.services.LoggingServiceRegistry;
+ import org.gradle.internal.service.ServiceRegistry;
+ import org.gradle.internal.service.scopes.Scope;
+@@ -309,6 +310,7 @@ private RuntimeException map(BuildActionResult result, RuntimeException exceptio
+ 
+     private BuildActionExecutor<ConnectionOperationParameters, ClientBuildRequestContext> createExecutor(ProviderOperationParameters operationParameters, Parameters params) {
+         LoggingManagerInternal loggingManager;
++        OutputEventListener outputEventListener;
+         BuildActionExecutor<BuildActionParameters, ClientBuildRequestContext> executor;
+         InputStream standardInput = operationParameters.getStandardInput();
+         if (standardInput == null) {
+@@ -317,6 +319,7 @@ private BuildActionExecutor<ConnectionOperationParameters, ClientBuildRequestCon
+         CompositeStoppable stoppable = new CompositeStoppable();
+         if (Boolean.TRUE.equals(operationParameters.isEmbedded())) {
+             loggingManager = sharedServices.get(LoggingManagerFactory.class).createLoggingManager();
++            outputEventListener = sharedServices.get(OutputEventListener.class);
+             loggingManager.captureSystemSources();
+             executor = new RunInProcess(new SystemPropertySetterExecuter(new ForwardStdInToThisProcess(
+                 sharedServices.get(GlobalUserInputReceiver.class),
+@@ -327,12 +330,13 @@ private BuildActionExecutor<ConnectionOperationParameters, ClientBuildRequestCon
+         } else {
+             ServiceRegistry requestSpecificLogging = LoggingServiceRegistry.newNestedLogging();
+             loggingManager = requestSpecificLogging.get(LoggingManagerFactory.class).createLoggingManager();
++            outputEventListener = requestSpecificLogging.get(OutputEventListener.class);
+             ServiceRegistry clientServices = daemonClientFactory.createBuildClientServices(requestSpecificLogging, params.daemonParams, params.requestContext, params.buildLayout.toLayoutConfiguration(), standardInput, Optional.ofNullable(operationParameters.getBuildProgressListener()));
+             stoppable.add(clientServices);
+             stoppable.add(requestSpecificLogging);
+             executor = clientServices.get(DaemonClient.class);
+         }
+-        return new LoggingBridgingBuildActionExecuter(new DaemonBuildActionExecuter(executor), loggingManager, stoppable);
++        return new LoggingBridgingBuildActionExecuter(new DaemonBuildActionExecuter(executor), loggingManager, outputEventListener, stoppable);
+     }
+ 
+     private Parameters initParams(ProviderOperationParameters operationParameters) {
+diff --git a/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/console/BuildStatusRenderer.java b/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/console/BuildStatusRenderer.java
+index a019872f8d252..814181ed2a7fe 100644
+--- a/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/console/BuildStatusRenderer.java
++++ b/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/console/BuildStatusRenderer.java
+@@ -16,6 +16,7 @@
+ 
+ package org.gradle.internal.logging.console;
+ 
++import org.gradle.internal.logging.events.BuildStartTimeEvent;
+ import org.gradle.internal.logging.events.EndOutputEvent;
+ import org.gradle.internal.logging.events.FlushOutputEvent;
+ import org.gradle.internal.logging.events.OutputEvent;
+@@ -54,6 +55,7 @@ private enum Phase {
+     private @Nullable ProgressBar progressBar;
+ 
+     // Used to maintain timer
++    private @Nullable Long clientBuildStartTime;
+     private long buildStartTimestamp;
+     private boolean timerEnabled;
+ 
+@@ -66,13 +68,15 @@ public BuildStatusRenderer(OutputEventListener listener, StyledLabel buildStatus
+ 
+     @Override
+     public void onOutput(OutputEvent event) {
+-        if (event instanceof ProgressStartEvent) {
++        if (event instanceof BuildStartTimeEvent) {
++            clientBuildStartTime = ((BuildStartTimeEvent) event).getStartTime();
++        } else if (event instanceof ProgressStartEvent) {
+             ProgressStartEvent startEvent = (ProgressStartEvent) event;
+             if (startEvent.isBuildOperationStart()) {
+                 if (buildStartTimestamp == 0 && startEvent.getParentProgressOperationId() == null) {
+                     // The very first event starts the Initializing phase
+-                    // TODO - should use BuildRequestMetaData to determine the build start time
+-                    buildStartTimestamp = startEvent.getTimestamp();
++                    // If the start time of the client is known, this start time is used for the timer, as for the build summary
++                    buildStartTimestamp = clientBuildStartTime != null ? clientBuildStartTime : startEvent.getTimestamp();
+                     buildProgressOperationId = startEvent.getProgressOperationId();
+                     phaseStarted(startEvent, Phase.Initializing);
+                 } else if (startEvent.getBuildOperationCategory() == BuildOperationCategory.CONFIGURE_ROOT_BUILD) {
+diff --git a/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/events/BuildStartTimeEvent.java b/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/events/BuildStartTimeEvent.java
+new file mode 100644
+index 0000000000000..12892c5b54c4d
+--- /dev/null
++++ b/platforms/core-runtime/logging/src/main/java/org/gradle/internal/logging/events/BuildStartTimeEvent.java
+@@ -0,0 +1,50 @@
++/*
++ * Copyright 2026 the original author or authors.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.gradle.internal.logging.events;
++
++import org.gradle.api.logging.LogLevel;
++import org.jspecify.annotations.Nullable;
++
++/**
++ * The start time of the build, which is also used for the build summary.
++ * This event is sent only by the client to its own console, before the build request.
++ */
++public class BuildStartTimeEvent extends OutputEvent {
++
++    private final long startTime;
++
++    public BuildStartTimeEvent(long startTime) {
++        this.startTime = startTime;
++    }
++
++    /**
++     * The start time of the build, in milliseconds since the epoch.
++     */
++    public long getStartTime() {
++        return startTime;
++    }
++
++    @Override
++    public String toString() {
++        return BuildStartTimeEvent.class.getSimpleName() + " " + startTime;
++    }
++
++    @Override
++    public @Nullable LogLevel getLogLevel() {
++        return null;
++    }
++}

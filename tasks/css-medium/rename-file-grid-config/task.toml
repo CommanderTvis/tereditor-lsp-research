@@ -1,4 +1,0 @@
-type = "rename-file"
-origin = "synthetic fallback: rename a Sass partial and its imports"
-subject = "packages/grid/scss/_config.scss -> packages/grid/scss/_grid-config.scss"
-selection = "Fallback selected deterministically from the pinned snapshot because mined candidates were unavailable or unvalidated; seed = 20261110. The substitution is recorded in project.toml."

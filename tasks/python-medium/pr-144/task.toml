@@ -1,7 +1,0 @@
-type = "pr"
-pr = 144
-issue = 140
-base_commit = "d3bd98712cc988be800a46108f4db35ec228fc0d"
-merged_at = "2020-07-07T16:09:00Z"
-gold_from = "diff d3bd98712cc988be800a46108f4db35ec228fc0d..038e22eb98f43091dec8b8d0d61d64bdc81587e1 (merge^1=d3bd98712cc988be800a46108f4db35ec228fc0d)"
-toolchain = "CPython 3.12 + pytest (grade-python)"

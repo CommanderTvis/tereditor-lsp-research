@@ -1,0 +1,4 @@
+{"task": "tasks/cpp-small/pr-416", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 9, "fresh_lines": 9, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.00106259}
+{"task": "tasks/cpp-small/pr-416", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 9, "fresh_lines": 9, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0274709}
+{"task": "tasks/cpp-small/pr-416", "model": "claude-opus-5-5", "answered": true, "gold_lines": 9, "fresh_lines": 9, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0850578}
+SCORE tasks/cpp-small/pr-416 worst verbatim share 0.00 (gold lines 9)

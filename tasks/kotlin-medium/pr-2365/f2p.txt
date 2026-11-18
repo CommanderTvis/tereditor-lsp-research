@@ -1,0 +1,2 @@
+:kotlinpoet:jvmTest com.squareup.kotlinpoet.CodeBlockTest
+:kotlinpoet:jvmTest com.squareup.kotlinpoet.FunSpecTest

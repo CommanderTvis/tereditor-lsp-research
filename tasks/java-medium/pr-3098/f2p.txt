@@ -1,0 +1,3 @@
+com.google.gson.functional.JsonParserTest
+com.google.gson.functional.MapTest
+com.google.gson.stream.JsonReaderPathTest

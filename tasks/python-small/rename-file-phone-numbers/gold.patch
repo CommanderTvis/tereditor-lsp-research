@@ -1,0 +1,90 @@
+diff --git a/pydantic_extra_types/phone_numbers.py b/pydantic_extra_types/phone_number.py
+similarity index 95%
+rename from pydantic_extra_types/phone_numbers.py
+rename to pydantic_extra_types/phone_number.py
+index 73d65ca..53a76d3 100644
+--- a/pydantic_extra_types/phone_numbers.py
++++ b/pydantic_extra_types/phone_number.py
+@@ -1,5 +1,5 @@
+-"""The `pydantic_extra_types.phone_numbers` module provides the
+-[`PhoneNumber`][pydantic_extra_types.phone_numbers.PhoneNumber] data type.
++"""The `pydantic_extra_types.phone_number` module provides the
++[`PhoneNumber`][pydantic_extra_types.phone_number.PhoneNumber] data type.
+ 
+ This class depends on the [phonenumbers](https://pypi.org/project/phonenumbers/) package,
+ which is a Python port of Google's [libphonenumber](https://github.com/google/libphonenumber/).
+@@ -36,7 +36,7 @@ class PhoneNumber(str):
+ 
+     ```python
+     from pydantic import BaseModel
+-    from pydantic_extra_types.phone_numbers import PhoneNumber
++    from pydantic_extra_types.phone_number import PhoneNumber
+ 
+ 
+     class Contact(BaseModel):
+@@ -52,7 +52,7 @@ class PhoneNumber(str):
+     ### Changing defaults by subclassing:
+ 
+     ```python
+-    from pydantic_extra_types.phone_numbers import PhoneNumber
++    from pydantic_extra_types.phone_number import PhoneNumber
+ 
+ 
+     class USPhone(PhoneNumber):
+@@ -73,7 +73,7 @@ class PhoneNumber(str):
+     from typing import Annotated, Union
+     import phonenumbers
+     from pydantic import BaseModel
+-    from pydantic_extra_types.phone_numbers import PhoneNumberValidator
++    from pydantic_extra_types.phone_number import PhoneNumberValidator
+ 
+     E164NumberType = Annotated[Union[str, phonenumbers.PhoneNumber], PhoneNumberValidator(number_format='E164')]
+ 
+@@ -147,7 +147,7 @@ class PhoneNumberValidator:
+ 
+         import phonenumbers
+         from pydantic import BaseModel
+-        from pydantic_extra_types.phone_numbers import PhoneNumberValidator
++        from pydantic_extra_types.phone_number import PhoneNumberValidator
+ 
+         MyNumberType = Annotated[Union[str, phonenumbers.PhoneNumber], PhoneNumberValidator()]
+ 
+diff --git a/tests/test_json_schema.py b/tests/test_json_schema.py
+index 62748d3..f61b087 100644
+--- a/tests/test_json_schema.py
++++ b/tests/test_json_schema.py
+@@ -21,7 +21,7 @@ from pydantic_extra_types.mime_types import MimeType
+ from pydantic_extra_types.mongo_object_id import MongoObjectId
+ from pydantic_extra_types.payment import PaymentCardNumber
+ from pydantic_extra_types.pendulum_dt import DateTime
+-from pydantic_extra_types.phone_numbers import PhoneNumber, PhoneNumberValidator
++from pydantic_extra_types.phone_number import PhoneNumber, PhoneNumberValidator
+ from pydantic_extra_types.s3 import S3Path
+ from pydantic_extra_types.script_code import ISO_15924
+ from pydantic_extra_types.semantic_version import SemanticVersion
+diff --git a/tests/test_phone_numbers.py b/tests/test_phone_numbers.py
+index 04b418e..2419454 100644
+--- a/tests/test_phone_numbers.py
++++ b/tests/test_phone_numbers.py
+@@ -3,7 +3,7 @@ from typing import Any
+ import pytest
+ from pydantic import BaseModel, ValidationError
+ 
+-from pydantic_extra_types.phone_numbers import PhoneNumber
++from pydantic_extra_types.phone_number import PhoneNumber
+ 
+ 
+ class Something(BaseModel):
+diff --git a/tests/test_phone_numbers_validator.py b/tests/test_phone_numbers_validator.py
+index 87f1186..d245ae0 100644
+--- a/tests/test_phone_numbers_validator.py
++++ b/tests/test_phone_numbers_validator.py
+@@ -5,7 +5,7 @@ import pytest
+ from phonenumbers import PhoneNumber
+ from pydantic import BaseModel, TypeAdapter, ValidationError
+ 
+-from pydantic_extra_types.phone_numbers import PhoneNumberValidator
++from pydantic_extra_types.phone_number import PhoneNumberValidator
+ 
+ Number = Annotated[Union[str, PhoneNumber], PhoneNumberValidator()]
+ NANumber = Annotated[

@@ -1,0 +1,5 @@
+tests/brain/test_builtin.py::TestStringNodes::test_string_format_uninferable[char-negative]
+tests/brain/test_builtin.py::TestStringNodes::test_string_format_uninferable[char-too-large]
+tests/test_inference.py::test_fstring_char_out_of_range_uninferable[f'{-1:c}']
+tests/test_inference.py::test_fstring_char_out_of_range_uninferable[f'{0x110000:c}']
+tests/test_inference.py::test_fstring_char_out_of_range_uninferable[f'{2**64:c}']

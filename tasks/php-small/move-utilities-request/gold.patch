@@ -1,0 +1,78 @@
+diff --git a/src/DataTableAbstract.php b/src/DataTableAbstract.php
+index e27a073..9852cc3 100644
+--- a/src/DataTableAbstract.php
++++ b/src/DataTableAbstract.php
+@@ -30,7 +30,7 @@ abstract class DataTableAbstract implements DataTable
+     /**
+      * DataTables Request object.
+      */
+-    public Utilities\Request $request;
++    public Request $request;
+ 
+     protected ?LoggerInterface $logger = null;
+ 
+diff --git a/src/DataTables.php b/src/DataTables.php
+index 3b9c154..165a14f 100644
+--- a/src/DataTables.php
++++ b/src/DataTables.php
+@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Config;
+ use Illuminate\Support\Traits\Macroable;
+ use Yajra\DataTables\Exceptions\Exception;
+ use Yajra\DataTables\Utilities\Config as DataTablesConfig;
+-use Yajra\DataTables\Utilities\Request;
+ 
+ class DataTables
+ {
+diff --git a/src/DataTablesServiceProvider.php b/src/DataTablesServiceProvider.php
+index 172ff84..dce5e3b 100644
+--- a/src/DataTablesServiceProvider.php
++++ b/src/DataTablesServiceProvider.php
+@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Config;
+ use Illuminate\Support\ServiceProvider;
+ use Illuminate\Support\Str;
+ use Yajra\DataTables\Utilities\Config as DataTablesConfig;
+-use Yajra\DataTables\Utilities\Request;
+ 
+ class DataTablesServiceProvider extends ServiceProvider
+ {
+diff --git a/src/Utilities/Request.php b/src/Request.php
+similarity index 99%
+rename from src/Utilities/Request.php
+rename to src/Request.php
+index 193151c..0431ec5 100644
+--- a/src/Utilities/Request.php
++++ b/src/Request.php
+@@ -1,6 +1,6 @@
+ <?php
+ 
+-namespace Yajra\DataTables\Utilities;
++namespace Yajra\DataTables;
+ 
+ use Illuminate\Http\Request as BaseRequest;
+ use Illuminate\Support\Facades\Config;
+diff --git a/tests/Integration/MaxLengthTest.php b/tests/Integration/MaxLengthTest.php
+index 34b8906..143f699 100644
+--- a/tests/Integration/MaxLengthTest.php
++++ b/tests/Integration/MaxLengthTest.php
+@@ -7,7 +7,7 @@ use PHPUnit\Framework\Attributes\Test;
+ use Yajra\DataTables\DataTables;
+ use Yajra\DataTables\Tests\Models\User;
+ use Yajra\DataTables\Tests\TestCase;
+-use Yajra\DataTables\Utilities\Request;
++use Yajra\DataTables\Request;
+ 
+ class MaxLengthTest extends TestCase
+ {
+diff --git a/tests/Unit/RequestTest.php b/tests/Unit/RequestTest.php
+index 47b6d44..d2b2d1f 100644
+--- a/tests/Unit/RequestTest.php
++++ b/tests/Unit/RequestTest.php
+@@ -4,7 +4,7 @@ namespace Yajra\DataTables\Tests\Unit;
+ 
+ use PHPUnit\Framework\Attributes\Test;
+ use Yajra\DataTables\Tests\TestCase;
+-use Yajra\DataTables\Utilities\Request;
++use Yajra\DataTables\Request;
+ 
+ class RequestTest extends TestCase
+ {

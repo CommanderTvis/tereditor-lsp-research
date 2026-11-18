@@ -1,8 +1,0 @@
-type = "pr"
-old_path = "kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/TypeName.kt"
-new_path = "kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/TypeNameFactories.kt"
-selection = "Kotlin files of main source sets whose JVM file facade (<File>Kt or its @file:JvmName) or file name is named outside the file (code, build scripts, resources; API dumps and docs/ excluded); sorted by path: interop/kotlin-metadata/.../specs/KotlinPoetMetadataSpecs.kt, kotlinpoet/.../ClassName.kt, kotlinpoet/.../TypeName.kt, kotlinpoet/.../jvm/JvmAnnotations.kt (4 candidates); k = 1 + int(rand() * 4) after srand(20261110) = 3. The new name is the old one plus 'Factories'; the facade follows the file name (the file's @file:JvmName is dropped)."
-origin = "documented synthetic fallback PR; no qualifying/current-toolchain mined candidate was available"
-fallback_for = "rename-file"
-pr = "fallback-kotlin-medium-rename-file-typename"
-issue = "fallback-kotlin-medium-rename-file-typename"

@@ -1,0 +1,3 @@
+List every concrete class that extends `org.apache.lucene.search.Scorable`, directly or through other classes, anywhere in the repository's production code. Production code means the `src/java` source sets of all modules except `lucene/test-framework`; tests, the test framework and anonymous or local classes are out of scope, abstract classes and interfaces are not listed, and nested classes count.
+
+Write one fully qualified class name per line to `ANSWER.txt` in the repository root, with a dot between an outer class and a nested one (for example `org.apache.lucene.search.Outer.Inner`), no other text.

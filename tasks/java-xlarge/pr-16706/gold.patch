@@ -1,0 +1,445 @@
+diff --git a/lucene/CHANGES.txt b/lucene/CHANGES.txt
+index ef3c0a05dc09..7e92490f317c 100644
+--- a/lucene/CHANGES.txt
++++ b/lucene/CHANGES.txt
+@@ -469,6 +469,10 @@ Improvements
+ Optimizations
+ ---------------------
+ 
++* GITHUB#16706: Reduce the sandboxed dedup vector formats' index size by packing each field
++  ordinal to group ordinal mapping at the minimum bit width required for the largest group ordinal,
++  instead of a fixed 32-bit width. (Pranshu Shukla)
++
+ * GITHUB#16682: Carry file open hints on merge and flush contexts, which used to drop them. An HNSW
+   format now carries the random access hint for the vectors it reads, rather than the flat format
+   holding them claiming it whatever reads them. Add NoReuseHint, set by stored fields, term vectors
+diff --git a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatFieldVectorsWriter.java b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatFieldVectorsWriter.java
+index b4bf395538ea..aaad4734a0ef 100644
+--- a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatFieldVectorsWriter.java
++++ b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatFieldVectorsWriter.java
+@@ -39,6 +39,7 @@ final class DedupFlatFieldVectorsWriter<T> extends FlatFieldVectorsWriter<T> {
+   private final DocsWithFieldSet docsWithFieldSet;
+   private final List<T> vectors;
+   private final IntArrayList fieldOrdToGroupOrd;
++  private int maxGroupOrd;
+   private int lastDocID;
+   private boolean finished;
+ 
+@@ -47,6 +48,7 @@ final class DedupFlatFieldVectorsWriter<T> extends FlatFieldVectorsWriter<T> {
+     this.docsWithFieldSet = new DocsWithFieldSet();
+     this.vectors = new ArrayList<>();
+     this.fieldOrdToGroupOrd = new IntArrayList();
++    this.maxGroupOrd = 0;
+     this.lastDocID = -1;
+     this.finished = false;
+   }
+@@ -65,6 +67,11 @@ IntArrayList getFieldOrdToGroupOrd() {
+     return fieldOrdToGroupOrd;
+   }
+ 
++  /** The largest group ordinal referenced by this field, tracked as values are added. */
++  int getMaxGroupOrd() {
++    return maxGroupOrd;
++  }
++
+   @Override
+   public void finish() {
+     if (finished) {
+@@ -98,6 +105,7 @@ public void addValue(int docID, T vectorValue) throws IOException {
+     ObjectCursor<T> cursor = group.addUnique(vectorValue);
+     vectors.add(cursor.value); // owned vector value
+     fieldOrdToGroupOrd.add(cursor.index); // index in group
++    maxGroupOrd = Math.max(maxGroupOrd, cursor.index);
+   }
+ 
+   @Override
+diff --git a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatVectorsFormat.java b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatVectorsFormat.java
+index f2485b2f7216..3abfed0a7be1 100644
+--- a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatVectorsFormat.java
++++ b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatVectorsFormat.java
+@@ -81,6 +81,7 @@
+  *       org.apache.lucene.codecs.lucene95.OrdToDocDISIReaderConfiguration#writeStoredMeta}
+  *   <li><b>[int64]</b> offset to this field's {@code fieldOrdToGroupOrd} map in the .vdd file
+  *   <li><b>[int64]</b> length of this field's {@code fieldOrdToGroupOrd} map, in bytes
++ *   <li><b>[int32]</b> bits per value used to pack this field's {@code fieldOrdToGroupOrd} map
+  * </ul>
+  *
+  * <p>also terminated by <b>[int32]</b> {@code -1}.
+diff --git a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatVectorsReader.java b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatVectorsReader.java
+index 4007a27b1118..914ab55f9936 100644
+--- a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatVectorsReader.java
++++ b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatVectorsReader.java
+@@ -285,7 +285,8 @@ private FloatVectorValues getFloatVectorValues(FieldEntry entry) throws IOExcept
+         entry.groupInfo.vectorDataOffset(),
+         entry.groupInfo.vectorDataSize(),
+         entry.fieldInfo.fieldOrdToGroupOrdOffset(),
+-        entry.fieldInfo.fieldOrdToGroupOrdSize());
++        entry.fieldInfo.fieldOrdToGroupOrdSize(),
++        entry.fieldInfo.fieldOrdToGroupOrdBitsPerValue());
+   }
+ 
+   @Override
+@@ -304,7 +305,8 @@ private ByteVectorValues getByteVectorValues(FieldEntry entry) throws IOExceptio
+         entry.groupInfo.vectorDataOffset(),
+         entry.groupInfo.vectorDataSize(),
+         entry.fieldInfo.fieldOrdToGroupOrdOffset(),
+-        entry.fieldInfo.fieldOrdToGroupOrdSize());
++        entry.fieldInfo.fieldOrdToGroupOrdSize(),
++        entry.fieldInfo.fieldOrdToGroupOrdBitsPerValue());
+   }
+ 
+   @Override
+@@ -323,7 +325,8 @@ private Float16VectorValues getFloat16VectorValues(FieldEntry entry) throws IOEx
+         entry.groupInfo.vectorDataOffset(),
+         entry.groupInfo.vectorDataSize(),
+         entry.fieldInfo.fieldOrdToGroupOrdOffset(),
+-        entry.fieldInfo.fieldOrdToGroupOrdSize());
++        entry.fieldInfo.fieldOrdToGroupOrdSize(),
++        entry.fieldInfo.fieldOrdToGroupOrdBitsPerValue());
+   }
+ 
+   @Override
+diff --git a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlushContext.java b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlushContext.java
+index d29645500c5b..d92a474d325f 100644
+--- a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlushContext.java
++++ b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlushContext.java
+@@ -198,6 +198,7 @@ void flush(
+           groupOrds.get(fieldData.groupKey),
+           vectorCount,
+           maxDoc,
++          fieldData.fieldWriter.getMaxGroupOrd(),
+           docs,
+           fieldOrdToGroupOrdFinal);
+     }
+diff --git a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupMergeContext.java b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupMergeContext.java
+index 9b99cc490dab..827cdba6003f 100644
+--- a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupMergeContext.java
++++ b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupMergeContext.java
+@@ -171,6 +171,7 @@ void finish(
+           groupOrds.get(fieldData.groupKey),
+           fieldData.fieldOrdToGroupOrd.elementsCount,
+           fieldData.maxDoc,
++          fieldData.maxGroupOrd,
+           fieldData.docsWithFieldSet,
+           new FieldOrdToGroupOrdArrayList(fieldData.fieldOrdToGroupOrd));
+     }
+@@ -201,6 +202,7 @@ void processField(FieldData fieldData, IndexOutput vectorData) throws IOExceptio
+         // record hit and ord in group
+         fieldData.docsWithFieldSet.add(next.mappedDocID);
+         fieldData.fieldOrdToGroupOrd.add(cursor.index);
++        fieldData.maxGroupOrd = Math.max(fieldData.maxGroupOrd, cursor.index);
+       }
+     }
+   }
+@@ -409,15 +411,37 @@ public long ramBytesUsed() {
+     }
+   }
+ 
+-  private record FieldData(
+-      FieldInfo fieldInfo,
+-      GroupKey groupKey,
+-      DocsWithFieldSet docsWithFieldSet,
+-      IntArrayList fieldOrdToGroupOrd,
+-      DocIDMerger<?> merger,
+-      int maxDoc) {
++  private static final class FieldData {
++    private final FieldInfo fieldInfo;
++    private final GroupKey groupKey;
++    private final DocsWithFieldSet docsWithFieldSet;
++    private final IntArrayList fieldOrdToGroupOrd;
++    private final DocIDMerger<?> merger;
++    private final int maxDoc;
++    // Largest group ordinal referenced by this field, tracked as vectors are merged in.
++    private int maxGroupOrd;
+ 
+     static final long SHALLOW_SIZE = RamUsageEstimator.shallowSizeOfInstance(FieldData.class);
++
++    FieldData(
++        FieldInfo fieldInfo,
++        GroupKey groupKey,
++        DocsWithFieldSet docsWithFieldSet,
++        IntArrayList fieldOrdToGroupOrd,
++        DocIDMerger<?> merger,
++        int maxDoc) {
++      this.fieldInfo = fieldInfo;
++      this.groupKey = groupKey;
++      this.docsWithFieldSet = docsWithFieldSet;
++      this.fieldOrdToGroupOrd = fieldOrdToGroupOrd;
++      this.merger = merger;
++      this.maxDoc = maxDoc;
++      this.maxGroupOrd = 0;
++    }
++
++    GroupKey groupKey() {
++      return groupKey;
++    }
+   }
+ 
+   private static class Sub<T extends KnnVectorValues> extends DocIDMerger.Sub {
+diff --git a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupScalarQuantizedVectorValues.java b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupScalarQuantizedVectorValues.java
+index 8504a4c6d0f4..b3cacda9f81f 100644
+--- a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupScalarQuantizedVectorValues.java
++++ b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupScalarQuantizedVectorValues.java
+@@ -92,7 +92,8 @@ static FieldValues loadQuantized(
+       long quantizedDataOffset,
+       long quantizedDataSize,
+       long fieldOrdToGroupOrdOffset,
+-      long fieldOrdToGroupOrdSize)
++      long fieldOrdToGroupOrdSize,
++      int fieldOrdToGroupOrdBitsPerValue)
+       throws IOException {
+ 
+     final OffHeapFloatVectorValues fieldView =
+@@ -112,7 +113,11 @@ static FieldValues loadQuantized(
+                 "quantized-group-slice", quantizedDataOffset, quantizedDataSize));
+ 
+     final FieldOrdToGroupOrd fieldOrdToGroupOrd =
+-        new FieldOrdToGroupOrdOffHeap(vectorData, fieldOrdToGroupOrdOffset, fieldOrdToGroupOrdSize);
++        new FieldOrdToGroupOrdOffHeap(
++            vectorData,
++            fieldOrdToGroupOrdOffset,
++            fieldOrdToGroupOrdSize,
++            fieldOrdToGroupOrdBitsPerValue);
+ 
+     return new FieldValues(vectorsScorer, function, fieldView, groupView, fieldOrdToGroupOrd);
+   }
+diff --git a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupScalarQuantizedVectorsReader.java b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupScalarQuantizedVectorsReader.java
+index 68378f34408c..63d1e92411d8 100644
+--- a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupScalarQuantizedVectorsReader.java
++++ b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupScalarQuantizedVectorsReader.java
+@@ -363,7 +363,8 @@ private DedupVectorValues.FloatImpl getRawFloatVectorValues(FieldEntry entry) th
+         entry.groupInfo().vectorDataOffset(),
+         entry.groupInfo().vectorDataSize(),
+         entry.fieldInfo().fieldOrdToGroupOrdOffset(),
+-        entry.fieldInfo().fieldOrdToGroupOrdSize());
++        entry.fieldInfo().fieldOrdToGroupOrdSize(),
++        entry.fieldInfo().fieldOrdToGroupOrdBitsPerValue());
+   }
+ 
+   private FieldValues getQuantizedVectorValues(FieldEntry entry) throws IOException {
+@@ -379,7 +380,8 @@ private FieldValues getQuantizedVectorValues(FieldEntry entry) throws IOExceptio
+         entry.quantizedBlock().quantizedDataOffset(),
+         entry.quantizedBlock().quantizedDataSize(),
+         entry.fieldInfo().fieldOrdToGroupOrdOffset(),
+-        entry.fieldInfo().fieldOrdToGroupOrdSize());
++        entry.fieldInfo().fieldOrdToGroupOrdSize(),
++        entry.fieldInfo().fieldOrdToGroupOrdBitsPerValue());
+   }
+ 
+   @Override
+@@ -400,7 +402,8 @@ private ByteVectorValues getByteVectorValues(FieldEntry entry) throws IOExceptio
+         entry.groupInfo().vectorDataOffset(),
+         entry.groupInfo().vectorDataSize(),
+         entry.fieldInfo().fieldOrdToGroupOrdOffset(),
+-        entry.fieldInfo().fieldOrdToGroupOrdSize());
++        entry.fieldInfo().fieldOrdToGroupOrdSize(),
++        entry.fieldInfo().fieldOrdToGroupOrdBitsPerValue());
+   }
+ 
+   @Override
+@@ -419,7 +422,8 @@ private Float16VectorValues getFloat16VectorValues(FieldEntry entry) throws IOEx
+         entry.groupInfo().vectorDataOffset(),
+         entry.groupInfo().vectorDataSize(),
+         entry.fieldInfo().fieldOrdToGroupOrdOffset(),
+-        entry.fieldInfo().fieldOrdToGroupOrdSize());
++        entry.fieldInfo().fieldOrdToGroupOrdSize(),
++        entry.fieldInfo().fieldOrdToGroupOrdBitsPerValue());
+   }
+ 
+   @Override
+diff --git a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupUtil.java b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupUtil.java
+index 594fb6abe730..23656f3fcab1 100644
+--- a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupUtil.java
++++ b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupUtil.java
+@@ -45,11 +45,6 @@ final class DedupUtil {
+   /** Alignment bytes on disk for fieldOrdToGroupOrd. */
+   private static final int FIELD_ORD_TO_GROUP_ORD_ALIGN_BYTES = 4;
+ 
+-  // TODO: This is the number of bits used to write each group ordinal in the index-backed per-field
+-  //  FieldOrdToGroupOrd mapping. Evaluate using fewer bits to reduce index size, at the expense of
+-  //  costlier lookups.
+-  static final int FIELD_ORD_TO_GROUP_ORD_BITS_PER_VALUE = 32;
+-
+   /** Initial allocation size for internal re-used int[] scratch buffers. */
+   static final int SCRATCH_INITIAL_SIZE = 16;
+ 
+@@ -104,6 +99,7 @@ static void writeFieldInfo(
+       int groupOrd,
+       int vectorCount,
+       int maxDoc,
++      int maxGroupOrd,
+       DocsWithFieldSet docs,
+       FieldOrdToGroupOrd fieldOrdToGroupOrd)
+       throws IOException {
+@@ -120,9 +116,12 @@ static void writeFieldInfo(
+         ORD_TO_DOC_DIRECT_MONOTONIC_BLOCK_SHIFT, meta, vectorData, vectorCount, maxDoc, docs);
+ 
+     // write fieldOrdToGroupOrd
++    // pack each ordinal to minimize storage, using the bits needed for the largest group ordinal
++    int fieldOrdToGroupOrdBitsPerValue = DirectWriter.bitsRequired(maxGroupOrd);
++
+     long fieldOrdToGroupOrdOffset = vectorData.alignFilePointer(FIELD_ORD_TO_GROUP_ORD_ALIGN_BYTES);
+     DirectWriter writer =
+-        DirectWriter.getInstance(vectorData, vectorCount, FIELD_ORD_TO_GROUP_ORD_BITS_PER_VALUE);
++        DirectWriter.getInstance(vectorData, vectorCount, fieldOrdToGroupOrdBitsPerValue);
+     for (int i = 0; i < vectorCount; i++) {
+       writer.add(fieldOrdToGroupOrd.get(i));
+     }
+@@ -131,6 +130,7 @@ static void writeFieldInfo(
+ 
+     meta.writeLong(fieldOrdToGroupOrdOffset);
+     meta.writeLong(fieldOrdToGroupOrdSize);
++    meta.writeInt(fieldOrdToGroupOrdBitsPerValue);
+   }
+ 
+   static void writeEndMarker(IndexOutput meta) throws IOException {
+@@ -146,7 +146,8 @@ record ReadFieldInfo(
+       int vectorCount,
+       OrdToDocDISIReaderConfiguration ordToDoc,
+       long fieldOrdToGroupOrdOffset,
+-      long fieldOrdToGroupOrdSize) {
++      long fieldOrdToGroupOrdSize,
++      int fieldOrdToGroupOrdBitsPerValue) {
+ 
+     static ReadFieldInfo read(IndexInput meta) throws IOException {
+ 
+@@ -164,6 +165,7 @@ static ReadFieldInfo read(IndexInput meta) throws IOException {
+           OrdToDocDISIReaderConfiguration.fromStoredMeta(meta, vectorCount);
+       long fieldOrdToGroupOrdOffset = meta.readLong();
+       long fieldOrdToGroupOrdSize = meta.readLong();
++      int fieldOrdToGroupOrdBitsPerValue = meta.readInt();
+ 
+       return new ReadFieldInfo(
+           fieldNumber,
+@@ -174,7 +176,8 @@ static ReadFieldInfo read(IndexInput meta) throws IOException {
+           vectorCount,
+           ordToDoc,
+           fieldOrdToGroupOrdOffset,
+-          fieldOrdToGroupOrdSize);
++          fieldOrdToGroupOrdSize,
++          fieldOrdToGroupOrdBitsPerValue);
+     }
+   }
+ 
+diff --git a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupVectorValues.java b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupVectorValues.java
+index b2102fa2e5ad..2e79cf653776 100644
+--- a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupVectorValues.java
++++ b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupVectorValues.java
+@@ -19,7 +19,6 @@
+ import static org.apache.lucene.index.VectorEncoding.BYTE;
+ import static org.apache.lucene.index.VectorEncoding.FLOAT16;
+ import static org.apache.lucene.index.VectorEncoding.FLOAT32;
+-import static org.apache.lucene.sandbox.codecs.dedup.DedupUtil.FIELD_ORD_TO_GROUP_ORD_BITS_PER_VALUE;
+ import static org.apache.lucene.sandbox.codecs.dedup.DedupUtil.SCRATCH_INITIAL_SIZE;
+ import static org.apache.lucene.search.VectorScorer.Bulk.fromRandomScorerDense;
+ import static org.apache.lucene.search.VectorScorer.Bulk.fromRandomScorerSparse;
+@@ -87,7 +86,8 @@ static ByteImpl loadDedupBytes(
+       long vectorDataOffset,
+       long vectorDataSize,
+       long fieldOrdToGroupOrdOffset,
+-      long fieldOrdToGroupOrdSize)
++      long fieldOrdToGroupOrdSize,
++      int fieldOrdToGroupOrdBitsPerValue)
+       throws IOException {
+ 
+     final OffHeapByteVectorValues fieldView =
+@@ -104,7 +104,11 @@ static ByteImpl loadDedupBytes(
+             function);
+ 
+     final FieldOrdToGroupOrd fieldOrdToGroupOrd =
+-        new FieldOrdToGroupOrdOffHeap(vectorData, fieldOrdToGroupOrdOffset, fieldOrdToGroupOrdSize);
++        new FieldOrdToGroupOrdOffHeap(
++            vectorData,
++            fieldOrdToGroupOrdOffset,
++            fieldOrdToGroupOrdSize,
++            fieldOrdToGroupOrdBitsPerValue);
+ 
+     return new ByteImpl(vectorsScorer, function, fieldView, groupView, fieldOrdToGroupOrd);
+   }
+@@ -207,7 +211,8 @@ static FloatImpl loadDedupFloats(
+       long vectorDataOffset,
+       long vectorDataSize,
+       long fieldOrdToGroupOrdOffset,
+-      long fieldOrdToGroupOrdSize)
++      long fieldOrdToGroupOrdSize,
++      int fieldOrdToGroupOrdBitsPerValue)
+       throws IOException {
+ 
+     final OffHeapFloatVectorValues fieldView =
+@@ -224,7 +229,11 @@ static FloatImpl loadDedupFloats(
+             function);
+ 
+     final FieldOrdToGroupOrd fieldOrdToGroupOrd =
+-        new FieldOrdToGroupOrdOffHeap(vectorData, fieldOrdToGroupOrdOffset, fieldOrdToGroupOrdSize);
++        new FieldOrdToGroupOrdOffHeap(
++            vectorData,
++            fieldOrdToGroupOrdOffset,
++            fieldOrdToGroupOrdSize,
++            fieldOrdToGroupOrdBitsPerValue);
+ 
+     return new FloatImpl(vectorsScorer, function, fieldView, groupView, fieldOrdToGroupOrd);
+   }
+@@ -327,7 +336,8 @@ static Float16Impl loadDedupFloat16s(
+       long vectorDataOffset,
+       long vectorDataSize,
+       long fieldOrdToGroupOrdOffset,
+-      long fieldOrdToGroupOrdSize)
++      long fieldOrdToGroupOrdSize,
++      int fieldOrdToGroupOrdBitsPerValue)
+       throws IOException {
+ 
+     final OffHeapFloat16VectorValues fieldView =
+@@ -344,7 +354,11 @@ static Float16Impl loadDedupFloat16s(
+             function);
+ 
+     final FieldOrdToGroupOrd fieldOrdToGroupOrd =
+-        new FieldOrdToGroupOrdOffHeap(vectorData, fieldOrdToGroupOrdOffset, fieldOrdToGroupOrdSize);
++        new FieldOrdToGroupOrdOffHeap(
++            vectorData,
++            fieldOrdToGroupOrdOffset,
++            fieldOrdToGroupOrdSize,
++            fieldOrdToGroupOrdBitsPerValue);
+ 
+     return new Float16Impl(vectorsScorer, function, fieldView, groupView, fieldOrdToGroupOrd);
+   }
+@@ -499,16 +513,25 @@ record FieldOrdToGroupOrdOffHeap(
+       IndexInput vectorData,
+       long fieldOrdToGroupOrdOffset,
+       long fieldOrdToGroupOrdSize,
++      int fieldOrdToGroupOrdBitsPerValue,
+       LongValues values)
+       implements FieldOrdToGroupOrd {
+ 
+     FieldOrdToGroupOrdOffHeap(
+-        IndexInput vectorData, long fieldOrdToGroupOrdOffset, long fieldOrdToGroupOrdSize)
++        IndexInput vectorData,
++        long fieldOrdToGroupOrdOffset,
++        long fieldOrdToGroupOrdSize,
++        int fieldOrdToGroupOrdBitsPerValue)
+         throws IOException {
+       RandomAccessInput slice =
+           vectorData.randomAccessSlice(fieldOrdToGroupOrdOffset, fieldOrdToGroupOrdSize);
+-      LongValues values = DirectReader.getInstance(slice, FIELD_ORD_TO_GROUP_ORD_BITS_PER_VALUE);
+-      this(vectorData, fieldOrdToGroupOrdOffset, fieldOrdToGroupOrdSize, values);
++      LongValues values = DirectReader.getInstance(slice, fieldOrdToGroupOrdBitsPerValue);
++      this(
++          vectorData,
++          fieldOrdToGroupOrdOffset,
++          fieldOrdToGroupOrdSize,
++          fieldOrdToGroupOrdBitsPerValue,
++          values);
+     }
+ 
+     @Override
+@@ -519,7 +542,10 @@ public int get(int v) {
+     @Override
+     public FieldOrdToGroupOrd copy() throws IOException {
+       return new FieldOrdToGroupOrdOffHeap(
+-          vectorData.clone(), fieldOrdToGroupOrdOffset, fieldOrdToGroupOrdSize);
++          vectorData.clone(),
++          fieldOrdToGroupOrdOffset,
++          fieldOrdToGroupOrdSize,
++          fieldOrdToGroupOrdBitsPerValue);
+     }
+   }
+ }

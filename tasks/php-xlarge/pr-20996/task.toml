@@ -1,0 +1,11 @@
+type = "pr"
+origin = "mined: shopware/shopware#20996 (issue #20711), docs/TASKS.md \"Mined pull requests\""
+pr = 20996
+issue = 20711
+base_commit = "66fedc2cabd62becab6b3cb68bef5cbc460b084c"
+merge_commit = "84cdcbe9e871c1fbc4ec5e5d299c36d875360b9d"
+merged_at = "2026-10-01T12:54:19Z"
+fail_to_pass = ["Shopware\\Tests\\Unit\\Core\\Framework\\MessageQueue\\Subscriber\\MessageQueueStatsSubscriberTest::testOnMessageHandledLogsFailingStatsInsteadOfStoppingTheWorker","Shopware\\Tests\\Unit\\Core\\Framework\\MessageQueue\\Subscriber\\MessageQueueStatsSubscriberTest::testMissingIncrementGatewayIsLoggedAndStatsAreStillRecorded"]
+pass_to_pass = "the other tests of tests/unit/Core/Framework/MessageQueue/Api/ConsumeMessagesControllerTest.php, tests/unit/Core/Framework/MessageQueue/Subscriber/MessageQueueStatsSubscriberTest.php"
+loc_base = 1075050
+loc_base_method = "scc 3.5.0 PHP code lines at base_commit (vendor/ excluded, tests included)"

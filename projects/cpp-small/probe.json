@@ -1,7 +1,7 @@
 [
-  {"name": "references ErrorIDToName (cross-file)", "args": {"operation": "references", "query": "ErrorIDToName", "path": "tinyxml2.h"},
-   "expect": ["xmltest.cpp:67", "xmltest.cpp:2382", "tinyxml2.cpp:2509"]},
-  {"name": "definition of LoadFile(const char*) from the header", "args": {"operation": "definition", "path": "tinyxml2.h", "line": 1759, "column": 13},
-   "expect": ["tinyxml2.cpp:2344"]},
-  {"name": "diagnostics tinyxml2.cpp", "tool": "lsp_diagnostics", "args": {"paths": ["tinyxml2.cpp"]}, "expect": []}
+  {"name": "references md_parse (cross-file)", "args": {"operation": "references", "query": "md_parse", "path": "src/md4c.h"},
+   "expect": ["src/md4c-html.c:657", "src/md4c.c:7339"]},
+  {"name": "definition of md_html from its header", "args": {"operation": "definition", "path": "src/md4c-html.h", "line": 59, "column": 5},
+   "expect": ["src/md4c-html.c:618"]},
+  {"name": "diagnostics md2html.c", "tool": "lsp_diagnostics", "args": {"paths": ["md2html/md2html.c"]}, "expect": []}
 ]

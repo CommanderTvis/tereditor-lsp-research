@@ -1,0 +1,7 @@
+type = "rename-file"
+origin = "devrig safe rename (module)"
+module = "compose-lint-checks/src/main/java/slack/lint/compose/util/KtFunctions.kt -> compose-lint-checks/src/main/java/slack/lint/compose/util/KtFunctionsExt.kt"
+selection = "seed 20261110. Candidates: Kotlin source files of compose-lint-checks/src/main/java/slack/lint/compose/util whose file name (Name.kt) is mentioned by at least one non-Kotlin file of the repository (a path list, the baseline or the documentation); sorted by path: ASTNodes, Composables, KotlinUtils, KtAnnotateds, KtCallableDeclarations, KtFunctions, Previews, PsiElements (8 candidates); index int(rand()*8)+1 after srand(20261110) = 6 (KtFunctions.kt). The new name is fixed by rule: the file name stem gets the suffix Ext. Kotlin has no file-level imports, so the references to a file are the path lists and documents that name it. Fixed after seeing candidates: the candidate filter and the new-name rule (suffix Ext) were set after seeing the file references."
+gold = "scripted: git mv of the file, then its path replaced in config/license-excludes-kt.txt; built and tested"
+# the lint-check test suite is slow on a cold Gradle build (several minutes with 3 CPUs)
+grade_timeout_s = 1200

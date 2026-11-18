@@ -1,7 +1,0 @@
-com.squareup.javapoet.AnnotationSpec.Builder.build
-com.squareup.javapoet.AnnotationSpec.get
-com.squareup.javapoet.FieldSpec.Builder.addAnnotation
-com.squareup.javapoet.MethodSpec.Builder.addAnnotation
-com.squareup.javapoet.MethodSpec.overriding
-com.squareup.javapoet.ParameterSpec.Builder.addAnnotation
-com.squareup.javapoet.TypeSpec.Builder.addAnnotation

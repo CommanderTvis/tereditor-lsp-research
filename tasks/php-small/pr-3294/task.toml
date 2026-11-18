@@ -1,0 +1,11 @@
+type = "pr"
+origin = "mined: yajra/laravel-datatables#3294 (issue #3276), docs/TASKS.md \"Mined pull requests\""
+pr = 3294
+issue = 3276
+base_commit = "3a7160b3c28754ff7aa7a0b97e2fdb40e3ec9374"
+merge_commit = "b254900fe238aed6c0306b1ff19da92cbfc951fb"
+merged_at = "2026-07-03T00:59:43Z"
+fail_to_pass = ["Yajra\\DataTables\\Tests\\Integration\\EloquentDataTableTest::it_can_perform_column_search_on_model_with_schema_qualified_table"]
+pass_to_pass = "the other tests of tests/Integration/EloquentDataTableTest.php"
+loc_base = 5656
+loc_base_method = "scc 3.5.0 PHP code lines at base_commit (vendor/ excluded, tests included)"

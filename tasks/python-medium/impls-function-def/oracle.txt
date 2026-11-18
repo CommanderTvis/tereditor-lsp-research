@@ -1,0 +1,5 @@
+astroid/interpreter/objectmodel.py:992
+astroid/interpreter/objectmodel.py:1043
+astroid/nodes/scoped_nodes/scoped_nodes.py:1725
+astroid/objects.py:281
+astroid/objects.py:355

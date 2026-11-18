@@ -1,0 +1,4 @@
+{"task": "tasks/css-medium/pr-22713", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 107, "fresh_lines": 107, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.00183669}
+{"task": "tasks/css-medium/pr-22713", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 107, "fresh_lines": 107, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0259189}
+{"task": "tasks/css-medium/pr-22713", "model": "claude-opus-5-5", "answered": true, "gold_lines": 107, "fresh_lines": 107, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0633698}
+SCORE tasks/css-medium/pr-22713 worst verbatim share 0.00 (gold lines 107)

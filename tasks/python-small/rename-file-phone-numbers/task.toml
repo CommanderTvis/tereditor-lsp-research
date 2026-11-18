@@ -1,0 +1,4 @@
+type = "rename-file"
+origin = "devrig safe rename (module)"
+module = "pydantic_extra_types/phone_numbers.py -> pydantic_extra_types/phone_number.py"
+selection = "non-test, non-underscore modules of pydantic_extra_types imported by module path (absolute or relative, from-package or direct) in at least 3 other .py files (python3 an.py <snapshot> pydantic_extra_types modules, an ast walk); sorted by path: color.py, phone_numbers.py (2 candidates); index random.Random(20261110).randrange(2) = 1 (CPython 3.12). Destination rule: the singular form of the module name. The module path also occurs in its docstring cross-reference and examples (strings and comments), which a language-level rename misses."

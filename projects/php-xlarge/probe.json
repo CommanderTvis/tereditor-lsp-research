@@ -1,0 +1,34 @@
+[
+ {
+  "name": "definition of Context by name",
+  "args": {
+   "operation": "definition",
+   "query": "Shopware\\Core\\Framework\\Context"
+  },
+  "expect": [
+   "src/Core/Framework/Context.php:18"
+  ]
+ },
+ {
+  "name": "references MediaEntity::getThumbnails (cross-file)",
+  "args": {
+   "operation": "references",
+   "query": "getThumbnails",
+   "path": "src/Core/Content/Media/MediaEntity.php"
+  },
+  "expect": [
+   "src/Core/Content/Media/Thumbnail/ThumbnailService.php:74",
+   "src/Core/Content/Media/File/FileSaver.php:154"
+  ]
+ },
+ {
+  "name": "diagnostics clean file",
+  "tool": "lsp_diagnostics",
+  "args": {
+   "paths": [
+    "src/Core/Framework/Context.php"
+   ]
+  },
+  "expect": []
+ }
+]

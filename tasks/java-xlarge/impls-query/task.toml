@@ -1,4 +1,0 @@
-type = "impls"
-origin = "synthetic fallback; fixed xlarge assignment"
-symbol = "org.apache.lucene.search.Query"
-selection = "First public abstract search type with transitive implementations in the pinned Lucene snapshot; selected before any run."

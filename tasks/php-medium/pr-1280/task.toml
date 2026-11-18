@@ -1,0 +1,11 @@
+type = "pr"
+origin = "mined: dedoc/scramble#1280 (issue #1277), docs/TASKS.md \"Mined pull requests\""
+pr = 1280
+issue = 1277
+base_commit = "82ae963da7b7356c10878fe039350d1ea6ffdecc"
+merge_commit = "7f6548ba383ec5dc2daeb2e80de9888d422a25a1"
+merged_at = "2026-09-28T09:51:14Z"
+fail_to_pass = ["\u001b[31;1m⨯\u001b[39;22m\u001b[90m \u001b[39m\u001b[90mit analyzes a closure route without deprecations\u001b[39m\u001b[90m                    \u001b[39m \u001b[90m0.18s\u001b[39m","\u001b[31;1m⨯\u001b[39;22m\u001b[90m \u001b[39m\u001b[90mit generates documentation for a route-cached closure\u001b[39m\u001b[90m               \u001b[39m \u001b[90m0.01s\u001b[39m"]
+pass_to_pass = "the other tests of tests/GeneratorTest.php"
+loc_base = 47980
+loc_base_method = "scc 3.5.0 PHP code lines at base_commit (vendor/ excluded, tests included)"

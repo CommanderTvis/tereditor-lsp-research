@@ -1,0 +1,60 @@
+diff --git a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ToolDecorators.kt b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ToolDecorators.kt
+index 8f58ac6..860cb23 100644
+--- a/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ToolDecorators.kt
++++ b/embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ToolDecorators.kt
+@@ -104,8 +104,19 @@ class ObservabilityTool(
+             .start()
+         return try {
+             val result = action()
+-            observation.lowCardinalityKeyValue("status", "success")
+-            observation.highCardinalityKeyValue("result", result.content)
++            // A tool can return an error without throwing. Record that as an error too.
++            if (result is Tool.Result.Error) {
++                val error = ToolReturnedError(delegate.definition.name, result.message, result.cause)
++                observation.lowCardinalityKeyValue("status", "error")
++                observation.highCardinalityKeyValue("error_type", (result.cause ?: error)::class.simpleName ?: "Unknown")
++                observation.highCardinalityKeyValue("error_message", result.message)
++                observation.error(error)
++            } else {
++                // successful path
++                observation.lowCardinalityKeyValue("status", "success")
++                observation.highCardinalityKeyValue("result", result.content)
++            }
++            // Return the result in both cases. Only a thrown exception is rethrown below.
+             result
+         } catch (ex: Exception) {
+             observation.lowCardinalityKeyValue("status", "error")
+diff --git a/embabel-agent-observability/src/main/java/com/embabel/agent/observability/tracing/EmbabelSpanEventListener.java b/embabel-agent-observability/src/main/java/com/embabel/agent/observability/tracing/EmbabelSpanEventListener.java
+index c6875f1..d8dfb2f 100644
+--- a/embabel-agent-observability/src/main/java/com/embabel/agent/observability/tracing/EmbabelSpanEventListener.java
++++ b/embabel-agent-observability/src/main/java/com/embabel/agent/observability/tracing/EmbabelSpanEventListener.java
+@@ -47,6 +47,7 @@ import com.embabel.agent.api.event.ToolCallRequestEvent;
+ import com.embabel.agent.api.event.ToolCallResponseEvent;
+ import com.embabel.agent.api.event.ToolLoopCompletedEvent;
+ import com.embabel.agent.api.event.observation.ToolCallOutcomes;
++import com.embabel.agent.api.tool.ToolReturnedError;
+ import com.embabel.agent.core.AgentProcess;
+ import com.embabel.agent.core.EmbeddingInvocation;
+ import com.embabel.agent.core.LlmInvocation;
+@@ -488,7 +489,7 @@ public class EmbabelSpanEventListener implements AgenticEventListener, Embedding
+             Throwable error = ToolCallOutcomes.error(event);
+             if (error != null) {
+                 observation.lowCardinalityKeyValue(SpanAttributes.EMBABEL_TOOL_STATUS, "error");
+-                observation.highCardinalityKeyValue(SpanAttributes.EMBABEL_TOOL_ERROR_TYPE, error.getClass().getSimpleName());
++                observation.highCardinalityKeyValue(SpanAttributes.EMBABEL_TOOL_ERROR_TYPE, toolErrorType(error));
+                 observation.highCardinalityKeyValue(SpanAttributes.EMBABEL_TOOL_ERROR_MESSAGE, truncate(error.getMessage()));
+                 observation.error(error);
+             } else {
+@@ -503,6 +504,12 @@ public class EmbabelSpanEventListener implements AgenticEventListener, Embedding
+         }
+     }
+ 
++    /** A returned tool error carries the tool's own exception, when there is one, as its cause. */
++    private static String toolErrorType(Throwable error) {
++        Throwable reported = error instanceof ToolReturnedError && error.getCause() != null ? error.getCause() : error;
++        return reported.getClass().getSimpleName();
++    }
++
+     /**
+      * Tool loop outcome (iteration count, replan flag). The scoped {@code embabel.tool_loop} span has
+      * already closed when this completion event fires, so the outcome is recorded as a sibling point

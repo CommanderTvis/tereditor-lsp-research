@@ -1,4 +1,4 @@
 type = "impls"
-origin = "synthetic fallback: exhaustive source-oracle navigation task"
+origin = "synthetic: implementations of an interface (docs/TASKS.md)"
 symbol = "Stringable"
-selection = "Whole-tree candidate scan fixed before authoring; seed = 20261110; no language server used."
+selection = "Interface name shared by an unrelated class: PHP built-in \\Stringable versus Illuminate\\Support\\Stringable; oracle from the PHP tokenizer, no language server used."

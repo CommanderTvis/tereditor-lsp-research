@@ -12,3 +12,8 @@ stripped = []
 task_types = ["rename", "rename-file", "inspect", "pr", "pr", "pr"]
 # The mined pull requests are from 2022, when hono had about 7 to 8 thousand TypeScript lines (loc_at_base in each
 # task.toml): their starting trees are in the small band, not the medium one.
+
+[probe]
+ok = true
+seconds_to_first_answer = 1.3
+note = "all four probe calls complete; cross-file references in 7.4 s"

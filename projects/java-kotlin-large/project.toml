@@ -1,13 +1,22 @@
-# java-kotlin, large: chosen by size, see docs/PROJECTS.md. Curated: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# java-kotlin, large: embabel/embabel-agent, a Maven multi-module agent framework, mostly Kotlin with Java in the observability, skills and autoconfigure modules (replaces dagger, which has too few modern pull requests that close an issue).
 lang = "java-kotlin"
 size = "large"
 status = "curated"
-repo = "https://github.com/google/dagger"
-tag = "dagger-2.60.1"
-commit = "f7a89b6cea7d47167f2d5f9912f61f3fee333d88"
-loc = 142388
-loc_by_language = { "Java" = 124610, "Kotlin" = 17778 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-task_types = ["move", "signature", "dispatch", "rename", "rename-file", "impls"]
-pr_fallback = "Assigned PR slots filled by documented synthetic fallback task directories; full project validation remains pending."
+repo = "https://github.com/embabel/embabel-agent"
+tag = "main-2026-11-17"
+commit = "37d2914b5e203692ccdc37ab201ced8add359e83"
+loc = 243748
+loc_by_language = { "Kotlin" = 214290, "Java" = 29458 }
+loc_method = "scc 3.5.0 code lines (harness/size/measure.sh), 2026-11-17"
+size_note = "Java is 12% of the code lines (29k of 244k), well below an even mix; owner-accepted deviation. No release tag is checked, so the commit of main on 2026-11-17 is pinned."
+stripped = ["CLAUDE.md"]
+task_types = ["move", "signature", "dispatch"]
+grade_note = "Maven, JDK 21. check.sh builds and tests MODULES (default embabel-agent-api) with -am, from clean target directories (a moved class must not survive as a stale class file), with SKIP_TESTCONTAINER_TESTS=true and a 2 GB heap. The parent pom embabel-build-parent 2.0.4 is on repo.embabel.com/artifactory, reached at prepare and grade-setup time (network on); grade-setup compiles the whole reactor and runs one test class so that the surefire providers are cached. Cold prepare plus grade-setup of one commit takes 7 to 8 minutes on 3 CPUs; a grade run takes 2 to 4 minutes (a clean compile of the api module and its dependencies, then the tests). A mined task whose merge adds dependencies that the base commit has never resolved cannot be built offline and is skipped (pr-log.md)."
+
+[probe]
+ok = false
+note = "Kotlin server (arm enforced), tereditor nightly-2026-11-17: every navigation call fails with 'Language server disconnected ... This build of kotlin-server has expired.' (first call 304 s of retries; the probe was then stopped). The new pin does not fix the expiry (results/probe/java-kotlin-large-enforced)."
+
+[probe_intellij]
+ok = false
+note = "IntelliJ server: licence accepted and the first call answered after 2 s, but the language server exited (state 'The language server exited', in a 4 GB container with the Maven import of 244k code lines) and stayed unavailable for the 900 s of retries; the other four calls were not run. A first attempt of the probe aborted with a jq parse error in the harness (probe.sh read loop) before any call; the repeat ran (results/probe/java-kotlin-large-intellij-enforced)."

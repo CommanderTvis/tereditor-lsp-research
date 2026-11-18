@@ -1,0 +1,10 @@
+type = "pr"
+origin = "modern pull request (opened on or after 2026-07-01, docs/MEMORIZATION.md)"
+pr = 617
+issue = 614
+base_commit = "21c8a1334d1ce703e21c7c474ffafe44f04aa4bd"
+pr_base_sha = "21c8a1334d1ce703e21c7c474ffafe44f04aa4bd"
+head_commit = "1036cd3c5c2d24e6e3ca5837b340e3c6204d2c77"
+merged_at = "2026-08-26T01:40:56Z"
+# the lint-check test suite is slow on a cold Gradle build (several minutes with 3 CPUs)
+grade_timeout_s = 1200

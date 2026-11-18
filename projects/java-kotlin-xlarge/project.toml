@@ -1,13 +1,18 @@
-# java-kotlin, xlarge: chosen by size, see docs/PROJECTS.md. Curated: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# java-kotlin, xlarge: gradle/gradle (JDK 25 build; JDKs 17, 11 and 8 for toolchains, see the scripts).
 lang = "java-kotlin"
 size = "xlarge"
 status = "curated"
+pr_shortfall = 3
+pr_shortfall_reason = "the three unit-level PR candidates (39526, 39587, 39260) are parked in parked-tasks/: a grade run of 39526 exceeds an hour because its pass-to-pass set is every test of three modules, and 39260 fails with the gold patch (offline build of :native). Narrowing the pass-to-pass sets would reinstate them."
 repo = "https://github.com/gradle/gradle"
 tag = "v9.9.1"
 commit = "47a96e4ed1822d6aa7fa32bed4461208e69077a6"
 loc = 731905
 loc_by_language = { "Java" = 562031, "Kotlin" = 169874 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-size_note = "Xlarge task set curated with deterministic synthetic fallbacks; project setup, probe, and validation are intentionally deferred."
-task_types = ["rename", "dispatch", "pr"]
+size_note = "Skipped on grade time. All four commits (pinned, #39526, #39587, #39260 bases) are set up (cold setup 4.4 to 21 minutes each). ./study validate java-kotlin-xlarge (3 CPUs, 8 GB): dispatch-persistentset-groupby VALID; pr-39260 INVALID (starting state fails, gold fails twice: the :native module's offline test build did not work against its base, cause not examined because the Docker CLI hung afterwards); pr-39526 (modules :gradle-cli, :launcher, :logging; pass-to-pass runs every test of all three) had not finished its three grade runs after 109 minutes, i.e. a single grade run took well over 30 minutes (mostly :launcher's tests), over the coordinator's 30-minute limit. Tasks pr-39587, refs-defaultlineinfilelocation and rename-jvmprocesssupport were never reached. The six tasks stay in tasks/java-kotlin-xlarge unvalidated (written, memprobe saved for the PRs); to use them, narrow each pr task's pass-to-pass set (for example to the f2p classes' own packages) instead of whole modules, then re-run validate. The planner enumerates task directories, so move them out of tasks/ while the slot is skipped."
+task_types = ["rename", "dispatch", "refs", "pr", "pr", "pr"]
+
+[probe]
+ok = false
+note = "no probe.json was written for this slot, so no probe ran; write one from the refs task oracle and run ./study probe java-kotlin-xlarge intellij-enforced (POLL_S=900)"

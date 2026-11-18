@@ -1,0 +1,11 @@
+type = "pr"
+origin = "mined: shopware/shopware#22487 (issue #22558), docs/TASKS.md \"Mined pull requests\""
+pr = 22487
+issue = 22558
+base_commit = "fe39f2e9e1019dd361460604db7e07eca973db3f"
+merge_commit = "a64b27d85b61161a1416087dbc751f1b3283b55d"
+merged_at = "2026-11-05T05:52:17Z"
+fail_to_pass = ["Shopware\\Tests\\Unit\\Core\\Content\\Media\\Commands\\GenerateMediaTypesCommandTest::testDetectsAndPersistsMediaTypes","Shopware\\Tests\\Unit\\Core\\Content\\Media\\Commands\\GenerateMediaTypesCommandTest::testSkipsMediaWithoutFile","Shopware\\Tests\\Unit\\Core\\Content\\Media\\Commands\\GenerateThumbnailsCommandTest::testFiltersMediaByFolderName","Shopware\\Tests\\Unit\\Core\\Framework\\Demodata\\Generator\\MediaGeneratorTest::testGenerateCreatesMediaFolderForDefaultFolderWithoutOne","Shopware\\Tests\\Unit\\Core\\Framework\\Demodata\\Generator\\MediaGeneratorTest::testGenerateReusesExistingMediaFolderOfDefaultFolder","Shopware\\Tests\\Unit\\Core\\Maintenance\\SalesChannel\\Command\\SalesChannelReplaceUrlCommandTest::testExecuteSuccessfullyReplacesUrl","Shopware\\Tests\\Unit\\Core\\Maintenance\\SalesChannel\\Command\\SalesChannelReplaceUrlCommandTest::testExecuteTrimsInputUrls","Shopware\\Tests\\Unit\\Storefront\\Theme\\Command\\ThemeChangeCommandTest::testItStillAcceptsTheDeprecatedNoCleanupOption","Shopware\\Tests\\Unit\\Storefront\\Theme\\Message\\CompileThemeHandlerTest::testHandleMessageNotifiesCompletionOnlyWhenRequested with data set \"requested\" (true, 1)","Shopware\\Tests\\Unit\\Storefront\\Theme\\ThemeServiceTest::testResetTheme"]
+pass_to_pass = "the other tests of tests/unit/Core/Content/Media/Commands/GenerateMediaTypesCommandTest.php, tests/unit/Core/Content/Media/Commands/GenerateThumbnailsCommandTest.php, tests/unit/Core/Framework/Demodata/Generator/MediaGeneratorTest.php, tests/unit/Core/Maintenance/SalesChannel/Command/SalesChannelReplaceUrlCommandTest.php, tests/unit/Storefront/Theme/Command/ThemeChangeCommandTest.php, tests/unit/Storefront/Theme/Message/CompileThemeHandlerTest.php, tests/unit/Storefront/Theme/ThemeServiceTest.php"
+loc_base = 1128934
+loc_base_method = "scc 3.5.0 PHP code lines at base_commit (vendor/ excluded, tests included)"

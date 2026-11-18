@@ -1,0 +1,4 @@
+{"task": "tasks/cpp-xlarge/pr-27499", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 1, "fresh_lines": 1, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.0014321899999999999}
+{"task": "tasks/cpp-xlarge/pr-27499", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 1, "fresh_lines": 1, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.020884899999999998}
+{"task": "tasks/cpp-xlarge/pr-27499", "model": "claude-opus-5-5", "answered": true, "gold_lines": 1, "fresh_lines": 1, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.0462418}
+SCORE tasks/cpp-xlarge/pr-27499 worst verbatim share 0.00 (gold lines 1)

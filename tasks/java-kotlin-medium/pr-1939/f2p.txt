@@ -1,0 +1,1 @@
+:core:model au.com.dius.pact.core.model.V4PactMergeSpec

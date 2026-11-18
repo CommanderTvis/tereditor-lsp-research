@@ -1,0 +1,26 @@
+diff --git a/astroid/brain/brain_random.py b/astroid/brain/brain_random.py
+index 90cb4110bf..d2c6731054 100644
+--- a/astroid/brain/brain_random.py
++++ b/astroid/brain/brain_random.py
+@@ -20,6 +20,11 @@
+ def _clone_node_with_lineno(node, parent, lineno):
+     if isinstance(node, nodes.EvaluatedObject):
+         node = node.original
++    if not isinstance(node, nodes.NodeNG):
++        # Inferred objects, such as ``Instance``, are not source nodes: they
++        # cannot be rebuilt from constructor arguments, so pass them through
++        # untouched instead of attempting to clone them.
++        return node
+     cls = node.__class__
+     other_fields = node._other_fields
+     _astroid_fields = node._astroid_fields
+diff --git a/doc/whatsnew/fragments/3310.bugfix b/doc/whatsnew/fragments/3310.bugfix
+new file mode 100644
+index 0000000000..6ba8f30d66
+--- /dev/null
++++ b/doc/whatsnew/fragments/3310.bugfix
+@@ -0,0 +1,4 @@
++Fix a ``TypeError`` crash when inferring ``random.sample()`` on a sequence whose
++elements are inferred as ``Instance``.
++
++Closes #3310

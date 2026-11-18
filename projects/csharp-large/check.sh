@@ -4,6 +4,9 @@
 # of the solution (Jellyfin.Server.Integration.Tests starts a whole server and is left out). TEST_FILTER (a dotnet test
 # filter) narrows the run. `check.sh build` only builds (grade-setup.sh, with network); grading runs offline from
 # ~/.nuget.
+# Jellyfin.Drawing.Skia.Tests is left out of the default list: its sharpen/resize tests fail on an unchanged tree here
+# (native SkiaSharp), and Jellyfin.Networking.Tests resolves jellyfin.org (grading has no network); select either explicitly
+# with TEST_PROJECTS. Jellyfin.Server.Tests is also left out (its ParseNetworkTests need IPv6 name resolution of localhost).
 # At the pin (global.json present, .NET 10) the whole solution is built first. Older commits (net5.0/net6.0) are built
 # with the study's newer SDK: out-of-support frameworks and NuGet audit warnings must not fail the build, warnings are
 # not errors (newer analyzers report what the project never saw), and tests roll forward to the newest runtime; only
@@ -16,9 +19,9 @@ if [ -f global.json ]; then
 else
   props="$props -p:TreatWarningsAsErrors=false -p:RunAnalyzers=false"
 fi
-projects=${TEST_PROJECTS:-$(ls -d tests/*.Tests | grep -v 'Integration' | sed 's|^tests/||' | tr '\n' ' ')}
+projects=${TEST_PROJECTS:-$(ls -d tests/*.Tests | grep -v 'Integration' | grep -v 'Drawing.Skia' | grep -v 'Networking' | grep -v 'tests/Jellyfin.Server.Tests$' | sed 's|^tests/||' | tr '\n' ' ')}
 for p in $projects; do dotnet build "tests/$p" -nologo -v q $props || [ "${1:-}" = build ]; done
 [ "${1:-}" = build ] && exit 0
 for p in $projects; do
-  dotnet test "tests/$p" --no-build -nologo -v q $props ${TEST_FILTER:+--filter "$TEST_FILTER"}
+  dotnet test "tests/$p" --no-build -nologo -v "${TEST_VERBOSITY:-q}" $props ${TEST_FILTER:+--filter "$TEST_FILTER"}
 done

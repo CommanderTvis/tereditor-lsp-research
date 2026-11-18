@@ -1,1 +1,0 @@
-List every concrete Lucene class that directly or transitively implements or extends `org.apache.lucene.search.Query` in production Java code. Write one fully qualified class name per line to `ANSWER.txt`; exclude the declaration, tests, generated code, and anonymous classes.

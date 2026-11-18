@@ -1,0 +1,4 @@
+{"task": "tasks/cpp-medium/pr-4962", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 115, "fresh_lines": 115, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0011880900000000002}
+{"task": "tasks/cpp-medium/pr-4962", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 115, "fresh_lines": 115, "verbatim_share": 0.009, "names_all_files": false, "cost_usd": 0.0294969}
+{"task": "tasks/cpp-medium/pr-4962", "model": "claude-opus-5-5", "answered": true, "gold_lines": 115, "fresh_lines": 115, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.0537978}
+SCORE tasks/cpp-medium/pr-4962 worst verbatim share 0.01 (gold lines 115)

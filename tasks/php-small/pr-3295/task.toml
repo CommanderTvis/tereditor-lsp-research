@@ -1,0 +1,11 @@
+type = "pr"
+origin = "mined: yajra/laravel-datatables#3295 (issue #3144), docs/TASKS.md \"Mined pull requests\""
+pr = 3295
+issue = 3144
+base_commit = "b254900fe238aed6c0306b1ff19da92cbfc951fb"
+merge_commit = "15d33ed473d85961884b09f2f10a55534afc25eb"
+merged_at = "2026-07-03T01:52:12Z"
+fail_to_pass = ["Yajra\\DataTables\\Tests\\Unit\\QueryDataTableTest::it_handles_normal_column_name_search","Yajra\\DataTables\\Tests\\Unit\\QueryDataTableTest::it_handles_starts_with_column_name_search"]
+pass_to_pass = "the other tests of tests/Unit/QueryDataTableTest.php"
+loc_base = 5694
+loc_base_method = "scc 3.5.0 PHP code lines at base_commit (vendor/ excluded, tests included)"

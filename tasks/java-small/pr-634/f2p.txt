@@ -1,0 +1,4 @@
+io.quarkiverse.httpproblem.jackson.InvalidFormatExceptionMapperTest
+io.quarkiverse.httpproblem.jackson.JsonProcessingExceptionMapperTest
+io.quarkiverse.httpproblem.jsonb.JsonbExceptionMapperTest
+io.quarkiverse.httpproblem.jsonb.RestEasyClassicJsonbExceptionMapperTest

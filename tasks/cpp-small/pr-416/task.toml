@@ -1,0 +1,9 @@
+type = "pr"
+pr = 416
+issue = 413
+base_commit = "00788b157b2b6ef3efd8659b66f6521229f382d7"
+merged_at = "2026-09-11T18:43:59Z"
+head_commit = "f07c5e7a7e3e3fe6c9fd28f554bdf821114c996b"
+origin = "mined pull request github.com/mity/md4c/pull/416"
+test_files = ["test/regressions.txt"]
+grade_timeout_s = 1200

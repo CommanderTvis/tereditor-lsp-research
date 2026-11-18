@@ -5,7 +5,8 @@
 # At older commits a sample project may not restore with the current SDK; the rest is still restored and the failure
 # is reported, not fatal (the probe checks what the language server understands).
 set -eu
-dotnet=$(find /cache/managed -path '*dotnet-sdk*' -type f -name dotnet 2>/dev/null | head -n1)
+# the managed cache may hold SDKs of several architectures (shared state volume): take one that runs here
+dotnet=""; for d in $(find /cache/managed -path '*dotnet-sdk*' -type f -name dotnet 2>/dev/null); do "$d" --version >/dev/null 2>&1 && { dotnet=$d; break; }; done
 [ -n "$dotnet" ] || { echo "prepare: no managed .NET SDK under /cache/managed" >&2; exit 1; }
 dotnet_dir=$(dirname "$dotnet")
 export DOTNET_ROOT="$dotnet_dir" PATH="$dotnet_dir:$PATH" DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 \

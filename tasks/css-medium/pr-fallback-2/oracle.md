@@ -1,1 +1,0 @@
-Documented synthetic fallback for an unavailable mined PR. The oracle was derived from the pinned snapshot without using the language server; the project log records that no qualifying PR could be graded offline.

@@ -1,0 +1,159 @@
+diff --git a/Emby.Server.Implementations/Library/LibraryManager.cs b/Emby.Server.Implementations/Library/LibraryManager.cs
+index de44e2ada51..5db3b80386e 100644
+--- a/Emby.Server.Implementations/Library/LibraryManager.cs
++++ b/Emby.Server.Implementations/Library/LibraryManager.cs
+@@ -2376,6 +2376,7 @@ public void CreateItems(IReadOnlyList<BaseItem> items, BaseItem? parent, Cancell
+                             {
+                                 altVideo.OwnerId = video.Id;
+                                 altVideo.SetPrimaryVersionId(video.Id);
++                                altVideo.IsInMixedFolder = video.IsInMixedFolder;
+                                 // ResolveAlternateVersion only sees the alternate's primary file.
+                                 // If the alternate is itself a stack (e.g. 1080p part1 + part2),
+                                 // detect its parts from sibling files so its AdditionalParts persist.
+@@ -2561,6 +2562,8 @@ public async Task UpdateItemsAsync(IReadOnlyList<BaseItem> items, BaseItem paren
+                 item.DateLastSaved = DateTime.UtcNow;
+             }
+ 
++            ForgetDroppedLocalAlternateVersions(items);
++
+             // Resolve and add any local alternate version items that don't exist yet
+             // This ensures they exist in the database when LinkedChildren are processed
+             var allItems = new List<BaseItem>(items);
+@@ -2589,6 +2592,7 @@ public async Task UpdateItemsAsync(IReadOnlyList<BaseItem> items, BaseItem paren
+                             {
+                                 altVideo.OwnerId = video.Id;
+                                 altVideo.SetPrimaryVersionId(video.Id);
++                                altVideo.IsInMixedFolder = video.IsInMixedFolder;
+                                 // ResolveAlternateVersion only sees the alternate's primary file.
+                                 // If the alternate is itself a stack (e.g. 1080p part1 + part2),
+                                 // detect its parts from sibling files so its AdditionalParts persist.
+@@ -2649,6 +2653,30 @@ public async Task UpdateItemsAsync(IReadOnlyList<BaseItem> items, BaseItem paren
+         public Task UpdateItemAsync(BaseItem item, BaseItem parent, ItemUpdateType updateReason, CancellationToken cancellationToken)
+             => UpdateItemsAsync([item], parent, updateReason, cancellationToken);
+ 
++        /// <summary>
++        /// Forgets the cached local alternate versions of the supplied items that they no longer list.
++        /// </summary>
++        /// <param name="items">The items about to be saved.</param>
++        private void ForgetDroppedLocalAlternateVersions(IReadOnlyList<BaseItem> items)
++        {
++            foreach (var video in items.OfType<Video>())
++            {
++                var videoType = video.GetType();
++                var keptIds = video.LocalAlternateVersions
++                    .Where(path => !string.IsNullOrEmpty(path))
++                    .Select(path => GetNewItemId(path, videoType))
++                    .ToHashSet();
++
++                foreach (var versionId in GetLocalAlternateVersionIds(video))
++                {
++                    if (!keptIds.Contains(versionId))
++                    {
++                        _cache.TryRemove(versionId, out _);
++                    }
++                }
++            }
++        }
++
+         /// <inheritdoc />
+         public async Task ReattachUserDataAsync(BaseItem item, CancellationToken cancellationToken)
+         {
+diff --git a/MediaBrowser.Controller/Entities/BaseItem.cs b/MediaBrowser.Controller/Entities/BaseItem.cs
+index 9c6d18d5090..28f40cb7fa3 100644
+--- a/MediaBrowser.Controller/Entities/BaseItem.cs
++++ b/MediaBrowser.Controller/Entities/BaseItem.cs
+@@ -771,6 +771,17 @@ public virtual bool IsTopParent
+         [JsonIgnore]
+         protected virtual bool SupportsOwnedItems => !ParentId.IsEmpty() && IsFileProtocol;
+ 
++        /// <summary>
++        /// Gets a value indicating whether this item searches the folder it lives in for its own extras.
++        /// </summary>
++        [JsonIgnore]
++        protected virtual bool SearchesContainingFolderForExtras =>
++            IsFileProtocol
++            && SupportsOwnedItems
++            && !IsInMixedFolder
++            && this is not (ICollectionFolder or UserRootFolder or AggregateFolder)
++            && GetType() != typeof(Folder);
++
+         [JsonIgnore]
+         public virtual bool SupportsPeople => false;
+ 
+@@ -1528,7 +1539,14 @@ public void SetParent(Folder parent)
+         /// <returns><c>true</c> if any items have changed, else <c>false</c>.</returns>
+         protected virtual async Task<bool> RefreshedOwnedItems(MetadataRefreshOptions options, IReadOnlyList<FileSystemMetadata> fileSystemChildren, CancellationToken cancellationToken)
+         {
+-            if (!IsFileProtocol || !SupportsOwnedItems || IsInMixedFolder || this is ICollectionFolder or UserRootFolder or AggregateFolder || this.GetType() == typeof(Folder))
++            if (!SearchesContainingFolderForExtras)
++            {
++                return false;
++            }
++
++            if (GetParent() is Folder container
++                && container.SearchesContainingFolderForExtras
++                && string.Equals(container.Path, ContainingFolderPath, StringComparison.OrdinalIgnoreCase))
+             {
+                 return false;
+             }
+diff --git a/MediaBrowser.Controller/Entities/TV/Episode.cs b/MediaBrowser.Controller/Entities/TV/Episode.cs
+index 42e4f799421..40f917d50c0 100644
+--- a/MediaBrowser.Controller/Entities/TV/Episode.cs
++++ b/MediaBrowser.Controller/Entities/TV/Episode.cs
+@@ -47,7 +47,7 @@ public class Episode : Video, IHasTrailers, IHasLookupInfo<EpisodeInfo>, IHasSer
+         public int? IndexNumberEnd { get; set; }
+ 
+         [JsonIgnore]
+-        protected override bool SupportsOwnedItems => IsStacked || MediaSourceCount > 1;
++        protected override bool SupportsOwnedItems => IsStacked || LocalAlternateVersions.Length > 0 || MediaSourceCount > 1;
+ 
+         [JsonIgnore]
+         public override bool SupportsInheritedParentImages => true;
+diff --git a/MediaBrowser.Controller/Entities/Video.cs b/MediaBrowser.Controller/Entities/Video.cs
+index 5012378c527..e2f91aa04a4 100644
+--- a/MediaBrowser.Controller/Entities/Video.cs
++++ b/MediaBrowser.Controller/Entities/Video.cs
+@@ -527,7 +527,13 @@ internal override ItemUpdateType UpdateFromResolvedItem(BaseItem newItem)
+ 
+         protected override async Task<bool> RefreshedOwnedItems(MetadataRefreshOptions options, IReadOnlyList<FileSystemMetadata> fileSystemChildren, CancellationToken cancellationToken)
+         {
+-            var hasChanges = await base.RefreshedOwnedItems(options, fileSystemChildren, cancellationToken).ConfigureAwait(false);
++            var hasChanges = false;
++
++            // The extras of a version group are maintained by its primary.
++            if (!PrimaryVersionId.HasValue)
++            {
++                hasChanges = await base.RefreshedOwnedItems(options, fileSystemChildren, cancellationToken).ConfigureAwait(false);
++            }
+ 
+             // Clean up LocalAlternateVersions - remove paths that no longer exist
+             if (LocalAlternateVersions.Length > 0)
+@@ -588,10 +594,20 @@ private async Task RefreshMetadataForVersions(
+                 {
+                     altVideo.OwnerId = Id;
+                     altVideo.SetPrimaryVersionId(Id);
++                    altVideo.IsInMixedFolder = IsInMixedFolder;
+                     LibraryManager.CreateItem(altVideo, GetParent());
+                 }
+             }
+ 
++            // A version is resolved on its own, so it does not learn whether the folder it sits in
++            // holds other items. It has to share that with the version it belongs to, before the
++            // refresh below acts on it.
++            if (LibraryManager.GetItemById(id) is Video resolvedVersion && resolvedVersion.IsInMixedFolder != IsInMixedFolder)
++            {
++                resolvedVersion.IsInMixedFolder = IsInMixedFolder;
++                await resolvedVersion.UpdateToRepositoryAsync(ItemUpdateType.MetadataImport, cancellationToken).ConfigureAwait(false);
++            }
++
+             await RefreshMetadataForOwnedVideo(options, copyTitleMetadata, path, cancellationToken).ConfigureAwait(false);
+ 
+             // Create LinkedChild entry for this local alternate version
+@@ -671,6 +687,7 @@ private async Task RefreshMetadataForOwnedVideo(
+ 
+                 video.Id = id;
+                 video.OwnerId = Id;
++                video.IsInMixedFolder = IsInMixedFolder;
+                 LibraryManager.CreateItem(video, parentFolder);
+                 newOptions.ForceSave = true;
+             }

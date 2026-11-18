@@ -1,0 +1,4 @@
+type = "callers"
+origin = "devrig call hierarchy; same-named method on a library type (Zalando Problem#getTitle) as a decoy"
+symbol = "io.quarkiverse.httpproblem.HttpProblem#getTitle()"
+selection = "seed 20261110. Candidates: methods declared in production classes (main source sets of every module, compiled bytecode read with javap) that are not private, not constructors, neither overriding nor overridden, with at least 3 distinct direct callers in at least 2 classes and at least 6 methods in their transitive caller closure; sorted by Class#name and descriptor: 9 candidates (HttpProblem#builder(), builder(HttpProblem), getDetail, getInstance, getParameters, getStatusCode, getTitle, getType, valueOf); index int(rand()*9)+1 after srand(20261110) = 7 (getTitle). Fixed after seeing candidates: the thresholds (3 callers in 2 classes, closure of 6) were set before the draw but after a first look at the call graph size."

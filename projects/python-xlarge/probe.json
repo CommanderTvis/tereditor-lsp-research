@@ -1,5 +1,7 @@
 [
-  {"file":"salt/state.py","line":923,"character":8,"method":"definition"},
-  {"file":"salt/exceptions.py","line":33,"character":6,"method":"references"},
-  {"file":"salt/client/ssh/state.py","line":87,"character":20,"method":"lsp_diagnostics"}
+  {"name": "references SaltException (cross-file)", "args": {"operation": "references", "query": "SaltException", "path": "salt/exceptions.py"},
+   "expect": ["salt/exceptions.py:33"]},
+  {"name": "definition of SaltException from another module", "args": {"operation": "definition", "query": "SaltException"},
+   "expect": ["salt/exceptions.py:33"]},
+  {"name": "diagnostics on a file", "tool": "lsp_diagnostics", "args": {"paths": ["salt/exceptions.py"]}, "expect": []}
 ]

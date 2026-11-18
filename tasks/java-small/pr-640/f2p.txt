@@ -1,0 +1,8 @@
+io.quarkiverse.httpproblem.deployment.ProblemProcessorTest
+io.quarkiverse.httpproblem.jackson.InvalidDefinitionExceptionMapperTest
+io.quarkiverse.httpproblem.jackson.InvalidFormatExceptionMapperTest
+io.quarkiverse.httpproblem.jackson.JacksonFieldPathSerializerTest
+io.quarkiverse.httpproblem.jackson.JsonProcessingExceptionMapperTest
+io.quarkiverse.httpproblem.jackson.MismatchedInputExceptionMapperTest
+io.quarkiverse.httpproblem.jsonb.JsonbExceptionMapperTest
+io.quarkiverse.httpproblem.jsonb.RestEasyClassicJsonbExceptionMapperTest

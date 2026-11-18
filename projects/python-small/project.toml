@@ -1,11 +1,21 @@
-# Python, small: toolz, functional utilities. Many modules, star imports, a curried namespace that rebinds most names.
+# Python, small: pydantic-extra-types, extra types for pydantic. Many small modules, optional third-party backends
+# (pycountry, phonenumbers, pendulum, python-ulid, semver, pymongo), validators reached through pydantic's protocols.
 lang = "python"
 size = "small"
 status = "curated"
-repo = "https://github.com/pytoolz/toolz"
-commit = "451af60dec590a6010e2babdbf391ea8f815122f"
-loc = 5765
+repo = "https://github.com/pydantic/pydantic-extra-types"
+tag = "v2.11.2"
+commit = "eb519c6bd5c2ffaca88e22755fae846081834e2d"
+loc = 10264
+loc_by_language = { "Python" = 10264 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md (harness/size/count.sh at the pinned commit)"
 stripped = []
 task_types = ["rename", "rename-file", "refs", "pr", "pr", "pr"]
-loc_by_language = { "Python" = 5765 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+
+[probe]
+# ./study probe python-small (enforced), 2026-11-17.
+ok = true
+seconds_to_first_answer = 2.25
+references = "complete in 2.3 s: Color from pydantic_extra_types/color.py finds its uses in the package and tests"
+definition = "complete in 1.9 s: PaymentCardNumber resolves to pydantic_extra_types/payment.py:35"
+diagnostics = "complete in 0.6 s: pydantic_extra_types/isbn.py checked, 2 diagnostics (lines 11 and 12, unresolved optional imports in the server's view)"

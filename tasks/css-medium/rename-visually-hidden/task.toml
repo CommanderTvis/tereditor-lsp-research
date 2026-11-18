@@ -1,0 +1,5 @@
+type = "rename"
+origin = "synthetic: rename a Sass mixin used across packages, whose name also occurs in module paths, a CSS class, a namespace and docs (devrig safe rename)"
+symbol = "visually-hidden (mixin, packages/styles/scss/utilities/_visually-hidden.scss)"
+new_name = "screen-reader-only"
+selection = "Candidates: mixins and functions defined exactly once under packages/styles/scss/utilities/ and referenced (word match, not part of a longer name) in at least 10 files with at least 20 references; 14 candidates (ai-gradient, ai-popover-gradient, box-shadow, declaration, density, emit-layout-tokens, focus-outline, high-contrast-mode, rotate, size, skeleton, use, visually-hidden, z), sorted, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk), first taken: visually-hidden (the second, z, is the subject of the callers task). The name also names the partial _visually-hidden.scss and its @use and @forward paths (24), the default namespace of @use '../../utilities/visually-hidden' (visually-hidden.visually-hidden), the CSS class .cds--visually-hidden (13 occurrences in Sass) and unrelated selectors; none of those may change."

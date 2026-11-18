@@ -1,13 +1,30 @@
-# kotlin, small: chosen by size, see docs/PROJECTS.md. Curated: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# Kotlin, small: slackhq/compose-lints, Android Lint checks for Jetpack Compose (Slack). Pure JVM Gradle build with
+# one module: a detector per rule over Kotlin PSI and UAST, shared helpers in util/, and lint's own test harness
+# (lint-tests) for every rule. Replaces kotlin-result (a Kotlin Multiplatform build with almost no modern pull requests
+# that close issues, docs/MEMORIZATION.md).
 lang = "kotlin"
 size = "small"
 status = "curated"
-repo = "https://github.com/michaelbull/kotlin-result"
-tag = "2.3.1"
-commit = "a528dd0f2e40522df0a45287ffcf46fbd9893d56"
-loc = 8485
-loc_by_language = { "Kotlin" = 8485 }
+repo = "https://github.com/slackhq/compose-lints"
+tag = "1.6.1"
+commit = "712b929717741d6ed6ee0937a3c3ec972f99abe9"
+loc = 13353
+stripped = []
+loc_by_language = { "Kotlin" = 13353 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-task_types = ["rename", "rename-file", "refs", "move", "signature", "impls"]
-pr_fallback = "No qualifying pre-cutoff PRs; three assigned pr slots are synthetic fallbacks (see tasks/kotlin-small/pr-log.md)."
+size_note = "13.4k Kotlin code lines, above the 3k to 12k small band; the owner waived the band for this project (no pure-JVM Kotlin project inside the band has live pull requests)."
+# Assigned (docs/TASKS.md): rename, rename-file, refs + 3 pr (modern pull requests, tasks/kotlin-small/pr-log.md).
+task_types = ["rename", "rename-file", "refs", "pr", "pr", "pr"]
+substitutions = []
+
+[probe]
+ok = false
+seconds_to_first_answer = 3
+note = "the Kotlin server (arm enforced) answered every navigation call with 'This build of kotlin-server has expired' (language server disconnected); diagnostics and lsp_status returned. A finding about the pinned tereditor build, not the project (results/probe/kotlin-small-enforced)."
+
+[probe_intellij]
+ok = true
+seconds_to_first_answer = 3
+seconds_to_complete = 116
+licence = "intellij server started and answered all calls"
+note = "references by name complete after 116 s (project graph loading), references at a position, definition, diagnostics and lsp_status complete in 3 s or less (results/probe/kotlin-small-intellij-enforced)."

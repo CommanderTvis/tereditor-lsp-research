@@ -1,0 +1,8 @@
+type = "pr"
+origin = "mined pull request (modern, docs/MEMORIZATION.md)"
+pr = 412
+issue = 411
+base_commit = "653ec79f3ba17d1677b449bae41d820f14ad3a81"
+merge_commit = "4b885d3d8fcd8d018bdec5e493c37650a38d6b5b"
+merged_at = "2026-11-12T11:53:11Z"
+test_files = ["test/listener.test.ts","test/utils.test.ts"]

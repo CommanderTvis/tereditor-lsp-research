@@ -1,24 +1,18 @@
 # Mined pull requests: typescript-large (typeorm)
 
-Candidates from `sh harness/gen/mine-prs.sh typescript-large` (203 qualify, first 40 in seeded order in
-pr-candidates.jsonl), taken strictly in order. Grading runs offline with sql.js only: no database server exists in
-the grading sandbox, and the native SQLite drivers (sqlite3, better-sqlite3) are not built (no compiler, install
-scripts off). A candidate whose tests are enabled only for other drivers cannot fail at its base commit here.
+Modern rule (docs/MEMORIZATION.md): opened on or after 2026-07-01 and merged. 26 candidates qualify (pr-candidates.jsonl,
+seeded order), taken strictly in order. Grading is offline on sql.js only (no database server, no native driver). The
+memorization probe is a measurement, not a filter: each task's memprobe.jsonl is kept.
 
 | PR | Outcome | Reason |
 | --- | --- | --- |
-| 8536 | tried | |
-| 7471 | skipped | tests enabled only for postgres, mariadb, mysql (`enabledDrivers`), not available offline |
-| 6927 | skipped | test enabled only for oracle |
-| 6642 | tried | |
-| 5305 | skipped | test enabled only for postgres |
-| 8977 | skipped | the test runs `typeorm init`, which installs the new project's packages from the npm registry; no network at grade time |
+| 12711 | task pr-12711 | |
+| 12759 | task pr-12759 | |
+| 12752 | skipped | test needs better-sqlite3 (native, unbuilt): passes at the base commit, cannot fail to pass |
+| 12729 | skipped | webpack test passes at the base commit: cannot fail to pass offline |
+| 12704 | skipped | test needs better-sqlite3 (native, unbuilt): fails with and without the fix |
+| 12891 | skipped | cockroachdb only (not built) |
+| 12905 | task pr-12905 | |
 
-The remaining PR slot is filled by `refs-entity-listener-execute-fallback`, a documented synthetic fallback using
-the existing compiler-mutation oracle and candidate selection. Its metadata records `fallback_for = "pr"`.
-
-The remaining assigned PR slot is now represented by typed task `pr-7471-fallback`, preserving candidate #7471's
-issue text, base/merge metadata, and non-test source diff. Its fallback metadata records deferred validation.
-
-The remaining assigned PR slot is represented by typed task `pr-7471-fallback`, preserving candidate #7471's issue
-text, base/merge metadata, and non-test source diff. Its fallback metadata records deferred validation.
+Also built and validated before the rule change, not among the first three, removed: 12663, 12793 (12938 and 12706 were
+built and validated too and also not needed).

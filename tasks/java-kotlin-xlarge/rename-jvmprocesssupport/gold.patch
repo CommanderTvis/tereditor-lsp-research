@@ -1,0 +1,145 @@
+diff --git a/platforms/core-runtime/process-services-base/src/java9Test/groovy/org/gradle/process/internal/jvm/JvmProcessSupportJava9Test.groovy b/platforms/core-runtime/process-services-base/src/java9Test/groovy/org/gradle/process/internal/jvm/JvmProcessSupportJava9Test.groovy
+index a76723c3..9c980e8b 100644
+--- a/platforms/core-runtime/process-services-base/src/java9Test/groovy/org/gradle/process/internal/jvm/JvmProcessSupportJava9Test.groovy
++++ b/platforms/core-runtime/process-services-base/src/java9Test/groovy/org/gradle/process/internal/jvm/JvmProcessSupportJava9Test.groovy
+@@ -22,7 +22,7 @@ import spock.lang.Specification
+ import spock.lang.Timeout
+ 
+ /**
+- * Exercises the Java 9+ copy of {@link JvmProcessSupport}.
++ * Exercises the Java 9+ copy of {@link ProcessHandleSupport}.
+  */
+ @Timeout(60)
+ class JvmProcessSupportJava9Test extends Specification {
+@@ -38,8 +38,8 @@ class JvmProcessSupportJava9Test extends Specification {
+         def process = startSleeper()
+ 
+         expect:
+-        JvmProcessSupport.pid(process) == process.pid()
+-        JvmProcessSupport.pid(process) > 0
++        ProcessHandleSupport.pid(process) == process.pid()
++        ProcessHandleSupport.pid(process) > 0
+ 
+         cleanup:
+         process.destroyForcibly().waitFor()
+@@ -52,7 +52,7 @@ class JvmProcessSupportJava9Test extends Specification {
+         waitFor { process.descendants().count() >= 1 }
+ 
+         when:
+-        JvmProcessSupport.destroyDescendants(process)
++        ProcessHandleSupport.destroyDescendants(process)
+ 
+         then:
+         waitFor { process.descendants().count() == 0 }
+diff --git a/platforms/core-runtime/process-services-base/src/main/java/org/gradle/process/internal/ExecHandleRunner.java b/platforms/core-runtime/process-services-base/src/main/java/org/gradle/process/internal/ExecHandleRunner.java
+index f27ec7fe..0edbab4c 100644
+--- a/platforms/core-runtime/process-services-base/src/main/java/org/gradle/process/internal/ExecHandleRunner.java
++++ b/platforms/core-runtime/process-services-base/src/main/java/org/gradle/process/internal/ExecHandleRunner.java
+@@ -24,7 +24,7 @@
+ import org.gradle.internal.operations.BuildOperationRef;
+ import org.gradle.internal.operations.CurrentBuildOperationRef;
+ import org.gradle.internal.os.OperatingSystem;
+-import org.gradle.process.internal.jvm.JvmProcessSupport;
++import org.gradle.process.internal.jvm.ProcessHandleSupport;
+ import org.gradle.process.internal.streams.FinishNotifyingStreamsHandler;
+ 
+ import java.io.InputStreamReader;
+@@ -75,7 +75,7 @@ public void sendSignal(int signal) {
+                 throw new IllegalStateException("Cannot send signal " + signal + ": the process has not started yet");
+             }
+             try {
+-                long pid = JvmProcessSupport.pid(process);
++                long pid = ProcessHandleSupport.pid(process);
+                 String[] command = {"kill", "-" + signal, String.valueOf(pid)};
+                 Process kill = new ProcessBuilder(command)
+                     .redirectErrorStream(true)
+@@ -118,7 +118,7 @@ public void abortProcess() {
+      * Falls back to only destroying the main process if the code runs on Java 8 or lower, which is the Gradle 8 or lower behavior.
+      */
+     private void destroyProcessTree() {
+-        JvmProcessSupport.destroyDescendants(process);
++        ProcessHandleSupport.destroyDescendants(process);
+         process.destroy();
+     }
+ 
+diff --git a/platforms/core-runtime/process-services-base/src/main/java/org/gradle/process/internal/jvm/JvmProcessSupport.java b/platforms/core-runtime/process-services-base/src/main/java/org/gradle/process/internal/jvm/ProcessHandleSupport.java
+similarity index 96%
+rename from platforms/core-runtime/process-services-base/src/main/java/org/gradle/process/internal/jvm/JvmProcessSupport.java
+rename to platforms/core-runtime/process-services-base/src/main/java/org/gradle/process/internal/jvm/ProcessHandleSupport.java
+index 760d850c..55e1a881 100644
+--- a/platforms/core-runtime/process-services-base/src/main/java/org/gradle/process/internal/jvm/JvmProcessSupport.java
++++ b/platforms/core-runtime/process-services-base/src/main/java/org/gradle/process/internal/jvm/ProcessHandleSupport.java
+@@ -27,7 +27,7 @@
+  * Version-specific access to {@link Process} APIs or their polyfill.
+  */
+ @NullMarked
+-public final class JvmProcessSupport {
++public final class ProcessHandleSupport {
+ 
+     private static final AtomicReference<@Nullable Field> PID_FIELD = new AtomicReference<>();
+ 
+@@ -69,6 +69,6 @@ public static long pid(Process process) {
+     public static void destroyDescendants(Process process) {
+     }
+ 
+-    private JvmProcessSupport() {
++    private ProcessHandleSupport() {
+     }
+ }
+diff --git a/platforms/core-runtime/process-services-base/src/main/java9/org/gradle/process/internal/jvm/JvmProcessSupport.java b/platforms/core-runtime/process-services-base/src/main/java9/org/gradle/process/internal/jvm/ProcessHandleSupport.java
+similarity index 84%
+rename from platforms/core-runtime/process-services-base/src/main/java9/org/gradle/process/internal/jvm/JvmProcessSupport.java
+rename to platforms/core-runtime/process-services-base/src/main/java9/org/gradle/process/internal/jvm/ProcessHandleSupport.java
+index a4289795..7d76b121 100644
+--- a/platforms/core-runtime/process-services-base/src/main/java9/org/gradle/process/internal/jvm/JvmProcessSupport.java
++++ b/platforms/core-runtime/process-services-base/src/main/java9/org/gradle/process/internal/jvm/ProcessHandleSupport.java
+@@ -19,13 +19,13 @@
+ import org.jspecify.annotations.NullMarked;
+ 
+ /**
+- * Java 9+ copy of {@link JvmProcessSupport}, using the real {@link Process} APIs directly with
++ * Java 9+ copy of {@link ProcessHandleSupport}, using the real {@link Process} APIs directly with
+  * no reflection.
+  */
+ @NullMarked
+-public final class JvmProcessSupport {
++public final class ProcessHandleSupport {
+ 
+-    private JvmProcessSupport() {
++    private ProcessHandleSupport() {
+     }
+ 
+     public static long pid(Process process) {
+diff --git a/platforms/core-runtime/process-services-base/src/test/groovy/org/gradle/process/internal/jvm/JvmProcessSupportTest.groovy b/platforms/core-runtime/process-services-base/src/test/groovy/org/gradle/process/internal/jvm/JvmProcessSupportTest.groovy
+index 5bcb53a3..f15d1bf4 100644
+--- a/platforms/core-runtime/process-services-base/src/test/groovy/org/gradle/process/internal/jvm/JvmProcessSupportTest.groovy
++++ b/platforms/core-runtime/process-services-base/src/test/groovy/org/gradle/process/internal/jvm/JvmProcessSupportTest.groovy
+@@ -21,7 +21,7 @@ import spock.lang.Specification
+ import spock.lang.Timeout
+ 
+ /**
+- * Exercises the base (Java 8) copy of {@link JvmProcessSupport}.
++ * Exercises the base (Java 8) copy of {@link ProcessHandleSupport}.
+  * For Java 9+ specific behavior, see {@code JvmProcessSupportJava9Test}.
+  */
+ @Timeout(60)
+@@ -38,8 +38,8 @@ class JvmProcessSupportTest extends Specification {
+         def process = startSleeper()
+ 
+         expect:
+-        JvmProcessSupport.pid(process) == process.pid()
+-        JvmProcessSupport.pid(process) > 0
++        ProcessHandleSupport.pid(process) == process.pid()
++        ProcessHandleSupport.pid(process) > 0
+ 
+         cleanup:
+         process.destroyForcibly().waitFor()
+@@ -49,7 +49,7 @@ class JvmProcessSupportTest extends Specification {
+         def process = startSleeper()
+ 
+         when:
+-        JvmProcessSupport.destroyDescendants(process)
++        ProcessHandleSupport.destroyDescendants(process)
+ 
+         then:
+         process.alive

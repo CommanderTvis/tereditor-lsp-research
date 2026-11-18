@@ -1,0 +1,426 @@
+diff --git a/docs/migration-guide/v4.mdx b/docs/migration-guide/v4.mdx
+index 386dbc7c5cd..0ce0742509a 100644
+--- a/docs/migration-guide/v4.mdx
++++ b/docs/migration-guide/v4.mdx
+@@ -855,6 +855,12 @@ If you relied on either option, remove it from your `jobs` config. If you depend
+ 
+ The `jobsCollectionOverrides` warning that detected extra hooks and prompted users to set `runHooks` has also been removed.
+ 
++### Jobs: custom database adapters must implement `updateJobs`
++
++Payload now uses a unique `processingToken` when claiming jobs so multiple workers cannot run the same job. This adds an internal, nullable `processingToken` field to the `payload-jobs` collection. Existing SQL databases need a migration that adds this column. MongoDB does not require a migration.
++
++The default `updateJobs` implementation has been removed because it could not safely claim jobs across multiple workers. If you maintain a custom database adapter, you must now provide `updateJobs`. It must only claim jobs that still match the provided `where` condition and, when a `processingToken` is provided, return only the jobs claimed with that token. The official Payload database adapters already implement this behavior.
++
+ ### Jobs: the `state` field on task return values has been removed ([#16416](https://github.com/payloadcms/payload/pull/16416))
+ 
+ Job task handlers and `inlineTask` callbacks can no longer use the `state` field to signal success or failure. Both shapes were deprecated in v3 and are now removed from tasks and inline tasks.
+diff --git a/packages/db-mongodb/src/updateJobs.ts b/packages/db-mongodb/src/updateJobs.ts
+index 703412410c1..df83175c22c 100644
+--- a/packages/db-mongodb/src/updateJobs.ts
++++ b/packages/db-mongodb/src/updateJobs.ts
+@@ -36,7 +36,7 @@ export const updateJobs: UpdateJobs = async function updateMany(
+     timestamps: true,
+   })
+ 
+-  let query = await buildQuery({
++  const query = await buildQuery({
+     adapter: this,
+     collectionSlug: collectionConfig.slug,
+     fields: collectionConfig.flattenedFields,
+@@ -105,20 +105,68 @@ export const updateJobs: UpdateJobs = async function updateMany(
+         const doc = await Model.findOneAndUpdate(query, updateData, findOptions)
+         result = doc ? [doc] : []
+       }
+-    } else {
+-      if (typeof limit === 'number' && limit > 0) {
+-        const documentsToUpdate = await Model.find(
+-          query,
+-          {},
+-          { ...findOptions, limit, projection: { _id: 1 }, sort },
+-        )
+-        if (documentsToUpdate.length === 0) {
++    } else if (limit === 1) {
++      /**
++       * Select, update, and return one job atomically in a single database call.
++       * We can only do this with limit === 1, which can be expressed as findOne.
++       */
++      const doc = await Model.findOneAndUpdate(query, updateData, {
++        ...findOptions,
++        projection: returning === false ? { _id: 1 } : undefined,
++        sort,
++      })
++
++      if (returning === false) {
++        return null
++      }
++
++      result = doc ? [doc] : []
++    } else if (typeof limit === 'number' && limit > 1) {
++      const candidates = await Model.find(
++        query,
++        {},
++        { ...findOptions, limit, projection: { _id: 1 }, sort },
++      )
++
++      if (candidates.length === 0) {
++        return null
++      }
++
++      const candidateIDs = candidates.map((candidate) => candidate._id)
++
++      if (typeof data.processingToken === 'string') {
++        /**
++         * `processingToken` identifies this claim update. `processing: true` cannot, because every
++         * worker writes the same value. The token lets us reliably find the jobs this update won.
++         */
++        const claimQuery = {
++          $and: [query, { _id: { $in: candidateIDs } }],
++        }
++
++        await Model.updateMany(claimQuery, updateData, baseOptions)
++
++        if (returning === false) {
+           return null
+         }
+ 
+-        query = { _id: { $in: documentsToUpdate.map((doc) => doc._id) } }
+-      }
++        const claimedJobsQuery = {
++          _id: { $in: candidateIDs },
++          processingToken: { $eq: data.processingToken },
++        }
++
++        result = await Model.find(claimedJobsQuery, {}, { ...findOptions, sort })
++      } else {
++        const limitedUpdateQuery = { _id: { $in: candidateIDs } }
+ 
++        await Model.updateMany(limitedUpdateQuery, updateData, baseOptions)
++
++        if (returning === false) {
++          return null
++        }
++
++        result = await Model.find(limitedUpdateQuery, {}, { ...findOptions, sort })
++      }
++    } else {
+       await Model.updateMany(query, updateData, baseOptions)
+ 
+       if (returning === false) {
+diff --git a/packages/drizzle/src/updateJobs.ts b/packages/drizzle/src/updateJobs.ts
+index abe1f36ef12..5093739145a 100644
+--- a/packages/drizzle/src/updateJobs.ts
++++ b/packages/drizzle/src/updateJobs.ts
+@@ -1,14 +1,25 @@
++import type { LibSQLDatabase } from 'drizzle-orm/libsql'
+ import type { UpdateJobs, Where } from 'payload'
+ 
++import { and, eq, inArray } from 'drizzle-orm'
+ import toSnakeCase from 'to-snake-case'
+ 
+ import type { DrizzleAdapter } from './types.js'
+ 
+ import { findMany } from './find/findMany.js'
++import { transformForWrite } from './transform/write/index.js'
+ import { upsertRow } from './upsertRow/index.js'
+ import { shouldUseOptimizedUpsertRow } from './upsertRow/shouldUseOptimizedUpsertRow.js'
+ import { getPrimaryDb } from './utilities/getPrimaryDb.js'
+ import { getTransaction } from './utilities/getTransaction.js'
++import { markWrite } from './utilities/readAfterWrite.js'
++
++const isInitialJobClaim = (data: Record<string, unknown>): boolean =>
++  data.processing === true &&
++  typeof data.processingToken === 'string' &&
++  Object.keys(data).every(
++    (field) => field === 'processing' || field === 'processingToken' || field === 'updatedAt',
++  )
+ 
+ export const updateJobs: UpdateJobs = async function updateMany(
+   this: DrizzleAdapter,
+@@ -69,6 +80,40 @@ export const updateJobs: UpdateJobs = async function updateMany(
+ 
+   const db = getPrimaryDb(this, await getTransaction(this, req))
+ 
++  if (isInitialJobClaim(data)) {
++    const _db = db as LibSQLDatabase
++    const table = this.tables[tableName]
++    const { row } = transformForWrite({
++      adapter: this,
++      data,
++      enableAtomicWrites: true,
++      fields: collection.flattenedFields,
++      tableName,
++    })
++
++    if (typeof row.updatedAt === 'undefined' || row.updatedAt === null) {
++      delete row.updatedAt
++    }
++
++    const jobIDs = jobs.docs.map((job) => job.id)
++    const claimedRows = await _db
++      .update(table)
++      .set(row)
++      .where(and(inArray(table.id, jobIDs), eq(table.processing, false)))
++      .returning({ id: table.id })
++
++    if (claimedRows.length) {
++      markWrite(this)
++    }
++
++    if (returning === false) {
++      return null
++    }
++
++    const claimedIDs = new Set(claimedRows.map(({ id }) => id))
++    return jobs.docs.filter((job) => claimedIDs.has(job.id)).map((job) => ({ ...job, ...data }))
++  }
++
+   const results = []
+ 
+   // TODO: We need to batch this to reduce the amount of db calls. This can get very slow if we are updating a lot of rows.
+diff --git a/packages/payload/src/database/createDatabaseAdapter.ts b/packages/payload/src/database/createDatabaseAdapter.ts
+index 5995115ece1..be0cba6979d 100644
+--- a/packages/payload/src/database/createDatabaseAdapter.ts
++++ b/packages/payload/src/database/createDatabaseAdapter.ts
+@@ -7,7 +7,6 @@ import type {
+   RollbackTransaction,
+ } from './types.js'
+ 
+-import { defaultUpdateJobs } from './defaultUpdateJobs.js'
+ import { createMigration } from './migrations/createMigration.js'
+ import { migrate } from './migrations/migrate.js'
+ import { migrateDown } from './migrations/migrateDown.js'
+@@ -34,7 +33,6 @@ export function createDatabaseAdapter<T extends BaseDatabaseAdapter>(
+     | 'migrateReset'
+     | 'migrateStatus'
+     | 'migrationDir'
+-    | 'updateJobs'
+   >,
+ ): T {
+   return {
+@@ -52,8 +50,6 @@ export function createDatabaseAdapter<T extends BaseDatabaseAdapter>(
+     migrateStatus,
+     // @ts-expect-error - vestiges of when tsconfig was not strict. Feel free to improve
+     rollbackTransaction,
+-    updateJobs: defaultUpdateJobs,
+-
+     ...args,
+     // Ensure migrationDir is set
+     migrationDir: args.migrationDir || 'migrations',
+diff --git a/packages/payload/src/database/defaultUpdateJobs.ts b/packages/payload/src/database/defaultUpdateJobs.ts
+deleted file mode 100644
+index 189b1d34f9b..00000000000
+--- a/packages/payload/src/database/defaultUpdateJobs.ts
++++ /dev/null
+@@ -1,52 +0,0 @@
+-import type { DatabaseAdapter, Job } from '../index.js'
+-import type { UpdateJobs } from './types.js'
+-
+-import { jobsCollectionSlug } from '../queues/config/collection.js'
+-
+-export const defaultUpdateJobs: UpdateJobs = async function updateMany(
+-  this: DatabaseAdapter,
+-  { id, data, limit, req, returning, where },
+-) {
+-  const updatedJobs: Job[] | null = []
+-
+-  const jobsToUpdate: Job[] = (
+-    id
+-      ? [
+-          await this.findOne({
+-            collection: jobsCollectionSlug,
+-            req,
+-            where: { id: { equals: id } },
+-          }),
+-        ]
+-      : (
+-          await this.find({
+-            collection: jobsCollectionSlug,
+-            limit,
+-            pagination: false,
+-            req,
+-            where,
+-          })
+-        ).docs
+-  ).filter(Boolean) as Job[]
+-
+-  if (!jobsToUpdate) {
+-    return null
+-  }
+-
+-  for (const job of jobsToUpdate) {
+-    const updateData = {
+-      ...job,
+-      ...data,
+-    }
+-    const updatedJob = await this.updateOne({
+-      id: job.id,
+-      collection: jobsCollectionSlug,
+-      data: updateData,
+-      req,
+-      returning,
+-    })
+-    updatedJobs.push(updatedJob)
+-  }
+-
+-  return updatedJobs
+-}
+diff --git a/packages/payload/src/database/types.ts b/packages/payload/src/database/types.ts
+index 926cee877a3..f4c45542073 100644
+--- a/packages/payload/src/database/types.ts
++++ b/packages/payload/src/database/types.ts
+@@ -630,6 +630,12 @@ export type UpdateJobsArgs = {
+     }
+ )
+ 
++/**
++ * Updates jobs matching the provided `where` condition.
++ *
++ * Job claims must only update jobs that are still not processing.
++ * When a `processingToken` is provided, only jobs updated with that token may be returned.
++ */
+ export type UpdateJobs = (args: UpdateJobsArgs) => Promise<Job[] | null>
+ 
+ export type UpsertArgs = {
+diff --git a/packages/payload/src/queues/config/collection.ts b/packages/payload/src/queues/config/collection.ts
+index 5a79063b253..496b7082bfc 100644
+--- a/packages/payload/src/queues/config/collection.ts
++++ b/packages/payload/src/queues/config/collection.ts
+@@ -234,6 +234,14 @@ export const getDefaultJobsCollection: (jobsConfig: SanitizedConfig['jobs']) =>
+         defaultValue: false,
+         index: true,
+       },
++      {
++        name: 'processingToken',
++        type: 'text',
++        admin: {
++          hidden: true,
++          readOnly: true,
++        },
++      },
+       // Only add concurrencyKey field if concurrency control is enabled
+       ...(jobsConfig.enableConcurrencyControl
+         ? [
+@@ -267,6 +275,7 @@ export const getDefaultJobsCollection: (jobsConfig: SanitizedConfig['jobs']) =>
+         ({ data, originalDoc }) => {
+           if (originalDoc?.error?.cancelled) {
+             data.processing = false
++            data.processingToken = null
+             data.hasError = true
+             delete data.completedAt
+             delete data.waitUntil
+diff --git a/packages/payload/src/queues/config/types/workflowTypes.ts b/packages/payload/src/queues/config/types/workflowTypes.ts
+index d561eca2536..dd50c1bd43f 100644
+--- a/packages/payload/src/queues/config/types/workflowTypes.ts
++++ b/packages/payload/src/queues/config/types/workflowTypes.ts
+@@ -67,6 +67,7 @@ export type BaseJob<
+     scheduled?: boolean
+   }
+   processing?: boolean
++  processingToken?: null | string
+   queue?: string
+   taskSlug?: null | TaskType
+   taskStatus: JobTaskStatus
+diff --git a/packages/payload/src/queues/operations/runJobs/index.ts b/packages/payload/src/queues/operations/runJobs/index.ts
+index c82cc9c560b..cadac3f5472 100644
+--- a/packages/payload/src/queues/operations/runJobs/index.ts
++++ b/packages/payload/src/queues/operations/runJobs/index.ts
+@@ -1,3 +1,5 @@
++import { v4 as uuid } from 'uuid'
++
+ import type { Job } from '../../../index.js'
+ import type { PayloadRequest, Sort, Where } from '../../../types/index.js'
+ import type { WorkflowJSON } from '../../config/types/workflowJSONTypes.js'
+@@ -109,6 +111,7 @@ export const runJobs = async (args: RunJobsArgs): Promise<RunJobsResult> => {
+       throw new Forbidden(req.t)
+     }
+   }
++  const processingToken = uuid()
+   const and: Where[] = [
+     {
+       completedAt: {
+@@ -141,7 +144,7 @@ export const runJobs = async (args: RunJobsArgs): Promise<RunJobsResult> => {
+     },
+   ]
+ 
+-  if (allQueues !== true) {
++  if (!id && allQueues !== true) {
+     and.push({
+       queue: {
+         equals: queue ?? 'default',
+@@ -153,6 +156,10 @@ export const runJobs = async (args: RunJobsArgs): Promise<RunJobsResult> => {
+     and.push(whereFromProps)
+   }
+ 
++  if (id) {
++    and.push({ id: { equals: id } })
++  }
++
+   // Only enforce concurrency controls if the feature is enabled
+   if (jobsConfig.enableConcurrencyControl) {
+     // Find currently running jobs with concurrency keys to enforce exclusive concurrency
+@@ -193,22 +200,23 @@ export const runJobs = async (args: RunJobsArgs): Promise<RunJobsResult> => {
+     }
+   }
+ 
+-  // Find all jobs and ensure we set job to processing: true as early as possible to reduce the chance of
+-  // the same job being picked up by another worker
++  // Claim jobs before running them so another worker cannot pick up the same jobs.
++  // `processingToken` identifies which jobs were claimed by this runner.
+   let jobs: Job[] = []
+ 
+   if (id) {
+-    // Only one job to run
+-    const job = await updateJob({
+-      id,
++    const updatedDocs = await updateJobs({
+       data: {
+         processing: true,
++        processingToken,
+       },
++      limit: 1,
+       req,
+       returning: true,
++      where: { and },
+     })
+-    if (job) {
+-      jobs = [job]
++    if (updatedDocs) {
++      jobs = updatedDocs
+     }
+   } else {
+     let defaultProcessingOrder: Sort =
+@@ -234,6 +242,7 @@ export const runJobs = async (args: RunJobsArgs): Promise<RunJobsResult> => {
+     const updatedDocs = await updateJobs({
+       data: {
+         processing: true,
++        processingToken,
+       },
+       limit,
+       req,
+@@ -283,7 +292,9 @@ export const runJobs = async (args: RunJobsArgs): Promise<RunJobsResult> => {
+         data: { processing: false },
+         req,
+         returning: false,
+-        where: { id: { in: releaseIds } },
++        where: {
++          and: [{ id: { in: releaseIds } }, { processingToken: { equals: processingToken } }],
++        },
+       })
+     }
+ 
+diff --git a/packages/payload/src/queues/utilities/updateJob.ts b/packages/payload/src/queues/utilities/updateJob.ts
+index 5e22df6a568..548f96bca21 100644
+--- a/packages/payload/src/queues/utilities/updateJob.ts
++++ b/packages/payload/src/queues/utilities/updateJob.ts
+@@ -62,6 +62,10 @@ export async function updateJobs({
+         : undefined,
+   }
+ 
++  if (data.processing === false) {
++    data.processingToken = null
++  }
++
+   if (typeof data.updatedAt === 'undefined') {
+     // Ensure updatedAt date is always updated
+     data.updatedAt = getCurrentDate().toISOString()

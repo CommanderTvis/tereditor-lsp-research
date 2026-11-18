@@ -1,0 +1,6 @@
+type = "refs"
+origin = "devrig find-usages; overloads on a type and its supertype"
+symbol = "slack.lint.compose.util.returnsUnitOrVoid(UMethod)"
+selection = "seed 20261110. Candidates: functions declared in compose-lint-checks/src/main that are not private, whose name is declared more than once there and occurs (whole word) on at least 8 lines in at least 4 files of the repository; sorted by name: composableCallKind (3 declarations), returnsUnitOrVoid (2 declarations); index int(rand()*2)+1 after srand(20261110) = 2 (returnsUnitOrVoid). Of its two declarations (extensions on UMethod and on PsiMethod, UMethod being a PsiMethod) the first, public one is the subject. Fixed after seeing candidates: the candidate filter (names declared more than once) was set after seeing the declarations."
+# the lint-check test suite is slow on a cold Gradle build (several minutes with 3 CPUs)
+grade_timeout_s = 1200

@@ -10,11 +10,12 @@ loc = 4478
 loc_by_language = { "Shell" = 278, "BASH" = 4200 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 task_types = ["move", "signature", "refs", "pr", "pr", "pr"]
-fallback_synthetic = ["move", "signature", "refs"]
+rotation = "move (a function into another sourced library file) and signature (the parameter order of a function) are expressed in Shell as such; no substitution"
+pr_tasks = "modern pull requests #1212, #1240 and #1249 (tasks/shell-small/pr-log.md)"
 
 [probe]
-ok = true
-seconds_to_first_answer = 0.11
-references = "recorded in probe.json; extensionless libexec scripts resolve to their library callers"
-definition = "recorded in probe.json; bats_binary_search resolves to lib/bats-core/common.bash"
+ok = false
+seconds_to_first_answer = 0.16
+references = "incomplete after 180 s per call (tereditor pin of harness/tereditor.env): bats_print_stack_trace resolves its callers in lib/bats-core but not in the extensionless libexec scripts (libexec/bats-core/bats-exec-test:166, bats-exec-file:169 missing); bats_version_lt misses its caller in test/common.bats:3 (the .bats test files)"
+definition = "bats_binary_search resolves to lib/bats-core/common.bash:84"
 diagnostics = "clean for lib/bats-core/common.bash"

@@ -1,0 +1,54 @@
+diff --git a/src/Contracts/Formatter.php b/src/Contracts/Formatter.php
+index 44e46ee..b2782d5 100644
+--- a/src/Contracts/Formatter.php
++++ b/src/Contracts/Formatter.php
+@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Model;
+ interface Formatter
+ {
+     /**
++     * @param  string  $column  the name of the source column being formatted
+      * @param  array|Model|object  $row
+      * @return string
+      */
+-    public function format(mixed $value, $row);
++    public function format(mixed $value, string $column, $row);
+ }
+diff --git a/src/Processors/DataProcessor.php b/src/Processors/DataProcessor.php
+index 7153303..d8694f9 100644
+--- a/src/Processors/DataProcessor.php
++++ b/src/Processors/DataProcessor.php
+@@ -127,7 +127,7 @@ class DataProcessor
+             if ($content instanceof Formatter) {
+                 $column = str_replace('_formatted', '', $value['name']);
+ 
+-                $value['content'] = $content->format($data[$column] ?? null, $row);
++                $value['content'] = $content->format($data[$column] ?? null, $column, $row);
+             } else {
+                 $value['content'] = Helper::compileContent($content, $data, $row);
+             }
+diff --git a/tests/Formatters/DateFormatter.php b/tests/Formatters/DateFormatter.php
+index 1a4e0ab..77eb5c8 100644
+--- a/tests/Formatters/DateFormatter.php
++++ b/tests/Formatters/DateFormatter.php
+@@ -10,7 +10,7 @@ class DateFormatter implements Formatter
+ {
+     public function __construct(public string $format = 'Y-m-d h:i a') {}
+ 
+-    public function format($value, $row): string
++    public function format($value, string $column, $row): string
+     {
+         if ($value instanceof DateTime) {
+             return $value->format($this->format);
+diff --git a/tests/Integration/EloquentDataTableTest.php b/tests/Integration/EloquentDataTableTest.php
+index 84f6245..d708235 100644
+--- a/tests/Integration/EloquentDataTableTest.php
++++ b/tests/Integration/EloquentDataTableTest.php
+@@ -152,7 +152,7 @@ class EloquentDataTableTest extends TestCase
+         {
+             public array $values = [];
+ 
+-            public function format(mixed $value, $row): string
++            public function format(mixed $value, string $column, $row): string
+             {
+                 $this->values[] = $value;
+ 

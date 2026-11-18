@@ -1,6 +1,0 @@
-packages/compiler-cli/src/ngtsc/translator/src/translator.ts:85
-packages/compiler-cli/src/ngtsc/translator/src/type_translator.ts:39
-packages/compiler/src/output/abstract_emitter.ts:237
-packages/compiler/src/output/abstract_js_emitter.ts:27
-packages/compiler/src/output/output_jit.ts:107
-packages/compiler/test/output/abstract_emitter_spec.ts:13

@@ -1,0 +1,30 @@
+diff --git a/astroid/interpreter/objectmodel.py b/astroid/interpreter/objectmodel.py
+index 6ff493c711..b995c00d35 100644
+--- a/astroid/interpreter/objectmodel.py
++++ b/astroid/interpreter/objectmodel.py
+@@ -817,8 +817,12 @@ def attr___dict__(self):
+ 
+ class ExceptionInstanceModel(InstanceModel):
+     @property
+-    def attr_args(self) -> nodes.Tuple:
+-        return nodes.Tuple(parent=self._instance)
++    def attr_args(self) -> bases.Instance:
++        # The arguments an exception was created with are not known from the
++        # instance alone, so ``args`` is a tuple of unknown contents rather
++        # than a known empty tuple.
++        builtins_ast_module = AstroidManager().builtins_module
++        return builtins_ast_module["tuple"].instantiate_class()
+ 
+     @property
+     def attr___traceback__(self):
+diff --git a/doc/whatsnew/fragments/11312.bugfix b/doc/whatsnew/fragments/11312.bugfix
+new file mode 100644
+index 0000000000..97876623ab
+--- /dev/null
++++ b/doc/whatsnew/fragments/11312.bugfix
+@@ -0,0 +1,5 @@
++The ``args`` attribute of an exception instance is now inferred as a ``tuple``
++instance of unknown contents instead of a known empty tuple, so unpacking
++``exc.args`` no longer looks unbalanced.
++
++Closes pylint-dev/pylint#11312

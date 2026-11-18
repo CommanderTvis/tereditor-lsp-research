@@ -1,0 +1,5 @@
+type = "signature"
+origin = "synthetic task; fixed seeded selection (docs/TASKS.md)"
+subject = "com.embabel.plan.Planner#planToGoal(actions, goal): swap the two parameters"
+selection = "seed 20261110. Candidates: Kotlin functions (declared with at least 2 parameters whose first two have different types) in embabel-agent-api/src/main whose name and parameter count are declared in at least 3 files, called by name on 8 to 60 lines in at least 4 files of the module, with a lower-case name, and not mentioned in any other module: 6 candidates sorted by name and count (createObjectIfPossibleWithThinking/2, createObjectIfPossibleWithThinking/5, doTransformWithThinking/4, doTransformWithThinkingIfPossible/4, planToGoal/2, withToolChainingFrom/2); index int(rand()*6)+1 after srand(20261110) = int(0.7378*6)+1 = 5 (planToGoal/2). The change (swap the two parameters) is fixed by rule."
+gold = "scripted: the two parameters swapped in the declaration, the three overriding implementations and all 36 call sites (main and test, found by parenthesis-balanced argument parsing); compiled and tested by ./study validate"

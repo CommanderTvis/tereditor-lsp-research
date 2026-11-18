@@ -1,0 +1,6 @@
+tests/test_types_color.py::test_color_fail[color9]
+tests/test_types_color.py::test_color_fail[color10]
+tests/test_ulid.py::test_format_for_ulid[1.5-None-False]
+tests/test_ulid.py::test_format_for_ulid[None-None-False]
+tests/test_ulid.py::test_format_for_ulid[ulid17-None-False]
+tests/test_ulid.py::test_format_for_ulid[ulid18-None-False]

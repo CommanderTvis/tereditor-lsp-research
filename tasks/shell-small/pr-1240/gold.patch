@@ -1,0 +1,38 @@
+diff --git a/libexec/bats-core/bats b/libexec/bats-core/bats
+index 7cd6615..2efadb0 100755
+--- a/libexec/bats-core/bats
++++ b/libexec/bats-core/bats
+@@ -36,6 +36,7 @@ HELP_TEXT_HEADER
+ 
+   --abort                   Stop execution of suite on first failed test
+   --allow-empty-suite       Exit with code 0 (instead of the default code 1) when no tests are found.
++                            Can also be set via $BATS_ALLOW_EMPTY_SUITE
+   -c, --count               Count test cases without running any tests
+   --code-quote-style <style>
+                             A two character string of code quote delimiters
+diff --git a/libexec/bats-core/bats-exec-suite b/libexec/bats-core/bats-exec-suite
+index a891762..19f38c3 100755
+--- a/libexec/bats-core/bats-exec-suite
++++ b/libexec/bats-core/bats-exec-suite
+@@ -15,7 +15,11 @@ flags=('--dummy-flag') # add a dummy flag to prevent unset variable errors on em
+ setup_suite_file=''
+ BATS_TRACE_LEVEL="${BATS_TRACE_LEVEL:-0}"
+ BATS_SHOW_OUTPUT_OF_SUCCEEDING_TESTS=
+-BATS_EMPTY_SUITE_STATUS=1
++if [[ -n "${BATS_ALLOW_EMPTY_SUITE:-}" ]]; then
++  BATS_EMPTY_SUITE_STATUS=0
++else
++  BATS_EMPTY_SUITE_STATUS=1
++fi
+ 
+ abort() {
+   printf 'Error: %s\n' "$1" >&2
+@@ -193,7 +197,7 @@ printf '1..%d\n' "${test_count}"
+ if [[ "${test_count}" == 0 ]]; then
+   bats_exec_suite_status=$BATS_EMPTY_SUITE_STATUS
+   if (( bats_exec_suite_status != 0)); then
+-    printf "ERROR: Found no tests. (Try \`--allow-empty-suite\`?)" >&2
++    printf "ERROR: Found no tests. Use \`--allow-empty-suite\` or \`BATS_ALLOW_EMPTY_SUITE=1\` to suppress this error." >&2
+   fi
+   bats_exit_suite
+ fi

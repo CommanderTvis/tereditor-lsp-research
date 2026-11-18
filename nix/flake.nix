@@ -63,18 +63,28 @@
             ln -s ${pkgs.cacert}/etc/ssl $out/etc/ssl
           '';
 
+          # A second JDK for the projects whose builds refuse to start below it (Lucene main, gradle/gradle toolchain): kept off
+          # PATH so JDK 21 stays the default; a project's scripts ask for its home with `study-jdk25` (the closure holds it).
+          jdk25-home = pkgs.writeShellScriptBin "study-jdk25" "echo ${pkgs.jdk25_headless}/lib/openjdk";
+          jdk17-home = pkgs.writeShellScriptBin "study-jdk17" "echo ${pkgs.jdk17_headless}/lib/openjdk";
+          jdk11-home = pkgs.writeShellScriptBin "study-jdk11" "echo ${pkgs.jdk11_headless}/lib/openjdk";
+          jdk8-home = pkgs.writeShellScriptBin "study-jdk8" "echo ${pkgs.jdk8_headless}/lib/openjdk";
+
+          # A second Node for projects that need it (payload: node 24), off PATH so Node 22 stays the default: `study-node24` prints its home.
+          node24-home = pkgs.writeShellScriptBin "study-node24" "echo ${pkgs.nodejs_24}";
+
           # JDK and Maven for the JVM language servers' Gradle and Maven import.
-          jvm-tools = env "study-jvm-tools" (with pkgs; [ jdk21_headless maven ]);
+          jvm-tools = env "study-jvm-tools" ((with pkgs; [ jdk21_headless maven ]) ++ [ jdk25-home jdk17-home jdk11-home jdk8-home ]);
 
           grade = {
             python = env "study-grade-python" (common ++ [ (pkgs.python312.withPackages (p: [ p.pytest ])) ]);
-            typescript = env "study-grade-typescript" (common ++ (with pkgs; [ nodejs_22 bun pnpm ]));
+            typescript = env "study-grade-typescript" (common ++ (with pkgs; [ nodejs_22 bun pnpm ]) ++ [ node24-home ]);
             csharp = env "study-grade-csharp" (common ++ (with pkgs; [
-              (dotnetCorePackages.combinePackages [ dotnetCorePackages.sdk_10_0 dotnetCorePackages.runtime_8_0 ]) icu openssl ]));
+              (dotnetCorePackages.combinePackages [ dotnetCorePackages.sdk_10_0 dotnetCorePackages.sdk_11_0 dotnetCorePackages.runtime_8_0 ]) icu openssl ]));
             php = env "study-grade-php" (common ++ (with pkgs; [ php84 php84Packages.composer unzip ]));
-            jvm = env "study-grade-jvm" (common ++ (with pkgs; [ jdk21_headless maven gradle ]));
-            cpp = env "study-grade-cpp" (common ++ (with pkgs; [ gcc14 cmake gnumake pkg-config ]));
-            shell = env "study-grade-shell" (common ++ (with pkgs; [ bats shellcheck ]));
+            jvm = env "study-grade-jvm" (common ++ (with pkgs; [ jdk21_headless maven gradle ]) ++ [ jdk25-home jdk17-home jdk11-home jdk8-home ]);
+            cpp = env "study-grade-cpp" (common ++ (with pkgs; [ gcc14 cmake gnumake pkg-config python312 tcl ]));
+            shell = env "study-grade-shell" (common ++ (with pkgs; [ bats shellcheck util-linux procps ]));
             css = env "study-grade-css" (common ++ (with pkgs; [ dart-sass nodejs_22 ]));
           };
 

@@ -1,5 +1,0 @@
-type = "refs"
-origin = "synthetic task; fixed seeded selection"
-selection = "First qualifying stable public symbol in the pinned snapshot after the pre-registered rotation; no post-run selection."
-symbol = "ObjectMapper"
-path = "src/main/java/tools/jackson/databind/ObjectMapper.java"

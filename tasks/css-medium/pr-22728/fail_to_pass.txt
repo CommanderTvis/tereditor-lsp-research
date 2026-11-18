@@ -1,0 +1,41 @@
+packages/utilities/src/date-picker/primitives/__tests__/calendar-grid-test.js :: generateCalendarGrid returns a 6x7 grid (42 day cells)
+packages/utilities/src/date-picker/primitives/__tests__/calendar-grid-test.js :: generateCalendarGrid pads with leading days from the previous month when the week starts on Sunday
+packages/utilities/src/date-picker/primitives/__tests__/calendar-grid-test.js :: generateCalendarGrid tags the viewed month, today, and adjacent-month days correctly
+packages/utilities/src/date-picker/primitives/__tests__/calendar-grid-test.js :: generateCalendarGrid marks days outside the min/max range as disabled
+packages/utilities/src/date-picker/primitives/__tests__/calendar-grid-test.js :: generateCalendarGrid honors a Monday week start
+packages/utilities/src/date-picker/primitives/__tests__/calendar-labels-test.js :: calendar-labels getMonthYearLabel formats month and year for the default (English) locale
+packages/utilities/src/date-picker/primitives/__tests__/calendar-labels-test.js :: calendar-labels getMonthYearLabel localizes the month name
+packages/utilities/src/date-picker/primitives/__tests__/calendar-labels-test.js :: calendar-labels getMonthYearLabel falls back to English for a structurally invalid locale
+packages/utilities/src/date-picker/primitives/__tests__/calendar-labels-test.js :: calendar-labels getFullDateLabel formats a full, English date label
+packages/utilities/src/date-picker/primitives/__tests__/calendar-labels-test.js :: calendar-labels getWeekdayLabels returns single-letter weekdays for English (Sunday start)
+packages/utilities/src/date-picker/primitives/__tests__/calendar-labels-test.js :: calendar-labels getWeekdayLabels honors a Monday week start
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Basic Functionality should call onOutsideClick when clicking outside
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Basic Functionality should not call onOutsideClick when clicking inside
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Basic Functionality should not call onOutsideClick when not open
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Timing and Delay should respect attachDelay
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Timing and Delay should use default delay of 0
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Timing and Delay should prevent opening click from closing when using delay
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Lifecycle Management should clean up properly on detach
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Lifecycle Management should handle multiple attach calls safely
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Lifecycle Management should handle multiple detach calls safely
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Lifecycle Management should cancel pending attachment on detach
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Configuration Updates should update isOpen state
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Configuration Updates should update containsNode function
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Configuration Updates should update onOutsideClick callback
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Configuration Updates should update multiple config properties at once
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Capture Phase should use capture phase by default
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Capture Phase should respect useCapture: false
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Status Methods should report attached status correctly
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Status Methods should report pending status correctly
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Edge Cases should handle null/undefined nodes gracefully
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Edge Cases should work with Shadow DOM
+packages/utilities/src/date-picker/primitives/__tests__/click-outside-handler-test.js :: ClickOutsideHandler Edge Cases should handle rapid open/close cycles
+packages/utilities/src/date-picker/primitives/__tests__/machine-focus-restoration-test.js :: DatePickerStateMachine focus restoration tracks the focused input when INPUT_FOCUS is sent from idle
+packages/utilities/src/date-picker/primitives/__tests__/machine-focus-restoration-test.js :: DatePickerStateMachine focus restoration preserves focus restoration intent when CALENDAR_CLOSE runs after single-date selection
+packages/utilities/src/date-picker/primitives/__tests__/machine-focus-restoration-test.js :: DatePickerStateMachine focus restoration preserves focus restoration intent when CALENDAR_CLOSE runs after range end selection
+packages/utilities/src/date-picker/primitives/__tests__/machine-focus-restoration-test.js :: DatePickerStateMachine focus restoration clears focus restoration intent when the calendar closes without a selection
+packages/utilities/src/date-picker/primitives/__tests__/machine-focus-restoration-test.js :: DatePickerStateMachine focus restoration ENTER_KEY in single mode sets restoreFocusTo and shouldRestoreFocus when closeOnSelect is true
+packages/utilities/src/date-picker/primitives/__tests__/machine-focus-restoration-test.js :: DatePickerStateMachine focus restoration ENTER_KEY in single mode does not set shouldRestoreFocus when closeOnSelect is false
+packages/utilities/src/date-picker/primitives/__tests__/machine-focus-restoration-test.js :: DatePickerStateMachine focus restoration ENTER_KEY in single mode falls back to "from" when lastFocusedInput is null
+packages/utilities/src/date-picker/primitives/__tests__/machine-focus-restoration-test.js :: DatePickerStateMachine focus restoration ENTER_KEY in range SELECTING_END sets restoreFocusTo "to" and shouldRestoreFocus true
+packages/utilities/src/date-picker/primitives/__tests__/machine-focus-restoration-test.js :: DatePickerStateMachine focus restoration ENTER_KEY in range SELECTING_END swaps dates when end is before start

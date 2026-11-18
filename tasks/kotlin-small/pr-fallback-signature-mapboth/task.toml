@@ -1,8 +1,0 @@
-type = "pr"
-symbol = "com.github.michaelbull.result.mapBoth"
-change = "mapBoth(success, failure) -> mapBoth(failure, success)"
-selection = "Public functions declared exactly once in the commonMain code of kotlin-result and kotlin-result-coroutines with at least 2 value parameters and at least 6 whole-word, non-comment, non-@Deprecated occurrences in at least 2 .kt files other than the declaring one: mapBoth (1 candidate); k = 1 + int(rand() * 1) after srand(20261110) = 1. The change is the fixed rule for this type: swap the first two parameters."
-origin = "documented synthetic fallback PR; no qualifying/current-toolchain mined candidate was available"
-fallback_for = "signature"
-pr = "fallback-kotlin-small-signature-mapboth"
-issue = "fallback-kotlin-small-signature-mapboth"

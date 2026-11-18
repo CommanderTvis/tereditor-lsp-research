@@ -1,4 +1,0 @@
-kotlin-result/src/commonMain/kotlin/com/github/michaelbull/result/Deprecated.kt:122
-kotlin-result/src/commonTest/kotlin/com/github/michaelbull/result/MapTest.kt:364
-kotlin-result/src/commonTest/kotlin/com/github/michaelbull/result/MapTest.kt:374
-kotlin-result/src/commonTest/kotlin/com/github/michaelbull/result/MapTest.kt:390

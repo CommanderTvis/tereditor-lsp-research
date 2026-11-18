@@ -140,6 +140,5 @@ Per run, from Claude Code's `stream-json`, tereditor's call log and the grader:
 ## Reproducibility
 
 Pinned: tereditor (a dated release archive, by sha256), nixpkgs (`nix/flake.lock`, so every toolchain and library), the
-Claude Code version, the `nixos/nix` image (by digest), the model IDs and every project's commit. The only host
-requirements are a container runtime (Docker, or Apple `container` on macOS), an Anthropic credential and a JetBrains
-licence.
+Claude Code version, the `nixos/nix` image (by digest), the model IDs and every project's commit. Host requirements
+are in the README.

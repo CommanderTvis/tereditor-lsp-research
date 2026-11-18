@@ -1,0 +1,4 @@
+empty test file runs zero tests but returns non-zero exit code
+BATS_ALLOW_EMPTY_SUITE exits successfully on empty suite
+empty BATS_ALLOW_EMPTY_SUITE does not allow an empty suite
+Empty suite is an error

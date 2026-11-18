@@ -1,0 +1,7 @@
+[
+  {"name":"references of CodeBlock.Builder.addNamed at its declaration (cross-file)","args":{"operation":"references","path":"kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt","line":321,"column":15},"expect":["kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FileSpec.kt:475","kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FunSpec.kt:524"]},
+  {"name":"definition of addNamed from a call site","args":{"operation":"definition","path":"kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FunSpec.kt","line":523,"column":11},"expect":["kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt:322"]},
+  {"name":"references of Taggable by name (declaring file given)","args":{"operation":"references","query":"Taggable","path":"kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/Taggable.kt"},"expect":["kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FunSpec.kt:46","kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/TypeSpec.kt:50"]},
+  {"name":"diagnostics clean file","tool":"lsp_diagnostics","args":{"paths":["kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/Taggable.kt"]},"expect":[]},
+  {"name":"servers","tool":"lsp_status","args":{"operation":"servers"},"expect":[]}
+]

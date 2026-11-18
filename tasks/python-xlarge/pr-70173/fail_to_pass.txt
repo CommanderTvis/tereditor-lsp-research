@@ -1,0 +1,3 @@
+tests/pytests/unit/modules/test_mount.py::test_fstab
+tests/pytests/unit/modules/test_mount.py::test_vfstab
+tests/pytests/unit/modules/test_mount.py::test_fstab_reports_pass_num

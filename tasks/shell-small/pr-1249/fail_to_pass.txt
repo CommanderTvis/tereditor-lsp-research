@@ -1,0 +1,4 @@
+dynamic argument prefixes are distinct in either registration order
+dynamic argument prefixes preserve spaces glob characters and empty values
+dynamic duplicate detection is independent of the array join separator
+dynamic argument prefixes work with nounset and unset IFS

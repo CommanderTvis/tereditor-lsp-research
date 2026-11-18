@@ -1,5 +1,6 @@
 #!/bin/sh
-# Dependencies for grading, resolved once with network: everything the gson module's build and tests need.
+# Dependencies for grading, resolved once with network: everything the build and the tests need (surefire providers
+# included). Test failures are not fatal here; resolution and compile errors are.
 set -e
-mvn -B -q -pl gson -am test
-mvn -B -q -pl gson -am -DskipTests dependency:go-offline
+mvn -B -q -Dmaven.test.failure.ignore=true test
+mvn -B -q -DskipTests dependency:go-offline

@@ -1,0 +1,3063 @@
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/DataColumn.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/DataColumn.kt
+index ee0b2c4..f8b1979 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/DataColumn.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/DataColumn.kt
+@@ -25,7 +25,7 @@ import org.jetbrains.kotlinx.dataframe.impl.columns.createColumnGuessingType
+ import org.jetbrains.kotlinx.dataframe.impl.columns.toColumnKind
+ import org.jetbrains.kotlinx.dataframe.impl.getValuesType
+ import org.jetbrains.kotlinx.dataframe.impl.nothingType
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.jetbrains.kotlinx.dataframe.util.CHUNKED_IMPL_IMPORT
+ import org.jetbrains.kotlinx.dataframe.util.CREATE
+ import org.jetbrains.kotlinx.dataframe.util.CREATE_BY_INFERENCE_IMPORT
+@@ -120,13 +120,13 @@ public interface DataColumn<out T> : BaseColumn<T> {
+          *
+          * @param name name of the frame column
+          * @param groups the dataframes to be put in the column
+-         * @param schema an optional (lazily calculated) [DataFrameSchema] representing
++         * @param schema an optional (lazily calculated) [TypedFrameSchema] representing
+          *   the intersecting schema of [groups]
+          */
+         public fun <T> createFrameColumn(
+             name: String,
+             groups: List<DataFrame<T>>,
+-            schema: Lazy<DataFrameSchema>? = null,
++            schema: Lazy<TypedFrameSchema>? = null,
+         ): FrameColumn<T> = FrameColumnImpl(name, groups, schema)
+ 
+         /**
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/DataFrame.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/DataFrame.kt
+index ce18bc2..cd7a4e9 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/DataFrame.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/DataFrame.kt
+@@ -27,7 +27,7 @@ import org.jetbrains.kotlinx.dataframe.impl.headPlusArray
+ import org.jetbrains.kotlinx.dataframe.impl.headPlusIterable
+ import org.jetbrains.kotlinx.dataframe.impl.schema.createEmptyDataFrame
+ import org.jetbrains.kotlinx.dataframe.impl.schema.createEmptyDataFrameOf
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.jetbrains.kotlinx.dataframe.util.DEPRECATED_ACCESS_API
+ import kotlin.reflect.KType
+ 
+@@ -59,7 +59,7 @@ public interface DataFrame<out T> :
+          * Creates a DataFrame with empty columns (rows = 0).
+          * Can be used as a "null object" in aggregation operations, operations that work on columns (select, reorder, ...)
+          */
+-        public fun empty(schema: DataFrameSchema): AnyFrame = schema.createEmptyDataFrame()
++        public fun empty(schema: TypedFrameSchema): AnyFrame = schema.createEmptyDataFrame()
+     }
+ 
+     // region columns
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/generateCode.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/generateCode.kt
+index ea5a46f..ed4986d 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/generateCode.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/generateCode.kt
+@@ -17,7 +17,7 @@ import org.jetbrains.kotlinx.dataframe.documentation.DocumentationUrls
+ import org.jetbrains.kotlinx.dataframe.documentation.ExcludeFromSources
+ import org.jetbrains.kotlinx.dataframe.impl.codeGen.id
+ import org.jetbrains.kotlinx.dataframe.impl.codeGen.toCamelCaseFrom
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.jetbrains.kotlinx.dataframe.util.GENERATE_CODE
+ import org.jetbrains.kotlinx.dataframe.util.GENERATE_CODE_REPLACE1
+ import org.jetbrains.kotlinx.dataframe.util.GENERATE_CODE_REPLACE2
+@@ -50,7 +50,7 @@ private interface CommonGenerateCodeDocs {
+     // "interfaces" or "data classes"
+     typealias TYPES = Nothing
+ 
+-    // "DataFrameSchema" or "DataFrame"
++    // "TypedFrameSchema" or "DataFrame"
+     typealias RECEIVER = Nothing
+ 
+     // "Useful when statement" or "How to use"
+@@ -104,7 +104,7 @@ private interface Params {
+ 
+ /**
+  * @include [CommonGenerateCodeDocs]
+- * @set [CommonGenerateCodeDocs.RECEIVER] [DataFrame's][this] [schema][DataFrameSchema]
++ * @set [CommonGenerateCodeDocs.RECEIVER] [DataFrame's][this] [schema][TypedFrameSchema]
+  * @set [CommonGenerateCodeDocs.TYPES] interfaces
+  * @set [CommonGenerateCodeDocs.USEFUL_WHEN] This is useful when working with the compiler plugin in cases where the schema
+  *   cannot be inferred automatically from the source. {@include [DocumentationUrls.CompilerPlugin]}
+@@ -153,7 +153,7 @@ public inline fun <reified T> DataFrame<T>.generateInterfaces(
+ 
+ /**
+  * @include [CommonGenerateCodeDocs]
+- * @set [CommonGenerateCodeDocs.RECEIVER] [DataFrame's][this] [schema][DataFrameSchema]
++ * @set [CommonGenerateCodeDocs.RECEIVER] [DataFrame's][this] [schema][TypedFrameSchema]
+  * @set [CommonGenerateCodeDocs.TYPES] data classes
+  * @set [CommonGenerateCodeDocs.USEFUL_WHEN] This is useful when you want to:
+  *   - Work with the data as regular Kotlin data classes.
+@@ -205,11 +205,11 @@ public inline fun <reified T> DataFrame<T>.generateDataClasses(
+ 
+ // endregion
+ 
+-// region DataFrameSchema
++// region TypedFrameSchema
+ 
+ /**
+  * @include [CommonGenerateCodeDocs]
+- * @set [CommonGenerateCodeDocs.RECEIVER] [DataFrameSchema][this]
++ * @set [CommonGenerateCodeDocs.RECEIVER] [TypedFrameSchema][this]
+  * @set [CommonGenerateCodeDocs.TYPES] interfaces
+  * @set [CommonGenerateCodeDocs.USEFUL_WHEN] This is useful when working with the compiler plugin in cases where the schema
+  *   cannot be inferred automatically from the source. {@include [DocumentationUrls.CompilerPlugin]}
+@@ -221,7 +221,7 @@ public inline fun <reified T> DataFrame<T>.generateDataClasses(
+  * @include [Params.NestedMarkerNameProvider]
+  */
+ @JvmName("generateInterfacesForSchema")
+-public fun DataFrameSchema.generateInterfaces(
++public fun TypedFrameSchema.generateInterfaces(
+     markerName: String,
+     extensionProperties: Boolean = false,
+     visibility: MarkerVisibility = MarkerVisibility.IMPLICIT_PUBLIC,
+@@ -241,7 +241,7 @@ public fun DataFrameSchema.generateInterfaces(
+ 
+ /**
+  * @include [CommonGenerateCodeDocs]
+- * {@set [CommonGenerateCodeDocs.RECEIVER] [DataFrameSchema][this]}
++ * {@set [CommonGenerateCodeDocs.RECEIVER] [TypedFrameSchema][this]}
+  * {@set [CommonGenerateCodeDocs.TYPES] data classes}
+  * @set [CommonGenerateCodeDocs.USEFUL_WHEN] This is useful when you want to:
+  *   - Work with the data as regular Kotlin data classes.
+@@ -256,7 +256,7 @@ public fun DataFrameSchema.generateInterfaces(
+  * @include [Params.NestedMarkerNameProvider]
+  */
+ @JvmName("generateDataClassesForSchema")
+-public fun DataFrameSchema.generateDataClasses(
++public fun TypedFrameSchema.generateDataClasses(
+     markerName: String,
+     extensionProperties: Boolean = false,
+     visibility: MarkerVisibility = MarkerVisibility.IMPLICIT_PUBLIC,
+@@ -322,7 +322,7 @@ internal fun String.toCodeString(): CodeString = CodeString(this)
+  * Generates a [CodeString] containing generated [@DataSchema][DataSchema] declarations (markers).
+  */
+ @PublishedApi
+-internal fun DataFrameSchema.generateCodeImpl(
++internal fun TypedFrameSchema.generateCodeImpl(
+     markerName: String,
+     extensionProperties: Boolean,
+     visibility: MarkerVisibility,
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/print.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/print.kt
+index c9420db..6241b4e 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/print.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/print.kt
+@@ -8,7 +8,7 @@ import org.jetbrains.kotlinx.dataframe.documentation.ExcludeFromSources
+ import org.jetbrains.kotlinx.dataframe.io.RenderToStringParamsSnippet
+ import org.jetbrains.kotlinx.dataframe.io.StringBorderStyle
+ import org.jetbrains.kotlinx.dataframe.io.renderToString
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.jetbrains.kotlinx.dataframe.util.PRINT
+ 
+ /**
+@@ -106,14 +106,14 @@ public fun <T, G> GroupBy<T, G>.print(): Unit = println(this)
+ 
+ // endregion
+ 
+-// region DataFrameSchema
++// region TypedFrameSchema
+ 
+ /**
+- * Prints this [DataFrameSchema] to standard output as a list of its columns with their types.
++ * Prints this [TypedFrameSchema] to standard output as a list of its columns with their types.
+  *
+  * @include [PrintConvenienceSnippet]
+  */
+-public fun DataFrameSchema.print(): Unit = println(this)
++public fun TypedFrameSchema.print(): Unit = println(this)
+ 
+ // endregion
+ 
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/schema.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/schema.kt
+index f394d6f..c1b1426 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/schema.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/schema.kt
+@@ -11,7 +11,7 @@ import org.jetbrains.kotlinx.dataframe.documentation.ExcludeFromSources
+ import org.jetbrains.kotlinx.dataframe.impl.api.compileTimeSchemaImpl
+ import org.jetbrains.kotlinx.dataframe.impl.owner
+ import org.jetbrains.kotlinx.dataframe.impl.schema.extractSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ 
+ @ExcludeFromSources
+ internal interface SchemaDocs {
+@@ -23,8 +23,8 @@ internal interface SchemaDocs {
+      * They differ when the type does not fit the columns, for example after a [cast]
+      * to a schema the data does not have; comparing them is how you notice.
+      *
+-     * Use [print][DataFrameSchema.print] to write a schema out as a tree,
+-     * and [compare][DataFrameSchema.compare] to relate two schemas to each other.
++     * Use [print][TypedFrameSchema.print] to write a schema out as a tree,
++     * and [compare][TypedFrameSchema.compare] to relate two schemas to each other.
+      */
+     @ExcludeFromSources
+     typealias SchemaSourcesSnippet = Nothing
+@@ -44,7 +44,7 @@ internal interface SchemaDocs {
+ // region DataRow
+ 
+ /**
+- * Returns the runtime [DataFrameSchema] of the [DataFrame] this row is part of.
++ * Returns the runtime [TypedFrameSchema] of the [DataFrame] this row is part of.
+  *
+  * The result describes all columns of that [DataFrame], not just the values of this one row,
+  * so every row of the same [DataFrame] gives the same schema.
+@@ -62,18 +62,18 @@ internal interface SchemaDocs {
+  * df.first().schema().columns.keys // [name, age, city, weight, isHappy]
+  * ```
+  *
+- * @return The [DataFrameSchema] of the [DataFrame] this row is part of.
++ * @return The [TypedFrameSchema] of the [DataFrame] this row is part of.
+  * @see [DataFrame.schema]
+  * @see [DataFrame.compileTimeSchema]
+  */
+-public fun DataRow<*>.schema(): DataFrameSchema = owner.schema()
++public fun DataRow<*>.schema(): TypedFrameSchema = owner.schema()
+ 
+ // endregion
+ 
+ // region DataFrame
+ 
+ /**
+- * Returns the runtime [DataFrameSchema] of this [DataFrame], read from the columns it holds.
++ * Returns the runtime [TypedFrameSchema] of this [DataFrame], read from the columns it holds.
+  *
+  * Because it comes from the columns and not from the type argument of this [DataFrame],
+  * it always fits the data.
+@@ -121,20 +121,20 @@ public fun DataRow<*>.schema(): DataFrameSchema = owner.schema()
+  *     b: Int
+  * ```
+  *
+- * @return The [DataFrameSchema] of this [DataFrame].
++ * @return The [TypedFrameSchema] of this [DataFrame].
+  * @see [DataFrame.compileTimeSchema]
+  * @see [DataRow.schema]
+  * @see [GroupBy.schema]
+  */
+ @RequiredByIntellijPlugin
+-public fun DataFrame<*>.schema(): DataFrameSchema = extractSchema()
++public fun DataFrame<*>.schema(): TypedFrameSchema = extractSchema()
+ 
+ // endregion
+ 
+ // region GroupBy
+ 
+ /**
+- * Returns the runtime [DataFrameSchema] of this [GroupBy] seen as a [DataFrame]:
++ * Returns the runtime [TypedFrameSchema] of this [GroupBy] seen as a [DataFrame]:
+  * the key columns, followed by a [frame column][FrameColumn] holding the groups.
+  *
+  * This is the schema of [toDataFrame][GroupBy.toDataFrame], so the group column carries its
+@@ -166,18 +166,18 @@ public fun DataFrame<*>.schema(): DataFrameSchema = extractSchema()
+  *     isHappy: Boolean
+  * ```
+  *
+- * @return The [DataFrameSchema] of this [GroupBy] as a [DataFrame].
++ * @return The [TypedFrameSchema] of this [GroupBy] as a [DataFrame].
+  * @see [GroupBy.toDataFrame]
+  * @see [DataFrame.schema]
+  */
+-public fun GroupBy<*, *>.schema(): DataFrameSchema = toDataFrame().schema()
++public fun GroupBy<*, *>.schema(): TypedFrameSchema = toDataFrame().schema()
+ 
+ // endregion
+ 
+ // region compileTimeSchema
+ 
+ /**
+- * Returns the compile-time [DataFrameSchema] of this [DataFrame]:
++ * Returns the compile-time [TypedFrameSchema] of this [DataFrame]:
+  * the schema that follows from its type argument [T], not from the columns it holds.
+  *
+  * [T] is a schema marker — a [DataSchema] declaration you wrote yourself,
+@@ -222,10 +222,10 @@ public fun GroupBy<*, *>.schema(): DataFrameSchema = toDataFrame().schema()
+  *   Without such a constructor — for an interface marker, for instance — the order is the one
+  *   reflection reports the properties of [T] in, which is neither their declaration order
+  *   nor the order of the columns.
+- * @return The [DataFrameSchema] that follows from the type argument [T] of this [DataFrame].
++ * @return The [TypedFrameSchema] that follows from the type argument [T] of this [DataFrame].
+  * @see [DataFrame.schema]
+  */
+-public inline fun <reified T> DataFrame<T>.compileTimeSchema(ordered: Boolean = true): DataFrameSchema =
++public inline fun <reified T> DataFrame<T>.compileTimeSchema(ordered: Boolean = true): TypedFrameSchema =
+     compileTimeSchemaImpl(if (ordered) schema() else null, T::class)
+ 
+ // endregion
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/CodeGenerator.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/CodeGenerator.kt
+index 672d61a..34f1607 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/CodeGenerator.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/CodeGenerator.kt
+@@ -4,7 +4,7 @@ import org.jetbrains.kotlinx.dataframe.impl.codeGen.CodeGeneratorImpl
+ import org.jetbrains.kotlinx.dataframe.impl.codeGen.FullyQualifiedNames
+ import org.jetbrains.kotlinx.dataframe.impl.codeGen.ShortNames
+ import org.jetbrains.kotlinx.dataframe.impl.codeGen.id
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import kotlin.reflect.KClass
+ 
+ public enum class InterfaceGenerationMode {
+@@ -20,7 +20,7 @@ public data class CodeGenResult(val code: CodeWithTypeCastGenerator, val newMark
+ public interface CodeGenerator : ExtensionsCodeGenerator {
+ 
+     public fun generate(
+-        schema: DataFrameSchema,
++        schema: TypedFrameSchema,
+         name: String,
+         fields: Boolean,
+         extensionProperties: Boolean,
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/Marker.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/Marker.kt
+index 9e5f1af..00b491c 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/Marker.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/Marker.kt
+@@ -1,7 +1,7 @@
+ package org.jetbrains.kotlinx.dataframe.codeGen
+ 
+ import org.jetbrains.kotlinx.dataframe.impl.schema.DataFrameSchemaImpl
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import kotlin.reflect.KClass
+ 
+ /**
+@@ -96,7 +96,7 @@ public open class Marker(
+ 
+     public val columnNames: List<String> get() = allFields.map { it.columnName }
+ 
+-    public val schema: DataFrameSchema by lazy {
++    public val schema: TypedFrameSchema by lazy {
+         DataFrameSchemaImpl(allFields.associate { it.columnName to it.columnSchema })
+     }
+ 
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/SchemaProcessor.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/SchemaProcessor.kt
+index 4990f2e..a9b0ad4 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/SchemaProcessor.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/SchemaProcessor.kt
+@@ -1,7 +1,7 @@
+ package org.jetbrains.kotlinx.dataframe.codeGen
+ 
+ import org.jetbrains.kotlinx.dataframe.impl.codeGen.SchemaProcessorImpl
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ 
+ internal interface SchemaProcessor {
+ 
+@@ -10,7 +10,7 @@ internal interface SchemaProcessor {
+     val namePrefix: String
+ 
+     fun process(
+-        schema: DataFrameSchema,
++        schema: TypedFrameSchema,
+         isOpen: Boolean,
+         visibility: MarkerVisibility = MarkerVisibility.IMPLICIT_PUBLIC,
+     ): Marker
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/columns/FrameColumn.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/columns/FrameColumn.kt
+index 2e7fc6f..66455b1 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/columns/FrameColumn.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/columns/FrameColumn.kt
+@@ -2,7 +2,7 @@ package org.jetbrains.kotlinx.dataframe.columns
+ 
+ import org.jetbrains.kotlinx.dataframe.DataColumn
+ import org.jetbrains.kotlinx.dataframe.DataFrame
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ 
+ /**
+  * Column that stores values of type [DataFrame]
+@@ -13,7 +13,7 @@ import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
+  */
+ public interface FrameColumn<out T> : DataColumn<DataFrame<T>> {
+ 
+-    public val schema: Lazy<DataFrameSchema>
++    public val schema: Lazy<TypedFrameSchema>
+ 
+     override fun distinct(): FrameColumn<T>
+ 
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/documentation/AccessApis.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/documentation/AccessApis.kt
+index 2d0eb59..4da60c7 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/documentation/AccessApis.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/documentation/AccessApis.kt
+@@ -59,7 +59,7 @@ internal interface AccessApis {
+      * is through auto-generated extension properties.
+      *
+      * These properties are generated based on the
+-     * [dataframe schema][org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema],
++     * [dataframe schema][org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema],
+      * with their names and types inferred from the names and types of the corresponding columns.
+      * This also works for hierarchical [DataFrame] structures
+      * (i.e., [column groups][org.jetbrains.kotlinx.dataframe.columns.ColumnGroup]
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/Rendering.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/Rendering.kt
+index 2774fb9..8d94201 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/Rendering.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/Rendering.kt
+@@ -12,7 +12,7 @@ import org.jetbrains.kotlinx.dataframe.impl.columns.asAnyFrameColumn
+ import org.jetbrains.kotlinx.dataframe.io.escapeHTML
+ import org.jetbrains.kotlinx.dataframe.jupyter.RenderedContent
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.jetbrains.kotlinx.dataframe.size
+ import org.jetbrains.kotlinx.dataframe.type
+ import java.net.URL
+@@ -35,7 +35,7 @@ internal fun String.truncate(limit: Int): RenderedContent =
+ 
+ internal fun renderSchema(df: AnyFrame): String = df.columns().joinToString { "${it.name()}:${renderType(it)}" }
+ 
+-internal fun renderSchema(schema: DataFrameSchema): String =
++internal fun renderSchema(schema: TypedFrameSchema): String =
+     schema.columns.map { "${it.key}:${renderType(it.value)}" }.joinToString()
+ 
+ internal fun renderType(column: ColumnSchema) =
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/api/convertTo.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/api/convertTo.kt
+index 4fc1745..e3ee1e9 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/api/convertTo.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/api/convertTo.kt
+@@ -42,7 +42,7 @@ import org.jetbrains.kotlinx.dataframe.impl.schema.extractSchema
+ import org.jetbrains.kotlinx.dataframe.impl.schema.render
+ import org.jetbrains.kotlinx.dataframe.kind
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.jetbrains.kotlinx.dataframe.size
+ import kotlin.reflect.KType
+ import kotlin.reflect.full.isSubtypeOf
+@@ -106,7 +106,7 @@ internal fun AnyFrame.convertToImpl(
+ 
+     val missingPaths = mutableSetOf<ColumnPath>()
+ 
+-    fun AnyFrame.convertToSchema(schema: DataFrameSchema, path: ColumnPath): AnyFrame {
++    fun AnyFrame.convertToSchema(schema: TypedFrameSchema, path: ColumnPath): AnyFrame {
+         // if current frame is empty
+         if (this.isEmpty()) {
+             return schema.createEmptyDataFrame()
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/api/schema.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/api/schema.kt
+index 288ac17..fad96e6 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/api/schema.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/api/schema.kt
+@@ -4,11 +4,11 @@ import org.jetbrains.kotlinx.dataframe.columns.ColumnPath
+ import org.jetbrains.kotlinx.dataframe.impl.schema.DataFrameSchemaImpl
+ import org.jetbrains.kotlinx.dataframe.impl.schema.getSchema
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import kotlin.reflect.KClass
+ 
+ @PublishedApi
+-internal fun compileTimeSchemaImpl(runtimeSchema: DataFrameSchema?, klass: KClass<*>): DataFrameSchema {
++internal fun compileTimeSchemaImpl(runtimeSchema: TypedFrameSchema?, klass: KClass<*>): TypedFrameSchema {
+     val compileSchema = getSchema(klass)
+     if (runtimeSchema == null) return compileSchema
+     val root = ColumnPath(emptyList())
+@@ -18,7 +18,7 @@ internal fun compileTimeSchemaImpl(runtimeSchema: DataFrameSchema?, klass: KClas
+     return compileSchema.sortedBy(order, path = root)
+ }
+ 
+-internal fun MutableMap<ColumnPath, Int>.putColumnsOrder(schema: DataFrameSchema, path: ColumnPath) {
++internal fun MutableMap<ColumnPath, Int>.putColumnsOrder(schema: TypedFrameSchema, path: ColumnPath) {
+     schema.columns.entries.forEachIndexed { i, (name, column) ->
+         val columnPath = path + name
+         this[columnPath] = i
+@@ -30,7 +30,7 @@ internal fun MutableMap<ColumnPath, Int>.putColumnsOrder(schema: DataFrameSchema
+     }
+ }
+ 
+-internal fun DataFrameSchema.sortedBy(order: Map<ColumnPath, Int>, path: ColumnPath): DataFrameSchema {
++internal fun TypedFrameSchema.sortedBy(order: Map<ColumnPath, Int>, path: ColumnPath): TypedFrameSchema {
+     val sorted = columns.map { (name, column) ->
+         name to when (column) {
+             is ColumnSchema.Frame -> ColumnSchema.Frame(
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/CodeGeneratorImpl.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/CodeGeneratorImpl.kt
+index a9b0e94..5cade78 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/CodeGeneratorImpl.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/CodeGeneratorImpl.kt
+@@ -39,13 +39,13 @@ import org.jetbrains.kotlinx.dataframe.keywords.HardKeywords
+ import org.jetbrains.kotlinx.dataframe.keywords.ModifierKeywords
+ import org.jetbrains.kotlinx.dataframe.keywords.SoftKeywords
+ import org.jetbrains.kotlinx.dataframe.schema.ComparisonMode
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import kotlin.reflect.KClass
+ import kotlin.text.replace
+ 
+ private fun renderNullability(nullable: Boolean) = if (nullable) "?" else ""
+ 
+-internal fun Iterable<Marker>.filterRequiredForSchema(schema: DataFrameSchema) =
++internal fun Iterable<Marker>.filterRequiredForSchema(schema: TypedFrameSchema) =
+     filter { it.isOpen && it.schema.compare(schema, ComparisonMode.STRICT_FOR_NESTED_SCHEMAS).isSuperOrMatches() }
+ 
+ internal val charsToQuote = """[ `(){}\[\].<>'"/|\\!?@:;%^&*#$-]""".toRegex()
+@@ -484,7 +484,7 @@ internal class CodeGeneratorImpl(typeRendering: TypeRenderingStrategy = FullyQua
+     }
+ 
+     override fun generate(
+-        schema: DataFrameSchema,
++        schema: TypedFrameSchema,
+         name: String,
+         fields: Boolean,
+         extensionProperties: Boolean,
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/ReplCodeGeneratorImpl.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/ReplCodeGeneratorImpl.kt
+index 94c25a7..98ecd16 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/ReplCodeGeneratorImpl.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/ReplCodeGeneratorImpl.kt
+@@ -16,7 +16,7 @@ import org.jetbrains.kotlinx.dataframe.codeGen.MarkerVisibility
+ import org.jetbrains.kotlinx.dataframe.codeGen.MarkersExtractor
+ import org.jetbrains.kotlinx.dataframe.codeGen.TypeCastGenerator
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import kotlin.reflect.KClass
+ import kotlin.reflect.KProperty
+ import kotlin.reflect.KType
+@@ -105,7 +105,7 @@ internal class ReplCodeGeneratorImpl : ReplCodeGenerator {
+         )
+     }
+ 
+-    fun generate(schema: DataFrameSchema, name: String, isOpen: Boolean): CodeWithTypeCastGenerator {
++    fun generate(schema: TypedFrameSchema, name: String, isOpen: Boolean): CodeWithTypeCastGenerator {
+         val result = generator.generate(
+             schema = schema,
+             name = name,
+@@ -137,7 +137,7 @@ internal class ReplCodeGeneratorImpl : ReplCodeGenerator {
+         }
+     }
+ 
+-    private fun DataFrameSchema.hasColumnOfType(type: KType): Boolean =
++    private fun TypedFrameSchema.hasColumnOfType(type: KType): Boolean =
+         columns.values.any { column ->
+             when (column) {
+                 is ColumnSchema.Frame -> column.schema.hasColumnOfType(type)
+@@ -146,9 +146,9 @@ internal class ReplCodeGeneratorImpl : ReplCodeGenerator {
+             }
+         }
+ 
+-    private fun DataFrameSchema.hasExperimentalInstant(): Boolean = hasColumnOfType(typeOf<Instant?>())
++    private fun TypedFrameSchema.hasExperimentalInstant(): Boolean = hasColumnOfType(typeOf<Instant?>())
+ 
+-    private fun DataFrameSchema.hasExperimentalUuid(): Boolean = hasColumnOfType(typeOf<Uuid?>())
++    private fun TypedFrameSchema.hasExperimentalUuid(): Boolean = hasColumnOfType(typeOf<Uuid?>())
+ 
+     override fun process(markerClass: KClass<*>): Code {
+         val newMarkers = mutableListOf<Marker>()
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/SchemaProcessorImpl.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/SchemaProcessorImpl.kt
+index fb6662e..74bd524 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/SchemaProcessorImpl.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/SchemaProcessorImpl.kt
+@@ -11,7 +11,7 @@ import org.jetbrains.kotlinx.dataframe.codeGen.ValidFieldName
+ import org.jetbrains.kotlinx.dataframe.columns.ColumnPath
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+ import org.jetbrains.kotlinx.dataframe.schema.ComparisonMode
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ 
+ internal class SchemaProcessorImpl(
+     existingMarkers: Iterable<Marker>,
+@@ -29,7 +29,7 @@ internal class SchemaProcessorImpl(
+ 
+     override val generatedMarkers = mutableListOf<Marker>()
+ 
+-    private fun DataFrameSchema.getAllSuperMarkers() =
++    private fun TypedFrameSchema.getAllSuperMarkers() =
+         registeredMarkers.filter {
+             it.isOpen && it.schema.compare(this, ComparisonMode.STRICT_FOR_NESTED_SCHEMAS).isSuperOrMatches()
+         }
+@@ -70,7 +70,7 @@ internal class SchemaProcessorImpl(
+     private typealias ContextNames = Set<String>
+ 
+     private fun generateFields(
+-        schema: DataFrameSchema,
++        schema: TypedFrameSchema,
+         visibility: MarkerVisibility,
+         requiredSuperMarkers: List<Marker> = emptyList(),
+         parentPath: ColumnPath = pathOf(),
+@@ -127,7 +127,7 @@ internal class SchemaProcessorImpl(
+     }
+ 
+     private fun createMarkerSchema(
+-        scheme: DataFrameSchema,
++        scheme: TypedFrameSchema,
+         name: String,
+         withBaseInterfaces: Boolean,
+         isOpen: Boolean,
+@@ -168,13 +168,13 @@ internal class SchemaProcessorImpl(
+         return Marker(name, isOpen, fields, baseMarkers.onlyLeafs(), visibility, emptyList(), emptyList())
+     }
+ 
+-    private fun DataFrameSchema.getRequiredMarkers() = registeredMarkers.filterRequiredForSchema(this)
++    private fun TypedFrameSchema.getRequiredMarkers() = registeredMarkers.filterRequiredForSchema(this)
+ 
+-    override fun process(schema: DataFrameSchema, isOpen: Boolean, visibility: MarkerVisibility): Marker =
++    override fun process(schema: TypedFrameSchema, isOpen: Boolean, visibility: MarkerVisibility): Marker =
+         process(schema, isOpen, visibility, columnPath = pathOf(), reservedNames = schema.columns.keys)
+ 
+     internal fun process(
+-        schema: DataFrameSchema,
++        schema: TypedFrameSchema,
+         isOpen: Boolean,
+         visibility: MarkerVisibility,
+         columnPath: ColumnPath,
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/SchemaReader.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/SchemaReader.kt
+index b2c3834..d9caf34 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/SchemaReader.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/codeGen/SchemaReader.kt
+@@ -12,7 +12,7 @@ import org.jetbrains.kotlinx.dataframe.io.SupportedFormat
+ import org.jetbrains.kotlinx.dataframe.io.guessFormat
+ import org.jetbrains.kotlinx.dataframe.io.read
+ import org.jetbrains.kotlinx.dataframe.io.readCodeForGeneration
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.jetbrains.kotlinx.dataframe.util.SUPPORTED_DATAFRAME_FORMAT
+ import java.net.URL
+ 
+@@ -46,7 +46,7 @@ public sealed interface DfReadResult {
+         public fun getReadDfMethod(pathRepresentation: String?): DefaultReadDfMethod =
+             format.createDefaultReadMethod(pathRepresentation)
+ 
+-        public val schema: DataFrameSchema = df.schema()
++        public val schema: TypedFrameSchema = df.schema()
+     }
+ 
+     public class Error(public val reason: Throwable) : DfReadResult
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/columns/FrameColumnImpl.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/columns/FrameColumnImpl.kt
+index b39ccc3..e403a91 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/columns/FrameColumnImpl.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/columns/FrameColumnImpl.kt
+@@ -12,13 +12,13 @@ import org.jetbrains.kotlinx.dataframe.impl.anyNull
+ import org.jetbrains.kotlinx.dataframe.impl.createStarProjectedType
+ import org.jetbrains.kotlinx.dataframe.impl.schema.intersectSchemas
+ import org.jetbrains.kotlinx.dataframe.nrow
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import kotlin.reflect.KType
+ 
+ internal open class FrameColumnImpl<T> constructor(
+     name: String,
+     values: List<DataFrame<T>>,
+-    columnSchema: Lazy<DataFrameSchema>? = null,
++    columnSchema: Lazy<TypedFrameSchema>? = null,
+     distinct: Lazy<Set<DataFrame<T>>>? = null,
+ ) : DataColumnImpl<DataFrame<T>>(
+         values = values,
+@@ -53,7 +53,7 @@ internal open class FrameColumnImpl<T> constructor(
+ 
+     override fun distinct() = FrameColumnImpl(name, distinct.value.toList(), schema, distinct)
+ 
+-    override val schema: Lazy<DataFrameSchema> = columnSchema ?: lazy {
++    override val schema: Lazy<TypedFrameSchema> = columnSchema ?: lazy {
+         values.mapNotNull { it.takeIf { it.nrow > 0 }?.schema() }.intersectSchemas()
+     }
+ 
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/schema/DataFrameSchemaImpl.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/schema/DataFrameSchemaImpl.kt
+index 54a9d84..0e52e90 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/schema/DataFrameSchemaImpl.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/schema/DataFrameSchemaImpl.kt
+@@ -10,18 +10,18 @@ import org.jetbrains.kotlinx.dataframe.schema.CompareResult.None
+ import org.jetbrains.kotlinx.dataframe.schema.ComparisonMode
+ import org.jetbrains.kotlinx.dataframe.schema.ComparisonMode.STRICT
+ import org.jetbrains.kotlinx.dataframe.schema.ComparisonMode.STRICT_FOR_NESTED_SCHEMAS
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchemaDoc
+ import org.jetbrains.kotlinx.dataframe.schema.plus
+ 
+ /**
+- * [DataFrameSchema] implementation.
++ * [TypedFrameSchema] implementation.
+  *
+  * @include [DataFrameSchemaDoc]
+  */
+-public class DataFrameSchemaImpl(override val columns: Map<String, ColumnSchema>) : DataFrameSchema {
++public class DataFrameSchemaImpl(override val columns: Map<String, ColumnSchema>) : TypedFrameSchema {
+ 
+-    override fun compare(other: DataFrameSchema, comparisonMode: ComparisonMode): CompareResult {
++    override fun compare(other: TypedFrameSchema, comparisonMode: ComparisonMode): CompareResult {
+         require(other is DataFrameSchemaImpl)
+         if (this === other) return Matches
+ 
+@@ -68,20 +68,20 @@ public class DataFrameSchemaImpl(override val columns: Map<String, ColumnSchema>
+      * [column group schemas][ColumnSchema.Group] and [frame column schemas][ColumnSchema.Frame]
+      * are compared by these same rules, recursively.
+      *
+-     * Note that [equals] and [compare][DataFrameSchema.compare] behave differently:
++     * Note that [equals] and [compare][TypedFrameSchema.compare] behave differently:
+      * [equals] requires schemas to match exactly, including column order,
+-     * while [compare][DataFrameSchema.compare] ignores column order and provides additional comparison options
++     * while [compare][TypedFrameSchema.compare] ignores column order and provides additional comparison options
+      * (see [ComparisonMode]).
+      *
+-     * Use [compare][DataFrameSchema.compare] when column order does not matter or
++     * Use [compare][TypedFrameSchema.compare] when column order does not matter or
+      * when you need additional [comparison options][ComparisonMode].
+      *
+-     * @see [DataFrameSchema.compare]
++     * @see [TypedFrameSchema.compare]
+      * @see [CompareResult.matches]
+      */
+     override fun equals(other: Any?): Boolean {
+         if (this === other) return true
+-        if (other !is DataFrameSchema) return false
++        if (other !is TypedFrameSchema) return false
+         if (columns.size != other.columns.size) return false
+ 
+         val otherColumnsIterator = other.columns.entries.iterator()
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/schema/Utils.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/schema/Utils.kt
+index ef2e135..a97adba 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/schema/Utils.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/schema/Utils.kt
+@@ -18,7 +18,7 @@ import org.jetbrains.kotlinx.dataframe.impl.getterName
+ import org.jetbrains.kotlinx.dataframe.impl.isGetterLike
+ import org.jetbrains.kotlinx.dataframe.impl.isJavaRecord
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.jetbrains.kotlinx.dataframe.type
+ import kotlin.reflect.KCallable
+ import kotlin.reflect.KClass
+@@ -26,14 +26,14 @@ import kotlin.reflect.full.primaryConstructor
+ import kotlin.reflect.full.withNullability
+ import kotlin.reflect.typeOf
+ 
+-internal fun AnyFrame.extractSchema(): DataFrameSchema =
++internal fun AnyFrame.extractSchema(): TypedFrameSchema =
+     DataFrameSchemaImpl(columns().filter { it.name().isNotEmpty() }.associate { it.name() to it.extractSchema() })
+ 
+ // helper overload for friend modules
+ @JvmName("intersectSchemasOverload")
+-internal fun intersectSchemas(schemas: Iterable<DataFrameSchema>): DataFrameSchema = schemas.intersectSchemas()
++internal fun intersectSchemas(schemas: Iterable<TypedFrameSchema>): TypedFrameSchema = schemas.intersectSchemas()
+ 
+-internal fun Iterable<DataFrameSchema>.intersectSchemas(): DataFrameSchema {
++internal fun Iterable<TypedFrameSchema>.intersectSchemas(): TypedFrameSchema {
+     val collectedTypes = mutableMapOf<String, MutableSet<ColumnSchema>>()
+     var first = true
+     val columnsToUpdate = mutableSetOf<String>()
+@@ -105,7 +105,7 @@ internal fun AnyCol.extractSchema(): ColumnSchema =
+     }
+ 
+ @PublishedApi
+-internal fun getSchema(kClass: KClass<*>): DataFrameSchema = MarkersExtractor.get(kClass).schema
++internal fun getSchema(kClass: KClass<*>): TypedFrameSchema = MarkersExtractor.get(kClass).schema
+ 
+ /**
+  * Create "empty" column based on the toplevel of [this] [ColumnSchema].
+@@ -146,12 +146,12 @@ internal fun ColumnSchema.createNullFilledColumn(name: String, numberOfRows: Int
+         )
+     }
+ 
+-internal fun DataFrameSchema.createEmptyDataFrame(): AnyFrame =
++internal fun TypedFrameSchema.createEmptyDataFrame(): AnyFrame =
+     columns.map { (name, schema) ->
+         schema.createEmptyColumn(name)
+     }.toDataFrame()
+ 
+-internal fun DataFrameSchema.createEmptyDataFrame(numberOfRows: Int): AnyFrame =
++internal fun TypedFrameSchema.createEmptyDataFrame(numberOfRows: Int): AnyFrame =
+     if (columns.isEmpty()) {
+         DataFrame.empty(numberOfRows)
+     } else {
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/ColumnSchema.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/ColumnSchema.kt
+index 5a0fa07..64d28e5 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/ColumnSchema.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/ColumnSchema.kt
+@@ -16,7 +16,7 @@ import kotlin.reflect.full.isSupertypeOf
+ import kotlin.reflect.typeOf
+ 
+ /**
+- * Describes a single column of a [DataFrameSchema]: what [kind] of column it is, what [type] it holds,
++ * Describes a single column of a [TypedFrameSchema]: what [kind] of column it is, what [type] it holds,
+  * and, for the two nested kinds, the schema of what is inside it.
+  *
+  * There is one subclass per [column kind][ColumnKind]:
+@@ -68,9 +68,9 @@ public sealed class ColumnSchema {
+     /**
+      * The schema of a [column group][ColumnGroup].
+      *
+-     * @property [schema] The [DataFrameSchema] of the columns nested in the group.
++     * @property [schema] The [TypedFrameSchema] of the columns nested in the group.
+      */
+-    public class Group(public val schema: DataFrameSchema, override val contentType: KType?) : ColumnSchema() {
++    public class Group(public val schema: TypedFrameSchema, override val contentType: KType?) : ColumnSchema() {
+         override val kind: ColumnKind = ColumnKind.Group
+ 
+         /** A column group is never null, instead, make the columns inside nullable. */
+@@ -87,10 +87,10 @@ public sealed class ColumnSchema {
+     /**
+      * The schema of a [frame column][FrameColumn].
+      *
+-     * @property [schema] The [DataFrameSchema] of the dataframes held by the column.
++     * @property [schema] The [TypedFrameSchema] of the dataframes held by the column.
+      */
+     public class Frame(
+-        public val schema: DataFrameSchema,
++        public val schema: TypedFrameSchema,
+         override val nullable: Boolean,
+         override val contentType: KType?,
+     ) : ColumnSchema() {
+@@ -122,11 +122,11 @@ public sealed class ColumnSchema {
+      * Column schemas of different [kinds][kind] are never comparable: the result is then
+      * [CompareResult.None], whatever the [comparisonMode] is.
+      *
+-     * For [Value] the [types][type] are compared, and for [Group] the [DataFrameSchema] of the
++     * For [Value] the [types][type] are compared, and for [Group] the [TypedFrameSchema] of the
+      * nested columns. How strict that comparison is, is decided by the [comparisonMode];
+      * see [ComparisonMode] for what each mode means.
+      *
+-     * For [Frame] the [DataFrameSchema] of the dataframes it holds is compared as well, but
++     * For [Frame] the [TypedFrameSchema] of the dataframes it holds is compared as well, but
+      * [nullability][nullable] counts too: two frame column schemas over the same nested schema
+      * that differ in nullability never match, whatever the [comparisonMode] is. The nullable one
+      * comes out [IsSuper][CompareResult.IsSuper] of the other, and the other
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/ComparisonMode.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/ComparisonMode.kt
+index 2433ee6..ffdf0c7 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/ComparisonMode.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/ComparisonMode.kt
+@@ -6,10 +6,10 @@ import org.jetbrains.kotlinx.dataframe.schema.ComparisonMode.STRICT
+ import org.jetbrains.kotlinx.dataframe.schema.ComparisonMode.STRICT_FOR_NESTED_SCHEMAS
+ 
+ /**
+- * Defines how [ColumnSchema] or [DataFrameSchema] are compared.
++ * Defines how [ColumnSchema] or [TypedFrameSchema] are compared.
+  *
+  * Defines how differences between schemas are interpreted; affects the [result][CompareResult]
+- * returned by [ColumnSchema.compare] and [DataFrameSchema.compare].
++ * returned by [ColumnSchema.compare] and [TypedFrameSchema.compare].
+  *
+  * @include [ComparisonModeOptionsSnippet]
+  */
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/DataFrameSchema.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/TypedFrameSchema.kt
+similarity index 84%
+rename from core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/DataFrameSchema.kt
+rename to core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/TypedFrameSchema.kt
+index 8596e4b..d5699a1 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/DataFrameSchema.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/TypedFrameSchema.kt
+@@ -5,19 +5,19 @@ import org.jetbrains.kotlinx.dataframe.documentation.ExcludeFromSources
+ /**
+  * @include [DataFrameSchemaDoc]
+  */
+-public interface DataFrameSchema {
++public interface TypedFrameSchema {
+     public companion object;
+ 
+     /**
+-     * A map that defines the schema of the columns within a [DataFrameSchema].
++     * A map that defines the schema of the columns within a [TypedFrameSchema].
+      *
+      * The key represents the name of the column, while the value is a [ColumnSchema] describing
+      * the structure, type, and properties of the column.
+      *
+      * The value can be one of the following:
+      * - [ColumnSchema.Value]: Represents a value column, including its type and nullability.
+-     * - [ColumnSchema.Group]: Represents a group of columns, containing their schemas as a nested [DataFrameSchema].
+-     * - [ColumnSchema.Frame]: Represents a frame column (column of dataframes) containing their [DataFrameSchema].
++     * - [ColumnSchema.Group]: Represents a group of columns, containing their schemas as a nested [TypedFrameSchema].
++     * - [ColumnSchema.Frame]: Represents a frame column (column of dataframes) containing their [TypedFrameSchema].
+      *
+      * This map provides an ordered representation of the schema that accurately describes the names and
+      * corresponding structure of all columns in a dataframe.
+@@ -40,7 +40,7 @@ public interface DataFrameSchema {
+      *   [matching][CompareResult.Matches] (neglecting order),
+      *   [derived][CompareResult.IsDerived], [superset][CompareResult.IsSuper], or [incomparable][CompareResult.None].
+      */
+-    public fun compare(other: DataFrameSchema, comparisonMode: ComparisonMode = ComparisonMode.LENIENT): CompareResult
++    public fun compare(other: TypedFrameSchema, comparisonMode: ComparisonMode = ComparisonMode.LENIENT): CompareResult
+ }
+ 
+ /**
+@@ -50,8 +50,8 @@ public interface DataFrameSchema {
+  * Column types are represented by [ColumnSchema]:
+  *
+  * - For value columns, it contains the [type][kotlin.reflect.KType] of the column.
+- * - For column groups, it contains the [DataFrameSchema] of the nested columns.
+- * - For frame columns, it contains the [DataFrameSchema] of the contained dataframes.
++ * - For column groups, it contains the [TypedFrameSchema] of the nested columns.
++ * - For frame columns, it contains the [TypedFrameSchema] of the contained dataframes.
+  *
+  * Use [schema][org.jetbrains.kotlinx.dataframe.api.schema] to read the schema of a
+  * [DataFrame][org.jetbrains.kotlinx.dataframe.DataFrame] from its columns, and
+diff --git a/core/src/test/kotlin/org/jetbrains/kotlinx/dataframe/api/convertTo.kt b/core/src/test/kotlin/org/jetbrains/kotlinx/dataframe/api/convertTo.kt
+index bcaa747..4450b1e 100644
+--- a/core/src/test/kotlin/org/jetbrains/kotlinx/dataframe/api/convertTo.kt
++++ b/core/src/test/kotlin/org/jetbrains/kotlinx/dataframe/api/convertTo.kt
+@@ -22,14 +22,14 @@ class ConvertToTests {
+     data class GroupSchema(val a: Int)
+ 
+     @DataSchema
+-    data class DataFrameSchema(val groups: DataFrame<GroupSchema>)
++    data class TypedFrameSchema(val groups: DataFrame<GroupSchema>)
+ 
+     @Test
+     fun `convert frame column with empty frames`() {
+         val groups by columnOf(dataFrameOf("a")("1"), DataFrame.empty())
+         val df = dataFrameOf(groups)
+ 
+-        val converted = df.convertTo<DataFrameSchema>()
++        val converted = df.convertTo<TypedFrameSchema>()
+ 
+         converted[groups].forEach {
+             it["a"].type() shouldBe typeOf<Int>()
+diff --git a/core/src/test/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/CodeGenerationTests.kt b/core/src/test/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/CodeGenerationTests.kt
+index 674da50..2c978c9 100644
+--- a/core/src/test/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/CodeGenerationTests.kt
++++ b/core/src/test/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/CodeGenerationTests.kt
+@@ -670,7 +670,7 @@ class CodeGenerationTests : BaseTest() {
+     }
+ 
+     @Test
+-    fun `DataFrameSchema generateInterfaces`() {
++    fun `TypedFrameSchema generateInterfaces`() {
+         val schema = typed.schema()
+         val code = schema.generateInterfaces("SchemaInterface")
+ 
+@@ -689,7 +689,7 @@ class CodeGenerationTests : BaseTest() {
+     }
+ 
+     @Test
+-    fun `DataFrameSchema generateDataClasses - with default parameters`() {
++    fun `TypedFrameSchema generateDataClasses - with default parameters`() {
+         val schema = typed.schema()
+         val code = schema.generateDataClasses("SchemaDataClass")
+ 
+@@ -708,7 +708,7 @@ class CodeGenerationTests : BaseTest() {
+     }
+ 
+     @Test
+-    fun `DataFrameSchema generateDataClasses - with custom parameters`() {
++    fun `TypedFrameSchema generateDataClasses - with custom parameters`() {
+         val schema = typed.schema()
+         val code = schema.generateDataClasses(
+             markerName = "SchemaDataClass",
+diff --git a/core/src/test/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/MatchSchemeTests.kt b/core/src/test/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/MatchSchemeTests.kt
+index 743e22a..1fe57db 100644
+--- a/core/src/test/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/MatchSchemeTests.kt
++++ b/core/src/test/kotlin/org/jetbrains/kotlinx/dataframe/codeGen/MatchSchemeTests.kt
+@@ -30,7 +30,7 @@ import org.jetbrains.kotlinx.dataframe.schema.ComparisonMode
+ import org.jetbrains.kotlinx.dataframe.schema.ComparisonMode.LENIENT
+ import org.jetbrains.kotlinx.dataframe.schema.ComparisonMode.STRICT
+ import org.jetbrains.kotlinx.dataframe.schema.ComparisonMode.STRICT_FOR_NESTED_SCHEMAS
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.Test
+ import kotlin.reflect.typeOf
+ 
+diff --git a/dataframe-csv/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/DelimCsvTsvTests.kt b/dataframe-csv/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/DelimCsvTsvTests.kt
+index 03f50dd..8cff86d 100644
+--- a/dataframe-csv/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/DelimCsvTsvTests.kt
++++ b/dataframe-csv/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/DelimCsvTsvTests.kt
+@@ -25,7 +25,7 @@ import org.jetbrains.kotlinx.dataframe.api.print
+ import org.jetbrains.kotlinx.dataframe.api.schema
+ import org.jetbrains.kotlinx.dataframe.api.toStr
+ import org.jetbrains.kotlinx.dataframe.impl.io.FastDoubleParser
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.After
+ import org.junit.Before
+ import org.junit.Test
+@@ -189,7 +189,7 @@ class DelimCsvTsvTests {
+         println(df)
+     }
+ 
+-    private fun assertColumnType(columnName: String, kClass: KClass<*>, schema: DataFrameSchema) {
++    private fun assertColumnType(columnName: String, kClass: KClass<*>, schema: TypedFrameSchema) {
+         val col = schema.columns[columnName]
+         col.shouldNotBeNull()
+         col.type.classifier shouldBe kClass
+diff --git a/dataframe-jdbc/generated-sources/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/db/DuckDb.kt b/dataframe-jdbc/generated-sources/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/db/DuckDb.kt
+index fe4c5ff..18e770e 100644
+--- a/dataframe-jdbc/generated-sources/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/db/DuckDb.kt
++++ b/dataframe-jdbc/generated-sources/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/db/DuckDb.kt
+@@ -403,7 +403,7 @@ public object DuckDb : AdvancedDbType("duckdb") {
+     /**
+      * How to filter out system tables from user-created ones when using
+      * [<code>DataFrame.readAllSqlTables</code>][DataFrame.Companion.readAllSqlTables] and
+-     * [<code>DataFrameSchema.readAllSqlTables</code>][org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema.Companion.readAllSqlTables].
++     * [<code>TypedFrameSchema.readAllSqlTables</code>][org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema.Companion.readAllSqlTables].
+      *
+      * The names of these can sometimes be found in the specific JDBC integration.
+      */
+@@ -415,7 +415,7 @@ public object DuckDb : AdvancedDbType("duckdb") {
+     /**
+      * How to retrieve the correct table metadata when using
+      * [<code>DataFrame.readAllSqlTables</code>][DataFrame.Companion.readAllSqlTables] and
+-     * [<code>DataFrameSchema.readAllSqlTables</code>][org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema.Companion.readAllSqlTables].
++     * [<code>TypedFrameSchema.readAllSqlTables</code>][org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema.Companion.readAllSqlTables].
+      * The names of these can be found in the [<code>DatabaseMetaData</code>][DatabaseMetaData] implementation of the DuckDB JDBC integration.
+      */
+     override fun buildTableMetadata(tables: ResultSet): TableMetadata =
+diff --git a/dataframe-jdbc/generated-sources/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/readDataFrameSchema.kt b/dataframe-jdbc/generated-sources/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/readDataFrameSchema.kt
+index b2a436a..dcdcca4 100644
+--- a/dataframe-jdbc/generated-sources/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/readDataFrameSchema.kt
++++ b/dataframe-jdbc/generated-sources/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/readDataFrameSchema.kt
+@@ -7,7 +7,7 @@ import org.jetbrains.kotlinx.dataframe.io.db.DbType
+ import org.jetbrains.kotlinx.dataframe.io.db.TableColumnMetadata
+ import org.jetbrains.kotlinx.dataframe.io.db.extractDBTypeFromConnection
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import java.sql.Connection
+ import java.sql.DatabaseMetaData
+ import java.sql.DriverManager
+@@ -33,13 +33,13 @@ import kotlin.reflect.typeOf
+  * @param [tableName] the name of the SQL table for which to retrieve the schema.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [<code>dbType</code>][dbType] will be recognized from the [<code>dbConfig</code>][dbConfig].
+- * @return the [<code>DataFrameSchema</code>][DataFrameSchema] object representing the schema of the SQL table
++ * @return the [<code>TypedFrameSchema</code>][TypedFrameSchema] object representing the schema of the SQL table
+  */
+-public fun DataFrameSchema.Companion.readSqlTable(
++public fun TypedFrameSchema.Companion.readSqlTable(
+     dbConfig: DbConnectionConfig,
+     tableName: String,
+     dbType: DbType? = null,
+-): DataFrameSchema =
++): TypedFrameSchema =
+     withReadOnlyConnection(dbConfig, dbType) { connection ->
+         readSqlTable(connection, tableName, dbType)
+     }
+@@ -70,14 +70,14 @@ public fun DataFrameSchema.Companion.readSqlTable(
+  * @param [tableName] the name of the SQL table for which to retrieve the schema.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [<code>dbType</code>][dbType] will be recognized from the [<code>dataSource</code>][dataSource].
+- * @return the schema of the SQL table as a [<code>DataFrameSchema</code>][DataFrameSchema] object.
++ * @return the schema of the SQL table as a [<code>TypedFrameSchema</code>][TypedFrameSchema] object.
+  * @see [DataSource.getConnection]
+  */
+-public fun DataFrameSchema.Companion.readSqlTable(
++public fun TypedFrameSchema.Companion.readSqlTable(
+     dataSource: DataSource,
+     tableName: String,
+     dbType: DbType? = null,
+-): DataFrameSchema {
++): TypedFrameSchema {
+     dataSource.connection.use { connection ->
+         return readSqlTable(connection, tableName, dbType)
+     }
+@@ -90,15 +90,15 @@ public fun DataFrameSchema.Companion.readSqlTable(
+  * @param [tableName] the name of the SQL table for which to retrieve the schema.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [<code>dbType</code>][dbType] will be recognized from the [<code>connection</code>][connection].
+- * @return the schema of the SQL table as a [<code>DataFrameSchema</code>][DataFrameSchema] object.
++ * @return the schema of the SQL table as a [<code>TypedFrameSchema</code>][TypedFrameSchema] object.
+  *
+  * @see DriverManager.getConnection
+  */
+-public fun DataFrameSchema.Companion.readSqlTable(
++public fun TypedFrameSchema.Companion.readSqlTable(
+     connection: Connection,
+     tableName: String,
+     dbType: DbType? = null,
+-): DataFrameSchema {
++): TypedFrameSchema {
+     val determinedDbType = dbType ?: extractDBTypeFromConnection(connection)
+ 
+     // TODO don't need to read 1 row, take it just from TableColumnMetadatas
+@@ -131,13 +131,13 @@ public fun DataFrameSchema.Companion.readSqlTable(
+  * @param [sqlQuery] the SQL query to execute and retrieve the schema from.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [<code>dbType</code>][dbType] will be recognized from the [<code>dbConfig</code>][dbConfig].
+- * @return the schema of the SQL query as a [<code>DataFrameSchema</code>][DataFrameSchema] object.
++ * @return the schema of the SQL query as a [<code>TypedFrameSchema</code>][TypedFrameSchema] object.
+  */
+-public fun DataFrameSchema.Companion.readSqlQuery(
++public fun TypedFrameSchema.Companion.readSqlQuery(
+     dbConfig: DbConnectionConfig,
+     sqlQuery: String,
+     dbType: DbType? = null,
+-): DataFrameSchema =
++): TypedFrameSchema =
+     withReadOnlyConnection(dbConfig, dbType) { connection ->
+         readSqlQuery(connection, sqlQuery, dbType)
+     }
+@@ -171,15 +171,15 @@ public fun DataFrameSchema.Companion.readSqlQuery(
+  * @param [sqlQuery] the SQL query to execute and retrieve the schema from.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [<code>dbType</code>][dbType] will be recognized from the [<code>dataSource</code>][dataSource].
+- * @return the schema of the SQL query as a [<code>DataFrameSchema</code>][DataFrameSchema] object.
++ * @return the schema of the SQL query as a [<code>TypedFrameSchema</code>][TypedFrameSchema] object.
+  *
+  * @see [DataSource.getConnection]
+  */
+-public fun DataFrameSchema.Companion.readSqlQuery(
++public fun TypedFrameSchema.Companion.readSqlQuery(
+     dataSource: DataSource,
+     sqlQuery: String,
+     dbType: DbType? = null,
+-): DataFrameSchema {
++): TypedFrameSchema {
+     dataSource.connection.use { connection ->
+         return readSqlQuery(connection, sqlQuery, dbType)
+     }
+@@ -192,15 +192,15 @@ public fun DataFrameSchema.Companion.readSqlQuery(
+  * @param [sqlQuery] the SQL query to execute and retrieve the schema from.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [<code>dbType</code>][dbType] will be recognized from the [<code>connection</code>][connection].
+- * @return the schema of the SQL query as a [<code>DataFrameSchema</code>][DataFrameSchema] object.
++ * @return the schema of the SQL query as a [<code>TypedFrameSchema</code>][TypedFrameSchema] object.
+  *
+  * @see DriverManager.getConnection
+  */
+-public fun DataFrameSchema.Companion.readSqlQuery(
++public fun TypedFrameSchema.Companion.readSqlQuery(
+     connection: Connection,
+     sqlQuery: String,
+     dbType: DbType? = null,
+-): DataFrameSchema {
++): TypedFrameSchema {
+     val determinedDbType = dbType ?: extractDBTypeFromConnection(connection)
+ 
+     // Read just 1 row to get the schema
+@@ -230,16 +230,16 @@ public fun DataFrameSchema.Companion.readSqlQuery(
+  * @param [sqlQueryOrTableName] the SQL query to execute and retrieve the schema from.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [<code>dbType</code>][dbType] will be recognized from the [<code>DbConnectionConfig</code>][DbConnectionConfig].
+- * @return the schema of the SQL query as a [<code>DataFrameSchema</code>][DataFrameSchema] object.
++ * @return the schema of the SQL query as a [<code>TypedFrameSchema</code>][TypedFrameSchema] object.
+  */
+ public fun DbConnectionConfig.readDataFrameSchema(
+     sqlQueryOrTableName: String,
+     dbType: DbType? = null,
+-): DataFrameSchema =
++): TypedFrameSchema =
+     when {
+-        isSqlQuery(sqlQueryOrTableName) -> DataFrameSchema.readSqlQuery(this, sqlQueryOrTableName, dbType)
++        isSqlQuery(sqlQueryOrTableName) -> TypedFrameSchema.readSqlQuery(this, sqlQueryOrTableName, dbType)
+ 
+-        isSqlTableName(sqlQueryOrTableName) -> DataFrameSchema.readSqlTable(this, sqlQueryOrTableName, dbType)
++        isSqlTableName(sqlQueryOrTableName) -> TypedFrameSchema.readSqlTable(this, sqlQueryOrTableName, dbType)
+ 
+         else -> throw IllegalArgumentException(
+             "$sqlQueryOrTableName should be SQL query or name of one of the existing SQL tables!",
+@@ -277,16 +277,16 @@ public fun DbConnectionConfig.readDataFrameSchema(
+  * It should not contain `;` symbol.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [<code>dbType</code>][dbType] will be recognized from the [<code>DataSource</code>][DataSource].
+- * @return the schema of the SQL query as a [<code>DataFrameSchema</code>][DataFrameSchema] object.
++ * @return the schema of the SQL query as a [<code>TypedFrameSchema</code>][TypedFrameSchema] object.
+  *
+  * @see [DataSource.getConnection]
+  */
+-public fun DataSource.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType? = null): DataFrameSchema {
++public fun DataSource.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType? = null): TypedFrameSchema {
+     connection.use { conn ->
+         return when {
+-            isSqlQuery(sqlQueryOrTableName) -> DataFrameSchema.readSqlQuery(conn, sqlQueryOrTableName, dbType)
++            isSqlQuery(sqlQueryOrTableName) -> TypedFrameSchema.readSqlQuery(conn, sqlQueryOrTableName, dbType)
+ 
+-            isSqlTableName(sqlQueryOrTableName) -> DataFrameSchema.readSqlTable(conn, sqlQueryOrTableName, dbType)
++            isSqlTableName(sqlQueryOrTableName) -> TypedFrameSchema.readSqlTable(conn, sqlQueryOrTableName, dbType)
+ 
+             else -> throw IllegalArgumentException(
+                 "$sqlQueryOrTableName should be SQL query or name of one of the existing SQL tables!",
+@@ -301,13 +301,13 @@ public fun DataSource.readDataFrameSchema(sqlQueryOrTableName: String, dbType: D
+  * @param [sqlQueryOrTableName] the SQL query to execute and retrieve the schema from.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [<code>dbType</code>][dbType] will be recognized from the [<code>Connection</code>][Connection].
+- * @return the schema of the SQL query as a [<code>DataFrameSchema</code>][DataFrameSchema] object.
++ * @return the schema of the SQL query as a [<code>TypedFrameSchema</code>][TypedFrameSchema] object.
+  */
+-public fun Connection.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType? = null): DataFrameSchema =
++public fun Connection.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType? = null): TypedFrameSchema =
+     when {
+-        isSqlQuery(sqlQueryOrTableName) -> DataFrameSchema.readSqlQuery(this, sqlQueryOrTableName, dbType)
++        isSqlQuery(sqlQueryOrTableName) -> TypedFrameSchema.readSqlQuery(this, sqlQueryOrTableName, dbType)
+ 
+-        isSqlTableName(sqlQueryOrTableName) -> DataFrameSchema.readSqlTable(this, sqlQueryOrTableName, dbType)
++        isSqlTableName(sqlQueryOrTableName) -> TypedFrameSchema.readSqlTable(this, sqlQueryOrTableName, dbType)
+ 
+         else -> throw IllegalArgumentException(
+             "$sqlQueryOrTableName should be SQL query or name of one of the existing SQL tables!",
+@@ -321,9 +321,9 @@ public fun Connection.readDataFrameSchema(sqlQueryOrTableName: String, dbType: D
+  *
+  * @param [resultSet] the [<code>ResultSet</code>][ResultSet] obtained from executing a database query.
+  * @param [dbType] the type of database that the [<code>ResultSet</code>][ResultSet] belongs to, could be a custom object, provided by user.
+- * @return the schema of the [<code>ResultSet</code>][ResultSet] as a [<code>DataFrameSchema</code>][DataFrameSchema] object.
++ * @return the schema of the [<code>ResultSet</code>][ResultSet] as a [<code>TypedFrameSchema</code>][TypedFrameSchema] object.
+  */
+-public fun DataFrameSchema.Companion.readResultSet(resultSet: ResultSet, dbType: DbType): DataFrameSchema {
++public fun TypedFrameSchema.Companion.readResultSet(resultSet: ResultSet, dbType: DbType): TypedFrameSchema {
+     val tableColumns = getTableColumnsMetadata(resultSet, dbType)
+     val expectedJdbcTypes = getExpectedJdbcTypes(dbType, tableColumns)
+     val preprocessedValueTypes = getPreprocessedValueTypes(dbType, tableColumns, expectedJdbcTypes)
+@@ -342,9 +342,9 @@ public fun DataFrameSchema.Companion.readResultSet(resultSet: ResultSet, dbType:
+  * NOTE: This function will not close connection and result set and not retrieve data from the result set.
+  *
+  * @param [dbType] the type of database that the [<code>ResultSet</code>][ResultSet] belongs to, could be a custom object, provided by user.
+- * @return the schema of the [<code>ResultSet</code>][ResultSet] as a [<code>DataFrameSchema</code>][DataFrameSchema] object.
++ * @return the schema of the [<code>ResultSet</code>][ResultSet] as a [<code>TypedFrameSchema</code>][TypedFrameSchema] object.
+  */
+-public fun ResultSet.readDataFrameSchema(dbType: DbType): DataFrameSchema = DataFrameSchema.readResultSet(this, dbType)
++public fun ResultSet.readDataFrameSchema(dbType: DbType): TypedFrameSchema = TypedFrameSchema.readResultSet(this, dbType)
+ 
+ /**
+  * Retrieves the schemas of all non-system tables in the database using the provided database configuration.
+@@ -361,12 +361,12 @@ public fun ResultSet.readDataFrameSchema(dbType: DbType): DataFrameSchema = Data
+  * @param [dbConfig] the database configuration to connect to the database, including URL, user, and password.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [<code>dbType</code>][dbType] will be recognized from the [<code>dbConfig</code>][dbConfig].
+- * @return a map of [<code>String, DataFrameSchema</code>][String, DataFrameSchema] objects representing the table name and its schema for each non-system table.
++ * @return a map of [<code>String, TypedFrameSchema</code>][String, TypedFrameSchema] objects representing the table name and its schema for each non-system table.
+  */
+-public fun DataFrameSchema.Companion.readAllSqlTables(
++public fun TypedFrameSchema.Companion.readAllSqlTables(
+     dbConfig: DbConnectionConfig,
+     dbType: DbType? = null,
+-): Map<String, DataFrameSchema> =
++): Map<String, TypedFrameSchema> =
+     withReadOnlyConnection(dbConfig, dbType) { connection ->
+         readAllSqlTables(connection, dbType)
+     }
+@@ -402,14 +402,14 @@ public fun DataFrameSchema.Companion.readAllSqlTables(
+  * @param [dataSource] the DataSource to get a database connection from.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [<code>dbType</code>][dbType] will be recognized from the [<code>dataSource</code>][dataSource].
+- * @return a map of [<code>String, DataFrameSchema</code>][String, DataFrameSchema] objects representing the table name and its schema for each non-system table.
++ * @return a map of [<code>String, TypedFrameSchema</code>][String, TypedFrameSchema] objects representing the table name and its schema for each non-system table.
+  *
+  * @see [DataSource.getConnection]
+  */
+-public fun DataFrameSchema.Companion.readAllSqlTables(
++public fun TypedFrameSchema.Companion.readAllSqlTables(
+     dataSource: DataSource,
+     dbType: DbType? = null,
+-): Map<String, DataFrameSchema> {
++): Map<String, TypedFrameSchema> {
+     dataSource.connection.use { connection ->
+         return readAllSqlTables(connection, dbType)
+     }
+@@ -421,12 +421,12 @@ public fun DataFrameSchema.Companion.readAllSqlTables(
+  * @param [connection] the database connection.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [<code>dbType</code>][dbType] will be recognized from the [<code>connection</code>][connection].
+- * @return a map of [<code>String, DataFrameSchema</code>][String, DataFrameSchema] objects representing the table name and its schema for each non-system table.
++ * @return a map of [<code>String, TypedFrameSchema</code>][String, TypedFrameSchema] objects representing the table name and its schema for each non-system table.
+  */
+-public fun DataFrameSchema.Companion.readAllSqlTables(
++public fun TypedFrameSchema.Companion.readAllSqlTables(
+     connection: Connection,
+     dbType: DbType? = null,
+-): Map<String, DataFrameSchema> {
++): Map<String, TypedFrameSchema> {
+     val metaData = connection.metaData
+     val determinedDbType = dbType ?: extractDBTypeFromConnection(connection)
+ 
+@@ -439,7 +439,7 @@ public fun DataFrameSchema.Companion.readAllSqlTables(
+     }.getOrNull()
+     val tables = metaData.getTables(effectiveCatalog, null, null, tableTypes)
+ 
+-    val dataFrameSchemas = mutableMapOf<String, DataFrameSchema>()
++    val dataFrameSchemas = mutableMapOf<String, TypedFrameSchema>()
+ 
+     while (tables.next()) {
+         val jdbcTable = determinedDbType.buildTableMetadata(tables)
+diff --git a/dataframe-jdbc/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/db/DuckDb.kt b/dataframe-jdbc/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/db/DuckDb.kt
+index 029bef9..7fac6d4 100644
+--- a/dataframe-jdbc/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/db/DuckDb.kt
++++ b/dataframe-jdbc/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/db/DuckDb.kt
+@@ -403,7 +403,7 @@ public object DuckDb : AdvancedDbType("duckdb") {
+     /**
+      * How to filter out system tables from user-created ones when using
+      * [DataFrame.readAllSqlTables][DataFrame.Companion.readAllSqlTables] and
+-     * [DataFrameSchema.readAllSqlTables][org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema.Companion.readAllSqlTables].
++     * [TypedFrameSchema.readAllSqlTables][org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema.Companion.readAllSqlTables].
+      *
+      * The names of these can sometimes be found in the specific JDBC integration.
+      */
+@@ -415,7 +415,7 @@ public object DuckDb : AdvancedDbType("duckdb") {
+     /**
+      * How to retrieve the correct table metadata when using
+      * [DataFrame.readAllSqlTables][DataFrame.Companion.readAllSqlTables] and
+-     * [DataFrameSchema.readAllSqlTables][org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema.Companion.readAllSqlTables].
++     * [TypedFrameSchema.readAllSqlTables][org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema.Companion.readAllSqlTables].
+      * The names of these can be found in the [DatabaseMetaData] implementation of the DuckDB JDBC integration.
+      */
+     override fun buildTableMetadata(tables: ResultSet): TableMetadata =
+diff --git a/dataframe-jdbc/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/readDataFrameSchema.kt b/dataframe-jdbc/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/readDataFrameSchema.kt
+index c7a0c31..204a2d8 100644
+--- a/dataframe-jdbc/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/readDataFrameSchema.kt
++++ b/dataframe-jdbc/src/main/kotlin/org/jetbrains/kotlinx/dataframe/io/readDataFrameSchema.kt
+@@ -7,7 +7,7 @@ import org.jetbrains.kotlinx.dataframe.io.db.DbType
+ import org.jetbrains.kotlinx.dataframe.io.db.TableColumnMetadata
+ import org.jetbrains.kotlinx.dataframe.io.db.extractDBTypeFromConnection
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import java.sql.Connection
+ import java.sql.DatabaseMetaData
+ import java.sql.DriverManager
+@@ -33,13 +33,13 @@ import kotlin.reflect.typeOf
+  * @param [tableName] the name of the SQL table for which to retrieve the schema.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [dbType] will be recognized from the [dbConfig].
+- * @return the [DataFrameSchema] object representing the schema of the SQL table
++ * @return the [TypedFrameSchema] object representing the schema of the SQL table
+  */
+-public fun DataFrameSchema.Companion.readSqlTable(
++public fun TypedFrameSchema.Companion.readSqlTable(
+     dbConfig: DbConnectionConfig,
+     tableName: String,
+     dbType: DbType? = null,
+-): DataFrameSchema =
++): TypedFrameSchema =
+     withReadOnlyConnection(dbConfig, dbType) { connection ->
+         readSqlTable(connection, tableName, dbType)
+     }
+@@ -70,14 +70,14 @@ public fun DataFrameSchema.Companion.readSqlTable(
+  * @param [tableName] the name of the SQL table for which to retrieve the schema.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [dbType] will be recognized from the [dataSource].
+- * @return the schema of the SQL table as a [DataFrameSchema] object.
++ * @return the schema of the SQL table as a [TypedFrameSchema] object.
+  * @see [DataSource.getConnection]
+  */
+-public fun DataFrameSchema.Companion.readSqlTable(
++public fun TypedFrameSchema.Companion.readSqlTable(
+     dataSource: DataSource,
+     tableName: String,
+     dbType: DbType? = null,
+-): DataFrameSchema {
++): TypedFrameSchema {
+     dataSource.connection.use { connection ->
+         return readSqlTable(connection, tableName, dbType)
+     }
+@@ -90,15 +90,15 @@ public fun DataFrameSchema.Companion.readSqlTable(
+  * @param [tableName] the name of the SQL table for which to retrieve the schema.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [dbType] will be recognized from the [connection].
+- * @return the schema of the SQL table as a [DataFrameSchema] object.
++ * @return the schema of the SQL table as a [TypedFrameSchema] object.
+  *
+  * @see DriverManager.getConnection
+  */
+-public fun DataFrameSchema.Companion.readSqlTable(
++public fun TypedFrameSchema.Companion.readSqlTable(
+     connection: Connection,
+     tableName: String,
+     dbType: DbType? = null,
+-): DataFrameSchema {
++): TypedFrameSchema {
+     val determinedDbType = dbType ?: extractDBTypeFromConnection(connection)
+ 
+     // TODO don't need to read 1 row, take it just from TableColumnMetadatas
+@@ -131,13 +131,13 @@ public fun DataFrameSchema.Companion.readSqlTable(
+  * @param [sqlQuery] the SQL query to execute and retrieve the schema from.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [dbType] will be recognized from the [dbConfig].
+- * @return the schema of the SQL query as a [DataFrameSchema] object.
++ * @return the schema of the SQL query as a [TypedFrameSchema] object.
+  */
+-public fun DataFrameSchema.Companion.readSqlQuery(
++public fun TypedFrameSchema.Companion.readSqlQuery(
+     dbConfig: DbConnectionConfig,
+     sqlQuery: String,
+     dbType: DbType? = null,
+-): DataFrameSchema =
++): TypedFrameSchema =
+     withReadOnlyConnection(dbConfig, dbType) { connection ->
+         readSqlQuery(connection, sqlQuery, dbType)
+     }
+@@ -171,15 +171,15 @@ public fun DataFrameSchema.Companion.readSqlQuery(
+  * @param [sqlQuery] the SQL query to execute and retrieve the schema from.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [dbType] will be recognized from the [dataSource].
+- * @return the schema of the SQL query as a [DataFrameSchema] object.
++ * @return the schema of the SQL query as a [TypedFrameSchema] object.
+  *
+  * @see [DataSource.getConnection]
+  */
+-public fun DataFrameSchema.Companion.readSqlQuery(
++public fun TypedFrameSchema.Companion.readSqlQuery(
+     dataSource: DataSource,
+     sqlQuery: String,
+     dbType: DbType? = null,
+-): DataFrameSchema {
++): TypedFrameSchema {
+     dataSource.connection.use { connection ->
+         return readSqlQuery(connection, sqlQuery, dbType)
+     }
+@@ -192,15 +192,15 @@ public fun DataFrameSchema.Companion.readSqlQuery(
+  * @param [sqlQuery] the SQL query to execute and retrieve the schema from.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [dbType] will be recognized from the [connection].
+- * @return the schema of the SQL query as a [DataFrameSchema] object.
++ * @return the schema of the SQL query as a [TypedFrameSchema] object.
+  *
+  * @see DriverManager.getConnection
+  */
+-public fun DataFrameSchema.Companion.readSqlQuery(
++public fun TypedFrameSchema.Companion.readSqlQuery(
+     connection: Connection,
+     sqlQuery: String,
+     dbType: DbType? = null,
+-): DataFrameSchema {
++): TypedFrameSchema {
+     val determinedDbType = dbType ?: extractDBTypeFromConnection(connection)
+ 
+     // Read just 1 row to get the schema
+@@ -230,16 +230,16 @@ public fun DataFrameSchema.Companion.readSqlQuery(
+  * @param [sqlQueryOrTableName] the SQL query to execute and retrieve the schema from.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [dbType] will be recognized from the [DbConnectionConfig].
+- * @return the schema of the SQL query as a [DataFrameSchema] object.
++ * @return the schema of the SQL query as a [TypedFrameSchema] object.
+  */
+ public fun DbConnectionConfig.readDataFrameSchema(
+     sqlQueryOrTableName: String,
+     dbType: DbType? = null,
+-): DataFrameSchema =
++): TypedFrameSchema =
+     when {
+-        isSqlQuery(sqlQueryOrTableName) -> DataFrameSchema.readSqlQuery(this, sqlQueryOrTableName, dbType)
++        isSqlQuery(sqlQueryOrTableName) -> TypedFrameSchema.readSqlQuery(this, sqlQueryOrTableName, dbType)
+ 
+-        isSqlTableName(sqlQueryOrTableName) -> DataFrameSchema.readSqlTable(this, sqlQueryOrTableName, dbType)
++        isSqlTableName(sqlQueryOrTableName) -> TypedFrameSchema.readSqlTable(this, sqlQueryOrTableName, dbType)
+ 
+         else -> throw IllegalArgumentException(
+             "$sqlQueryOrTableName should be SQL query or name of one of the existing SQL tables!",
+@@ -277,16 +277,16 @@ public fun DbConnectionConfig.readDataFrameSchema(
+  * It should not contain `;` symbol.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [dbType] will be recognized from the [DataSource].
+- * @return the schema of the SQL query as a [DataFrameSchema] object.
++ * @return the schema of the SQL query as a [TypedFrameSchema] object.
+  *
+  * @see [DataSource.getConnection]
+  */
+-public fun DataSource.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType? = null): DataFrameSchema {
++public fun DataSource.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType? = null): TypedFrameSchema {
+     connection.use { conn ->
+         return when {
+-            isSqlQuery(sqlQueryOrTableName) -> DataFrameSchema.readSqlQuery(conn, sqlQueryOrTableName, dbType)
++            isSqlQuery(sqlQueryOrTableName) -> TypedFrameSchema.readSqlQuery(conn, sqlQueryOrTableName, dbType)
+ 
+-            isSqlTableName(sqlQueryOrTableName) -> DataFrameSchema.readSqlTable(conn, sqlQueryOrTableName, dbType)
++            isSqlTableName(sqlQueryOrTableName) -> TypedFrameSchema.readSqlTable(conn, sqlQueryOrTableName, dbType)
+ 
+             else -> throw IllegalArgumentException(
+                 "$sqlQueryOrTableName should be SQL query or name of one of the existing SQL tables!",
+@@ -301,13 +301,13 @@ public fun DataSource.readDataFrameSchema(sqlQueryOrTableName: String, dbType: D
+  * @param [sqlQueryOrTableName] the SQL query to execute and retrieve the schema from.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [dbType] will be recognized from the [Connection].
+- * @return the schema of the SQL query as a [DataFrameSchema] object.
++ * @return the schema of the SQL query as a [TypedFrameSchema] object.
+  */
+-public fun Connection.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType? = null): DataFrameSchema =
++public fun Connection.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType? = null): TypedFrameSchema =
+     when {
+-        isSqlQuery(sqlQueryOrTableName) -> DataFrameSchema.readSqlQuery(this, sqlQueryOrTableName, dbType)
++        isSqlQuery(sqlQueryOrTableName) -> TypedFrameSchema.readSqlQuery(this, sqlQueryOrTableName, dbType)
+ 
+-        isSqlTableName(sqlQueryOrTableName) -> DataFrameSchema.readSqlTable(this, sqlQueryOrTableName, dbType)
++        isSqlTableName(sqlQueryOrTableName) -> TypedFrameSchema.readSqlTable(this, sqlQueryOrTableName, dbType)
+ 
+         else -> throw IllegalArgumentException(
+             "$sqlQueryOrTableName should be SQL query or name of one of the existing SQL tables!",
+@@ -321,9 +321,9 @@ public fun Connection.readDataFrameSchema(sqlQueryOrTableName: String, dbType: D
+  *
+  * @param [resultSet] the [ResultSet] obtained from executing a database query.
+  * @param [dbType] the type of database that the [ResultSet] belongs to, could be a custom object, provided by user.
+- * @return the schema of the [ResultSet] as a [DataFrameSchema] object.
++ * @return the schema of the [ResultSet] as a [TypedFrameSchema] object.
+  */
+-public fun DataFrameSchema.Companion.readResultSet(resultSet: ResultSet, dbType: DbType): DataFrameSchema {
++public fun TypedFrameSchema.Companion.readResultSet(resultSet: ResultSet, dbType: DbType): TypedFrameSchema {
+     val tableColumns = getTableColumnsMetadata(resultSet, dbType)
+     val expectedJdbcTypes = getExpectedJdbcTypes(dbType, tableColumns)
+     val preprocessedValueTypes = getPreprocessedValueTypes(dbType, tableColumns, expectedJdbcTypes)
+@@ -342,9 +342,9 @@ public fun DataFrameSchema.Companion.readResultSet(resultSet: ResultSet, dbType:
+  * NOTE: This function will not close connection and result set and not retrieve data from the result set.
+  *
+  * @param [dbType] the type of database that the [ResultSet] belongs to, could be a custom object, provided by user.
+- * @return the schema of the [ResultSet] as a [DataFrameSchema] object.
++ * @return the schema of the [ResultSet] as a [TypedFrameSchema] object.
+  */
+-public fun ResultSet.readDataFrameSchema(dbType: DbType): DataFrameSchema = DataFrameSchema.readResultSet(this, dbType)
++public fun ResultSet.readDataFrameSchema(dbType: DbType): TypedFrameSchema = TypedFrameSchema.readResultSet(this, dbType)
+ 
+ /**
+  * Retrieves the schemas of all non-system tables in the database using the provided database configuration.
+@@ -361,12 +361,12 @@ public fun ResultSet.readDataFrameSchema(dbType: DbType): DataFrameSchema = Data
+  * @param [dbConfig] the database configuration to connect to the database, including URL, user, and password.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [dbType] will be recognized from the [dbConfig].
+- * @return a map of [String, DataFrameSchema] objects representing the table name and its schema for each non-system table.
++ * @return a map of [String, TypedFrameSchema] objects representing the table name and its schema for each non-system table.
+  */
+-public fun DataFrameSchema.Companion.readAllSqlTables(
++public fun TypedFrameSchema.Companion.readAllSqlTables(
+     dbConfig: DbConnectionConfig,
+     dbType: DbType? = null,
+-): Map<String, DataFrameSchema> =
++): Map<String, TypedFrameSchema> =
+     withReadOnlyConnection(dbConfig, dbType) { connection ->
+         readAllSqlTables(connection, dbType)
+     }
+@@ -402,14 +402,14 @@ public fun DataFrameSchema.Companion.readAllSqlTables(
+  * @param [dataSource] the DataSource to get a database connection from.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [dbType] will be recognized from the [dataSource].
+- * @return a map of [String, DataFrameSchema] objects representing the table name and its schema for each non-system table.
++ * @return a map of [String, TypedFrameSchema] objects representing the table name and its schema for each non-system table.
+  *
+  * @see [DataSource.getConnection]
+  */
+-public fun DataFrameSchema.Companion.readAllSqlTables(
++public fun TypedFrameSchema.Companion.readAllSqlTables(
+     dataSource: DataSource,
+     dbType: DbType? = null,
+-): Map<String, DataFrameSchema> {
++): Map<String, TypedFrameSchema> {
+     dataSource.connection.use { connection ->
+         return readAllSqlTables(connection, dbType)
+     }
+@@ -421,12 +421,12 @@ public fun DataFrameSchema.Companion.readAllSqlTables(
+  * @param [connection] the database connection.
+  * @param [dbType] the type of database, could be a custom object, provided by user, optional, default is `null`,
+  * in that case the [dbType] will be recognized from the [connection].
+- * @return a map of [String, DataFrameSchema] objects representing the table name and its schema for each non-system table.
++ * @return a map of [String, TypedFrameSchema] objects representing the table name and its schema for each non-system table.
+  */
+-public fun DataFrameSchema.Companion.readAllSqlTables(
++public fun TypedFrameSchema.Companion.readAllSqlTables(
+     connection: Connection,
+     dbType: DbType? = null,
+-): Map<String, DataFrameSchema> {
++): Map<String, TypedFrameSchema> {
+     val metaData = connection.metaData
+     val determinedDbType = dbType ?: extractDBTypeFromConnection(connection)
+ 
+@@ -439,7 +439,7 @@ public fun DataFrameSchema.Companion.readAllSqlTables(
+     }.getOrNull()
+     val tables = metaData.getTables(effectiveCatalog, null, null, tableTypes)
+ 
+-    val dataFrameSchemas = mutableMapOf<String, DataFrameSchema>()
++    val dataFrameSchemas = mutableMapOf<String, TypedFrameSchema>()
+ 
+     while (tables.next()) {
+         val jdbcTable = determinedDbType.buildTableMetadata(tables)
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/commonTestScenarios.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/commonTestScenarios.kt
+index 0e1e37e..f49397c 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/commonTestScenarios.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/commonTestScenarios.kt
+@@ -11,7 +11,7 @@ import org.jetbrains.kotlinx.dataframe.DataFrame
+ import org.jetbrains.kotlinx.dataframe.api.inferType
+ import org.jetbrains.kotlinx.dataframe.api.schema
+ import org.jetbrains.kotlinx.dataframe.io.db.MsSql
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import java.sql.Connection
+ import java.sql.ResultSet
+ import kotlin.reflect.typeOf
+@@ -52,7 +52,7 @@ internal fun inferNullability(connection: Connection) {
+     df.schema().columns["surname"]!!.type shouldBe typeOf<String?>()
+     df.schema().columns["age"]!!.type shouldBe typeOf<Int>()
+ 
+-    val dataSchema = DataFrameSchema.readSqlTable(connection, TEST_TABLE_NAME)
++    val dataSchema = TypedFrameSchema.readSqlTable(connection, TEST_TABLE_NAME)
+     dataSchema.columns.size shouldBe 4
+     dataSchema.columns["id"]!!.type shouldBe typeOf<Int>()
+     dataSchema.columns["name"]!!.type shouldBe typeOf<String?>()
+@@ -84,7 +84,7 @@ internal fun inferNullability(connection: Connection) {
+     df2.schema().columns["surname"]!!.type shouldBe typeOf<String?>()
+     df2.schema().columns["age"]!!.type shouldBe typeOf<Int>()
+ 
+-    val dataSchema2 = DataFrameSchema.readSqlQuery(connection, sqlQuery)
++    val dataSchema2 = TypedFrameSchema.readSqlQuery(connection, sqlQuery)
+     dataSchema2.columns.size shouldBe 3
+     dataSchema2.columns["name"]!!.type shouldBe typeOf<String?>()
+     dataSchema2.columns["surname"]!!.type shouldBe typeOf<String?>()
+@@ -115,7 +115,7 @@ internal fun inferNullability(connection: Connection) {
+ 
+             rs.beforeFirst()
+ 
+-            val dataSchema3 = DataFrameSchema.readResultSet(rs, MsSql)
++            val dataSchema3 = TypedFrameSchema.readResultSet(rs, MsSql)
+             dataSchema3.columns.size shouldBe 4
+             dataSchema3.columns["id"]!!.type shouldBe typeOf<Int>()
+             dataSchema3.columns["name"]!!.type shouldBe typeOf<String?>()
+@@ -142,7 +142,7 @@ internal fun inferNullability(connection: Connection) {
+ private const val ALIAS_TABLE_NAME = "alias_test_table"
+ 
+ /**
+- * An SQL `AS` alias names the column it renames, both in the [DataFrame] and in its [DataFrameSchema]:
++ * An SQL `AS` alias names the column it renames, both in the [DataFrame] and in its [TypedFrameSchema]:
+  * on a plain column, on an expression, and on two same-named columns of a join.
+  * The aliases are unquoted and lower-case; [reportedAs] is how the database reports such an identifier
+  * (H2 without a compatibility mode upper-cases it).
+@@ -159,7 +159,7 @@ internal fun aliasesNameColumns(connection: Connection, reportedAs: (String) ->
+         "SELECT id AS customer_id, name AS customer_name, id + 1 AS next_id FROM $ALIAS_TABLE_NAME"
+     val aliases = listOf("customer_id", "customer_name", "next_id").map(reportedAs)
+     DataFrame.readSqlQuery(connection, plainAndExpression).columnNames() shouldBe aliases
+-    DataFrameSchema.readSqlQuery(connection, plainAndExpression).columns.keys.toList() shouldBe aliases
++    TypedFrameSchema.readSqlQuery(connection, plainAndExpression).columns.keys.toList() shouldBe aliases
+ 
+     @Language("SQL")
+     val sameNamedColumns =
+@@ -167,7 +167,7 @@ internal fun aliasesNameColumns(connection: Connection, reportedAs: (String) ->
+             "FROM $ALIAS_TABLE_NAME a JOIN $ALIAS_TABLE_NAME b ON a.id = b.id"
+     val joinAliases = listOf("first_name", "second_name").map(reportedAs)
+     DataFrame.readSqlQuery(connection, sameNamedColumns).columnNames() shouldBe joinAliases
+-    DataFrameSchema.readSqlQuery(connection, sameNamedColumns).columns.keys.toList() shouldBe joinAliases
++    TypedFrameSchema.readSqlQuery(connection, sameNamedColumns).columns.keys.toList() shouldBe joinAliases
+ 
+     connection.createStatement().use { st -> st.execute("DROP TABLE IF EXISTS $ALIAS_TABLE_NAME") }
+ }
+@@ -190,7 +190,7 @@ fun AnyFrame.assertInferredTypesMatchSchema() {
+     }
+ }
+ 
+-fun DataFrameSchema.assertMatches(other: DataFrameSchema) {
++fun TypedFrameSchema.assertMatches(other: TypedFrameSchema) {
+     if (!this.compare(other).isSuperOrMatches()) {
+         throw createAssertionError(
+             message = "Schemas must be <:",
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/h2Test.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/h2Test.kt
+index 539704b..8b55c05 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/h2Test.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/h2Test.kt
+@@ -35,7 +35,7 @@ import org.jetbrains.kotlinx.dataframe.io.readResultSet
+ import org.jetbrains.kotlinx.dataframe.io.readSqlQuery
+ import org.jetbrains.kotlinx.dataframe.io.readSqlTable
+ import org.jetbrains.kotlinx.dataframe.io.withReadOnlyConnection
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.AfterClass
+ import org.junit.BeforeClass
+ import org.junit.Test
+@@ -201,7 +201,7 @@ class JdbcTest {
+             casted[0][1] shouldBe "John"
+         }
+ 
+-        private fun assertCustomerSchema(schema: DataFrameSchema) {
++        private fun assertCustomerSchema(schema: TypedFrameSchema) {
+             schema.columns.size shouldBe 3
+             schema.columns["name"]!!.type shouldBe typeOf<String?>()
+         }
+@@ -214,7 +214,7 @@ class JdbcTest {
+             casted[0][0] shouldBe "John"
+         }
+ 
+-        private fun assertCustomerSalesSchema(schema: DataFrameSchema) {
++        private fun assertCustomerSalesSchema(schema: TypedFrameSchema) {
+             schema.columns.size shouldBe 2
+             schema.columns["customerName"]!!.type shouldBe typeOf<String?>()
+         }
+@@ -250,7 +250,7 @@ class JdbcTest {
+             (saleDf[0][2] as BigDecimal).compareTo(BigDecimal(100.50)) shouldBe 0
+         }
+ 
+-        private fun assertAllTablesSchema(dataFrameSchemaMap: Map<String, DataFrameSchema>) {
++        private fun assertAllTablesSchema(dataFrameSchemaMap: Map<String, TypedFrameSchema>) {
+             dataFrameSchemaMap.containsKey("Customer") shouldBe true
+             dataFrameSchemaMap.containsKey("Sale") shouldBe true
+ 
+@@ -295,7 +295,7 @@ class JdbcTest {
+         val df = DataFrame.readSqlTable(connection, tableName)
+         df.rowsCount() shouldBe 0
+ 
+-        val dataSchema = DataFrameSchema.readSqlTable(connection, tableName)
++        val dataSchema = TypedFrameSchema.readSqlTable(connection, tableName)
+         dataSchema.columns.size shouldBe 2
+         dataSchema.columns["characterCol"]!!.type shouldBe typeOf<String?>()
+ 
+@@ -423,7 +423,7 @@ class JdbcTest {
+ 
+         BigDecimal("2.71").compareTo(result6[0][1] as BigDecimal) shouldBe 0
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, tableName)
++        val schema = TypedFrameSchema.readSqlTable(connection, tableName)
+ 
+         schema.columns["characterCol"]!!.type shouldBe typeOf<String?>()
+         schema.columns["tinyIntCol"]!!.type shouldBe typeOf<Int?>()
+@@ -446,7 +446,7 @@ class JdbcTest {
+         val df1 = DataFrame.readSqlTable(connection, tableName, 1)
+         assertCustomerData(df1, 1)
+ 
+-        val dataSchema = DataFrameSchema.readSqlTable(connection, tableName)
++        val dataSchema = TypedFrameSchema.readSqlTable(connection, tableName)
+         assertCustomerSchema(dataSchema)
+ 
+         val dbConfig = DbConnectionConfig(url = URL)
+@@ -456,7 +456,7 @@ class JdbcTest {
+         val df3 = DataFrame.readSqlTable(dbConfig, tableName, 1)
+         assertCustomerData(df3, 1)
+ 
+-        val dataSchema1 = DataFrameSchema.readSqlTable(dbConfig, tableName)
++        val dataSchema1 = TypedFrameSchema.readSqlTable(dbConfig, tableName)
+         assertCustomerSchema(dataSchema1)
+     }
+ 
+@@ -516,7 +516,7 @@ class JdbcTest {
+ 
+                 rs.beforeFirst()
+ 
+-                val dataSchema = DataFrameSchema.readResultSet(rs, dbType)
++                val dataSchema = TypedFrameSchema.readResultSet(rs, dbType)
+                 assertCustomerSchema(dataSchema)
+ 
+                 rs.beforeFirst()
+@@ -531,7 +531,7 @@ class JdbcTest {
+ 
+                 rs.beforeFirst()
+ 
+-                val dataSchema1 = DataFrameSchema.readResultSet(rs, dbType)
++                val dataSchema1 = TypedFrameSchema.readResultSet(rs, dbType)
+                 assertCustomerSchema(dataSchema1)
+             }
+         }
+@@ -914,7 +914,7 @@ class JdbcTest {
+         val df1 = DataFrame.readSqlQuery(connection, CUSTOMER_SALES_QUERY, 1)
+         assertCustomerSalesData(df1, 1)
+ 
+-        val dataSchema = DataFrameSchema.readSqlQuery(connection, CUSTOMER_SALES_QUERY)
++        val dataSchema = TypedFrameSchema.readSqlQuery(connection, CUSTOMER_SALES_QUERY)
+         assertCustomerSalesSchema(dataSchema)
+ 
+         val dbConfig = DbConnectionConfig(url = URL)
+@@ -924,7 +924,7 @@ class JdbcTest {
+         val df3 = DataFrame.readSqlQuery(dbConfig, CUSTOMER_SALES_QUERY, 1)
+         assertCustomerSalesData(df3, 1)
+ 
+-        val dataSchema1 = DataFrameSchema.readSqlQuery(dbConfig, CUSTOMER_SALES_QUERY)
++        val dataSchema1 = TypedFrameSchema.readSqlQuery(dbConfig, CUSTOMER_SALES_QUERY)
+         assertCustomerSalesSchema(dataSchema1)
+     }
+ 
+@@ -960,7 +960,7 @@ class JdbcTest {
+             INNER JOIN Customer c2 ON c1.id = c2.id
+             """.trimIndent()
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery)
+         schema.columns.size shouldBe 2
+         schema.columns.toList()[0].first shouldBe "name"
+         schema.columns.toList()[1].first shouldBe "name1"
+@@ -976,7 +976,7 @@ class JdbcTest {
+             INNER JOIN Customer c2 ON c1.id = c2.id
+             """.trimIndent()
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery)
+         schema.columns.size shouldBe 3
+         schema.columns.toList()[0].first shouldBe "name"
+         schema.columns.toList()[1].first shouldBe "name1"
+@@ -993,7 +993,7 @@ class JdbcTest {
+             INNER JOIN Customer c2 ON c1.id = c2.id
+             """.trimIndent()
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery)
+         // the aliases name the columns; the repeated `name_1` is made unique as in any DataFrame
+         schema.columns.keys.toList() shouldBe listOf("name", "name_1", "name_11")
+     }
+@@ -1006,7 +1006,7 @@ class JdbcTest {
+         val dataframes1 = DataFrame.readAllSqlTables(connection, limit = 1)
+         assertAllTablesDataWithLimit(dataframes1)
+ 
+-        val dataFrameSchemaMap = DataFrameSchema.readAllSqlTables(connection)
++        val dataFrameSchemaMap = TypedFrameSchema.readAllSqlTables(connection)
+         assertAllTablesSchema(dataFrameSchemaMap)
+ 
+         val dbConfig = DbConnectionConfig(url = URL)
+@@ -1016,7 +1016,7 @@ class JdbcTest {
+         val dataframes3 = DataFrame.readAllSqlTables(dbConfig, limit = 1)
+         assertAllTablesDataWithLimit(dataframes3)
+ 
+-        val dataSchemas1 = DataFrameSchema.readAllSqlTables(dbConfig)
++        val dataSchemas1 = TypedFrameSchema.readAllSqlTables(dbConfig)
+         assertAllTablesSchema(dataSchemas1)
+     }
+ 
+@@ -1236,14 +1236,14 @@ class JdbcTest {
+         val df = DataFrame.readSqlTable(connection, tableName, dbType = CustomDB)
+         assertCustomerData(df)
+ 
+-        val dataSchema = DataFrameSchema.readSqlTable(connection, tableName, dbType = CustomDB)
++        val dataSchema = TypedFrameSchema.readSqlTable(connection, tableName, dbType = CustomDB)
+         assertCustomerSchema(dataSchema)
+ 
+         val dbConfig = DbConnectionConfig(url = URL)
+         val df2 = DataFrame.readSqlTable(dbConfig, tableName, dbType = CustomDB)
+         assertCustomerData(df2)
+ 
+-        val dataSchema1 = DataFrameSchema.readSqlTable(dbConfig, tableName, dbType = CustomDB)
++        val dataSchema1 = TypedFrameSchema.readSqlTable(dbConfig, tableName, dbType = CustomDB)
+         assertCustomerSchema(dataSchema1)
+     }
+ 
+@@ -1252,14 +1252,14 @@ class JdbcTest {
+         val df = DataFrame.readSqlQuery(connection, CUSTOMER_SALES_QUERY, dbType = CustomDB)
+         assertCustomerSalesData(df)
+ 
+-        val dataSchema = DataFrameSchema.readSqlQuery(connection, CUSTOMER_SALES_QUERY, dbType = CustomDB)
++        val dataSchema = TypedFrameSchema.readSqlQuery(connection, CUSTOMER_SALES_QUERY, dbType = CustomDB)
+         assertCustomerSalesSchema(dataSchema)
+ 
+         val dbConfig = DbConnectionConfig(url = URL)
+         val df2 = DataFrame.readSqlQuery(dbConfig, CUSTOMER_SALES_QUERY, dbType = CustomDB)
+         assertCustomerSalesData(df2)
+ 
+-        val dataSchema1 = DataFrameSchema.readSqlQuery(dbConfig, CUSTOMER_SALES_QUERY, dbType = CustomDB)
++        val dataSchema1 = TypedFrameSchema.readSqlQuery(dbConfig, CUSTOMER_SALES_QUERY, dbType = CustomDB)
+         assertCustomerSalesSchema(dataSchema1)
+     }
+ 
+@@ -1268,14 +1268,14 @@ class JdbcTest {
+         val dataFrameMap = DataFrame.readAllSqlTables(connection, dbType = CustomDB)
+         assertAllTablesData(dataFrameMap)
+ 
+-        val dataFrameSchemaMap = DataFrameSchema.readAllSqlTables(connection, dbType = CustomDB)
++        val dataFrameSchemaMap = TypedFrameSchema.readAllSqlTables(connection, dbType = CustomDB)
+         assertAllTablesSchema(dataFrameSchemaMap)
+ 
+         val dbConfig = DbConnectionConfig(url = URL)
+         val dataframes2 = DataFrame.readAllSqlTables(dbConfig, dbType = CustomDB)
+         assertAllTablesData(dataframes2)
+ 
+-        val dataSchemas1 = DataFrameSchema.readAllSqlTables(dbConfig, dbType = CustomDB)
++        val dataSchemas1 = TypedFrameSchema.readAllSqlTables(dbConfig, dbType = CustomDB)
+         assertAllTablesSchema(dataSchemas1)
+     }
+ 
+@@ -1305,7 +1305,7 @@ class JdbcTest {
+         val df1 = DataFrame.readSqlTable(dataSource, tableName, 1)
+         assertCustomerData(df1, 1)
+ 
+-        val dataSchema = DataFrameSchema.readSqlTable(dataSource, tableName)
++        val dataSchema = TypedFrameSchema.readSqlTable(dataSource, tableName)
+         assertCustomerSchema(dataSchema)
+     }
+ 
+@@ -1330,7 +1330,7 @@ class JdbcTest {
+         val df1 = DataFrame.readSqlQuery(dataSource, CUSTOMER_SALES_QUERY, 1)
+         assertCustomerSalesData(df1, 1)
+ 
+-        val dataSchema = DataFrameSchema.readSqlQuery(dataSource, CUSTOMER_SALES_QUERY)
++        val dataSchema = TypedFrameSchema.readSqlQuery(dataSource, CUSTOMER_SALES_QUERY)
+         assertCustomerSalesSchema(dataSchema)
+     }
+ 
+@@ -1354,7 +1354,7 @@ class JdbcTest {
+         val dataframes1 = DataFrame.readAllSqlTables(dataSource, limit = 1)
+         assertAllTablesDataWithLimit(dataframes1)
+ 
+-        val dataFrameSchemaMap = DataFrameSchema.readAllSqlTables(dataSource)
++        val dataFrameSchemaMap = TypedFrameSchema.readAllSqlTables(dataSource)
+         assertAllTablesSchema(dataFrameSchemaMap)
+     }
+ 
+@@ -1364,7 +1364,7 @@ class JdbcTest {
+         val df = DataFrame.readSqlTable(dataSource, tableName, dbType = CustomDB)
+         assertCustomerData(df)
+ 
+-        val dataSchema = DataFrameSchema.readSqlTable(dataSource, tableName, dbType = CustomDB)
++        val dataSchema = TypedFrameSchema.readSqlTable(dataSource, tableName, dbType = CustomDB)
+         assertCustomerSchema(dataSchema)
+     }
+ 
+@@ -1373,7 +1373,7 @@ class JdbcTest {
+         val df = DataFrame.readSqlQuery(dataSource, CUSTOMER_SALES_QUERY, dbType = CustomDB)
+         assertCustomerSalesData(df)
+ 
+-        val dataSchema = DataFrameSchema.readSqlQuery(dataSource, CUSTOMER_SALES_QUERY, dbType = CustomDB)
++        val dataSchema = TypedFrameSchema.readSqlQuery(dataSource, CUSTOMER_SALES_QUERY, dbType = CustomDB)
+         assertCustomerSalesSchema(dataSchema)
+     }
+ 
+@@ -1382,7 +1382,7 @@ class JdbcTest {
+         val dataFrameMap = DataFrame.readAllSqlTables(dataSource, dbType = CustomDB)
+         assertAllTablesData(dataFrameMap)
+ 
+-        val dataFrameSchemaMap = DataFrameSchema.readAllSqlTables(dataSource, dbType = CustomDB)
++        val dataFrameSchemaMap = TypedFrameSchema.readAllSqlTables(dataSource, dbType = CustomDB)
+         assertAllTablesSchema(dataFrameSchemaMap)
+     }
+ 
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/mariadbH2Test.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/mariadbH2Test.kt
+index ce0b920..8eeebff 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/mariadbH2Test.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/mariadbH2Test.kt
+@@ -13,7 +13,7 @@ import org.jetbrains.kotlinx.dataframe.io.inferNullability
+ import org.jetbrains.kotlinx.dataframe.io.readAllSqlTables
+ import org.jetbrains.kotlinx.dataframe.io.readSqlQuery
+ import org.jetbrains.kotlinx.dataframe.io.readSqlTable
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.AfterClass
+ import org.junit.BeforeClass
+ import org.junit.Test
+@@ -312,7 +312,7 @@ class MariadbH2Test {
+         val byteArray = "tinyblobValue".toByteArray()
+         (result[0][22] as Blob).getBytes(1, byteArray.size) contentEquals byteArray
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, "table1")
++        val schema = TypedFrameSchema.readSqlTable(connection, "table1")
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["textcol"]!!.type shouldBe typeOf<String>()
+         schema.columns["varbinarycol"]!!.type shouldBe typeOf<ByteArray>()
+@@ -329,7 +329,7 @@ class MariadbH2Test {
+         val result2 = df2.filter { "id"<Int>() == 1 }
+         result2[0][26] shouldBe null
+ 
+-        val schema2 = DataFrameSchema.readSqlTable(connection, "table2")
++        val schema2 = TypedFrameSchema.readSqlTable(connection, "table2")
+         schema2.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema2.columns["textcol"]!!.type shouldBe typeOf<String?>()
+     }
+@@ -350,7 +350,7 @@ class MariadbH2Test {
+         val result = df.filter { "id"<Int>() == 1 }
+         result[0][1] shouldBe "Value1"
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["enumcol"]!!.type shouldBe typeOf<Any>()
+     }
+@@ -410,7 +410,7 @@ class MariadbH2Test {
+ 
+         result8[0][1] shouldBe BigDecimal("10")
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, "table1")
++        val schema = TypedFrameSchema.readSqlTable(connection, "table1")
+ 
+         schema.columns["tinyintcol"]!!.type shouldBe typeOf<Int>()
+         schema.columns["smallintcol"]!!.type shouldBe typeOf<Int?>()
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/mssqlH2Test.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/mssqlH2Test.kt
+index 659d291..6e164d8 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/mssqlH2Test.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/mssqlH2Test.kt
+@@ -11,7 +11,7 @@ import org.jetbrains.kotlinx.dataframe.io.inferNullability
+ import org.jetbrains.kotlinx.dataframe.io.readAllSqlTables
+ import org.jetbrains.kotlinx.dataframe.io.readSqlQuery
+ import org.jetbrains.kotlinx.dataframe.io.readSqlTable
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.AfterClass
+ import org.junit.BeforeClass
+ import org.junit.Test
+@@ -185,7 +185,7 @@ class MSSQLH2Test {
+         result[0]["intColumn"] shouldBe 123456
+         result[0]["ntextColumn"] shouldBe "Sample1 text"
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, "table1")
++        val schema = TypedFrameSchema.readSqlTable(connection, "table1")
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["bigintColumn"]!!.type shouldBe typeOf<Long?>()
+         schema.columns["binaryColumn"]!!.type shouldBe typeOf<ByteArray?>()
+@@ -231,7 +231,7 @@ class MSSQLH2Test {
+         val result = df.filter { "id"<Int>() == 1 }
+         result[0]["bigintColumn"] shouldBe 123456789012345L
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["bigintColumn"]!!.type shouldBe typeOf<Long?>()
+     }
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/mysqlH2Test.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/mysqlH2Test.kt
+index 61ceb20..7c701d0 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/mysqlH2Test.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/mysqlH2Test.kt
+@@ -13,7 +13,7 @@ import org.jetbrains.kotlinx.dataframe.io.inferNullability
+ import org.jetbrains.kotlinx.dataframe.io.readAllSqlTables
+ import org.jetbrains.kotlinx.dataframe.io.readSqlQuery
+ import org.jetbrains.kotlinx.dataframe.io.readSqlTable
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.AfterClass
+ import org.junit.BeforeClass
+ import org.junit.Test
+@@ -311,7 +311,7 @@ class MySqlH2Test {
+         val result = df1.filter { "id"<Int>() == 1 }
+         result[0][26] shouldBe "textValue1"
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, "table1")
++        val schema = TypedFrameSchema.readSqlTable(connection, "table1")
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["textcol"]!!.type shouldBe typeOf<String>()
+         schema.columns["datecol"]!!.type shouldBe typeOf<Date>()
+@@ -328,7 +328,7 @@ class MySqlH2Test {
+         val result2 = df2.filter { "id"<Int>() == 1 }
+         result2[0][26] shouldBe null
+ 
+-        val schema2 = DataFrameSchema.readSqlTable(connection, "table2")
++        val schema2 = TypedFrameSchema.readSqlTable(connection, "table2")
+         schema2.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema2.columns["textcol"]!!.type shouldBe typeOf<String?>()
+     }
+@@ -349,7 +349,7 @@ class MySqlH2Test {
+         val result = df.filter { "id"<Int>() == 1 }
+         result[0][1] shouldBe "Value1"
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["enumcol"]!!.type shouldBe typeOf<Any>()
+     }
+@@ -413,7 +413,7 @@ class MySqlH2Test {
+ 
+         result8[0][1] shouldBe BigDecimal("10")
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, "table1")
++        val schema = TypedFrameSchema.readSqlTable(connection, "table1")
+ 
+         schema.columns["tinyintcol"]!!.type shouldBe typeOf<Int>()
+         schema.columns["smallintcol"]!!.type shouldBe typeOf<Int>()
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/postgresH2Test.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/postgresH2Test.kt
+index af23c45..4319950 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/postgresH2Test.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/h2/postgresH2Test.kt
+@@ -13,7 +13,7 @@ import org.jetbrains.kotlinx.dataframe.io.inferNullability
+ import org.jetbrains.kotlinx.dataframe.io.readAllSqlTables
+ import org.jetbrains.kotlinx.dataframe.io.readSqlQuery
+ import org.jetbrains.kotlinx.dataframe.io.readSqlTable
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.AfterClass
+ import org.junit.BeforeClass
+ import org.junit.Test
+@@ -253,7 +253,7 @@ class PostgresH2Test {
+         result[0][15] shouldBe arrayOf("Hello", "World")
+         result[0][16] shouldBe arrayOf(true, false, true)
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, tableName1)
++        val schema = TypedFrameSchema.readSqlTable(connection, tableName1)
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["integercol"]!!.type shouldBe typeOf<Int?>()
+         schema.columns["smallintcol"]!!.type shouldBe typeOf<Int>()
+@@ -268,7 +268,7 @@ class PostgresH2Test {
+         val result2 = df2.filter { "id"<Int>() == 1 }
+         result2[0][4] shouldBe 1001
+ 
+-        val schema2 = DataFrameSchema.readSqlTable(connection, tableName2)
++        val schema2 = TypedFrameSchema.readSqlTable(connection, tableName2)
+         schema2.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema2.columns["textcol"]!!.type shouldBe typeOf<String?>()
+     }
+@@ -290,7 +290,7 @@ class PostgresH2Test {
+         val result = df.filter { "id"<Int>() == 1 }
+         result[0][2] shouldBe null
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["bigintcol"]!!.type shouldBe typeOf<Long>()
+         schema.columns["textcol"]!!.type shouldBe typeOf<String?>()
+@@ -325,7 +325,7 @@ class PostgresH2Test {
+         df3.rowsCount() shouldBe 3
+ 
+         // Validate schema type stays as Any for STRUCT (no special mapping yet)
+-        val schema3 = DataFrameSchema.readSqlTable(connection, tableName3)
++        val schema3 = TypedFrameSchema.readSqlTable(connection, tableName3)
+         schema3.columns["structcol"]!!.type shouldBe typeOf<Any>()
+     }
+ 
+@@ -360,12 +360,12 @@ class PostgresH2Test {
+             .add("serialcol2") { "serialcol"<Int>() }
+         result8[0][1] shouldBe 1000001
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, tableName1)
++        val schema = TypedFrameSchema.readSqlTable(connection, tableName1)
+         schema.columns["smallintcol"]!!.type shouldBe typeOf<Int>()
+         schema.columns["bigserialcol"]!!.type shouldBe typeOf<Long>()
+         schema.columns["doublecol"]!!.type shouldBe typeOf<Double>()
+ 
+-        val schema1 = DataFrameSchema.readSqlTable(connection, tableName2)
++        val schema1 = TypedFrameSchema.readSqlTable(connection, tableName2)
+         schema1.columns["numericcol"]!!.type shouldBe typeOf<BigDecimal>()
+         schema1.columns["realcol"]!!.type shouldBe typeOf<Float>()
+         schema1.columns["serialcol"]!!.type shouldBe typeOf<Int>()
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/local/duckDbTest.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/local/duckDbTest.kt
+index 25ba64e..bd357e1 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/local/duckDbTest.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/local/duckDbTest.kt
+@@ -33,7 +33,7 @@ import org.jetbrains.kotlinx.dataframe.io.readDataFrame
+ import org.jetbrains.kotlinx.dataframe.io.readResultSet
+ import org.jetbrains.kotlinx.dataframe.io.readSqlQuery
+ import org.jetbrains.kotlinx.dataframe.io.readSqlTable
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.Test
+ import java.math.BigDecimal
+ import java.math.BigInteger
+@@ -315,7 +315,7 @@ class DuckDbTest {
+     @Test
+     fun `read simple dataframe from DuckDB`() {
+         val df: AnyFrame
+-        val schema: DataFrameSchema
++        val schema: TypedFrameSchema
+         val subset: AnyFrame
+         DriverManager.getConnection(URL).use { connection ->
+             connection.prepareStatement(
+@@ -342,7 +342,7 @@ class DuckDbTest {
+             ).executeUpdate()
+ 
+             df = DataFrame.readSqlTable(connection, "test_table")
+-            schema = DataFrameSchema.readSqlTable(connection, "test_table")
++            schema = TypedFrameSchema.readSqlTable(connection, "test_table")
+ 
+             subset = DataFrame.readSqlQuery(connection, """SELECT test_table.name, test_table.age FROM test_table""")
+         }
+@@ -373,7 +373,7 @@ class DuckDbTest {
+     @Test
+     fun `read simple dataframe from DuckDB ResultSet`() {
+         val df: AnyFrame
+-        val schema: DataFrameSchema
++        val schema: TypedFrameSchema
+         DriverManager.getConnection(URL).use { connection ->
+             connection.prepareStatement(
+                 """
+@@ -400,7 +400,7 @@ class DuckDbTest {
+ 
+             connection.prepareStatement("SELECT * FROM test_table").executeQuery().use { rs ->
+                 df = DataFrame.readResultSet(rs, DuckDb)
+-                schema = DataFrameSchema.readResultSet(rs, DuckDb)
++                schema = TypedFrameSchema.readResultSet(rs, DuckDb)
+             }
+         }
+ 
+@@ -413,7 +413,7 @@ class DuckDbTest {
+     @Test
+     fun `read all tables`() {
+         val dfs: Map<String, AnyFrame>
+-        val schemas: Map<String, DataFrameSchema>
++        val schemas: Map<String, TypedFrameSchema>
+         DriverManager.getConnection(URL).use { connection ->
+             connection.prepareStatement(
+                 """
+@@ -439,7 +439,7 @@ class DuckDbTest {
+             ).executeUpdate()
+ 
+             dfs = DataFrame.readAllSqlTables(connection = connection)
+-            schemas = DataFrameSchema.readAllSqlTables(connection = connection)
++            schemas = TypedFrameSchema.readAllSqlTables(connection = connection)
+         }
+ 
+         val df = dfs["test_table"]!!
+@@ -457,7 +457,7 @@ class DuckDbTest {
+     @Test
+     fun `read each general-purpose DuckDB type`() {
+         val df: AnyFrame
+-        val schema: DataFrameSchema
++        val schema: TypedFrameSchema
+         DriverManager.getConnection(URL).use { connection ->
+             connection as DuckDBConnection
+             connection.prepareStatement(
+@@ -594,7 +594,7 @@ class DuckDbTest {
+                 """.trimIndent(),
+             ).executeUpdate()
+ 
+-            schema = DataFrameSchema.readSqlTable(connection, "table1")
++            schema = TypedFrameSchema.readSqlTable(connection, "table1")
+             df = DataFrame.readSqlTable(connection, "table1").reorderColumnsByName()
+         }
+ 
+@@ -616,7 +616,7 @@ class DuckDbTest {
+     @Test
+     fun `read each nested DuckDB type`() {
+         val df: AnyFrame
+-        val schema: DataFrameSchema
++        val schema: TypedFrameSchema
+         DriverManager.getConnection(URL).use { connection ->
+             connection as DuckDBConnection
+             connection.prepareStatement(
+@@ -657,7 +657,7 @@ class DuckDbTest {
+                 """.trimIndent(),
+             ).executeUpdate()
+ 
+-            schema = DataFrameSchema.readSqlTable(connection, "table2")
++            schema = TypedFrameSchema.readSqlTable(connection, "table2")
+             df = DataFrame.readSqlTable(connection, "table2")
+         }
+ 
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/local/imdbTest.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/local/imdbTest.kt
+index e47f7a5..cb8ea53 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/local/imdbTest.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/local/imdbTest.kt
+@@ -9,7 +9,7 @@ import org.jetbrains.kotlinx.dataframe.api.cast
+ import org.jetbrains.kotlinx.dataframe.api.filter
+ import org.jetbrains.kotlinx.dataframe.io.readSqlQuery
+ import org.jetbrains.kotlinx.dataframe.io.readSqlTable
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.Ignore
+ import org.junit.Test
+ import java.sql.DriverManager
+@@ -59,7 +59,7 @@ class ImdbTestTest {
+             val result = df.filter { "id"<Int>() in 11..19 }
+             result[0][1] shouldBe "Víctor"
+ 
+-            val schema = DataFrameSchema.readSqlTable(connection, tableName)
++            val schema = TypedFrameSchema.readSqlTable(connection, tableName)
+             schema.columns["id"]!!.type shouldBe typeOf<Int>()
+             schema.columns["first_name"]!!.type shouldBe typeOf<String?>()
+         }
+@@ -80,7 +80,7 @@ class ImdbTestTest {
+             val result = df.filter { "id"<Int>() in 11..19 }
+             result[0][1] shouldBe "Víctor"
+ 
+-            val schema = DataFrameSchema.readSqlTable(connection, imdbTableName)
++            val schema = TypedFrameSchema.readSqlTable(connection, imdbTableName)
+             schema.columns["id"]!!.type shouldBe typeOf<Int>()
+             schema.columns["first_name"]!!.type shouldBe typeOf<String?>()
+         }
+@@ -113,7 +113,7 @@ class ImdbTestTest {
+                 df.filter { "year"<Int?>()?.let { it > 2000 } ?: false }
+             result[0][1] shouldBe 2003
+ 
+-            val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery)
++            val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery)
+             schema.columns["name"]!!.type shouldBe typeOf<String?>()
+             schema.columns["year"]!!.type shouldBe typeOf<Int?>()
+         }
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/mariadbTestBase.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/mariadbTestBase.kt
+index 3911d34..7c507ba 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/mariadbTestBase.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/mariadbTestBase.kt
+@@ -9,7 +9,7 @@ import org.jetbrains.kotlinx.dataframe.api.cast
+ import org.jetbrains.kotlinx.dataframe.api.filter
+ import org.jetbrains.kotlinx.dataframe.api.select
+ import org.jetbrains.kotlinx.dataframe.io.db.MariaDb
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.Test
+ import java.math.BigDecimal
+ import java.math.BigInteger
+@@ -338,7 +338,7 @@ abstract class MariadbTestBase {
+         result[0][24] shouldBe "mediumblobValue".toByteArray()
+         result[0][25] shouldBe "longblobValue".toByteArray()
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, "table1")
++        val schema = TypedFrameSchema.readSqlTable(connection, "table1")
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["textCol"]!!.type shouldBe typeOf<String>()
+         schema.columns["varbinaryCol"]!!.type shouldBe typeOf<ByteArray>()
+@@ -357,7 +357,7 @@ abstract class MariadbTestBase {
+         val result2 = df2.filter { "id"<Int>() == 1 }
+         result2[0][26] shouldBe null
+ 
+-        val schema2 = DataFrameSchema.readSqlTable(connection, "table2")
++        val schema2 = TypedFrameSchema.readSqlTable(connection, "table2")
+         schema2.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema2.columns["textCol"]!!.type shouldBe typeOf<String?>()
+         schema2.columns["tinyblobCol"]!!.type shouldBe typeOf<ByteArray?>()
+@@ -383,7 +383,7 @@ abstract class MariadbTestBase {
+         val result = df.filter { "id"<Int>() == 1 }
+         result[0][2] shouldBe "Option1"
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["enumCol"]!!.type shouldBe typeOf<String>()
+         schema.columns["setCol"]!!.type shouldBe typeOf<String?>()
+@@ -466,7 +466,7 @@ abstract class MariadbTestBase {
+ 
+         result8[0][1] shouldBe BigDecimal("10")
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, "table1")
++        val schema = TypedFrameSchema.readSqlTable(connection, "table1")
+ 
+         schema.columns["tinyintCol"]!!.type shouldBe typeOf<Int>()
+         schema.columns["smallintCol"]!!.type shouldBe typeOf<Short?>()
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/mssqlTestBase.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/mssqlTestBase.kt
+index d73f870..a8c704c 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/mssqlTestBase.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/mssqlTestBase.kt
+@@ -11,7 +11,7 @@ import org.jetbrains.kotlinx.dataframe.io.inferNullability
+ import org.jetbrains.kotlinx.dataframe.io.readAllSqlTables
+ import org.jetbrains.kotlinx.dataframe.io.readSqlQuery
+ import org.jetbrains.kotlinx.dataframe.io.readSqlTable
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.Test
+ import java.math.BigDecimal
+ import java.sql.Connection
+@@ -221,7 +221,7 @@ abstract class MsSqlTestBase {
+         result[0]["intColumn"] shouldBe 123456
+         result[0]["ntextColumn"] shouldBe "Sample1 text"
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, "table1")
++        val schema = TypedFrameSchema.readSqlTable(connection, "table1")
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["bigintColumn"]!!.type shouldBe typeOf<Long?>()
+         schema.columns["binaryColumn"]!!.type shouldBe typeOf<ByteArray?>()
+@@ -274,7 +274,7 @@ abstract class MsSqlTestBase {
+         val result = df.filter { "id"<Int>() == 1 }
+         result[0]["bigintColumn"] shouldBe 123456789012345L
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["bigintColumn"]!!.type shouldBe typeOf<Long?>()
+     }
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/mysqlTestBase.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/mysqlTestBase.kt
+index e6a8d57..3367d2a 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/mysqlTestBase.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/mysqlTestBase.kt
+@@ -10,7 +10,7 @@ import org.jetbrains.kotlinx.dataframe.api.cast
+ import org.jetbrains.kotlinx.dataframe.api.filter
+ import org.jetbrains.kotlinx.dataframe.api.select
+ import org.jetbrains.kotlinx.dataframe.io.db.MySql
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.Test
+ import java.math.BigDecimal
+ import java.math.BigInteger
+@@ -336,7 +336,7 @@ abstract class MySqlTestBase {
+         result[0][26] shouldBe "textValue1"
+         result[0][22] shouldBe "tinyblobValue".toByteArray()
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, "table1")
++        val schema = TypedFrameSchema.readSqlTable(connection, "table1")
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["textCol"]!!.type shouldBe typeOf<String>()
+         schema.columns["dateCol"]!!.type shouldBe typeOf<Date>()
+@@ -354,7 +354,7 @@ abstract class MySqlTestBase {
+         val result2 = df2.filter { "id"<Int>() == 1 }
+         result2[0][26] shouldBe null
+ 
+-        val schema2 = DataFrameSchema.readSqlTable(connection, "table2")
++        val schema2 = TypedFrameSchema.readSqlTable(connection, "table2")
+         schema2.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema2.columns["textCol"]!!.type shouldBe typeOf<String?>()
+     }
+@@ -376,7 +376,7 @@ abstract class MySqlTestBase {
+         val result = df.filter { "id"<Int>() == 1 }
+         result[0][2] shouldBe "Option1"
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["enumCol"]!!.type shouldBe typeOf<String>()
+         schema.columns["setCol"]!!.type shouldBe typeOf<String?>()
+@@ -456,7 +456,7 @@ abstract class MySqlTestBase {
+ 
+         result8[0][1] shouldBe BigDecimal("10")
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, "table1")
++        val schema = TypedFrameSchema.readSqlTable(connection, "table1")
+ 
+         schema.columns["tinyintCol"]!!.type shouldBe typeOf<Int>()
+         schema.columns["smallintCol"]!!.type shouldBe typeOf<Int>()
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/postgresTestBase.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/postgresTestBase.kt
+index 3c3fa81..9e223a7 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/postgresTestBase.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/postgresTestBase.kt
+@@ -14,7 +14,7 @@ import org.jetbrains.kotlinx.dataframe.api.select
+ import org.jetbrains.kotlinx.dataframe.api.toMap
+ import org.jetbrains.kotlinx.dataframe.columns.ColumnKind
+ import org.jetbrains.kotlinx.dataframe.io.db.PostgreSql
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.Test
+ import org.postgresql.geometric.PGbox
+ import org.postgresql.geometric.PGcircle
+@@ -284,7 +284,7 @@ abstract class PostgresTestBase {
+         result[0][20] shouldBe arrayOf("Hello", "World")
+         result[0][21] shouldBe arrayOf(true, false, true)
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, tableName1)
++        val schema = TypedFrameSchema.readSqlTable(connection, tableName1)
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["integercol"]!!.type shouldBe typeOf<Int?>()
+         schema.columns["smallintcol"]!!.type shouldBe typeOf<Int>()
+@@ -301,7 +301,7 @@ abstract class PostgresTestBase {
+         result2[0][11] shouldBe 1001
+         result2[0][13] shouldBe null
+ 
+-        val schema2 = DataFrameSchema.readSqlTable(connection, tableName2)
++        val schema2 = TypedFrameSchema.readSqlTable(connection, tableName2)
+         schema2.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema2.columns["pathcol"]!!.type shouldBe typeOf<PGpath>()
+         schema2.columns["textcol"]!!.type shouldBe typeOf<String?>()
+@@ -326,7 +326,7 @@ abstract class PostgresTestBase {
+         val result = df.filter { "id"<Int>() == 1 }
+         result[0][3] shouldBe null
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
+         schema.columns["id"]!!.type shouldBe typeOf<Int>()
+         schema.columns["bigintcol"]!!.type shouldBe typeOf<Long>()
+         schema.columns["textcol"]!!.type shouldBe typeOf<String?>()
+@@ -391,12 +391,12 @@ abstract class PostgresTestBase {
+             .add("serialcol2") { "serialcol"<Int>() }
+         result8[0][1] shouldBe 1000001
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, tableName1)
++        val schema = TypedFrameSchema.readSqlTable(connection, tableName1)
+         schema.columns["smallintcol"]!!.type shouldBe typeOf<Int>()
+         schema.columns["bigserialcol"]!!.type shouldBe typeOf<Long>()
+         schema.columns["doublecol"]!!.type shouldBe typeOf<Double>()
+ 
+-        val schema1 = DataFrameSchema.readSqlTable(connection, tableName2)
++        val schema1 = TypedFrameSchema.readSqlTable(connection, tableName2)
+         schema1.columns["moneycol"]!!.type shouldBe typeOf<PGmoney>()
+         schema1.columns["numericcol"]!!.type shouldBe typeOf<BigDecimal>()
+         schema1.columns["realcol"]!!.type shouldBe typeOf<Float>()
+@@ -461,7 +461,7 @@ abstract class PostgresTestBase {
+             df.columns().associate { it.name() to it.type() }.filterValues { it != typeOf<String?>() } shouldBe
+                 emptyMap()
+             // the schema read without the data declares the same types
+-            DataFrameSchema.readSqlTable(connection, "text_form_types").columns.mapValues { it.value.type } shouldBe
++            TypedFrameSchema.readSqlTable(connection, "text_form_types").columns.mapValues { it.value.type } shouldBe
+                 df.columns().associate { it.name() to it.type() }
+             df[0].toMap() shouldBe mapOf(
+                 // json keeps the text as written, jsonb prints PostgreSQL's normalized form
+@@ -644,7 +644,7 @@ abstract class PostgresTestBase {
+ 
+             df["uuidcol"].type() shouldBe typeOf<Uuid?>()
+             // the schema read without the data declares the same type
+-            DataFrameSchema.readSqlTable(connection, "uuid_type").columns["uuidcol"]!!.type shouldBe typeOf<Uuid?>()
++            TypedFrameSchema.readSqlTable(connection, "uuid_type").columns["uuidcol"]!!.type shouldBe typeOf<Uuid?>()
+             df["uuidcol"].toList() shouldBe listOf(Uuid.parse("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"), null)
+         } finally {
+             connection.createStatement().use { st -> st.execute("DROP TABLE IF EXISTS uuid_type") }
+diff --git a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/sqliteTest.kt b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/sqliteTest.kt
+index 0756f38..6706ba6 100644
+--- a/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/sqliteTest.kt
++++ b/dataframe-jdbc/src/test/kotlin/org/jetbrains/kotlinx/dataframe/io/sqliteTest.kt
+@@ -6,7 +6,7 @@ import org.jetbrains.kotlinx.dataframe.DataFrame
+ import org.jetbrains.kotlinx.dataframe.annotations.DataSchema
+ import org.jetbrains.kotlinx.dataframe.api.cast
+ import org.jetbrains.kotlinx.dataframe.api.filter
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.AfterClass
+ import org.junit.BeforeClass
+ import org.junit.Test
+@@ -255,7 +255,7 @@ class SqliteTest {
+         val result = df.filter { "name"<String?>() == "John Doe" }
+         result[0][2] shouldBe 30L
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, customerTableName)
++        val schema = TypedFrameSchema.readSqlTable(connection, customerTableName)
+         schema.columns["id"]!!.type shouldBe typeOf<Long?>()
+         schema.columns["name"]!!.type shouldBe typeOf<String?>()
+         schema.columns["salary"]!!.type shouldBe typeOf<Double>()
+@@ -266,7 +266,7 @@ class SqliteTest {
+         val result2 = df2.filter { "totalAmount"<Double>() > 10 }
+         result2[0][2] shouldBe "2023-07-21"
+ 
+-        val schema2 = DataFrameSchema.readSqlTable(connection, orderTableName)
++        val schema2 = TypedFrameSchema.readSqlTable(connection, orderTableName)
+         schema2.columns["id"]!!.type shouldBe typeOf<Long?>()
+         schema2.columns["customerName"]!!.type shouldBe typeOf<String?>()
+         schema2.columns["totalAmount"]!!.type shouldBe typeOf<Double>()
+@@ -282,7 +282,7 @@ class SqliteTest {
+         val result = df.filter { "name"<String?>() == "John Doe" }
+         result[0][2] shouldBe 30L
+ 
+-        val schema = DataFrameSchema.readSqlTable(dbConnectionConfig, customerTableName)
++        val schema = TypedFrameSchema.readSqlTable(dbConnectionConfig, customerTableName)
+         schema.columns["id"]!!.type shouldBe typeOf<Long?>()
+         schema.columns["name"]!!.type shouldBe typeOf<String?>()
+         schema.columns["salary"]!!.type shouldBe typeOf<Double>()
+@@ -293,7 +293,7 @@ class SqliteTest {
+         val result2 = df2.filter { "totalAmount"<Double>() > 10 }
+         result2[0][2] shouldBe "2023-07-21"
+ 
+-        val schema2 = DataFrameSchema.readSqlTable(dbConnectionConfig, orderTableName)
++        val schema2 = TypedFrameSchema.readSqlTable(dbConnectionConfig, orderTableName)
+         schema2.columns["id"]!!.type shouldBe typeOf<Long?>()
+         schema2.columns["customerName"]!!.type shouldBe typeOf<String?>()
+         schema2.columns["totalAmount"]!!.type shouldBe typeOf<Double>()
+@@ -321,7 +321,7 @@ class SqliteTest {
+         val result = df.filter { "customerSalary"<Double>() > 1 }
+         result[0][3] shouldBe 2500.5
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(connection, sqlQuery = sqlQuery)
+         schema.columns["customerId"]!!.type shouldBe typeOf<Long?>()
+         schema.columns["customerName"]!!.type shouldBe typeOf<String?>()
+         schema.columns["customerAge"]!!.type shouldBe typeOf<Long?>()
+@@ -336,7 +336,7 @@ class SqliteTest {
+         val result = df.filter { "customerSalary"<Double>() > 1 }
+         result[0][3] shouldBe 2500.5
+ 
+-        val schema = DataFrameSchema.readSqlQuery(dbConnectionConfig, sqlQuery = sqlQuery)
++        val schema = TypedFrameSchema.readSqlQuery(dbConnectionConfig, sqlQuery = sqlQuery)
+         schema.columns["customerId"]!!.type shouldBe typeOf<Long?>()
+         schema.columns["customerName"]!!.type shouldBe typeOf<String?>()
+         schema.columns["customerAge"]!!.type shouldBe typeOf<Long?>()
+@@ -380,7 +380,7 @@ class SqliteTest {
+         df["enabled"].type() shouldBe typeOf<Boolean>()
+         df["optional"].type() shouldBe typeOf<Boolean?>()
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, flagsTableName)
++        val schema = TypedFrameSchema.readSqlTable(connection, flagsTableName)
+         schema.columns["enabled"]!!.type shouldBe typeOf<Boolean>()
+         schema.columns["optional"]!!.type shouldBe typeOf<Boolean?>()
+     }
+@@ -444,7 +444,7 @@ class SqliteTest {
+         df["julianTimestampOpt"].type() shouldBe typeOf<kotlin.time.Instant?>()
+ 
+         // Schema types follow the SQL nullability declaration exactly.
+-        val schema = DataFrameSchema.readSqlTable(connection, "Temporal")
++        val schema = TypedFrameSchema.readSqlTable(connection, "Temporal")
+         schema.columns["isoDate"]!!.type shouldBe typeOf<kotlinx.datetime.LocalDate>()
+         schema.columns["isoDateOpt"]!!.type shouldBe typeOf<kotlinx.datetime.LocalDate?>()
+         schema.columns["isoDateTime"]!!.type shouldBe typeOf<kotlinx.datetime.LocalDateTime>()
+diff --git a/dataframe-json/generated-sources/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/readJson.kt b/dataframe-json/generated-sources/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/readJson.kt
+index 673a518..0299851 100644
+--- a/dataframe-json/generated-sources/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/readJson.kt
++++ b/dataframe-json/generated-sources/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/readJson.kt
+@@ -48,7 +48,7 @@ import org.jetbrains.kotlinx.dataframe.io.JSON.TypeClashTactic.ANY_COLUMNS
+ import org.jetbrains.kotlinx.dataframe.io.JSON.TypeClashTactic.ARRAY_AND_VALUE_COLUMNS
+ import org.jetbrains.kotlinx.dataframe.io.VALUE_COLUMN_NAME
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.jetbrains.kotlinx.dataframe.type
+ import org.jetbrains.kotlinx.dataframe.typeClass
+ import org.jetbrains.kotlinx.dataframe.values
+@@ -816,7 +816,7 @@ private fun Iterable<KType?>.commonType(useStar: Boolean = true) =
+     org.jetbrains.kotlinx.dataframe.impl.commonType(types = this, useStar)
+ 
+ @Suppress("INVISIBLE_REFERENCE")
+-private fun Iterable<DataFrameSchema>.intersectSchemas() =
++private fun Iterable<TypedFrameSchema>.intersectSchemas() =
+     org.jetbrains.kotlinx.dataframe.impl.schema.intersectSchemas(schemas = this)
+ 
+ // endregion
+diff --git a/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/readJson.kt b/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/readJson.kt
+index 143cb38..254c5d2 100644
+--- a/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/readJson.kt
++++ b/dataframe-json/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/io/readJson.kt
+@@ -48,7 +48,7 @@ import org.jetbrains.kotlinx.dataframe.io.JSON.TypeClashTactic.ANY_COLUMNS
+ import org.jetbrains.kotlinx.dataframe.io.JSON.TypeClashTactic.ARRAY_AND_VALUE_COLUMNS
+ import org.jetbrains.kotlinx.dataframe.io.VALUE_COLUMN_NAME
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.jetbrains.kotlinx.dataframe.type
+ import org.jetbrains.kotlinx.dataframe.typeClass
+ import org.jetbrains.kotlinx.dataframe.values
+@@ -816,7 +816,7 @@ private fun Iterable<KType?>.commonType(useStar: Boolean = true) =
+     org.jetbrains.kotlinx.dataframe.impl.commonType(types = this, useStar)
+ 
+ @Suppress("INVISIBLE_REFERENCE")
+-private fun Iterable<DataFrameSchema>.intersectSchemas() =
++private fun Iterable<TypedFrameSchema>.intersectSchemas() =
+     org.jetbrains.kotlinx.dataframe.impl.schema.intersectSchemas(schemas = this)
+ 
+ // endregion
+diff --git a/docs/StardustDocs/topics/dataSources/OpenAPI.md b/docs/StardustDocs/topics/dataSources/OpenAPI.md
+index 62eb054..7ae47e9 100644
+--- a/docs/StardustDocs/topics/dataSources/OpenAPI.md
++++ b/docs/StardustDocs/topics/dataSources/OpenAPI.md
+@@ -405,7 +405,7 @@ However, what if your data source already provides its own types, like OpenAPI d
+ Surely that will be safer than using a sample.
+ 
+ This is, for instance, why in [dataframe-jdbc](SQL.md) we have
+-`DataFrameSchema.readSqlTable(): DataFrameSchema` which you can print, copy-paste into your project,
++`TypedFrameSchema.readSqlTable(): TypedFrameSchema` which you can print, copy-paste into your project,
+ and use to safely cast your data to.
+ 
+ However, for OpenAPI, we identified that just generating `DataSchema` interfaces was not enough to
+diff --git a/docs/StardustDocs/topics/io/readSqlDatabases.md b/docs/StardustDocs/topics/io/readSqlDatabases.md
+index 97269fb..d5c99af 100644
+--- a/docs/StardustDocs/topics/io/readSqlDatabases.md
++++ b/docs/StardustDocs/topics/io/readSqlDatabases.md
+@@ -27,18 +27,18 @@ There are two main blocks of available functionality:
+   *  ```DataFrame.readResultSet()``` reads from a `ResultSet`
+   *  ```DataFrame.readAllSqlTables()``` reads all non-system tables
+ * Methods for reading table schemas
+-  * ```DataFrameSchema.readSqlTable()``` for specific tables
+-  * ```DataFrameSchema.readSqlQuery()``` for a specific SQL query
+-  * ```DataFrameSchema.readResultSet()``` for a `ResultSet`
+-  * ```DataFrameSchema.readAllSqlTables()``` for all non-system tables
++  * ```TypedFrameSchema.readSqlTable()``` for specific tables
++  * ```TypedFrameSchema.readSqlQuery()``` for a specific SQL query
++  * ```TypedFrameSchema.readResultSet()``` for a `ResultSet`
++  * ```TypedFrameSchema.readAllSqlTables()``` for all non-system tables
+ 
+ >**NOTE (Beta-4 changes):** 
+ > 
+-> Starting from a version **```Beta-4```**, methods for reading table schemas have been moved from the `DataFrame` companion object to the `DataFrameSchema` companion object.
++> Starting from a version **```Beta-4```**, methods for reading table schemas have been moved from the `DataFrame` companion object to the `TypedFrameSchema` companion object.
+ > 
+-> Use `DataFrameSchema.readSqlTable()` instead of `DataFrame.getSchemaForSqlTable()`, 
++> Use `TypedFrameSchema.readSqlTable()` instead of `DataFrame.getSchemaForSqlTable()`, 
+ > 
+-> `DataFrameSchema.readSqlQuery()` instead of `DataFrame.getSchemaForSqlQuery()`, etc.
++> `TypedFrameSchema.readSqlQuery()` instead of `DataFrame.getSchemaForSqlQuery()`, etc.
+ 
+ Also, there are a few **extension functions** available on `Connection`,
+ `ResultSet`, `DbConnectionConfig`, and `DataSource` objects.
+@@ -512,9 +512,9 @@ val dataframes = DataFrame.readAllSqlTables(dataSource)
+ 
+ The purpose of these functions is to facilitate the retrieval of table schema. 
+ By providing a table name and either a database configuration or connection, 
+-these functions return the [DataFrameSchema](schema.md) of the specified table.
++these functions return the [TypedFrameSchema](schema.md) of the specified table.
+ 
+-**DataFrameSchema.readSqlTable(dbConfig: DbConnectionConfig, tableName: String, dbType: DbType?): DataFrameSchema**
++**TypedFrameSchema.readSqlTable(dbConfig: DbConnectionConfig, tableName: String, dbType: DbType?): TypedFrameSchema**
+ 
+ This function captures the schema of a specific table from an SQL database.
+ 
+@@ -527,12 +527,12 @@ Typically, it requires a URL, username, and password.
+ ```kotlin
+ val dbConfig = DbConnectionConfig("URL_TO_CONNECT_DATABASE", "USERNAME", "PASSWORD")
+ 
+-val schema = DataFrameSchema.readSqlTable(dbConfig, "Users")
++val schema = TypedFrameSchema.readSqlTable(dbConfig, "Users")
+ ```
+ 
+ <!---END-->
+ 
+-**DataFrameSchema.readSqlTable(connection: Connection, tableName: String, dbType: DbType?): DataFrameSchema**
++**TypedFrameSchema.readSqlTable(connection: Connection, tableName: String, dbType: DbType?): TypedFrameSchema**
+ 
+ Another variant, where instead of `dbConfig: DbConnectionConfig` we use a JDBC connection: `Connection` object.
+ 
+@@ -541,14 +541,14 @@ Another variant, where instead of `dbConfig: DbConnectionConfig` we use a JDBC c
+ ```kotlin
+ val connection = DriverManager.getConnection("URL_TO_CONNECT_DATABASE")
+ 
+-val schema = DataFrameSchema.readSqlTable(connection, "Users")
++val schema = TypedFrameSchema.readSqlTable(connection, "Users")
+ 
+ connection.close()
+ ```
+ 
+ <!---END-->
+ 
+-**DataFrameSchema.readSqlTable(dataSource: DataSource, tableName: String, dbType: DbType?): DataFrameSchema**
++**TypedFrameSchema.readSqlTable(dataSource: DataSource, tableName: String, dbType: DbType?): TypedFrameSchema**
+ 
+ Another variant, where instead of `connection: Connection` we use a `DataSource` object (useful for connection pooling with HikariCP).
+ 
+@@ -564,7 +564,7 @@ val config = HikariConfig().apply {
+ }
+ val dataSource = HikariDataSource(config)
+ 
+-val schema = DataFrameSchema.readSqlTable(dataSource, "Users")
++val schema = TypedFrameSchema.readSqlTable(dataSource, "Users")
+ ```
+ 
+ <!---END-->
+@@ -574,9 +574,9 @@ val schema = DataFrameSchema.readSqlTable(dataSource, "Users")
+ These functions return the schema of an SQL query result. 
+ 
+ Once you provide a database configuration or connection and an SQL query, 
+-they return the [DataFrameSchema](schema.md) of the query result.
++they return the [TypedFrameSchema](schema.md) of the query result.
+ 
+-**DataFrameSchema.readSqlQuery(dbConfig: DbConnectionConfig, sqlQuery: String, dbType: DbType?): DataFrameSchema**
++**TypedFrameSchema.readSqlQuery(dbConfig: DbConnectionConfig, sqlQuery: String, dbType: DbType?): TypedFrameSchema**
+ 
+ This function executes an SQL query on the database and then retrieves the resulting schema.
+ 
+@@ -589,12 +589,12 @@ Typically, it requires a URL, username, and password.
+ ```kotlin
+ val dbConfig = DbConnectionConfig("URL_TO_CONNECT_DATABASE", "USERNAME", "PASSWORD")
+ 
+-val schema = DataFrameSchema.readSqlQuery(dbConfig, "SELECT * FROM Users WHERE age > 35")
++val schema = TypedFrameSchema.readSqlQuery(dbConfig, "SELECT * FROM Users WHERE age > 35")
+ ```
+ 
+ <!---END-->
+ 
+-**DataFrameSchema.readSqlQuery(connection: Connection, sqlQuery: String, dbType: DbType?): DataFrameSchema**
++**TypedFrameSchema.readSqlQuery(connection: Connection, sqlQuery: String, dbType: DbType?): TypedFrameSchema**
+ 
+ Another variant, where instead of `dbConfig: DbConnectionConfig` we use a JDBC connection: `Connection` object.
+ 
+@@ -603,14 +603,14 @@ Another variant, where instead of `dbConfig: DbConnectionConfig` we use a JDBC c
+ ```kotlin
+ val connection = DriverManager.getConnection("URL_TO_CONNECT_DATABASE")
+ 
+-val schema = DataFrameSchema.readSqlQuery(connection, "SELECT * FROM Users WHERE age > 35")
++val schema = TypedFrameSchema.readSqlQuery(connection, "SELECT * FROM Users WHERE age > 35")
+ 
+ connection.close()
+ ```
+ 
+ <!---END-->
+ 
+-**DataFrameSchema.readSqlQuery(dataSource: DataSource, sqlQuery: String, dbType: DbType?): DataFrameSchema**
++**TypedFrameSchema.readSqlQuery(dataSource: DataSource, sqlQuery: String, dbType: DbType?): TypedFrameSchema**
+ 
+ Another variant, where instead of `connection: Connection` we use a `DataSource` object (useful for connection pooling with HikariCP).
+ 
+@@ -626,7 +626,7 @@ val config = HikariConfig().apply {
+ }
+ val dataSource = HikariDataSource(config)
+ 
+-val schema = DataFrameSchema.readSqlQuery(dataSource, "SELECT * FROM Users WHERE age > 35")
++val schema = TypedFrameSchema.readSqlQuery(dataSource, "SELECT * FROM Users WHERE age > 35")
+ ```
+ 
+ <!---END-->
+@@ -647,11 +647,11 @@ connection.close()
+ 
+ <!---END-->
+ 
+-**Connection.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType?): DataFrameSchema**
++**Connection.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType?): TypedFrameSchema**
+ 
+ Retrieves the schema of an SQL query result or an SQL table using the provided database connection.
+ 
+-**DbConnectionConfig.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType?): DataFrameSchema**
++**DbConnectionConfig.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType?): TypedFrameSchema**
+ 
+ Retrieves the schema of an SQL query result or an SQL table using the provided database configuration.
+ 
+@@ -669,7 +669,7 @@ val schema = dbConfig.readDataFrameSchema("SELECT * FROM Users WHERE age > 35")
+ 
+ <!---END-->
+ 
+-**DataSource.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType?): DataFrameSchema**
++**DataSource.readDataFrameSchema(sqlQueryOrTableName: String, dbType: DbType?): TypedFrameSchema**
+ 
+ Retrieves the schema of an SQL query result or an SQL table using the provided `DataSource`.
+ 
+@@ -697,7 +697,7 @@ These functions return the schema from a `ResultSet` provided by the user.
+ This can help developers infer the structure of the result set, 
+ which is quite essential for data transformation and mapping purposes.
+ 
+-**DataFrameSchema.readResultSet(resultSet: ResultSet, dbType: DbType): DataFrameSchema**
++**TypedFrameSchema.readResultSet(resultSet: ResultSet, dbType: DbType): TypedFrameSchema**
+ 
+ This function reads the schema from a `ResultSet` object provided by the user.
+ 
+@@ -712,7 +712,7 @@ Also, users can pass objects, describing their custom databases, more informatio
+ 
+ ```kotlin
+ // org.jetbrains.kotlinx.dataframe.io.db.PostgreSql
+-val schema = DataFrameSchema.readResultSet(resultSet, PostgreSql)
++val schema = TypedFrameSchema.readResultSet(resultSet, PostgreSql)
+ ```
+ 
+ <!---END-->
+@@ -732,17 +732,17 @@ val schema = resultSet.readDataFrameSchema(PostgreSql)
+ 
+ based on
+ 
+-**ResultSet.readDataFrameSchema(dbType: DbType): DataFrameSchema**
++**ResultSet.readDataFrameSchema(dbType: DbType): TypedFrameSchema**
+ 
+ ## Schema reading for all non-system tables
+ 
+-These functions return a map from table names to [`DataFrameSchema`](schema.md) for all the non-system tables in the SQL database. 
++These functions return a map from table names to [`TypedFrameSchema`](schema.md) for all the non-system tables in the SQL database. 
+ They can be called with either a database configuration or a connection.
+ 
+-**DataFrameSchema.readAllSqlTables(dbConfig: DbConnectionConfig, dbType: DbType?): Map<String, DataFrameSchema>**
++**TypedFrameSchema.readAllSqlTables(dbConfig: DbConnectionConfig, dbType: DbType?): Map<String, TypedFrameSchema>**
+ 
+ This function retrieves the schema of all tables from an SQL database
+-and returns them as a map of table names to [`DataFrameSchema`](schema.md) objects.
++and returns them as a map of table names to [`TypedFrameSchema`](schema.md) objects.
+ 
+ The `dbConfig: DbConnectionConfig` parameter represents the configuration for a database connection,
+ created under the hood and managed by the library.
+@@ -753,29 +753,29 @@ Typically, it requires a URL, username, and password.
+ ```kotlin
+ val dbConfig = DbConnectionConfig("URL_TO_CONNECT_DATABASE", "USERNAME", "PASSWORD")
+ 
+-val schemas = DataFrameSchema.readAllSqlTables(dbConfig)
++val schemas = TypedFrameSchema.readAllSqlTables(dbConfig)
+ ```
+ 
+ <!---END-->
+ 
+-**DataFrameSchema.readAllSqlTables(connection: Connection, dbType: DbType?): Map<String, DataFrameSchema>**
++**TypedFrameSchema.readAllSqlTables(connection: Connection, dbType: DbType?): Map<String, TypedFrameSchema>**
+ 
+ This function retrieves the schema of all tables using a JDBC connection: `Connection` object
+-and returns them as a map of table names to [`DataFrameSchema`](schema.md).
++and returns them as a map of table names to [`TypedFrameSchema`](schema.md).
+ 
+ <!---FUN readAllSqlTablesSchemaConnection-->
+ 
+ ```kotlin
+ val connection = DriverManager.getConnection("URL_TO_CONNECT_DATABASE")
+ 
+-val schemas = DataFrameSchema.readAllSqlTables(connection)
++val schemas = TypedFrameSchema.readAllSqlTables(connection)
+ 
+ connection.close()
+ ```
+ 
+ <!---END-->
+ 
+-**DataFrameSchema.readAllSqlTables(dataSource: DataSource, dbType: DbType?): Map<String, DataFrameSchema>**
++**TypedFrameSchema.readAllSqlTables(dataSource: DataSource, dbType: DbType?): Map<String, TypedFrameSchema>**
+ 
+ Another variant, where instead of `connection: Connection` we use a `DataSource` object (useful for connection pooling with HikariCP).
+ 
+@@ -791,7 +791,7 @@ val config = HikariConfig().apply {
+ }
+ val dataSource = HikariDataSource(config)
+ 
+-val schemas = DataFrameSchema.readAllSqlTables(dataSource)
++val schemas = TypedFrameSchema.readAllSqlTables(dataSource)
+ ```
+ 
+ <!---END-->
+diff --git a/docs/StardustDocs/topics/schema.md b/docs/StardustDocs/topics/schema.md
+index a7d4cdd..54d5dab 100644
+--- a/docs/StardustDocs/topics/schema.md
++++ b/docs/StardustDocs/topics/schema.md
+@@ -2,7 +2,7 @@
+ 
+ <!---IMPORT org.jetbrains.kotlinx.dataframe.samples.api.Analyze-->
+ 
+-Returns a [`DataFrameSchema`](schemas.md) object with the [`DataFrame`](DataFrame.md) schema description. It can be printed to see column structure.
++Returns a [`TypedFrameSchema`](schemas.md) object with the [`DataFrame`](DataFrame.md) schema description. It can be printed to see column structure.
+ 
+ **API reference**: [`schema`](https://kotlin.github.io/dataframe/api-docs/core/org.jetbrains.kotlinx.dataframe.api/schema.html)
+ 
+diff --git a/examples/projects/dev/exposed/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/exposed/compatibilityLayer.kt b/examples/projects/dev/exposed/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/exposed/compatibilityLayer.kt
+index 2c3b37e..ab61ccf 100644
+--- a/examples/projects/dev/exposed/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/exposed/compatibilityLayer.kt
++++ b/examples/projects/dev/exposed/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/exposed/compatibilityLayer.kt
+@@ -15,7 +15,7 @@ import org.jetbrains.kotlinx.dataframe.api.toDataFrame
+ import org.jetbrains.kotlinx.dataframe.codeGen.NameNormalizer
+ import org.jetbrains.kotlinx.dataframe.impl.schema.DataFrameSchemaImpl
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import kotlin.reflect.KProperty1
+ import kotlin.reflect.full.isSubtypeOf
+ import kotlin.reflect.full.memberProperties
+@@ -60,7 +60,7 @@ val Expression<*>.readableName: String
+     }
+ 
+ /**
+- * Creates a [DataFrameSchema] from the declared [Table] instance.
++ * Creates a [TypedFrameSchema] from the declared [Table] instance.
+  *
+  * This is not needed for conversion, but it can be useful to create a DataFrame [@DataSchema][DataSchema] instance.
+  *
+@@ -70,7 +70,7 @@ val Expression<*>.readableName: String
+  * @see toDataFrameSchemaWithNameNormalizer
+  */
+ @Suppress("UNCHECKED_CAST")
+-fun Table.toDataFrameSchema(columnNameToAccessor: MutableMap<String, String> = mutableMapOf()): DataFrameSchema {
++fun Table.toDataFrameSchema(columnNameToAccessor: MutableMap<String, String> = mutableMapOf()): TypedFrameSchema {
+     // we use reflection to go over all `Column<*>` properties in the Table object
+     val columns = this::class.memberProperties
+         .filter { it.returnType.isSubtypeOf(typeOf<Column<*>>()) }
+@@ -92,14 +92,14 @@ fun Table.toDataFrameSchema(columnNameToAccessor: MutableMap<String, String> = m
+ }
+ 
+ /**
+- * Creates a [DataFrameSchema] from the declared [Table] instance with a [NameNormalizer] to
++ * Creates a [TypedFrameSchema] from the declared [Table] instance with a [NameNormalizer] to
+  * convert the SQL column names to the corresponding Kotlin property names.
+  *
+  * This is not needed for conversion, but it can be useful to create a DataFrame [@DataSchema][DataSchema] instance.
+  *
+  * @see toDataFrameSchema
+  */
+-fun Table.toDataFrameSchemaWithNameNormalizer(): Pair<DataFrameSchema, NameNormalizer> {
++fun Table.toDataFrameSchemaWithNameNormalizer(): Pair<TypedFrameSchema, NameNormalizer> {
+     val columnNameToAccessor = mutableMapOf<String, String>()
+     val dataSchema = this.toDataFrameSchema(columnNameToAccessor)
+     val nameNormalizer = NameNormalizer { columnNameToAccessor[it] ?: it }
+diff --git a/examples/projects/dev/kotlin-spark/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/spark/compatibilityLayer.kt b/examples/projects/dev/kotlin-spark/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/spark/compatibilityLayer.kt
+index 080a2e1..d73b366 100644
+--- a/examples/projects/dev/kotlin-spark/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/spark/compatibilityLayer.kt
++++ b/examples/projects/dev/kotlin-spark/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/spark/compatibilityLayer.kt
+@@ -24,7 +24,7 @@ import org.jetbrains.kotlinx.dataframe.api.toDataFrame
+ import org.jetbrains.kotlinx.dataframe.columns.ColumnGroup
+ import org.jetbrains.kotlinx.dataframe.columns.TypeSuggestion
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import java.math.BigDecimal
+ import java.math.BigInteger
+ import java.sql.Date
+@@ -224,11 +224,11 @@ fun DataRow<*>.convertToSpark(): Row =
+     )
+ 
+ /**
+- * Converts a [DataFrameSchema] to a Spark [StructType].
++ * Converts a [TypedFrameSchema] to a Spark [StructType].
+  *
+  * @return The converted Spark [StructType].
+  */
+-fun DataFrameSchema.convertToSpark(): StructType =
++fun TypedFrameSchema.convertToSpark(): StructType =
+     DataTypes.createStructType(
+         this.columns.map { (name, schema) ->
+             DataTypes.createStructField(name, schema.convertToSpark(), schema.nullable)
+diff --git a/examples/projects/exposed/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/exposed/compatibilityLayer.kt b/examples/projects/exposed/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/exposed/compatibilityLayer.kt
+index 2c3b37e..ab61ccf 100644
+--- a/examples/projects/exposed/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/exposed/compatibilityLayer.kt
++++ b/examples/projects/exposed/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/exposed/compatibilityLayer.kt
+@@ -15,7 +15,7 @@ import org.jetbrains.kotlinx.dataframe.api.toDataFrame
+ import org.jetbrains.kotlinx.dataframe.codeGen.NameNormalizer
+ import org.jetbrains.kotlinx.dataframe.impl.schema.DataFrameSchemaImpl
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import kotlin.reflect.KProperty1
+ import kotlin.reflect.full.isSubtypeOf
+ import kotlin.reflect.full.memberProperties
+@@ -60,7 +60,7 @@ val Expression<*>.readableName: String
+     }
+ 
+ /**
+- * Creates a [DataFrameSchema] from the declared [Table] instance.
++ * Creates a [TypedFrameSchema] from the declared [Table] instance.
+  *
+  * This is not needed for conversion, but it can be useful to create a DataFrame [@DataSchema][DataSchema] instance.
+  *
+@@ -70,7 +70,7 @@ val Expression<*>.readableName: String
+  * @see toDataFrameSchemaWithNameNormalizer
+  */
+ @Suppress("UNCHECKED_CAST")
+-fun Table.toDataFrameSchema(columnNameToAccessor: MutableMap<String, String> = mutableMapOf()): DataFrameSchema {
++fun Table.toDataFrameSchema(columnNameToAccessor: MutableMap<String, String> = mutableMapOf()): TypedFrameSchema {
+     // we use reflection to go over all `Column<*>` properties in the Table object
+     val columns = this::class.memberProperties
+         .filter { it.returnType.isSubtypeOf(typeOf<Column<*>>()) }
+@@ -92,14 +92,14 @@ fun Table.toDataFrameSchema(columnNameToAccessor: MutableMap<String, String> = m
+ }
+ 
+ /**
+- * Creates a [DataFrameSchema] from the declared [Table] instance with a [NameNormalizer] to
++ * Creates a [TypedFrameSchema] from the declared [Table] instance with a [NameNormalizer] to
+  * convert the SQL column names to the corresponding Kotlin property names.
+  *
+  * This is not needed for conversion, but it can be useful to create a DataFrame [@DataSchema][DataSchema] instance.
+  *
+  * @see toDataFrameSchema
+  */
+-fun Table.toDataFrameSchemaWithNameNormalizer(): Pair<DataFrameSchema, NameNormalizer> {
++fun Table.toDataFrameSchemaWithNameNormalizer(): Pair<TypedFrameSchema, NameNormalizer> {
+     val columnNameToAccessor = mutableMapOf<String, String>()
+     val dataSchema = this.toDataFrameSchema(columnNameToAccessor)
+     val nameNormalizer = NameNormalizer { columnNameToAccessor[it] ?: it }
+diff --git a/examples/projects/kotlin-spark/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/spark/compatibilityLayer.kt b/examples/projects/kotlin-spark/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/spark/compatibilityLayer.kt
+index 080a2e1..d73b366 100644
+--- a/examples/projects/kotlin-spark/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/spark/compatibilityLayer.kt
++++ b/examples/projects/kotlin-spark/src/main/kotlin/org/jetbrains/kotlinx/dataframe/examples/spark/compatibilityLayer.kt
+@@ -24,7 +24,7 @@ import org.jetbrains.kotlinx.dataframe.api.toDataFrame
+ import org.jetbrains.kotlinx.dataframe.columns.ColumnGroup
+ import org.jetbrains.kotlinx.dataframe.columns.TypeSuggestion
+ import org.jetbrains.kotlinx.dataframe.schema.ColumnSchema
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import java.math.BigDecimal
+ import java.math.BigInteger
+ import java.sql.Date
+@@ -224,11 +224,11 @@ fun DataRow<*>.convertToSpark(): Row =
+     )
+ 
+ /**
+- * Converts a [DataFrameSchema] to a Spark [StructType].
++ * Converts a [TypedFrameSchema] to a Spark [StructType].
+  *
+  * @return The converted Spark [StructType].
+  */
+-fun DataFrameSchema.convertToSpark(): StructType =
++fun TypedFrameSchema.convertToSpark(): StructType =
+     DataTypes.createStructType(
+         this.columns.map { (name, schema) ->
+             DataTypes.createStructField(name, schema.convertToSpark(), schema.nullable)
+diff --git a/samples/src/test/kotlin/org/jetbrains/kotlinx/dataframe/samples/io/ReadSQLDatabases.kt b/samples/src/test/kotlin/org/jetbrains/kotlinx/dataframe/samples/io/ReadSQLDatabases.kt
+index 8d039f5..2eb1276 100644
+--- a/samples/src/test/kotlin/org/jetbrains/kotlinx/dataframe/samples/io/ReadSQLDatabases.kt
++++ b/samples/src/test/kotlin/org/jetbrains/kotlinx/dataframe/samples/io/ReadSQLDatabases.kt
+@@ -14,7 +14,7 @@ import org.jetbrains.kotlinx.dataframe.io.readDataFrameSchema
+ import org.jetbrains.kotlinx.dataframe.io.readResultSet
+ import org.jetbrains.kotlinx.dataframe.io.readSqlQuery
+ import org.jetbrains.kotlinx.dataframe.io.readSqlTable
+-import org.jetbrains.kotlinx.dataframe.schema.DataFrameSchema
++import org.jetbrains.kotlinx.dataframe.schema.TypedFrameSchema
+ import org.junit.Ignore
+ import org.junit.Test
+ import java.sql.DriverManager
+@@ -233,7 +233,7 @@ class ReadSQLDatabases {
+         // SampleStart
+         val dbConfig = DbConnectionConfig("URL_TO_CONNECT_DATABASE", "USERNAME", "PASSWORD")
+ 
+-        val schema = DataFrameSchema.readSqlTable(dbConfig, "Users")
++        val schema = TypedFrameSchema.readSqlTable(dbConfig, "Users")
+         // SampleEnd
+     }
+ 
+@@ -243,7 +243,7 @@ class ReadSQLDatabases {
+         // SampleStart
+         val connection = DriverManager.getConnection("URL_TO_CONNECT_DATABASE")
+ 
+-        val schema = DataFrameSchema.readSqlTable(connection, "Users")
++        val schema = TypedFrameSchema.readSqlTable(connection, "Users")
+ 
+         connection.close()
+         // SampleEnd
+@@ -262,7 +262,7 @@ class ReadSQLDatabases {
+         }
+         val dataSource = HikariDataSource(config)
+ 
+-        val schema = DataFrameSchema.readSqlTable(dataSource, "Users")
++        val schema = TypedFrameSchema.readSqlTable(dataSource, "Users")
+         // SampleEnd
+     }
+ 
+@@ -272,7 +272,7 @@ class ReadSQLDatabases {
+         // SampleStart
+         val dbConfig = DbConnectionConfig("URL_TO_CONNECT_DATABASE", "USERNAME", "PASSWORD")
+ 
+-        val schema = DataFrameSchema.readSqlQuery(dbConfig, "SELECT * FROM Users WHERE age > 35")
++        val schema = TypedFrameSchema.readSqlQuery(dbConfig, "SELECT * FROM Users WHERE age > 35")
+         // SampleEnd
+     }
+ 
+@@ -282,7 +282,7 @@ class ReadSQLDatabases {
+         // SampleStart
+         val connection = DriverManager.getConnection("URL_TO_CONNECT_DATABASE")
+ 
+-        val schema = DataFrameSchema.readSqlQuery(connection, "SELECT * FROM Users WHERE age > 35")
++        val schema = TypedFrameSchema.readSqlQuery(connection, "SELECT * FROM Users WHERE age > 35")
+ 
+         connection.close()
+         // SampleEnd
+@@ -301,7 +301,7 @@ class ReadSQLDatabases {
+         }
+         val dataSource = HikariDataSource(config)
+ 
+-        val schema = DataFrameSchema.readSqlQuery(dataSource, "SELECT * FROM Users WHERE age > 35")
++        val schema = TypedFrameSchema.readSqlQuery(dataSource, "SELECT * FROM Users WHERE age > 35")
+         // SampleEnd
+     }
+ 
+@@ -350,7 +350,7 @@ class ReadSQLDatabases {
+         val resultSet: ResultSet = RowSetProvider.newFactory().createCachedRowSet()
+         // SampleStart
+         // org.jetbrains.kotlinx.dataframe.io.db.PostgreSql
+-        val schema = DataFrameSchema.readResultSet(resultSet, PostgreSql)
++        val schema = TypedFrameSchema.readResultSet(resultSet, PostgreSql)
+         // SampleEnd
+     }
+ 
+@@ -370,7 +370,7 @@ class ReadSQLDatabases {
+         // SampleStart
+         val dbConfig = DbConnectionConfig("URL_TO_CONNECT_DATABASE", "USERNAME", "PASSWORD")
+ 
+-        val schemas = DataFrameSchema.readAllSqlTables(dbConfig)
++        val schemas = TypedFrameSchema.readAllSqlTables(dbConfig)
+         // SampleEnd
+     }
+ 
+@@ -380,7 +380,7 @@ class ReadSQLDatabases {
+         // SampleStart
+         val connection = DriverManager.getConnection("URL_TO_CONNECT_DATABASE")
+ 
+-        val schemas = DataFrameSchema.readAllSqlTables(connection)
++        val schemas = TypedFrameSchema.readAllSqlTables(connection)
+ 
+         connection.close()
+         // SampleEnd
+@@ -399,7 +399,7 @@ class ReadSQLDatabases {
+         }
+         val dataSource = HikariDataSource(config)
+ 
+-        val schemas = DataFrameSchema.readAllSqlTables(dataSource)
++        val schemas = TypedFrameSchema.readAllSqlTables(dataSource)
+         // SampleEnd
+     }
+ }

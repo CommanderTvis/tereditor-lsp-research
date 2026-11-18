@@ -1,6 +1,0 @@
-type = "pr"
-origin = "documented synthetic fallback PR; no qualifying/current-toolchain mined candidate was available"
-base_commit = "9180ce6a7a7d3627f88b424717583f28ddca052d"
-pr = "fallback-kotlin-xlarge-pr-fallback-name"
-issue = "fallback-kotlin-xlarge-pr-fallback-name"
-selection = "Synthetic fallback occupies the assigned mined slot; it is explicitly not an upstream pull request."

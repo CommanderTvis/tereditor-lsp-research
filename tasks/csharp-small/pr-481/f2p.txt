@@ -1,1 +1,0 @@
-MediatR.Tests.ExceptionTests.Should_throw_exception_for_non_generic_send_when_exception_occurs

@@ -1,0 +1,7 @@
+[
+  {"name": "references RegexMatchOperatorSemantics (cross-file)", "args": {"operation": "references", "query": "RegexMatchOperatorSemantics", "path": "src/include/duckdb/common/enums/regex_match_operator_semantics.hpp"},
+   "expect": ["src/parser/peg/transformer/transform_expression.cpp:949", "src/main/settings/custom_settings.cpp:2076", "src/include/duckdb/parser/parser_options.hpp:36"]},
+  {"name": "definition of PhysicalJoin::GetSources from its header", "args": {"operation": "definition", "path": "src/include/duckdb/execution/operator/join/physical_join.hpp", "line": 43, "column": 45},
+   "expect": ["src/execution/operator/join/physical_join.cpp:89"]},
+  {"name": "diagnostics physical_join.cpp", "tool": "lsp_diagnostics", "args": {"paths": ["src/execution/operator/join/physical_join.cpp"]}, "expect": []}
+]

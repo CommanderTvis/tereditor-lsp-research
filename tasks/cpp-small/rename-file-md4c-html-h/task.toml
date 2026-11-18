@@ -1,0 +1,5 @@
+type = "rename-file"
+origin = "devrig safe rename (file)"
+file = "src/md4c-html.h -> src/md4c-render.h"
+selection = "tracked headers (*.h) whose base name occurs (git grep -lF) in at least 3 other tracked files: md2html/cmdline.h (3), src/entity.h (3), src/md4c-html.h (6), src/md4c.h (7): 4 candidates sorted by path; index awk 'BEGIN{srand(20261110); print int(rand()*4)+1}' = 3 (src/md4c-html.h)"
+grade_timeout_s = 1200

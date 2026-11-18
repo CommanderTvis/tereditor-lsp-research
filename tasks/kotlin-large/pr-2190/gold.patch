@@ -1,0 +1,1561 @@
+diff --git a/core/api/core.api b/core/api/core.api
+index 8dd0653..e52d21c 100644
+--- a/core/api/core.api
++++ b/core/api/core.api
+@@ -4093,9 +4093,13 @@ public final class org/jetbrains/kotlinx/dataframe/api/SortKt {
+ 	public static final fun sortByGroupDesc (Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;ZLkotlin/jvm/functions/Function2;)Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;
+ 	public static synthetic fun sortByGroupDesc$default (Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;
+ 	public static final fun sortByKey (Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;Z)Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;
++	public static final fun sortByKey (Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;ZLkotlin/jvm/functions/Function2;)Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;
+ 	public static synthetic fun sortByKey$default (Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;ZILjava/lang/Object;)Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;
++	public static synthetic fun sortByKey$default (Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;
+ 	public static final fun sortByKeyDesc (Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;Z)Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;
++	public static final fun sortByKeyDesc (Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;ZLkotlin/jvm/functions/Function2;)Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;
+ 	public static synthetic fun sortByKeyDesc$default (Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;ZILjava/lang/Object;)Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;
++	public static synthetic fun sortByKeyDesc$default (Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lorg/jetbrains/kotlinx/dataframe/api/GroupBy;
+ 	public static final fun sortDesc (Lorg/jetbrains/kotlinx/dataframe/DataColumn;)Lorg/jetbrains/kotlinx/dataframe/columns/ValueColumn;
+ 	public static final fun sortWith (Lorg/jetbrains/kotlinx/dataframe/DataColumn;Ljava/util/Comparator;)Lorg/jetbrains/kotlinx/dataframe/DataColumn;
+ 	public static final fun sortWith (Lorg/jetbrains/kotlinx/dataframe/DataColumn;Lkotlin/jvm/functions/Function2;)Lorg/jetbrains/kotlinx/dataframe/DataColumn;
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/groupBy.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/groupBy.kt
+index 3babcb3..3c98feb 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/groupBy.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/groupBy.kt
+@@ -90,10 +90,10 @@ internal interface GroupByDocs {
+      * `\[ `__`.`__[**`sortByCountAsc`**][GroupBy.sortByCountAsc]**`() `**`]`
+      *
+      * {@include [Indent]}
+-     * `\[ `__`.`__[**`sortByKey`**][GroupBy.sortByKey]**`() `**`]`
++     * `\[ `__`.`__[**`sortByKey`**][GroupBy.sortByKey]` \[ `**`{ `**`columns: `[`SortColumnsSelector`][SortColumnsSelector]**` }`**` \] ]`
+      *
+      * {@include [Indent]}
+-     * `\[ `__`.`__[**`sortByKeyDesc`**][GroupBy.sortByKeyDesc]**`() `**`]`
++     * `\[ `__`.`__[**`sortByKeyDesc`**][GroupBy.sortByKeyDesc]` \[ `**`{ `**`columns: `[`SortColumnsSelector`][SortColumnsSelector]**` }`**` \] ]`
+      *
+      * {@include [Indent]}
+      * `\[ `__`.`__[**`sortBy`**][GroupBy.sortBy]**`  {  `**`columns: `[`ColumnsSelector`][ColumnsSelector]**`  }  `**`]`
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/sort.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/sort.kt
+index 0c5a406..3357abc 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/sort.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/api/sort.kt
+@@ -26,6 +26,7 @@ import org.jetbrains.kotlinx.dataframe.documentation.SelectingColumns.CSDslLink
+ import org.jetbrains.kotlinx.dataframe.impl.api.SortFlag
+ import org.jetbrains.kotlinx.dataframe.impl.api.addFlag
+ import org.jetbrains.kotlinx.dataframe.impl.api.sortByImpl
++import org.jetbrains.kotlinx.dataframe.impl.api.sortByKeyImpl
+ import org.jetbrains.kotlinx.dataframe.impl.columns.newColumnWithActualType
+ import org.jetbrains.kotlinx.dataframe.impl.columns.toColumnSet
+ import org.jetbrains.kotlinx.dataframe.index
+@@ -477,7 +478,7 @@ public fun <T> DataFrame<T>.sortByDesc(vararg columns: ColumnReference<*>): Data
+  *   - [sortByCount] and [sortByCountAsc] that sort key-group pairs by group size.
+  *   - [sortByKey] and [sortByKeyDesc] that sort key-group pairs by key values.
+  *
+- * Check out [`GroupBy grammar`][Grammar].
++ * Check out the [`GroupBy grammar`][Grammar].
+  *
+  * For more information: {@include [DocumentationUrls.GroupByTransformation]}
+  *
+@@ -525,7 +526,7 @@ public fun <T, G> GroupBy<T, G>.sortBy(vararg cols: KProperty<Comparable<*>?>):
+  *   - [sortByCount] and [sortByCountAsc] that sort key-group pairs by group size.
+  *   - [sortByKey] and [sortByKeyDesc] that sort key-group pairs by key values.
+  *
+- * Check out [`GroupBy grammar`][Grammar].
++ * Check out the [`GroupBy grammar`][Grammar].
+  *
+  * For more information: {@include [DocumentationUrls.GroupByTransformation]}
+  *
+@@ -573,7 +574,7 @@ public fun <T, G, C> GroupBy<T, G>.sortBy(selector: SortColumnsSelector<G, C>):
+  *   - [sortByCount] and [sortByCountAsc] that sort key-group pairs by group size.
+  *   - [sortByKey] and [sortByKeyDesc] that sort key-group pairs by key values.
+  *
+- * Check out [`GroupBy grammar`][Grammar].
++ * Check out the [`GroupBy grammar`][Grammar].
+  *
+  * For more information: {@include [DocumentationUrls.GroupByTransformation]}
+  *
+@@ -622,7 +623,7 @@ public fun <T, G> GroupBy<T, G>.sortByDesc(vararg cols: KProperty<Comparable<*>?
+  *   - [sortByCount] and [sortByCountAsc] that sort key-group pairs by group size.
+  *   - [sortByKey] and [sortByKeyDesc] that sort key-group pairs by key values.
+  *
+- * Check out [`GroupBy grammar`][Grammar].
++ * Check out the [`GroupBy grammar`][Grammar].
+  *
+  * For more information: {@include [DocumentationUrls.GroupByTransformation]}
+  *
+@@ -686,7 +687,7 @@ private typealias NullsLastArgumentDescription = Nothing
+  *   - [sortByCount] and [sortByCountAsc] that sort the key-group pairs of this [GroupBy] by the group sizes.
+  *   - [sortByKey] and [sortByKeyDesc] that sort the key-group pairs of this [GroupBy] by the key values.
+  *
+- * Check out [`GroupBy grammar`][Grammar].
++ * Check out the [`GroupBy grammar`][Grammar].
+  *
+  * For more information: {@include [DocumentationUrls.GroupByTransformation]}
+  *
+@@ -725,7 +726,7 @@ public fun <T, G, C> GroupBy<T, G>.sortByGroup(
+  *   - [sortByCount] and [sortByCountAsc] that sort the key-group pairs of this [GroupBy] by the group sizes.
+  *   - [sortByKey] and [sortByKeyDesc] that sort the key-group pairs of this [GroupBy] by the key values.
+  *
+- * Check out [`GroupBy grammar`][Grammar].
++ * Check out the [`GroupBy grammar`][Grammar].
+  *
+  * For more information: {@include [DocumentationUrls.GroupByTransformation]}
+  *
+@@ -760,7 +761,7 @@ public fun <T, G, C> GroupBy<T, G>.sortByGroupDesc(
+  *   - [sortByGroup] and [sortByGroupDesc] that sorts the key-group pairs of this [GroupBy] d on computed values.
+  *   - [sortByKey] and [sortByKeyDesc] that sort the key-group pairs of this [GroupBy] by the key values.
+  *
+- * Check out [`GroupBy grammar`][Grammar].
++ * Check out the [`GroupBy grammar`][Grammar].
+  *
+  * For more information: {@include [DocumentationUrls.GroupByTransformation]}
+  *
+@@ -781,7 +782,7 @@ public fun <T, G> GroupBy<T, G>.sortByCountAsc(): GroupBy<T, G> = sortByGroup {
+  *   - [sortByGroup] and [sortByGroupDesc] that sorts the key-group pairs of this [GroupBy] based on computed values.
+  *   - [sortByKey] and [sortByKeyDesc] that sort the key-group pairs of this [GroupBy] by the key values.
+  *
+- * Check out [`GroupBy grammar`][Grammar].
++ * Check out the [`GroupBy grammar`][Grammar].
+  *
+  * For more information: {@include [DocumentationUrls.GroupByTransformation]}
+  *
+@@ -790,32 +791,41 @@ public fun <T, G> GroupBy<T, G>.sortByCountAsc(): GroupBy<T, G> = sortByGroup {
+ public fun <T, G> GroupBy<T, G>.sortByCount(): GroupBy<T, G> = sortByGroupDesc { nrow }
+ 
+ /**
+- * Sorts the key-group pairs of this [GroupBy] by the keys descending.
++ * Sorts the key-group pairs of this [GroupBy] by selected keys descending, or by all keys if [selector] is omitted.
+  *
+  * Returns a new [GroupBy] containing the same keys and groups in the resulting order.
+  * The contents of the groups remain unchanged.
+  *
+- * Don't confuse this with [sortBy][GroupBy.sortBy] that sorts rows within groups.
++ * Don't confuse this with [sortByDesc][GroupBy.sortByDesc] that sorts rows within groups.
+  *
+  * See also
+- *   - [sortByKey] that sorts the key-group pairs of this [GroupBy] by the key values ascending.
++ *   - [sortByKey] that sorts the key-group pairs of this [GroupBy] by the selected key values ascending.
+  *   - [sortByCount] and [sortByCountAsc] that sort the key-group pairs of this [GroupBy] by the group sizes.
+  *   - [sortByGroup] and [sortByGroupDesc] that sorts the key-group pairs of this [GroupBy] based on computed values.
+  *
+- * Check out [`GroupBy grammar`][Grammar].
++ * Check out the [`GroupBy grammar`][Grammar].
+  *
+  * For more information: {@include [DocumentationUrls.GroupByTransformation]}
+  *
++ * ### Example
++ * @sample [org.jetbrains.kotlinx.dataframe.samples.api.GroupBySamples.sortBySelectedKeysDescOnGroupBy_properties]
++ *
+  * @include [NullsLastArgumentDescription]
+- * @return A new [GroupBy] with its key-group pairs sorted by the keys.
++ * @param selector The [Sort Columns Selector][SortColumnsSelector] that defines which keys are used for sorting,
++ * in which order and direction. Selects all keys by default.
++ * @return A new [GroupBy] with its key-group pairs sorted by the selected keys.
+  */
+-public fun <T, G> GroupBy<T, G>.sortByKeyDesc(nullsLast: Boolean = false): GroupBy<T, G> =
+-    toDataFrame()
+-        .sortBy { keys.columns().toColumnSet().reversed().nullsLast(nullsLast) }
+-        .asGroupBy(groups)
++@OptIn(ExperimentalVersionOverloading::class)
++public fun <T, G> GroupBy<T, G>.sortByKeyDesc(
++    nullsLast: Boolean = false,
++    @IntroducedAt("1.0") selector: SortColumnsSelector<T, *> = { all() },
++): GroupBy<T, G> {
++    val set = selector.toColumnSet()
++    return sortByKeyImpl(nullsLast) { set.reversed() }
++}
+ 
+ /**
+- * Sorts the key-group pairs of this [GroupBy] by the keys ascending.
++ * Sorts the key-group pairs of this [GroupBy] by selected keys ascending, or by all keys if [selector] is omitted.
+  *
+  * Returns a new [GroupBy] containing the same keys and groups in the resulting order.
+  * The contents of the groups remain unchanged.
+@@ -823,20 +833,26 @@ public fun <T, G> GroupBy<T, G>.sortByKeyDesc(nullsLast: Boolean = false): Group
+  * Don't confuse this with [sortBy][GroupBy.sortBy] that sorts rows within groups.
+  *
+  * See also
+- *   - [sortByKeyDesc] that sorts the key-group pairs of this [GroupBy] by the key values descending.
++ *   - [sortByKeyDesc] that sorts the key-group pairs of this [GroupBy] by the selected key values descending.
+  *   - [sortByCount] and [sortByCountAsc] that sort the key-group pairs of this [GroupBy] by the group sizes.
+  *   - [sortByGroup] and [sortByGroupDesc] that sorts the key-group pairs of this [GroupBy] based on computed values.
+  *
+- * Check out [`GroupBy grammar`][Grammar].
++ * Check out the [`GroupBy grammar`][Grammar].
+  *
+  * For more information: {@include [DocumentationUrls.GroupByTransformation]}
+  *
++ * ### Example
++ * @sample [org.jetbrains.kotlinx.dataframe.samples.api.GroupBySamples.sortBySelectedKeysOnGroupBy_properties]
++ *
+  * @include [NullsLastArgumentDescription]
+- * @return A new [GroupBy] with its key-group pairs sorted by the keys.
++ * @param selector The [Sort Columns Selector][SortColumnsSelector] that defines which keys are used for sorting,
++ * in which order and direction. Selects all keys by default.
++ * @return A new [GroupBy] with its key-group pairs sorted by the selected keys.
+  */
+-public fun <T, G> GroupBy<T, G>.sortByKey(nullsLast: Boolean = false): GroupBy<T, G> =
+-    toDataFrame()
+-        .sortBy { keys.columns().toColumnSet().nullsLast(nullsLast) }
+-        .asGroupBy(groups)
++@OptIn(ExperimentalVersionOverloading::class)
++public fun <T, G> GroupBy<T, G>.sortByKey(
++    nullsLast: Boolean = false,
++    @IntroducedAt("1.0") selector: SortColumnsSelector<T, *> = { all() },
++): GroupBy<T, G> = sortByKeyImpl(nullsLast, selector)
+ 
+ // endregion
+diff --git a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/api/sort.kt b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/api/sort.kt
+index 3db4bd9..b949b07 100644
+--- a/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/api/sort.kt
++++ b/core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/impl/api/sort.kt
+@@ -20,6 +20,7 @@ import org.jetbrains.kotlinx.dataframe.columns.isEmpty
+ import org.jetbrains.kotlinx.dataframe.impl.columns.ValueColumnInternal
+ import org.jetbrains.kotlinx.dataframe.impl.columns.addPath
+ import org.jetbrains.kotlinx.dataframe.impl.columns.assertIsComparable
++import org.jetbrains.kotlinx.dataframe.impl.columns.createColumnSet
+ import org.jetbrains.kotlinx.dataframe.impl.columns.internalValueColumn
+ import org.jetbrains.kotlinx.dataframe.impl.columns.missing.MissingColumnGroup
+ import org.jetbrains.kotlinx.dataframe.impl.columns.resolve
+@@ -51,6 +52,16 @@ internal fun <T, G> GroupBy<T, G>.sortByImpl(columns: SortColumnsSelector<G, *>)
+     return sorted.asGroupBy { it.getFrameColumn(groups.name()).castFrameColumn<G>() }
+ }
+ 
++internal fun <T, G, C> GroupBy<T, G>.sortByKeyImpl(
++    nullsLast: Boolean,
++    columns: SortColumnsSelector<T, C>,
++): GroupBy<T, G> {
++    val keyColumns = columns.toColumnSet().resolve(keys, UnresolvedColumnsPolicy.Fail)
++    return toDataFrame()
++        .sortByImpl { createColumnSet { keyColumns }.nullsLast(nullsLast) }
++        .asGroupBy { it.getFrameColumn(groups.name()).castFrameColumn() }
++}
++
+ internal fun <T, C> DataFrame<T>.sortByImpl(
+     unresolvedColumnsPolicy: UnresolvedColumnsPolicy = UnresolvedColumnsPolicy.Fail,
+     columns: SortColumnsSelector<T, C>,
+diff --git a/docs/StardustDocs/resources/api/groupBy/sortBySelectedKeysDescOnGroupBy.html b/docs/StardustDocs/resources/api/groupBy/sortBySelectedKeysDescOnGroupBy.html
+new file mode 100644
+index 0000000..ec4d1d7
+--- /dev/null
++++ b/docs/StardustDocs/resources/api/groupBy/sortBySelectedKeysDescOnGroupBy.html
+@@ -0,0 +1,611 @@
++<html>
++<head>
++<style type="text/css">
++:root {
++    --background: #fff;
++    --background-odd: #f5f5f5;
++    --background-hover: #d9edfd;
++    --header-text-color: #474747;
++    --text-color: #848484;
++    --text-color-dark: #000;
++    --text-color-medium: #737373;
++    --text-color-pale: #b3b3b3;
++    --inner-border-color: #aaa;
++    --bold-border-color: #000;
++    --link-color: #296eaa;
++    --link-color-pale: #296eaa;
++    --link-hover: #1a466c;
++}
++
++:root[theme="dark"], :root [data-jp-theme-light="false"], .dataframe_dark{
++    --background: #303030;
++    --background-odd: #3c3c3c;
++    --background-hover: #464646;
++    --header-text-color: #dddddd;
++    --text-color: #b3b3b3;
++    --text-color-dark: #dddddd;
++    --text-color-medium: #b2b2b2;
++    --text-color-pale: #737373;
++    --inner-border-color: #707070;
++    --bold-border-color: #777777;
++    --link-color: #008dc0;
++    --link-color-pale: #97e1fb;
++    --link-hover: #00688e;
++}
++
++p.dataframe_description {
++    color: var(--text-color-dark);
++}
++
++table.dataframe {
++    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
++    font-size: 12px;
++    background-color: var(--background);
++    color: var(--text-color-dark);
++    border: none;
++    border-collapse: collapse;
++}
++
++table.dataframe th, td {
++    padding: 6px;
++    border: 1px solid transparent;
++    text-align: left;
++}
++
++table.dataframe th {
++    background-color: var(--background);
++    color: var(--header-text-color);
++}
++
++table.dataframe td {
++    vertical-align: top;
++    white-space: nowrap;
++}
++
++table.dataframe th.bottomBorder {
++    border-bottom-color: var(--bold-border-color);
++}
++
++table.dataframe tbody > tr:nth-child(odd) {
++    background: var(--background-odd);
++}
++
++table.dataframe tbody > tr:nth-child(even) {
++    background: var(--background);
++}
++
++table.dataframe tbody > tr:hover {
++    background: var(--background-hover);
++}
++
++table.dataframe a {
++    cursor: pointer;
++    color: var(--link-color);
++    text-decoration: none;
++}
++
++table.dataframe tr:hover > td a {
++    color: var(--link-color-pale);
++}
++
++table.dataframe a:hover {
++    color: var(--link-hover);
++    text-decoration: underline;
++}
++
++table.dataframe img {
++    max-width: fit-content;
++}
++
++table.dataframe th.complex {
++    background-color: var(--background);
++    border: 1px solid var(--background);
++}
++
++table.dataframe .leftBorder {
++    border-left-color: var(--inner-border-color);
++}
++
++table.dataframe .rightBorder {
++    border-right-color: var(--inner-border-color);
++}
++
++table.dataframe .rightAlign {
++    text-align: right;
++}
++
++table.dataframe .expanderSvg {
++    width: 8px;
++    height: 8px;
++    margin-right: 3px;
++}
++
++table.dataframe .expander {
++    display: flex;
++    align-items: center;
++}
++
++/* formatting */
++
++table.dataframe .null {
++    color: var(--text-color-pale);
++}
++
++table.dataframe .structural {
++    color: var(--text-color-medium);
++    font-weight: bold;
++}
++
++table.dataframe .dataFrameCaption {
++    font-weight: bold;
++}
++
++table.dataframe .numbers {
++    color: var(--text-color-dark);
++}
++
++table.dataframe td:hover .formatted .structural, .null {
++    color: var(--text-color-dark);
++}
++
++table.dataframe tr:hover .formatted .structural, .null {
++    color: var(--text-color-dark);
++}
++
++
++body {
++    font-family: "JetBrains Mono",SFMono-Regular,Consolas,"Liberation Mono",Menlo,Courier,monospace;
++}       
++
++:root {
++    color: #19191C;
++    background-color: #fff;
++}
++
++:root[theme="dark"] {
++    background-color: #19191C;
++    color: #FFFFFFCC
++}
++
++details details {
++    margin-left: 20px; 
++}
++
++summary {
++    padding: 6px;
++}
++</style>
++</head>
++<body>
++<table class="dataframe" id="df_0"></table>
++
++<p class="dataframe_description"></p>
++</body>
++<script>
++(function () {
++    window.DataFrame = window.DataFrame || new (function () {
++        this.addTable = function (df) {
++            let cols = df.cols;
++            for (let i = 0; i < cols.length; i++) {
++                for (let c of cols[i].children) {
++                    cols[c].parent = i;
++                }
++            }
++            df.nrow = 0
++            for (let i = 0; i < df.cols.length; i++) {
++                if (df.cols[i].values.length > df.nrow) df.nrow = df.cols[i].values.length
++            }
++            if (df.id === df.rootId) {
++                df.expandedFrames = new Set()
++                df.childFrames = {}
++                const table = this.getTableElement(df.id)
++                table.df = df
++                for (let i = 0; i < df.cols.length; i++) {
++                    let col = df.cols[i]
++                    if (col.parent === undefined && col.children.length > 0) col.expanded = true
++                }
++            } else {
++                const rootDf = this.getTableData(df.rootId)
++                rootDf.childFrames[df.id] = df
++            }
++        }
++
++        this.computeRenderData = function (df) {
++            let result = []
++            let pos = 0
++            for (let col = 0; col < df.cols.length; col++) {
++                if (df.cols[col].parent === undefined)
++                    pos += this.computeRenderDataRec(df.cols, col, pos, 0, result, false, false)
++            }
++            for (let i = 0; i < result.length; i++) {
++                let row = result[i]
++                for (let j = 0; j < row.length; j++) {
++                    let cell = row[j]
++                    if (j === 0)
++                        cell.leftBd = false
++                    if (j < row.length - 1) {
++                        let nextData = row[j + 1]
++                        if (nextData.leftBd) cell.rightBd = true
++                        else if (cell.rightBd) nextData.leftBd = true
++                    } else cell.rightBd = false
++                }
++            }
++            return result
++        }
++
++        this.computeRenderDataRec = function (cols, colId, pos, depth, result, leftBorder, rightBorder) {
++            if (result.length === depth) {
++                const array = [];
++                if (pos > 0) {
++                    let j = 0
++                    for (let i = 0; j < pos; i++) {
++                        let c = result[depth - 1][i]
++                        j += c.span
++                        let copy = Object.assign({empty: true}, c)
++                        array.push(copy)
++                    }
++                }
++                result.push(array)
++            }
++            const col = cols[colId];
++            let size = 0;
++            if (col.expanded) {
++                let childPos = pos
++                for (let i = 0; i < col.children.length; i++) {
++                    let child = col.children[i]
++                    let childLeft = i === 0 && (col.children.length > 1 || leftBorder)
++                    let childRight = i === col.children.length - 1 && (col.children.length > 1 || rightBorder)
++                    let childSize = this.computeRenderDataRec(cols, child, childPos, depth + 1, result, childLeft, childRight)
++                    childPos += childSize
++                    size += childSize
++                }
++            } else {
++                for (let i = depth + 1; i < result.length; i++)
++                    result[i].push({id: colId, span: 1, leftBd: leftBorder, rightBd: rightBorder, empty: true})
++                size = 1
++            }
++            let left = leftBorder
++            let right = rightBorder
++            if (size > 1) {
++                left = true
++                right = true
++            }
++            result[depth].push({id: colId, span: size, leftBd: left, rightBd: right})
++            return size
++        }
++
++        this.getTableElement = function (id) {
++            return document.getElementById("df_" + id)
++        }
++
++        this.getTableData = function (id) {
++            return this.getTableElement(id).df
++        }
++
++        this.createExpander = function (isExpanded) {
++            const svgNs = "http://www.w3.org/2000/svg"
++            let svg = document.createElementNS(svgNs, "svg")
++            svg.classList.add("expanderSvg")
++            let path = document.createElementNS(svgNs, "path")
++            if (isExpanded) {
++                svg.setAttribute("viewBox", "0 -2 8 8")
++                path.setAttribute("d", "M1 0 l-1 1 4 4 4 -4 -1 -1 -3 3Z")
++            } else {
++                svg.setAttribute("viewBox", "-2 0 8 8")
++                path.setAttribute("d", "M1 0 l-1 1 3 3 -3 3 1 1 4 -4Z")
++            }
++            path.setAttribute("fill", "currentColor")
++            svg.appendChild(path)
++            return svg
++        }
++
++        this.renderTable = function (id) {
++
++            let table = this.getTableElement(id)
++
++            if (table === null) return
++
++            table.innerHTML = ""
++
++            let df = table.df
++            let rootDf = df.rootId === df.id ? df : this.getTableData(df.rootId)
++
++            // header
++            let header = document.createElement("thead")
++            table.appendChild(header)
++
++            let renderData = this.computeRenderData(df)
++            for (let j = 0; j < renderData.length; j++) {
++                let rowData = renderData[j]
++                let tr = document.createElement("tr");
++                let isLastRow = j === renderData.length - 1
++                header.appendChild(tr);
++                for (let i = 0; i < rowData.length; i++) {
++                    let cell = rowData[i]
++                    let th = document.createElement("th");
++                    th.setAttribute("colspan", cell.span)
++                    let colId = cell.id
++                    let col = df.cols[colId];
++                    if (!cell.empty) {
++                        if (col.children.length === 0) {
++                            th.innerHTML = col.name
++                        } else {
++                            let link = document.createElement("a")
++                            link.className = "expander"
++                            let that = this
++                            link.onclick = function () {
++                                col.expanded = !col.expanded
++                                that.renderTable(id)
++                            }
++                            link.appendChild(this.createExpander(col.expanded))
++                            link.innerHTML += col.name
++                            th.appendChild(link)
++                        }
++                    }
++                    let classes = (cell.leftBd ? " leftBorder" : "") + (cell.rightBd ? " rightBorder" : "")
++                    if (col.rightAlign)
++                        classes += " rightAlign"
++                    if (isLastRow)
++                        classes += " bottomBorder"
++                    if (classes.length > 0)
++                        th.setAttribute("class", classes)
++                    tr.appendChild(th)
++                }
++            }
++
++            // body
++            let body = document.createElement("tbody")
++            table.appendChild(body)
++
++            let columns = renderData.pop()
++            for (let row = 0; row < df.nrow; row++) {
++                let tr = document.createElement("tr");
++                body.appendChild(tr)
++                for (let i = 0; i < columns.length; i++) {
++                    let cell = columns[i]
++                    let td = document.createElement("td");
++                    let colId = cell.id
++                    let col = df.cols[colId]
++                    let classes = (cell.leftBd ? " leftBorder" : "") + (cell.rightBd ? " rightBorder" : "")
++                    if (col.rightAlign)
++                        classes += " rightAlign"
++                    if (classes.length > 0)
++                        td.setAttribute("class", classes)
++                    tr.appendChild(td)
++                    let value = col.values[row]
++                    if (value.frameId !== undefined) {
++                        let frameId = value.frameId
++                        let expanded = rootDf.expandedFrames.has(frameId)
++                        let link = document.createElement("a")
++                        link.className = "expander"
++                        let that = this
++                        link.onclick = function () {
++                            if (rootDf.expandedFrames.has(frameId))
++                                rootDf.expandedFrames.delete(frameId)
++                            else rootDf.expandedFrames.add(frameId)
++                            that.renderTable(id)
++                        }
++                        link.appendChild(this.createExpander(expanded))
++                        link.innerHTML += value.value
++                        if (expanded) {
++                            td.appendChild(link)
++                            td.appendChild(document.createElement("p"))
++                            const childTable = document.createElement("table")
++                            childTable.className = "dataframe"
++                            childTable.id = "df_" + frameId
++                            let childDf = rootDf.childFrames[frameId]
++                            childTable.df = childDf
++                            td.appendChild(childTable)
++                            this.renderTable(frameId)
++                            if (childDf.nrow !== childDf.totalRows) {
++                                const footer = document.createElement("p")
++                                footer.innerText = `... showing only top ${childDf.nrow} of ${childDf.totalRows} rows`
++                                td.appendChild(footer)
++                            }
++                        } else {
++                            td.appendChild(link)
++                        }
++                    } else if (value.style !== undefined) {
++                        td.innerHTML = value.value
++                        td.setAttribute("style", value.style)
++                    } else td.innerHTML = value
++                    this.nodeScriptReplace(td)
++                }
++            }
++        }
++
++        this.nodeScriptReplace = function (node) {
++            if (this.nodeScriptIs(node) === true) {
++                node.parentNode.replaceChild(this.nodeScriptClone(node), node);
++            } else {
++                let i = -1, children = node.childNodes;
++                while (++i < children.length) {
++                    this.nodeScriptReplace(children[i]);
++                }
++            }
++
++            return node;
++        }
++
++        this.nodeScriptClone = function (node) {
++            let script = document.createElement("script");
++            script.text = node.innerHTML;
++
++            let i = -1, attrs = node.attributes, attr;
++            while (++i < attrs.length) {
++                script.setAttribute((attr = attrs[i]).name, attr.value);
++            }
++            return script;
++        }
++
++        this.nodeScriptIs = function (node) {
++            return node.tagName === 'SCRIPT';
++        }
++    })()
++
++    window.call_DataFrame = function (f) {
++        return f();
++    };
++
++    let funQueue = window["kotlinQueues"] && window["kotlinQueues"]["DataFrame"];
++    if (funQueue) {
++        funQueue.forEach(function (f) {
++            f();
++        });
++        funQueue = [];
++    }
++})()
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"city: String?\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>","Tokyo","Moscow","Moscow","Milan","Milan","London","Dubai","Dubai"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">20</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">30</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">20</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">30</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">40</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">30</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">15</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">45</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">18</span></span>"] }, 
++{ name: "<span title=\"group: DataFrame<*>\">group</span>", children: [], rightAlign: false, values: [{ frameId: 1, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 2, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 3, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 4, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 5, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 6, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 7, value: "<b>DataFrame 2 x 5</b>" },{ frameId: 8, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 9, value: "<b>DataFrame 1 x 5</b>" }] }, 
++], id: 0, rootId: 0, totalRows: 9 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Alice"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Wolf"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Alice\nlastName: Wolf\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Alice<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Wolf<span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">20</span></span>"] }, 
++{ name: "<span title=\"city: String?\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">55</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["false"] }, 
++], id: 1, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Bob"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Marley"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Bob\nlastName: Marley\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Bob<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Marley<span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">30</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Tokyo"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">68</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["true"] }, 
++], id: 2, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Charlie"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Daniels"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Charlie\nlastName: Daniels\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Charlie<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Dan<span class=\"structural\">...</span><span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">20</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Moscow"] }, 
++{ name: "<span title=\"weight: Int?\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["false"] }, 
++], id: 3, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Charlie"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Byrd"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Charlie\nlastName: Byrd\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Charlie<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Byrd<span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">30</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Moscow"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">90</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["true"] }, 
++], id: 4, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Charlie"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Chaplin"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Charlie\nlastName: Chaplin\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Charlie<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Cha<span class=\"structural\">...</span><span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">40</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Milan"] }, 
++{ name: "<span title=\"weight: Int?\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["true"] }, 
++], id: 5, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Alice"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Smith"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Alice\nlastName: Smith\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Alice<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Smith<span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">30</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Milan"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">52</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["false"] }, 
++], id: 6, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Alice","Bob"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Cooper","Brown"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Alice\nlastName: Cooper\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Alice<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Cooper<span class=\"structural\"> }</span></span>","<span class=\"formatted\" title=\"firstName: Bob\nlastName: Brown\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Bob<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Brown<span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">15</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">15</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["London","London"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">54</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">60</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["true","false"] }, 
++], id: 7, rootId: 0, totalRows: 2 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Bob"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Dylan"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Bob\nlastName: Dylan\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Bob<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Dylan<span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">45</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Dubai"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">87</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["true"] }, 
++], id: 8, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Charlie"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Johnson"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Charlie\nlastName: Johnson\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Charlie<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Joh<span class=\"structural\">...</span><span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">18</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Dubai"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">70</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["false"] }, 
++], id: 9, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++call_DataFrame(function() { DataFrame.renderTable(0) });
++
++function sendHeight() {
++    const table = document.querySelector('table.dataframe');
++    if (!table) return;
++
++    let height = 0;
++    
++    const thead = table.querySelector('thead');
++    if (thead) height += thead.offsetHeight;
++    
++    const rows = table.querySelectorAll(':scope > tbody > tr');
++    rows.forEach(row => {
++        height += row.offsetHeight;
++    });
++    
++    height += getVerticalMargins(table) + 10;
++
++    window.parent.postMessage({ type: 'iframeHeight', height: Math.ceil(height) }, '*');
++}
++
++function getVerticalMargins(element) {
++    const style = getComputedStyle(element);
++    return parseFloat(style.marginTop) + parseFloat(style.marginBottom);
++}
++
++function repeatHeightCalculation(maxRetries = 10, interval = 100) {
++    let retries = 0;
++    const intervalId = setInterval(() => {
++        sendHeight();
++        retries++;
++        if (retries >= maxRetries) clearInterval(intervalId);
++    }, interval);
++}
++
++window.addEventListener('load', repeatHeightCalculation);
++
++const observer = new MutationObserver(() => repeatHeightCalculation(5, 50));
++observer.observe(document.querySelector('.dataframe'), {
++    childList: true,
++    subtree: true,
++    characterData: true,
++});
++
++
++</script>
++</html>
+diff --git a/docs/StardustDocs/resources/api/groupBy/sortBySelectedKeysOnGroupBy.html b/docs/StardustDocs/resources/api/groupBy/sortBySelectedKeysOnGroupBy.html
+new file mode 100644
+index 0000000..73b0a3a
+--- /dev/null
++++ b/docs/StardustDocs/resources/api/groupBy/sortBySelectedKeysOnGroupBy.html
+@@ -0,0 +1,611 @@
++<html>
++<head>
++<style type="text/css">
++:root {
++    --background: #fff;
++    --background-odd: #f5f5f5;
++    --background-hover: #d9edfd;
++    --header-text-color: #474747;
++    --text-color: #848484;
++    --text-color-dark: #000;
++    --text-color-medium: #737373;
++    --text-color-pale: #b3b3b3;
++    --inner-border-color: #aaa;
++    --bold-border-color: #000;
++    --link-color: #296eaa;
++    --link-color-pale: #296eaa;
++    --link-hover: #1a466c;
++}
++
++:root[theme="dark"], :root [data-jp-theme-light="false"], .dataframe_dark{
++    --background: #303030;
++    --background-odd: #3c3c3c;
++    --background-hover: #464646;
++    --header-text-color: #dddddd;
++    --text-color: #b3b3b3;
++    --text-color-dark: #dddddd;
++    --text-color-medium: #b2b2b2;
++    --text-color-pale: #737373;
++    --inner-border-color: #707070;
++    --bold-border-color: #777777;
++    --link-color: #008dc0;
++    --link-color-pale: #97e1fb;
++    --link-hover: #00688e;
++}
++
++p.dataframe_description {
++    color: var(--text-color-dark);
++}
++
++table.dataframe {
++    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
++    font-size: 12px;
++    background-color: var(--background);
++    color: var(--text-color-dark);
++    border: none;
++    border-collapse: collapse;
++}
++
++table.dataframe th, td {
++    padding: 6px;
++    border: 1px solid transparent;
++    text-align: left;
++}
++
++table.dataframe th {
++    background-color: var(--background);
++    color: var(--header-text-color);
++}
++
++table.dataframe td {
++    vertical-align: top;
++    white-space: nowrap;
++}
++
++table.dataframe th.bottomBorder {
++    border-bottom-color: var(--bold-border-color);
++}
++
++table.dataframe tbody > tr:nth-child(odd) {
++    background: var(--background-odd);
++}
++
++table.dataframe tbody > tr:nth-child(even) {
++    background: var(--background);
++}
++
++table.dataframe tbody > tr:hover {
++    background: var(--background-hover);
++}
++
++table.dataframe a {
++    cursor: pointer;
++    color: var(--link-color);
++    text-decoration: none;
++}
++
++table.dataframe tr:hover > td a {
++    color: var(--link-color-pale);
++}
++
++table.dataframe a:hover {
++    color: var(--link-hover);
++    text-decoration: underline;
++}
++
++table.dataframe img {
++    max-width: fit-content;
++}
++
++table.dataframe th.complex {
++    background-color: var(--background);
++    border: 1px solid var(--background);
++}
++
++table.dataframe .leftBorder {
++    border-left-color: var(--inner-border-color);
++}
++
++table.dataframe .rightBorder {
++    border-right-color: var(--inner-border-color);
++}
++
++table.dataframe .rightAlign {
++    text-align: right;
++}
++
++table.dataframe .expanderSvg {
++    width: 8px;
++    height: 8px;
++    margin-right: 3px;
++}
++
++table.dataframe .expander {
++    display: flex;
++    align-items: center;
++}
++
++/* formatting */
++
++table.dataframe .null {
++    color: var(--text-color-pale);
++}
++
++table.dataframe .structural {
++    color: var(--text-color-medium);
++    font-weight: bold;
++}
++
++table.dataframe .dataFrameCaption {
++    font-weight: bold;
++}
++
++table.dataframe .numbers {
++    color: var(--text-color-dark);
++}
++
++table.dataframe td:hover .formatted .structural, .null {
++    color: var(--text-color-dark);
++}
++
++table.dataframe tr:hover .formatted .structural, .null {
++    color: var(--text-color-dark);
++}
++
++
++body {
++    font-family: "JetBrains Mono",SFMono-Regular,Consolas,"Liberation Mono",Menlo,Courier,monospace;
++}       
++
++:root {
++    color: #19191C;
++    background-color: #fff;
++}
++
++:root[theme="dark"] {
++    background-color: #19191C;
++    color: #FFFFFFCC
++}
++
++details details {
++    margin-left: 20px; 
++}
++
++summary {
++    padding: 6px;
++}
++</style>
++</head>
++<body>
++<table class="dataframe" id="df_0"></table>
++
++<p class="dataframe_description"></p>
++</body>
++<script>
++(function () {
++    window.DataFrame = window.DataFrame || new (function () {
++        this.addTable = function (df) {
++            let cols = df.cols;
++            for (let i = 0; i < cols.length; i++) {
++                for (let c of cols[i].children) {
++                    cols[c].parent = i;
++                }
++            }
++            df.nrow = 0
++            for (let i = 0; i < df.cols.length; i++) {
++                if (df.cols[i].values.length > df.nrow) df.nrow = df.cols[i].values.length
++            }
++            if (df.id === df.rootId) {
++                df.expandedFrames = new Set()
++                df.childFrames = {}
++                const table = this.getTableElement(df.id)
++                table.df = df
++                for (let i = 0; i < df.cols.length; i++) {
++                    let col = df.cols[i]
++                    if (col.parent === undefined && col.children.length > 0) col.expanded = true
++                }
++            } else {
++                const rootDf = this.getTableData(df.rootId)
++                rootDf.childFrames[df.id] = df
++            }
++        }
++
++        this.computeRenderData = function (df) {
++            let result = []
++            let pos = 0
++            for (let col = 0; col < df.cols.length; col++) {
++                if (df.cols[col].parent === undefined)
++                    pos += this.computeRenderDataRec(df.cols, col, pos, 0, result, false, false)
++            }
++            for (let i = 0; i < result.length; i++) {
++                let row = result[i]
++                for (let j = 0; j < row.length; j++) {
++                    let cell = row[j]
++                    if (j === 0)
++                        cell.leftBd = false
++                    if (j < row.length - 1) {
++                        let nextData = row[j + 1]
++                        if (nextData.leftBd) cell.rightBd = true
++                        else if (cell.rightBd) nextData.leftBd = true
++                    } else cell.rightBd = false
++                }
++            }
++            return result
++        }
++
++        this.computeRenderDataRec = function (cols, colId, pos, depth, result, leftBorder, rightBorder) {
++            if (result.length === depth) {
++                const array = [];
++                if (pos > 0) {
++                    let j = 0
++                    for (let i = 0; j < pos; i++) {
++                        let c = result[depth - 1][i]
++                        j += c.span
++                        let copy = Object.assign({empty: true}, c)
++                        array.push(copy)
++                    }
++                }
++                result.push(array)
++            }
++            const col = cols[colId];
++            let size = 0;
++            if (col.expanded) {
++                let childPos = pos
++                for (let i = 0; i < col.children.length; i++) {
++                    let child = col.children[i]
++                    let childLeft = i === 0 && (col.children.length > 1 || leftBorder)
++                    let childRight = i === col.children.length - 1 && (col.children.length > 1 || rightBorder)
++                    let childSize = this.computeRenderDataRec(cols, child, childPos, depth + 1, result, childLeft, childRight)
++                    childPos += childSize
++                    size += childSize
++                }
++            } else {
++                for (let i = depth + 1; i < result.length; i++)
++                    result[i].push({id: colId, span: 1, leftBd: leftBorder, rightBd: rightBorder, empty: true})
++                size = 1
++            }
++            let left = leftBorder
++            let right = rightBorder
++            if (size > 1) {
++                left = true
++                right = true
++            }
++            result[depth].push({id: colId, span: size, leftBd: left, rightBd: right})
++            return size
++        }
++
++        this.getTableElement = function (id) {
++            return document.getElementById("df_" + id)
++        }
++
++        this.getTableData = function (id) {
++            return this.getTableElement(id).df
++        }
++
++        this.createExpander = function (isExpanded) {
++            const svgNs = "http://www.w3.org/2000/svg"
++            let svg = document.createElementNS(svgNs, "svg")
++            svg.classList.add("expanderSvg")
++            let path = document.createElementNS(svgNs, "path")
++            if (isExpanded) {
++                svg.setAttribute("viewBox", "0 -2 8 8")
++                path.setAttribute("d", "M1 0 l-1 1 4 4 4 -4 -1 -1 -3 3Z")
++            } else {
++                svg.setAttribute("viewBox", "-2 0 8 8")
++                path.setAttribute("d", "M1 0 l-1 1 3 3 -3 3 1 1 4 -4Z")
++            }
++            path.setAttribute("fill", "currentColor")
++            svg.appendChild(path)
++            return svg
++        }
++
++        this.renderTable = function (id) {
++
++            let table = this.getTableElement(id)
++
++            if (table === null) return
++
++            table.innerHTML = ""
++
++            let df = table.df
++            let rootDf = df.rootId === df.id ? df : this.getTableData(df.rootId)
++
++            // header
++            let header = document.createElement("thead")
++            table.appendChild(header)
++
++            let renderData = this.computeRenderData(df)
++            for (let j = 0; j < renderData.length; j++) {
++                let rowData = renderData[j]
++                let tr = document.createElement("tr");
++                let isLastRow = j === renderData.length - 1
++                header.appendChild(tr);
++                for (let i = 0; i < rowData.length; i++) {
++                    let cell = rowData[i]
++                    let th = document.createElement("th");
++                    th.setAttribute("colspan", cell.span)
++                    let colId = cell.id
++                    let col = df.cols[colId];
++                    if (!cell.empty) {
++                        if (col.children.length === 0) {
++                            th.innerHTML = col.name
++                        } else {
++                            let link = document.createElement("a")
++                            link.className = "expander"
++                            let that = this
++                            link.onclick = function () {
++                                col.expanded = !col.expanded
++                                that.renderTable(id)
++                            }
++                            link.appendChild(this.createExpander(col.expanded))
++                            link.innerHTML += col.name
++                            th.appendChild(link)
++                        }
++                    }
++                    let classes = (cell.leftBd ? " leftBorder" : "") + (cell.rightBd ? " rightBorder" : "")
++                    if (col.rightAlign)
++                        classes += " rightAlign"
++                    if (isLastRow)
++                        classes += " bottomBorder"
++                    if (classes.length > 0)
++                        th.setAttribute("class", classes)
++                    tr.appendChild(th)
++                }
++            }
++
++            // body
++            let body = document.createElement("tbody")
++            table.appendChild(body)
++
++            let columns = renderData.pop()
++            for (let row = 0; row < df.nrow; row++) {
++                let tr = document.createElement("tr");
++                body.appendChild(tr)
++                for (let i = 0; i < columns.length; i++) {
++                    let cell = columns[i]
++                    let td = document.createElement("td");
++                    let colId = cell.id
++                    let col = df.cols[colId]
++                    let classes = (cell.leftBd ? " leftBorder" : "") + (cell.rightBd ? " rightBorder" : "")
++                    if (col.rightAlign)
++                        classes += " rightAlign"
++                    if (classes.length > 0)
++                        td.setAttribute("class", classes)
++                    tr.appendChild(td)
++                    let value = col.values[row]
++                    if (value.frameId !== undefined) {
++                        let frameId = value.frameId
++                        let expanded = rootDf.expandedFrames.has(frameId)
++                        let link = document.createElement("a")
++                        link.className = "expander"
++                        let that = this
++                        link.onclick = function () {
++                            if (rootDf.expandedFrames.has(frameId))
++                                rootDf.expandedFrames.delete(frameId)
++                            else rootDf.expandedFrames.add(frameId)
++                            that.renderTable(id)
++                        }
++                        link.appendChild(this.createExpander(expanded))
++                        link.innerHTML += value.value
++                        if (expanded) {
++                            td.appendChild(link)
++                            td.appendChild(document.createElement("p"))
++                            const childTable = document.createElement("table")
++                            childTable.className = "dataframe"
++                            childTable.id = "df_" + frameId
++                            let childDf = rootDf.childFrames[frameId]
++                            childTable.df = childDf
++                            td.appendChild(childTable)
++                            this.renderTable(frameId)
++                            if (childDf.nrow !== childDf.totalRows) {
++                                const footer = document.createElement("p")
++                                footer.innerText = `... showing only top ${childDf.nrow} of ${childDf.totalRows} rows`
++                                td.appendChild(footer)
++                            }
++                        } else {
++                            td.appendChild(link)
++                        }
++                    } else if (value.style !== undefined) {
++                        td.innerHTML = value.value
++                        td.setAttribute("style", value.style)
++                    } else td.innerHTML = value
++                    this.nodeScriptReplace(td)
++                }
++            }
++        }
++
++        this.nodeScriptReplace = function (node) {
++            if (this.nodeScriptIs(node) === true) {
++                node.parentNode.replaceChild(this.nodeScriptClone(node), node);
++            } else {
++                let i = -1, children = node.childNodes;
++                while (++i < children.length) {
++                    this.nodeScriptReplace(children[i]);
++                }
++            }
++
++            return node;
++        }
++
++        this.nodeScriptClone = function (node) {
++            let script = document.createElement("script");
++            script.text = node.innerHTML;
++
++            let i = -1, attrs = node.attributes, attr;
++            while (++i < attrs.length) {
++                script.setAttribute((attr = attrs[i]).name, attr.value);
++            }
++            return script;
++        }
++
++        this.nodeScriptIs = function (node) {
++            return node.tagName === 'SCRIPT';
++        }
++    })()
++
++    window.call_DataFrame = function (f) {
++        return f();
++    };
++
++    let funQueue = window["kotlinQueues"] && window["kotlinQueues"]["DataFrame"];
++    if (funQueue) {
++        funQueue.forEach(function (f) {
++            f();
++        });
++        funQueue = [];
++    }
++})()
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"city: String?\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["London","Dubai","Moscow","<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>","Tokyo","Moscow","Milan","Milan","Dubai"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">15</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">18</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">20</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">20</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">30</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">30</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">30</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">40</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">45</span></span>"] }, 
++{ name: "<span title=\"group: DataFrame<*>\">group</span>", children: [], rightAlign: false, values: [{ frameId: 1, value: "<b>DataFrame 2 x 5</b>" },{ frameId: 2, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 3, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 4, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 5, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 6, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 7, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 8, value: "<b>DataFrame 1 x 5</b>" },{ frameId: 9, value: "<b>DataFrame 1 x 5</b>" }] }, 
++], id: 0, rootId: 0, totalRows: 9 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Alice","Bob"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Cooper","Brown"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Alice\nlastName: Cooper\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Alice<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Cooper<span class=\"structural\"> }</span></span>","<span class=\"formatted\" title=\"firstName: Bob\nlastName: Brown\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Bob<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Brown<span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">15</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">15</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["London","London"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">54</span></span>","<span class=\"formatted\" title=\"\"><span class=\"numbers\">60</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["true","false"] }, 
++], id: 1, rootId: 0, totalRows: 2 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Charlie"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Johnson"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Charlie\nlastName: Johnson\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Charlie<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Joh<span class=\"structural\">...</span><span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">18</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Dubai"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">70</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["false"] }, 
++], id: 2, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Charlie"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Daniels"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Charlie\nlastName: Daniels\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Charlie<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Dan<span class=\"structural\">...</span><span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">20</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Moscow"] }, 
++{ name: "<span title=\"weight: Int?\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["false"] }, 
++], id: 3, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Alice"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Wolf"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Alice\nlastName: Wolf\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Alice<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Wolf<span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">20</span></span>"] }, 
++{ name: "<span title=\"city: String?\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">55</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["false"] }, 
++], id: 4, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Bob"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Marley"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Bob\nlastName: Marley\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Bob<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Marley<span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">30</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Tokyo"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">68</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["true"] }, 
++], id: 5, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Charlie"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Byrd"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Charlie\nlastName: Byrd\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Charlie<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Byrd<span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">30</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Moscow"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">90</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["true"] }, 
++], id: 6, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Alice"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Smith"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Alice\nlastName: Smith\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Alice<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Smith<span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">30</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Milan"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">52</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["false"] }, 
++], id: 7, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Charlie"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Chaplin"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Charlie\nlastName: Chaplin\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Charlie<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Cha<span class=\"structural\">...</span><span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">40</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Milan"] }, 
++{ name: "<span title=\"weight: Int?\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"null\">null</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["true"] }, 
++], id: 8, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++/*<!--*/
++call_DataFrame(function() { DataFrame.addTable({ cols: [{ name: "<span title=\"firstName: String\">firstName</span>", children: [], rightAlign: false, values: ["Bob"] }, 
++{ name: "<span title=\"lastName: String\">lastName</span>", children: [], rightAlign: false, values: ["Dylan"] }, 
++{ name: "<span title=\"name: DataRow<*>\">name</span>", children: [0, 1], rightAlign: false, values: ["<span class=\"formatted\" title=\"firstName: Bob\nlastName: Dylan\"><span class=\"structural\">{ </span><span class=\"structural\">firstName: </span>Bob<span class=\"structural\">, </span><span class=\"structural\">lastName: </span>Dylan<span class=\"structural\"> }</span></span>"] }, 
++{ name: "<span title=\"age: Int\" style=\"color:#2196f3;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">age</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">45</span></span>"] }, 
++{ name: "<span title=\"city: String\" style=\"color:#f44336;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace\">city</span>", children: [], rightAlign: false, values: ["Dubai"] }, 
++{ name: "<span title=\"weight: Int\">weight</span>", children: [], rightAlign: true, values: ["<span class=\"formatted\" title=\"\"><span class=\"numbers\">87</span></span>"] }, 
++{ name: "<span title=\"isHappy: Boolean\">isHappy</span>", children: [], rightAlign: false, values: ["true"] }, 
++], id: 9, rootId: 0, totalRows: 1 } ) });
++/*-->*/
++
++call_DataFrame(function() { DataFrame.renderTable(0) });
++
++function sendHeight() {
++    const table = document.querySelector('table.dataframe');
++    if (!table) return;
++
++    let height = 0;
++    
++    const thead = table.querySelector('thead');
++    if (thead) height += thead.offsetHeight;
++    
++    const rows = table.querySelectorAll(':scope > tbody > tr');
++    rows.forEach(row => {
++        height += row.offsetHeight;
++    });
++    
++    height += getVerticalMargins(table) + 10;
++
++    window.parent.postMessage({ type: 'iframeHeight', height: Math.ceil(height) }, '*');
++}
++
++function getVerticalMargins(element) {
++    const style = getComputedStyle(element);
++    return parseFloat(style.marginTop) + parseFloat(style.marginBottom);
++}
++
++function repeatHeightCalculation(maxRetries = 10, interval = 100) {
++    let retries = 0;
++    const intervalId = setInterval(() => {
++        sendHeight();
++        retries++;
++        if (retries >= maxRetries) clearInterval(intervalId);
++    }, interval);
++}
++
++window.addEventListener('load', repeatHeightCalculation);
++
++const observer = new MutationObserver(() => repeatHeightCalculation(5, 50));
++observer.observe(document.querySelector('.dataframe'), {
++    childList: true,
++    subtree: true,
++    characterData: true,
++});
++
++
++</script>
++</html>
+diff --git a/docs/StardustDocs/topics/_shadow_resources.md b/docs/StardustDocs/topics/_shadow_resources.md
+index 921d7ee..f3b4094 100644
+--- a/docs/StardustDocs/topics/_shadow_resources.md
++++ b/docs/StardustDocs/topics/_shadow_resources.md
+@@ -176,6 +176,8 @@
+ <resource src="sortByGroupOnGroupBy.html"></resource>
+ <resource src="sortByKeyOnGroupBy.html"></resource>
+ <resource src="sortByOnGroupBy.html"></resource>
++<resource src="sortBySelectedKeysDescOnGroupBy.html"></resource>
++<resource src="sortBySelectedKeysOnGroupBy.html"></resource>
+ <resource src="stdOnGroupBy.html"></resource>
+ <resource src="sumOnGroupBy.html"></resource>
+ <resource src="toDfOnGroupBy.html"></resource>
+diff --git a/docs/StardustDocs/topics/groupBy.md b/docs/StardustDocs/topics/groupBy.md
+index d11533d..9862eec 100644
+--- a/docs/StardustDocs/topics/groupBy.md
++++ b/docs/StardustDocs/topics/groupBy.md
+@@ -17,7 +17,7 @@ groupBy(moveToTop = true) { columns }
+       [ transformations ]
+       reducer | aggregator | pivot | mapper
+ 
+-transformations = [ .sortByGroup { expression } | .sortByGroupDesc { expression } | .sortByCount() | .sortByCountAsc() | .sortByKey() | .sortByKeyDesc() | .sortBy { columns } | .sortByDesc { columns } ]
++transformations = [ .sortByGroup { expression } | .sortByGroupDesc { expression } | .sortByCount() | .sortByCountAsc() | .sortByKey [ { columns } ] | .sortByKeyDesc [ { columns } ] | .sortBy { columns } | .sortByDesc { columns } ]
+                   [ .updateGroups { frameExpression } ]
+                   [ .filter { rowExpression } ]
+                   [ .add(column) { rowExpression } ]
+@@ -188,7 +188,8 @@ A `GroupBy` can be transformed into a new `GroupBy` using one of the following m
+ 
+ * `sortByGroup` / `sortByGroupDesc` — sorts the **order of groups** (and their corresponding keys) by values computed with a `DataFrameExpression` applied to each group;
+ * `sortByCount` / `sortByCountAsc` — sorts the **order of groups** (and their corresponding keys) by the number of rows they contain;
+-* `sortByKey` / `sortByKeyDesc` — sorts the **order of groups** (and their corresponding keys) by the grouping key values;
++* `sortByKey` / `sortByKeyDesc` — sorts the **order of groups**
++  (and their corresponding keys) by the grouping key values;
+ * [`sortBy`](sortBy.md) / [`sortByDesc`](sortBy.md#sortbydesc) — sorts the **order of rows within each group** by one or more column values, preserving the order of groups and their corresponding keys;
+ * `updateGroups` — transforms each group into a new one using the provided transforming function;
+ * [`filter`](filter.md) — filters out keys and corresponding groups that
+@@ -281,7 +282,7 @@ df.groupBy { age }.sortByKey()
+ <tab title="Strings">
+ 
+ ```kotlin
+-df.groupBy { age }.sortByKey()
++df.groupBy("age").sortByKey()
+ ```
+ 
+ </tab></tabs>
+@@ -289,6 +290,47 @@ df.groupBy { age }.sortByKey()
+ 
+ <!---END-->
+ 
++<!---FUN sortBySelectedKeysOnGroupBy-->
++<tabs>
++<tab title="Properties">
++
++```kotlin
++df.groupBy { city and age }.sortByKey { age and city.reversed() }
++```
++
++</tab>
++<tab title="Strings">
++
++```kotlin
++df.groupBy("city", "age").sortByKey { "age"<Int>() and "city"<String?>().reversed() }
++```
++
++</tab></tabs>
++<inline-frame src="./resources/sortBySelectedKeysOnGroupBy.html" width="100%" height="500px"></inline-frame>
++
++<!---END-->
++
++<!---FUN sortBySelectedKeysDescOnGroupBy-->
++<tabs>
++<tab title="Properties">
++
++```kotlin
++df.groupBy { city and age }.sortByKeyDesc(nullsLast = true) { city }
++```
++
++</tab>
++<tab title="Strings">
++
++```kotlin
++df.groupBy("city", "age").sortByKeyDesc(nullsLast = true) { "city"<String?>() }
++```
++
++</tab></tabs>
++<inline-frame src="./resources/sortBySelectedKeysDescOnGroupBy.html" width="100%" height="500px"></inline-frame>
++
++<!---END-->
++
++
+ #### sortBy {collapsible="true"}
+ <!---FUN sortByOnGroupBy-->
+ <tabs>

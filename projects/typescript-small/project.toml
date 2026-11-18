@@ -1,16 +1,21 @@
-# TypeScript, small: superstruct, composable runtime validation. One Struct class, dozens of struct factories whose
-# names collide with built-ins and with each other's helpers (string, number, object, type, assert, is, create...),
-# overloaded factories, and a barrel index that re-exports everything.
+# TypeScript, small: @hono/node-server, the Node.js adapter of hono. A Request/Response/Headers implementation lazily
+# wrapping Node's IncomingMessage and ServerResponse (subclasses of the globals with getters and symbol keys), a listener
+# that streams bodies, static file serving, WebSocket upgrade, and an index that re-exports the public API.
 lang = "typescript"
 size = "small"
 status = "curated"
-repo = "https://github.com/ianstormtaylor/superstruct"
-commit = "d31f007fbe39d304b68e25604b12d452869a5264"
-loc = 4603
-loc_by_language = { "TypeScript" = 4603 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+repo = "https://github.com/honojs/node-server"
+tag = "v2.1.8"
+commit = "1fc1dfc6c5c6c40c49618f3e21d97554e74acddf"
+loc = 7943
+loc_by_language = { "TypeScript" = 7943 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md (sh harness/size/measure.sh); tests and benchmarks included"
 stripped = []
 task_types = ["move", "signature", "callers", "pr", "pr", "pr"]
-# Upstream git-ignores package-lock.json; the lockfile next to this file (npm, generated once from package.json at the
-# pinned commit) fixes the grading dependencies. The mined pull requests' base commits (2021-2022) use yarn.lock,
-# imported by pnpm (grade-setup.sh), and mocha instead of vitest (check.sh).
+# pnpm-lock.yaml is upstream's; grade-setup.sh installs from it (pnpm, no install scripts), check.sh type-checks and
+# runs vitest (the Node-hosted tests; no build step is needed because the tests import src/).
+
+[probe]
+ok = false
+seconds_to_first_answer = 1.0
+note = "cross-file references of buildOutgoingHttpHeaders complete in 8.5 s (all expected locations found); the next call (definition by name, tried with newRequest and getRequestListener) never got a reply from the bridge in 15+ minutes in two runs, so the diagnostics call was not reached; the probe was killed. Cause not identified (the same probe shape worked on typescript-medium)."

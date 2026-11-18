@@ -1,5 +1,0 @@
-type = "rename"
-origin = "synthetic fallback: rename a widely used Sass variable"
-symbol = "$grid-gutter"
-new_name = "$layout-gutter"
-selection = "Fallback selected deterministically from the pinned snapshot because mined candidates were unavailable or unvalidated; seed = 20261110. The substitution is recorded in project.toml."

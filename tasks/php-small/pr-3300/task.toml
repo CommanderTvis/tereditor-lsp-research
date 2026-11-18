@@ -1,0 +1,11 @@
+type = "pr"
+origin = "mined: yajra/laravel-datatables#3300 (issue #2324), docs/TASKS.md \"Mined pull requests\""
+pr = 3300
+issue = 2324
+base_commit = "1a3d674cdc0ef6a226c76f5ff0c3b6d8f3af15cc"
+merge_commit = "16d0a0dd9ce9fedc0af6a9169c4006a4e02f5e33"
+merged_at = "2026-09-15T10:33:07Z"
+fail_to_pass = ["Yajra\\DataTables\\Tests\\Integration\\MixedCaseRelationTest::it_can_sort_on_a_path_mixing_a_literal_snake_case_and_a_camel_case_relation","Yajra\\DataTables\\Tests\\Integration\\MixedCaseRelationTest::it_can_search_a_relation_registered_with_resolve_relation_using","Yajra\\DataTables\\Tests\\Integration\\SnakeCaseRelationTest::it_can_perform_global_search_on_a_snake_case_relation_name","Yajra\\DataTables\\Tests\\Integration\\SnakeCaseRelationTest::it_can_perform_column_search_on_a_snake_case_relation_name","Yajra\\DataTables\\Tests\\Integration\\SnakeCaseRelationTest::it_can_sort_on_a_snake_case_relation_name","Yajra\\DataTables\\Tests\\Integration\\SnakeCaseRelationTest::it_can_perform_global_search_on_a_nested_snake_case_relation_name","Yajra\\DataTables\\Tests\\Integration\\SnakeCaseRelationTest::it_can_perform_column_search_on_a_nested_snake_case_relation_name","Yajra\\DataTables\\Tests\\Integration\\SnakeCaseRelationTest::it_can_sort_on_a_nested_snake_case_relation_name","Yajra\\DataTables\\Tests\\Integration\\SnakeCaseRelationTest::it_can_search_a_nested_snake_case_relation_that_is_not_eager_loaded"]
+pass_to_pass = "the other tests of tests/Integration/MixedCaseRelationTest.php, tests/Integration/SnakeCaseRelationTest.php"
+loc_base = 6071
+loc_base_method = "scc 3.5.0 PHP code lines at base_commit (vendor/ excluded, tests included)"

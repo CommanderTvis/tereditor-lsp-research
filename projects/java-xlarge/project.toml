@@ -1,5 +1,6 @@
-# java, xlarge: chosen by size, see docs/PROJECTS.md. Curated: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# Java, xlarge: Apache Lucene (Gradle, Java only); chosen by size, see docs/PROJECTS.md. The pinned release (10.6.0) carries
+# the synthetic tasks; the mined pull requests start from their own base commits on lucene main (JDK 25 to 27, which the
+# project's scripts select with study-jdk25; the environment default is JDK 21).
 lang = "java"
 size = "xlarge"
 status = "curated"
@@ -9,5 +10,14 @@ commit = "4ae946e5a9b99d1e22c23865c99e561b8dcc9d71"
 loc = 979941
 loc_by_language = { "Java" = 979941 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-size_note = "Xlarge task set curated with deterministic synthetic fallbacks; project setup, probe, and validation are intentionally deferred."
-task_types = ["impls", "pr", "pr"]
+size_note = "Feasibility measured on 3 CPUs, 8 GB, JDK 25: per base commit, server-side prepare 27 s to 123 s (wrapper, :lucene:core and :lucene:test-framework compileJava; the longer one waited on the shared Gradle home), grade-setup compile of every module's test code 58 to 62 s, one core test class 4 to 6 s. ./study validate java-xlarge (6 tasks, each graded three times) took 11 minutes."
+# Assigned (docs/TASKS.md): rename, impls, rename + 3 pr (modern pull requests 16547, 16706, 16684; tasks/java-xlarge/pr-log.md).
+task_types = ["rename", "impls", "rename", "pr", "pr", "pr"]
+substitutions = []
+
+[probe_intellij]
+ok = true
+seconds_to_first_answer = 2
+seconds_to_complete = 76
+licence = "intellij server state ready (version 263.7084.0), 5 of 5 calls succeeded"
+note = "references at the declaration of org.apache.lucene.util.QueryBuilder (lucene/core) across modules (67 locations, the first 50 returned; the first page of results is what the expectation names; it needed 76 s until the project graph was loaded), definition from lucene/queryparser, diagnostics, lsp_status servers and logs all complete (results/probe/java-xlarge-intellij-enforced). An earlier probe whose expectation named a location on the second page of results looked like a failure after POLL_S=900 s; it was the expectation, not the server. Java has no tereditor server outside IntelliJ, so there is no [probe]."

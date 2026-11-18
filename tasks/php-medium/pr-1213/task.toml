@@ -1,0 +1,11 @@
+type = "pr"
+origin = "mined: dedoc/scramble#1213 (issue #900), docs/TASKS.md \"Mined pull requests\""
+pr = 1213
+issue = 900
+base_commit = "e006f812f85280c99e9a5f0fcfff58ce24f7a7be"
+merge_commit = "af86ba277ee71640215ec4715bac1aa04e0767f6"
+merged_at = "2026-07-12T08:47:55Z"
+fail_to_pass = ["\u001b[31;1m⨯\u001b[39;22m\u001b[90m \u001b[39m\u001b[90mit maintains parameter order when merging nested rules\u001b[39m\u001b[90m              \u001b[39m \u001b[90m0.07s\u001b[39m"]
+pass_to_pass = "the other tests of tests/ValidationRulesDocumentingTest.php"
+loc_base = 38526
+loc_base_method = "scc 3.5.0 PHP code lines at base_commit (vendor/ excluded, tests included)"

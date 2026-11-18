@@ -1,0 +1,130 @@
+diff --git a/src/Infer/Contracts/ClassDefinition.php b/src/Infer/Contracts/ClassDefinition.php
+index 19d3856..6625f5a 100644
+--- a/src/Infer/Contracts/ClassDefinition.php
++++ b/src/Infer/Contracts/ClassDefinition.php
+@@ -9,5 +9,5 @@ interface ClassDefinition
+ {
+     public function getMethod(string $name): ?FunctionLikeDefinition;
+ 
+-    public function getData(): ClassDefinitionData;
++    public function getDefinitionData(): ClassDefinitionData;
+ }
+diff --git a/src/Infer/Definition/ClassDefinition.php b/src/Infer/Definition/ClassDefinition.php
+index 983c4aa..4d33105 100644
+--- a/src/Infer/Definition/ClassDefinition.php
++++ b/src/Infer/Definition/ClassDefinition.php
+@@ -481,7 +481,7 @@ class ClassDefinition implements ClassDefinitionContract
+         return $this->getMethodDefinition($name);
+     }
+ 
+-    public function getData(): ClassDefinition
++    public function getDefinitionData(): ClassDefinition
+     {
+         return $this;
+     }
+diff --git a/src/Infer/Definition/LazyShallowClassDefinition.php b/src/Infer/Definition/LazyShallowClassDefinition.php
+index b73b8e7..2c16a7a 100644
+--- a/src/Infer/Definition/LazyShallowClassDefinition.php
++++ b/src/Infer/Definition/LazyShallowClassDefinition.php
+@@ -16,7 +16,7 @@ class LazyShallowClassDefinition implements ClassDefinitionContract
+ 
+     public function getMethod(string $name): ?FunctionLikeDefinition
+     {
+-        $data = $this->getData();
++        $data = $this->getDefinitionData();
+ 
+         if (isset($data->methods[$name])) {
+             return $data->methods[$name];
+@@ -31,8 +31,8 @@ class LazyShallowClassDefinition implements ClassDefinitionContract
+         return $data->methods[$name] = (new FunctionLikeReflectionDefinitionBuilder($name, $reflection))->build();
+     }
+ 
+-    public function getData(): ClassDefinitionData
++    public function getDefinitionData(): ClassDefinitionData
+     {
+-        return $this->definition->getData();
++        return $this->definition->getDefinitionData();
+     }
+ }
+diff --git a/src/Infer/DefinitionBuilders/LazyClassReflectionDefinitionBuilder.php b/src/Infer/DefinitionBuilders/LazyClassReflectionDefinitionBuilder.php
+index bbf7a05..78698a0 100644
+--- a/src/Infer/DefinitionBuilders/LazyClassReflectionDefinitionBuilder.php
++++ b/src/Infer/DefinitionBuilders/LazyClassReflectionDefinitionBuilder.php
+@@ -31,7 +31,7 @@ class LazyClassReflectionDefinitionBuilder implements ClassDefinitionBuilder
+         $propertyPhpDocTypeExtractor = new ReflectionPropertyPhpDocTypeExtractor($this->reflection);
+ 
+         $parentDefinition = ($parentName = ($this->reflection->getParentClass() ?: null)?->name)
+-            ? ($this->index->getClass($parentName)?->getData() ?? new ClassDefinition(name: ''))
++            ? ($this->index->getClass($parentName)?->getDefinitionData() ?? new ClassDefinition(name: ''))
+             : new ClassDefinition(name: '');
+ 
+         $classDefinitionData = new ClassDefinition(
+diff --git a/src/Infer/Services/ShallowTypeResolver.php b/src/Infer/Services/ShallowTypeResolver.php
+index e119a17..6c49bc2 100644
+--- a/src/Infer/Services/ShallowTypeResolver.php
++++ b/src/Infer/Services/ShallowTypeResolver.php
+@@ -82,7 +82,7 @@ class ShallowTypeResolver
+             return new UnknownType('cannot find a definition of '.$callee->name);
+         }
+ 
+-        $propertyDefinition = $definition->getData()->properties[$type->propertyName] ?? null;
++        $propertyDefinition = $definition->getDefinitionData()->properties[$type->propertyName] ?? null;
+         if (! $propertyDefinition) {
+             return new UnknownType("property [{$type->propertyName}] is not found on object [{$callee->name}]");
+         }
+@@ -116,7 +116,7 @@ class ShallowTypeResolver
+             return new UnknownType("method [{$type->methodName}] is not found on object [{$callee->name}]");
+         }
+ 
+-        return $this->resolveStaticBinding($definition->getData(), $methodDefinition, $methodDefinition->type->returnType);
++        return $this->resolveStaticBinding($definition->getDefinitionData(), $methodDefinition, $methodDefinition->type->returnType);
+     }
+ 
+     private function resolveNewCallReferenceType(Scope $scope, NewCallReferenceType $type): Type
+@@ -213,7 +213,7 @@ class ShallowTypeResolver
+             return new UnknownType("method [{$type->methodName}] is not found on object [{$class}]");
+         }
+ 
+-        return $this->resolveStaticBinding($definition->getData(), $methodDefinition, $methodDefinition->type->returnType);
++        return $this->resolveStaticBinding($definition->getDefinitionData(), $methodDefinition, $methodDefinition->type->returnType);
+     }
+ 
+     /**
+diff --git a/src/Support/TypeToSchemaExtensions/PlainObjectToSchema.php b/src/Support/TypeToSchemaExtensions/PlainObjectToSchema.php
+index e6cdc60..008dd73 100644
+--- a/src/Support/TypeToSchemaExtensions/PlainObjectToSchema.php
++++ b/src/Support/TypeToSchemaExtensions/PlainObjectToSchema.php
+@@ -114,7 +114,7 @@ class PlainObjectToSchema extends TypeToSchemaExtension
+     private function getSerializedPublicPropertiesType(ClassDefinition $definition, ObjectType $type): ?Type
+     {
+         $items = [];
+-        foreach ($definition->getData()->properties as $name => $propertyDefinition) {
++        foreach ($definition->getDefinitionData()->properties as $name => $propertyDefinition) {
+             if ($propertyDefinition->visibility !== PropertyVisibility::Public) {
+                 continue;
+             }
+diff --git a/tests/Infer/Scope/LazyShallowReflectionIndexTest.php b/tests/Infer/Scope/LazyShallowReflectionIndexTest.php
+index 27db00a..8e6771f 100644
+--- a/tests/Infer/Scope/LazyShallowReflectionIndexTest.php
++++ b/tests/Infer/Scope/LazyShallowReflectionIndexTest.php
+@@ -10,9 +10,9 @@ it('builds reflection based definition upon request', function () {
+ 
+     $definition = $index->getClass(Foo_LazyShallowReflectionIndexTest::class);
+ 
+-    expect($definition->getData()->name)
++    expect($definition->getDefinitionData()->name)
+         ->toBe(Foo_LazyShallowReflectionIndexTest::class)
+-        ->and(count($definition->getData()->methods))
++        ->and(count($definition->getDefinitionData()->methods))
+         ->toBe(0);
+ });
+ it('builds method definition upon request', function () {
+@@ -32,7 +32,7 @@ it('builds property types from PHPDoc', function () {
+         throw new \RuntimeException('Expected the PHPDoc properties fixture to be reflected.');
+     }
+ 
+-    $definition = $lazyDefinition->getData();
++    $definition = $lazyDefinition->getDefinitionData();
+ 
+     $propertyType = $definition->getPropertyDefinition('number')->type;
+     $untypedPropertyType = $definition->getPropertyDefinition('untypedNumber')->type;

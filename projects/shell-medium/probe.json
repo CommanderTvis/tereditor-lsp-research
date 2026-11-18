@@ -1,10 +1,9 @@
 [
-  {"name": "references at position (_time, used from hook files)",
-   "args": {"operation": "references", "path": "acme.sh", "line": 1931, "column": 0},
-   "expect": ["acme.sh:2129", "dnsapi/dns_azure.sh:129", "deploy/unifios.sh:235"]},
-  {"name": "references by name _clearaccountconf_mutable", "args": {"operation": "references", "query": "_clearaccountconf_mutable"},
-   "expect": ["dnsapi/dns_cf.sh:38", "dnsapi/dns_cf.sh:59"]},
-  {"name": "definition of _hmac by name", "args": {"operation": "definition", "query": "_hmac"},
-   "expect": ["acme.sh:1090"]},
-  {"name": "diagnostics on a hook file", "tool": "lsp_diagnostics", "args": {"paths": ["dnsapi/dns_cf.sh"]}, "expect": []}
+  {"name": "references at position (nvm_version_greater, called inside nvm.sh)", "args": {"operation": "references", "path": "nvm.sh", "line": 1056, "column": 0},
+   "expect": ["nvm.sh:537", "nvm.sh:542", "nvm.sh:551"]},
+  {"name": "references by name nvm_get_os", "args": {"operation": "references", "query": "nvm_get_os"},
+   "expect": ["nvm.sh:3385"]},
+  {"name": "definition of nvm_download_artifact by name", "args": {"operation": "definition", "query": "nvm_download_artifact"},
+   "expect": ["nvm.sh:3813"]},
+  {"name": "diagnostics on nvm.sh", "tool": "lsp_diagnostics", "args": {"paths": ["nvm.sh"]}, "expect": []}
 ]

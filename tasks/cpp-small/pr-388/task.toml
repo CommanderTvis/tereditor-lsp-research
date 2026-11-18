@@ -1,0 +1,9 @@
+type = "pr"
+pr = 388
+issue = 365
+base_commit = "3e7ace20d262028baf702db9850520f017c25591"
+merged_at = "2026-08-27T15:09:02Z"
+head_commit = "60663eb536c06c0823c841553037d1709c514aac"
+origin = "mined pull request github.com/mity/md4c/pull/388"
+test_files = ["test/spec-insert.txt"]
+grade_timeout_s = 1200

@@ -2,7 +2,7 @@
   {"name": "references at position (Class overload)", "args": {"operation": "references", "path": "gson/src/main/java/com/google/gson/Gson.java", "line": 406, "column": 28}, "expect": ["gson/src/test/java/com/google/gson/GsonTest.java:199"]},
   {"name": "definition of gson.getDelegateAdapter from Excluder (cross-file)", "args": {"operation": "definition", "path": "gson/src/main/java/com/google/gson/internal/Excluder.java", "line": 150, "column": 30}, "expect": ["gson/src/main/java/com/google/gson/Gson.java:472"]},
   {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["gson/src/main/java/com/google/gson/internal/ObjectConstructor.java"]}, "expect": []},
-  {"name": "references by name Gson/getAdapter", "args": {"operation": "references", "query": "Gson/getAdapter"}, "expect": ["gson/src/test/java/com/google/gson/GsonTest.java:199"]},
+  {"name": "references by name Gson/getDelegateAdapter", "args": {"operation": "references", "query": "Gson/getDelegateAdapter", "path": "gson/src/main/java/com/google/gson/Gson.java"}, "expect": ["gson/src/main/java/com/google/gson/internal/Excluder.java:151"]},
   {"name": "servers", "tool": "lsp_status", "args": {"operation": "servers"}, "expect": []},
   {"name": "logs", "tool": "lsp_status", "args": {"operation": "logs", "server": "intellij"}, "expect": []}
 ]

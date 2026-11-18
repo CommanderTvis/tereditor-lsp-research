@@ -1,0 +1,33 @@
+[
+ {
+  "name": "definition of HtmlString by name",
+  "args": {
+   "operation": "definition",
+   "query": "HtmlString"
+  },
+  "expect": [
+   "src/Illuminate/Support/HtmlString.php:8"
+  ]
+ },
+ {
+  "name": "references EncodedParameter (cross-file)",
+  "args": {
+   "operation": "references",
+   "query": "EncodedParameter",
+   "path": "src/Illuminate/Routing/EncodedParameter.php"
+  },
+  "expect": [
+   "src/Illuminate/Routing/RouteUrlGenerator.php:382"
+  ]
+ },
+ {
+  "name": "diagnostics clean file",
+  "tool": "lsp_diagnostics",
+  "args": {
+   "paths": [
+    "src/Illuminate/Support/HtmlString.php"
+   ]
+  },
+  "expect": []
+ }
+]

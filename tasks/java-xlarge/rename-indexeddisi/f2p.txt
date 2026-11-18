@@ -1,0 +1,2 @@
+lucene:core org.apache.lucene.codecs.lucene90.StudyHiddenRenameDisiTest
+lucene:core org.apache.lucene.codecs.lucene90.TestIndexedDISI

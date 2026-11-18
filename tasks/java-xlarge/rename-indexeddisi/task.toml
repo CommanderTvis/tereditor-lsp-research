@@ -1,0 +1,5 @@
+type = "rename"
+origin = "synthetic; compiler-checked rename (docs/TASKS.md)"
+symbol = "org.apache.lucene.codecs.lucene90.IndexedDISI"
+new_name = "JumpTableDISI"
+selection = "top-level public types declared under lucene/core/src/java, with 10 to 40 .java files of the repository naming the type as a whole word and at least 20 occurrences, 318 types; of these the ones whose simple name is declared more than once in the repository (class, interface, enum or record): 22; sorted by name, shuffled with awk 'BEGIN{srand(20261110)}', first = QueryBuilder (three types of that name: org.apache.lucene.util, org.apache.lucene.queryparser.xml, org.apache.lucene.queryparser.flexible.core.builders); second = IndexedDISI (org.apache.lucene.codecs.lucene90 and org.apache.lucene.backward_codecs.lucene80); new names chosen by hand"

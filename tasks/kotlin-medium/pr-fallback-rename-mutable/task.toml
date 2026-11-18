@@ -1,8 +1,0 @@
-type = "pr"
-symbol = "com.squareup.kotlinpoet.PropertySpec.Builder.mutable(Boolean)"
-new_name = "makeMutable"
-selection = "Functions, classes, interfaces, objects and type aliases (no properties or locals) declared exactly once in kotlinpoet's main source sets, with at least 10 whole-word, non-comment occurrences in at least 5 .kt/.kts/.java files other than the declaring file, and the name declared at least once more anywhere in the repository (any kind); sorted by name (C locale): 32 candidates; k = 1 + int(rand() * 32) after srand(20261110) = 24: mutable."
-origin = "documented synthetic fallback PR; no qualifying/current-toolchain mined candidate was available"
-fallback_for = "rename"
-pr = "fallback-kotlin-medium-rename-mutable"
-issue = "fallback-kotlin-medium-rename-mutable"

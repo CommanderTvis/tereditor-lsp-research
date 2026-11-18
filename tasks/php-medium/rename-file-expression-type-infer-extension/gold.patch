@@ -1,0 +1,175 @@
+diff --git a/src/Infer/Extensions/ExpressionTypeInferExtension.php b/src/Infer/Extensions/ExpressionTypeInferenceExtension.php
+similarity index 76%
+rename from src/Infer/Extensions/ExpressionTypeInferExtension.php
+rename to src/Infer/Extensions/ExpressionTypeInferenceExtension.php
+index e1fcec1..19377b5 100644
+--- a/src/Infer/Extensions/ExpressionTypeInferExtension.php
++++ b/src/Infer/Extensions/ExpressionTypeInferenceExtension.php
+@@ -6,7 +6,7 @@ use Dedoc\Scramble\Infer\Scope\Scope;
+ use Dedoc\Scramble\Support\Type\Type;
+ use PhpParser\Node\Expr;
+ 
+-interface ExpressionTypeInferExtension extends InferExtension
++interface ExpressionTypeInferenceExtension extends InferExtension
+ {
+     public function getType(Expr $node, Scope $scope): ?Type;
+ }
+diff --git a/src/Infer/Handler/ExpressionTypeInferringExtensions.php b/src/Infer/Handler/ExpressionTypeInferringExtensions.php
+index ad052af..211c5b1 100644
+--- a/src/Infer/Handler/ExpressionTypeInferringExtensions.php
++++ b/src/Infer/Handler/ExpressionTypeInferringExtensions.php
+@@ -2,13 +2,13 @@
+ 
+ namespace Dedoc\Scramble\Infer\Handler;
+ 
+-use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferExtension;
++use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferenceExtension;
+ use Dedoc\Scramble\Infer\Scope\Scope;
+ use PhpParser\Node;
+ 
+ class ExpressionTypeInferringExtensions
+ {
+-    /** @var ExpressionTypeInferExtension[] */
++    /** @var ExpressionTypeInferenceExtension[] */
+     private array $extensions;
+ 
+     public function __construct(array $extensions = [])
+@@ -25,7 +25,7 @@ class ExpressionTypeInferringExtensions
+     {
+         $type = array_reduce(
+             $this->extensions,
+-            function ($acc, ExpressionTypeInferExtension $extension) use ($node, $scope) {
++            function ($acc, ExpressionTypeInferenceExtension $extension) use ($node, $scope) {
+                 $type = $extension->getType($node, $scope);
+                 if ($type) {
+                     $scope->setType($node, $type);
+diff --git a/src/Infer/TypeInferer.php b/src/Infer/TypeInferer.php
+index 2e3070c..e628c5c 100644
+--- a/src/Infer/TypeInferer.php
++++ b/src/Infer/TypeInferer.php
+@@ -3,7 +3,7 @@
+ namespace Dedoc\Scramble\Infer;
+ 
+ use Dedoc\Scramble\Infer\Extensions\ExpressionExceptionExtension;
+-use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferExtension;
++use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferenceExtension;
+ use Dedoc\Scramble\Infer\Extensions\InferExtension;
+ use Dedoc\Scramble\Infer\Handler\ArrayHandler;
+ use Dedoc\Scramble\Infer\Handler\ArrayItemHandler;
+@@ -59,7 +59,7 @@ class TypeInferer extends NodeVisitorAbstract
+             new ThrowHandler,
+             new ExpressionTypeInferringExtensions(array_values(array_filter(
+                 $extensions,
+-                fn ($ext) => $ext instanceof ExpressionTypeInferExtension,
++                fn ($ext) => $ext instanceof ExpressionTypeInferenceExtension,
+             ))),
+             new ExceptionInferringExtensions(array_values(array_filter(
+                 $extensions,
+diff --git a/src/Support/InferExtensions/RedirectorTypeInfer.php b/src/Support/InferExtensions/RedirectorTypeInfer.php
+index 6fa0111..e018bd1 100644
+--- a/src/Support/InferExtensions/RedirectorTypeInfer.php
++++ b/src/Support/InferExtensions/RedirectorTypeInfer.php
+@@ -4,7 +4,7 @@ namespace Dedoc\Scramble\Support\InferExtensions;
+ 
+ use Dedoc\Scramble\Infer\Extensions\Event\FunctionCallEvent;
+ use Dedoc\Scramble\Infer\Extensions\Event\MethodCallEvent;
+-use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferExtension;
++use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferenceExtension;
+ use Dedoc\Scramble\Infer\Extensions\FunctionReturnTypeExtension;
+ use Dedoc\Scramble\Infer\Extensions\MethodReturnTypeExtension;
+ use Dedoc\Scramble\Infer\Scope\Scope;
+@@ -23,7 +23,7 @@ use Illuminate\Routing\Redirector;
+ use PhpParser\Node\Expr;
+ use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirectResponse;
+ 
+-class RedirectorTypeInfer implements ExpressionTypeInferExtension, FunctionReturnTypeExtension, MethodReturnTypeExtension
++class RedirectorTypeInfer implements ExpressionTypeInferenceExtension, FunctionReturnTypeExtension, MethodReturnTypeExtension
+ {
+     public function shouldHandle(ObjectType|string $callee): bool
+     {
+diff --git a/src/Support/InferExtensions/ResponseFactoryTypeInfer.php b/src/Support/InferExtensions/ResponseFactoryTypeInfer.php
+index 8a78fbb..e6bf19b 100644
+--- a/src/Support/InferExtensions/ResponseFactoryTypeInfer.php
++++ b/src/Support/InferExtensions/ResponseFactoryTypeInfer.php
+@@ -4,7 +4,7 @@ namespace Dedoc\Scramble\Support\InferExtensions;
+ 
+ use Dedoc\Scramble\Infer\Extensions\Event\FunctionCallEvent;
+ use Dedoc\Scramble\Infer\Extensions\Event\MethodCallEvent;
+-use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferExtension;
++use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferenceExtension;
+ use Dedoc\Scramble\Infer\Extensions\FunctionReturnTypeExtension;
+ use Dedoc\Scramble\Infer\Extensions\MethodReturnTypeExtension;
+ use Dedoc\Scramble\Infer\Scope\Scope;
+@@ -25,7 +25,7 @@ use PhpParser\Node\Expr;
+ use Symfony\Component\HttpFoundation\StreamedJsonResponse;
+ use Symfony\Component\HttpFoundation\StreamedResponse;
+ 
+-class ResponseFactoryTypeInfer implements ExpressionTypeInferExtension, FunctionReturnTypeExtension, MethodReturnTypeExtension
++class ResponseFactoryTypeInfer implements ExpressionTypeInferenceExtension, FunctionReturnTypeExtension, MethodReturnTypeExtension
+ {
+     public function shouldHandle(ObjectType|string $callee): bool
+     {
+diff --git a/src/Support/InferExtensions/TypeTraceInfer.php b/src/Support/InferExtensions/TypeTraceInfer.php
+index 259807f..b729a7c 100644
+--- a/src/Support/InferExtensions/TypeTraceInfer.php
++++ b/src/Support/InferExtensions/TypeTraceInfer.php
+@@ -2,7 +2,7 @@
+ 
+ namespace Dedoc\Scramble\Support\InferExtensions;
+ 
+-use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferExtension;
++use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferenceExtension;
+ use Dedoc\Scramble\Infer\Scope\Scope;
+ use Dedoc\Scramble\Support\Type\Type;
+ use PhpParser\Node\Expr;
+@@ -11,7 +11,7 @@ use PhpParser\Node\Expr;
+  * Adds the information about type's expression location to the inferred type, so the data can be later used
+  * to have the data when making exceptions, etc.
+  */
+-class TypeTraceInfer implements ExpressionTypeInferExtension
++class TypeTraceInfer implements ExpressionTypeInferenceExtension
+ {
+     public function getType(Expr $node, Scope $scope): ?Type
+     {
+diff --git a/src/Support/InferExtensions/ValidatorTypeInfer.php b/src/Support/InferExtensions/ValidatorTypeInfer.php
+index 678ccca..e1f959c 100644
+--- a/src/Support/InferExtensions/ValidatorTypeInfer.php
++++ b/src/Support/InferExtensions/ValidatorTypeInfer.php
+@@ -2,7 +2,7 @@
+ 
+ namespace Dedoc\Scramble\Support\InferExtensions;
+ 
+-use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferExtension;
++use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferenceExtension;
+ use Dedoc\Scramble\Infer\Scope\Scope;
+ use Dedoc\Scramble\Support\Type\Generic;
+ use Dedoc\Scramble\Support\Type\Type;
+@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Validator as ValidatorFacade;
+ use PhpParser\Node;
+ use PhpParser\Node\Expr;
+ 
+-class ValidatorTypeInfer implements ExpressionTypeInferExtension
++class ValidatorTypeInfer implements ExpressionTypeInferenceExtension
+ {
+     public function getType(Expr $node, Scope $scope): ?Type
+     {
+diff --git a/tests/Infer/Extensions/ExpressionTypeInferExtensionTest.php b/tests/Infer/Extensions/ExpressionTypeInferExtensionTest.php
+index eaf2167..929a4a0 100644
+--- a/tests/Infer/Extensions/ExpressionTypeInferExtensionTest.php
++++ b/tests/Infer/Extensions/ExpressionTypeInferExtensionTest.php
+@@ -1,13 +1,13 @@
+ <?php
+ 
+-use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferExtension;
++use Dedoc\Scramble\Infer\Extensions\ExpressionTypeInferenceExtension;
+ use Dedoc\Scramble\Infer\Scope\Scope;
+ use Dedoc\Scramble\Support\Type\Literal\LiteralStringType;
+ use Dedoc\Scramble\Support\Type\Type;
+ use PhpParser\Node\Expr;
+ 
+ it('uses expression type infer extension', function () {
+-    $extension = new class implements ExpressionTypeInferExtension
++    $extension = new class implements ExpressionTypeInferenceExtension
+     {
+         public function getType(Expr $node, Scope $scope): ?Type
+         {

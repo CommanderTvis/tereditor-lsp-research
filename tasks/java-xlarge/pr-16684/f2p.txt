@@ -1,0 +1,1 @@
+lucene:core org.apache.lucene.index.TestStoredFieldsMergeReadAdvice

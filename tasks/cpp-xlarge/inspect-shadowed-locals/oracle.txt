@@ -1,0 +1,5 @@
+src/function/cast/vector_cast_helpers.cpp
+src/function/function_binder.cpp
+src/function/table/arrow/arrow_duck_schema.cpp
+src/main/capi/v1/result-c.cpp
+src/planner/binder/tableref/bind_expressionlistref.cpp

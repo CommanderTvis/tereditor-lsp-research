@@ -1,0 +1,199 @@
+diff --git a/src/EFCore.Cosmos/Query/Internal/CosmosProjectionBindingExpressionVisitor.cs b/src/EFCore.Cosmos/Query/Internal/CosmosProjectionBindingExpressionVisitor.cs
+index f40f49a..2a676e4 100644
+--- a/src/EFCore.Cosmos/Query/Internal/CosmosProjectionBindingExpressionVisitor.cs
++++ b/src/EFCore.Cosmos/Query/Internal/CosmosProjectionBindingExpressionVisitor.cs
+@@ -119,7 +119,7 @@ public virtual Expression Translate(SelectExpression selectExpression, Expressio
+                     case ParameterExpression parameterExpression:
+                         throw new InvalidOperationException(CoreStrings.TranslationFailed(parameterExpression.Print()));
+ 
+-                    case MaterializeCollectionNavigationExpression:
++                    case CollectionNavigationMaterializationExpression:
+                         return base.Visit(expression);
+                 }
+ 
+@@ -295,7 +295,7 @@ protected override Expression VisitExtension(Expression extensionExpression)
+ 
+                 if (structuralTypeShaper.StructuralType is IComplexType { ComplexProperty: { } complexProperty })
+                 {
+-                    // Projections of complex collections do not produce a separate expression like MaterializeCollectionNavigationExpression for owned types.
++                    // Projections of complex collections do not produce a separate expression like CollectionNavigationMaterializationExpression for owned types.
+                     // Instead, it's simply a StructuralTypeShaperExpression over the complex collection property structural type
+                     // So we need to handle it here.
+                     // If the query uses SelectMany, the structuralTypeShaper's ValueBuffer is already bound to the inner query and is a ProjectionBindingExpression
+@@ -328,7 +328,7 @@ protected override Expression VisitExtension(Expression extensionExpression)
+                 return structuralTypeShaper;
+             }
+ 
+-            case MaterializeCollectionNavigationExpression materializeCollectionNavigationExpression:
++            case CollectionNavigationMaterializationExpression materializeCollectionNavigationExpression:
+                 if (materializeCollectionNavigationExpression.Navigation is not INavigation includableCollectionNavigation
+                     || !includableCollectionNavigation.IsEmbedded())
+                 {
+diff --git a/src/EFCore.InMemory/Query/Internal/InMemoryProjectionBindingExpressionVisitor.cs b/src/EFCore.InMemory/Query/Internal/InMemoryProjectionBindingExpressionVisitor.cs
+index 6f299cf..efa015c 100644
+--- a/src/EFCore.InMemory/Query/Internal/InMemoryProjectionBindingExpressionVisitor.cs
++++ b/src/EFCore.InMemory/Query/Internal/InMemoryProjectionBindingExpressionVisitor.cs
+@@ -116,7 +116,7 @@ public virtual Expression Translate(InMemoryQueryExpression queryExpression, Exp
+ 
+                         throw new InvalidOperationException(CoreStrings.TranslationFailed(projectionBindingExpression.Print()));
+ 
+-                    case MaterializeCollectionNavigationExpression materializeCollectionNavigationExpression:
++                    case CollectionNavigationMaterializationExpression materializeCollectionNavigationExpression:
+                     {
+                         var subquery = _queryableMethodTranslatingExpressionVisitor.TranslateSubquery(
+                             materializeCollectionNavigationExpression.Subquery)!;
+diff --git a/src/EFCore.Relational/Query/Internal/RelationalProjectionBindingExpressionVisitor.cs b/src/EFCore.Relational/Query/Internal/RelationalProjectionBindingExpressionVisitor.cs
+index 0d2aa22..15542de 100644
+--- a/src/EFCore.Relational/Query/Internal/RelationalProjectionBindingExpressionVisitor.cs
++++ b/src/EFCore.Relational/Query/Internal/RelationalProjectionBindingExpressionVisitor.cs
+@@ -235,7 +235,7 @@ public virtual Expression Translate(SelectExpression selectExpression, Expressio
+                             _ => throw new InvalidOperationException(CoreStrings.TranslationFailed(projectionBindingExpression.Print()))
+                         };
+ 
+-                    case MaterializeCollectionNavigationExpression materializeCollectionNavigationExpression:
++                    case CollectionNavigationMaterializationExpression materializeCollectionNavigationExpression:
+                         if (materializeCollectionNavigationExpression.Navigation.TargetEntityType.IsMappedToJson())
+                         {
+                             var subquery = materializeCollectionNavigationExpression.Subquery;
+diff --git a/src/EFCore.Relational/Query/RelationalQueryableMethodTranslatingExpressionVisitor.cs b/src/EFCore.Relational/Query/RelationalQueryableMethodTranslatingExpressionVisitor.cs
+index d61106b..5974d37 100644
+--- a/src/EFCore.Relational/Query/RelationalQueryableMethodTranslatingExpressionVisitor.cs
++++ b/src/EFCore.Relational/Query/RelationalQueryableMethodTranslatingExpressionVisitor.cs
+@@ -1891,7 +1891,7 @@ when JsonQueryExpressionIsRootedIn(memberJqe, baselineJsonQuery):
+                     // MCNE(JSON_QUERY($[0].Collection).AsQueryable())
+                     // MCNE(JSON_QUERY($[0].Collection).Select(xx => xx.Includes())
+                     // MCNE(JSON_QUERY($[0].Collection).AsQueryable().Select(xx => xx.Includes())
+-                    case MaterializeCollectionNavigationExpression { Subquery: var subquery }:
++                    case CollectionNavigationMaterializationExpression { Subquery: var subquery }:
+                     {
+                         if (subquery is MethodCallExpression { Method.IsGenericMethod: true } selectMethodCall
+                             && selectMethodCall.Method.GetGenericMethodDefinition() == QueryableMethods.Select
+diff --git a/src/EFCore/EFCore.baseline.json b/src/EFCore/EFCore.baseline.json
+index 3f6994e..9befd46 100644
+--- a/src/EFCore/EFCore.baseline.json
++++ b/src/EFCore/EFCore.baseline.json
+@@ -18172,13 +18172,13 @@
+       ]
+     },
+     {
+-      "Type": "class Microsoft.EntityFrameworkCore.Query.MaterializeCollectionNavigationExpression : System.Linq.Expressions.Expression, Microsoft.EntityFrameworkCore.Query.IPrintableExpression",
++      "Type": "class Microsoft.EntityFrameworkCore.Query.CollectionNavigationMaterializationExpression : System.Linq.Expressions.Expression, Microsoft.EntityFrameworkCore.Query.IPrintableExpression",
+       "Methods": [
+         {
+-          "Member": "MaterializeCollectionNavigationExpression(System.Linq.Expressions.Expression subquery, Microsoft.EntityFrameworkCore.Metadata.INavigationBase navigation);"
++          "Member": "CollectionNavigationMaterializationExpression(System.Linq.Expressions.Expression subquery, Microsoft.EntityFrameworkCore.Metadata.INavigationBase navigation);"
+         },
+         {
+-          "Member": "virtual Microsoft.EntityFrameworkCore.Query.MaterializeCollectionNavigationExpression Update(System.Linq.Expressions.Expression subquery);"
++          "Member": "virtual Microsoft.EntityFrameworkCore.Query.CollectionNavigationMaterializationExpression Update(System.Linq.Expressions.Expression subquery);"
+         },
+         {
+           "Member": "override System.Linq.Expressions.Expression VisitChildren(System.Linq.Expressions.ExpressionVisitor visitor);"
+diff --git a/src/EFCore/Query/MaterializeCollectionNavigationExpression.cs b/src/EFCore/Query/CollectionNavigationMaterializationExpression.cs
+similarity index 85%
+rename from src/EFCore/Query/MaterializeCollectionNavigationExpression.cs
+rename to src/EFCore/Query/CollectionNavigationMaterializationExpression.cs
+index ac740d3..9f185ad 100644
+--- a/src/EFCore/Query/MaterializeCollectionNavigationExpression.cs
++++ b/src/EFCore/Query/CollectionNavigationMaterializationExpression.cs
+@@ -17,14 +17,14 @@ namespace Microsoft.EntityFrameworkCore.Query;
+ ///     and <see href="https://aka.ms/efcore-docs-how-query-works">How EF Core queries work</see> for more information and examples.
+ /// </remarks>
+ [DebuggerDisplay("{Microsoft.EntityFrameworkCore.Query.ExpressionPrinter.Print(this), nq}")]
+-public class MaterializeCollectionNavigationExpression : Expression, IPrintableExpression
++public class CollectionNavigationMaterializationExpression : Expression, IPrintableExpression
+ {
+     /// <summary>
+-    ///     Creates a new instance of the <see cref="MaterializeCollectionNavigationExpression" /> class.
++    ///     Creates a new instance of the <see cref="CollectionNavigationMaterializationExpression" /> class.
+     /// </summary>
+     /// <param name="subquery">An expression representing how to get value from query to create the collection.</param>
+     /// <param name="navigation">A navigation associated with this collection.</param>
+-    public MaterializeCollectionNavigationExpression(Expression subquery, INavigationBase navigation)
++    public CollectionNavigationMaterializationExpression(Expression subquery, INavigationBase navigation)
+     {
+         Subquery = subquery;
+         Navigation = navigation;
+@@ -58,9 +58,9 @@ protected override Expression VisitChildren(ExpressionVisitor visitor)
+     /// </summary>
+     /// <param name="subquery">The <see cref="Subquery" /> property of the result.</param>
+     /// <returns>This expression if no children changed, or an expression with the updated children.</returns>
+-    public virtual MaterializeCollectionNavigationExpression Update(Expression subquery)
++    public virtual CollectionNavigationMaterializationExpression Update(Expression subquery)
+         => subquery != Subquery
+-            ? new MaterializeCollectionNavigationExpression(subquery, Navigation)
++            ? new CollectionNavigationMaterializationExpression(subquery, Navigation)
+             : this;
+ 
+     /// <inheritdoc />
+diff --git a/src/EFCore/Query/Internal/NavigationExpandingExpressionVisitor.ExpressionVisitors.cs b/src/EFCore/Query/Internal/NavigationExpandingExpressionVisitor.ExpressionVisitors.cs
+index 6b136dc..ac0c195 100644
+--- a/src/EFCore/Query/Internal/NavigationExpandingExpressionVisitor.ExpressionVisitors.cs
++++ b/src/EFCore/Query/Internal/NavigationExpandingExpressionVisitor.ExpressionVisitors.cs
+@@ -175,7 +175,7 @@ protected Expression ExpandNavigation(
+                         QueryableMethods.AsQueryable.MakeGenericMethod(elementType),
+                         ownedExpansion);
+ 
+-                    return new MaterializeCollectionNavigationExpression(subquery, navigation);
++                    return new CollectionNavigationMaterializationExpression(subquery, navigation);
+                 }
+ 
+                 entityReference.ForeignKeyExpansionMap[(navigation.ForeignKey, navigation.IsOnDependent)] = ownedExpansion;
+@@ -186,7 +186,7 @@ protected Expression ExpandNavigation(
+                 root, entityReference, navigation.ForeignKey, navigation.IsOnDependent, derivedTypeConversion);
+ 
+             return navigation.IsCollection
+-                ? new MaterializeCollectionNavigationExpression(expansion, navigation)
++                ? new CollectionNavigationMaterializationExpression(expansion, navigation)
+                 : expansion;
+         }
+ 
+@@ -330,7 +330,7 @@ protected Expression ExpandSkipNavigation(
+             }
+ 
+             return navigation.IsCollection
+-                ? new MaterializeCollectionNavigationExpression(secondaryExpansion, navigation)
++                ? new CollectionNavigationMaterializationExpression(secondaryExpansion, navigation)
+                 : secondaryExpansion;
+         }
+ 
+@@ -559,7 +559,7 @@ protected override Expression VisitExtension(Expression extensionExpression)
+                 case OwnedNavigationReference ownedNavigationReference:
+                     return ExpandInclude(ownedNavigationReference, ownedNavigationReference.EntityReference);
+ 
+-                case MaterializeCollectionNavigationExpression:
++                case CollectionNavigationMaterializationExpression:
+                 case IncludeExpression:
+                 case PrimitiveCollectionReference:
+                 case ComplexPropertyReference:
+@@ -788,7 +788,7 @@ private Expression ExpandIncludesHelper(Expression root, EntityReference entityR
+                 }
+                 else
+                 {
+-                    var materializeCollectionNavigation = (MaterializeCollectionNavigationExpression)included;
++                    var materializeCollectionNavigation = (CollectionNavigationMaterializationExpression)included;
+                     var subquery = materializeCollectionNavigation.Subquery;
+                     if (!_ignoreAutoIncludes
+                         && navigationBase is INavigation
+diff --git a/src/EFCore/Query/Internal/NavigationExpandingExpressionVisitor.cs b/src/EFCore/Query/Internal/NavigationExpandingExpressionVisitor.cs
+index e3c830d..cf77877 100644
+--- a/src/EFCore/Query/Internal/NavigationExpandingExpressionVisitor.cs
++++ b/src/EFCore/Query/Internal/NavigationExpandingExpressionVisitor.cs
+@@ -857,7 +857,7 @@ when QueryableMethods.IsSumWithSelector(method):
+             return ProcessUnknownMethod(methodCallExpression);
+         }
+ 
+-        // Remove MaterializeCollectionNavigationExpression when applying ToList/ToArray
++        // Remove CollectionNavigationMaterializationExpression when applying ToList/ToArray
+         if (method.IsGenericMethod
+             && (method.GetGenericMethodDefinition() == EnumerableMethods.ToList
+                 || method.GetGenericMethodDefinition() == EnumerableMethods.ToArray))
+@@ -2514,7 +2514,7 @@ private Expression UnwrapCollectionMaterialization(Expression expression)
+             expression = innerMethodCall.Arguments[0];
+         }
+ 
+-        if (expression is MaterializeCollectionNavigationExpression materializeCollectionNavigationExpression)
++        if (expression is CollectionNavigationMaterializationExpression materializeCollectionNavigationExpression)
+         {
+             expression = materializeCollectionNavigationExpression.Subquery;
+         }

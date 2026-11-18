@@ -1,0 +1,438 @@
+diff --git a/mypyc/doc/float_operations.rst b/mypyc/doc/float_operations.rst
+index feae5a806c70b..0f75b6ddd0dd0 100644
+--- a/mypyc/doc/float_operations.rst
++++ b/mypyc/doc/float_operations.rst
+@@ -26,6 +26,15 @@ Operators
+ * Comparisons (``==``, ``!=``, ``<``, etc.)
+ * Augmented assignment (``x += y``, etc.)
+ 
++Attributes
++----------
++
++* ``f.real``
++* ``f.imag``
++
++These are fast both for ``complex`` values and for unions such as
++``int | float | complex``.
++
+ Functions
+ ---------
+ 
+diff --git a/mypyc/doc/int_operations.rst b/mypyc/doc/int_operations.rst
+index 53b4f74618ed7..ad67ea908cd1f 100644
+--- a/mypyc/doc/int_operations.rst
++++ b/mypyc/doc/int_operations.rst
+@@ -143,6 +143,12 @@ and the ``int`` operand is coerced to the native integer type::
+       b = 1 - x
+       # Similarly, type of "b" is "i64"
+ 
++Attributes
++----------
++
++* ``n.real`` (``int`` only)
++* ``n.imag`` (``int`` only)
++
+ Methods
+ -------
+ 
+diff --git a/mypyc/irbuild/expression.py b/mypyc/irbuild/expression.py
+index 8bc4568e0d477..11b7dbd80f72a 100644
+--- a/mypyc/irbuild/expression.py
++++ b/mypyc/irbuild/expression.py
+@@ -54,8 +54,10 @@
+     Instance,
+     ProperType,
+     TupleType,
++    Type,
+     TypeOfAny,
+     TypeType,
++    UnionType,
+     get_proper_type,
+ )
+ from mypyc.common import (
+@@ -73,6 +75,7 @@
+     CallC,
+     Cast,
+     ComparisonOp,
++    Float,
+     GetAttr,
+     Integer,
+     LoadAddress,
+@@ -88,14 +91,17 @@
+ from mypyc.ir.rtypes import (
+     RInstance,
+     RTuple,
++    RType,
+     RVec,
+     bool_rprimitive,
+     int64_rprimitive,
+     int_rprimitive,
+     is_any_int,
++    is_bool_or_bit_rprimitive,
+     is_bytearray_rprimitive,
+     is_bytes_rprimitive,
+     is_fixed_width_rtype,
++    is_float_rprimitive,
+     is_int64_rprimitive,
+     is_int_rprimitive,
+     is_list_rprimitive,
+@@ -145,7 +151,14 @@
+ )
+ from mypyc.primitives.bytes_ops import bytes_slice_op
+ from mypyc.primitives.dict_ops import dict_get_item_op, dict_new_op, exact_dict_set_item_op
++from mypyc.primitives.float_ops import (
++    complex_imag_op,
++    complex_real_op,
++    number_imag_op,
++    number_real_op,
++)
+ from mypyc.primitives.generic_ops import iter_op, name_op
++from mypyc.primitives.int_ops import int_imag_op, int_real_op
+ from mypyc.primitives.list_ops import list_append_op, list_extend_op, list_slice_op
+ from mypyc.primitives.misc_ops import ellipsis_op, get_module_dict_op, new_slice_op, type_op
+ from mypyc.primitives.set_ops import set_add_op, set_in_op, set_update_op
+@@ -303,6 +316,9 @@ def transform_member_expr(builder: IRBuilder, expr: MemberExpr) -> Value:
+         # only apply to RInstance types.
+         return builder.primitive_op(type_op, [obj], expr.line)
+ 
++    if expr.name in ("real", "imag") and is_builtin_number_type(builder.types.get(expr.expr)):
++        return transform_real_imag(builder, obj, expr.name == "real", rtype, expr.line)
++
+     # Special case: for named tuples transform attribute access to faster index access.
+     typ = get_proper_type(builder.types.get(expr.expr))
+     if isinstance(typ, TupleType) and typ.partial_fallback.type.is_named_tuple:
+@@ -335,6 +351,49 @@ def transform_member_expr(builder: IRBuilder, expr: MemberExpr) -> Value:
+     )
+ 
+ 
++def is_builtin_number_type(typ: Type | None) -> bool:
++    """Is typ int, bool, float, complex or a union of them (and not a subclass)?"""
++    typ = get_proper_type(typ)
++    if isinstance(typ, UnionType):
++        return all(is_builtin_number_type(item) for item in typ.items)
++    return isinstance(typ, Instance) and typ.type.fullname in (
++        "builtins.int",
++        "builtins.bool",
++        "builtins.float",
++        "builtins.complex",
++    )
++
++
++def transform_real_imag(
++    builder: IRBuilder, obj: Value, is_real: bool, rtype: RType, line: int
++) -> Value:
++    """Get obj.real or obj.imag, where obj is an int, a float or a complex."""
++    if is_tagged(obj.type):
++        # A large int could be an instance of an int subclass that overrides these
++        op = int_real_op if is_real else int_imag_op
++        return builder.primitive_op(op, [obj], line)
++    if is_bool_or_bit_rprimitive(obj.type):
++        # bool can't be subclassed, and b.real is an int
++        return builder.coerce(obj, int_rprimitive, line) if is_real else builder.load_int(0, line)
++    if is_float_rprimitive(obj.type):
++        # Unboxed floats are always exact floats, so these can't be overridden
++        if not is_real:
++            return Float(0.0, line)
++        if isinstance(obj, Register):
++            # Copy the variable, since it could be reassigned later in the same
++            # expression, as in "x.real + (x := 2.0)"
++            copy = Register(obj.type)
++            builder.assign(copy, obj, line)
++            return copy
++        return obj
++    if is_float_rprimitive(rtype):
++        op = complex_real_op if is_real else complex_imag_op
++        return builder.primitive_op(op, [obj], line)
++    # The result can be an int, for example with int | float | complex
++    op = number_real_op if is_real else number_imag_op
++    return builder.primitive_op(op, [obj], line, result_type=rtype)
++
++
+ def value_borrow_scope(builder: IRBuilder, v: Value) -> int:
+     """Compute how long an existing borrowed value can safely be kept alive.
+ 
+diff --git a/mypyc/lib-rt/CPy.h b/mypyc/lib-rt/CPy.h
+index 1c1571b99f506..293165ea2a218 100644
+--- a/mypyc/lib-rt/CPy.h
++++ b/mypyc/lib-rt/CPy.h
+@@ -195,6 +195,7 @@ CPyTagged CPyTagged_BitwiseLongOp_(CPyTagged a, CPyTagged b, char op);
+ CPyTagged CPyTagged_Rshift_(CPyTagged left, CPyTagged right);
+ CPyTagged CPyTagged_Lshift_(CPyTagged left, CPyTagged right);
+ CPyTagged CPyTagged_BitLength(CPyTagged self);
++CPyTagged CPyTagged_GetPartSlow(PyObject *o, PyObject *name);
+ PyObject *CPyTagged_ToBytes(CPyTagged self, Py_ssize_t length, PyObject *byteorder, int signed_flag);
+ PyObject *CPyTagged_ToBigEndianBytes(CPyTagged self, Py_ssize_t length, int signed_flag);
+ PyObject *CPyTagged_ToLittleEndianBytes(CPyTagged self, Py_ssize_t length, int signed_flag);
+@@ -623,6 +624,33 @@ static inline CPyTagged CPyTagged_Lshift(CPyTagged left, CPyTagged right) {
+     return CPyTagged_Lshift_(left, right);
+ }
+ 
++// x.real, where x is an int. An int too large for a short int is stored as an object,
++// which could be an instance of an int subclass that overrides the property, so
++// subclass instances use getattr.
++static inline CPyTagged CPyTagged_Real(CPyTagged x) {
++    if (likely(CPyTagged_CheckShort(x))) {
++        return x;
++    }
++    PyObject *o = CPyTagged_LongAsObject(x);
++    if (likely(PyLong_CheckExact(o))) {
++        Py_INCREF(o);
++        return x;
++    }
++    return CPyTagged_GetPartSlow(o, mypyc_interned_str.real);
++}
++
++// x.imag, where x is an int (see CPyTagged_Real)
++static inline CPyTagged CPyTagged_Imag(CPyTagged x) {
++    if (likely(CPyTagged_CheckShort(x))) {
++        return 0;
++    }
++    PyObject *o = CPyTagged_LongAsObject(x);
++    if (likely(PyLong_CheckExact(o))) {
++        return 0;
++    }
++    return CPyTagged_GetPartSlow(o, mypyc_interned_str.imag);
++}
++
+ 
+ // Float operations
+ 
+@@ -640,6 +668,58 @@ CPyTagged CPyFloat_Ceil(double x);
+ double CPyFloat_FromTagged(CPyTagged x);
+ bool CPyFloat_IsInf(double x);
+ bool CPyFloat_IsNaN(double x);
++double CPyComplex_GetPartSlow(PyObject *o, PyObject *name);
++double CPyLong_AsDouble(PyObject *o);
++
++// o.real, where the static type of o is float or complex. Other types,
++// including subclasses that might override the property, use getattr.
++static inline double CPyComplex_Real(PyObject *o) {
++    if (PyComplex_CheckExact(o)) {
++        return ((PyComplexObject *)o)->cval.real;
++    } else if (PyFloat_CheckExact(o)) {
++        return PyFloat_AS_DOUBLE(o);
++    } else if (PyLong_CheckExact(o)) {
++        // An int can be used where a float or complex is expected. It's converted
++        // to a float, as when unboxing an int to a float.
++        return CPyLong_AsDouble(o);
++    }
++    return CPyComplex_GetPartSlow(o, mypyc_interned_str.real);
++}
++
++// o.imag, where the static type of o is float or complex
++static inline double CPyComplex_Imag(PyObject *o) {
++    if (PyComplex_CheckExact(o)) {
++        return ((PyComplexObject *)o)->cval.imag;
++    } else if (PyFloat_CheckExact(o) || PyLong_CheckExact(o)) {
++        return 0.0;
++    }
++    return CPyComplex_GetPartSlow(o, mypyc_interned_str.imag);
++}
++
++// o.real, where the static type of o is a union such as int | float | complex,
++// so the result can be an int or a float. Other types use getattr.
++static inline PyObject *CPyNumber_Real(PyObject *o) {
++    if (PyLong_CheckExact(o) || PyFloat_CheckExact(o)) {
++        // int.real and float.real return the object itself
++        Py_INCREF(o);
++        return o;
++    } else if (PyComplex_CheckExact(o)) {
++        return PyFloat_FromDouble(((PyComplexObject *)o)->cval.real);
++    }
++    return PyObject_GetAttr(o, mypyc_interned_str.real);
++}
++
++// o.imag, where the static type of o is a union such as int | float | complex
++static inline PyObject *CPyNumber_Imag(PyObject *o) {
++    if (PyLong_CheckExact(o)) {
++        return PyLong_FromLong(0);
++    } else if (PyFloat_CheckExact(o)) {
++        return PyFloat_FromDouble(0.0);
++    } else if (PyComplex_CheckExact(o)) {
++        return PyFloat_FromDouble(((PyComplexObject *)o)->cval.imag);
++    }
++    return PyObject_GetAttr(o, mypyc_interned_str.imag);
++}
+ 
+ 
+ // Generic operations (that work with arbitrary types)
+diff --git a/mypyc/lib-rt/float_ops.c b/mypyc/lib-rt/float_ops.c
+index 3190657425592..4210b84f33a98 100644
+--- a/mypyc/lib-rt/float_ops.c
++++ b/mypyc/lib-rt/float_ops.c
+@@ -237,3 +237,30 @@ double CPyFloat_Pow(double x, double y) {
+     }
+     return r;
+ }
++
++// Look up o.real or o.imag and convert it to a C double (see CPyComplex_Real)
++double CPyComplex_GetPartSlow(PyObject *o, PyObject *name) {
++    PyObject *part = PyObject_GetAttr(o, name);
++    if (part == NULL) {
++        return CPY_FLOAT_ERROR;
++    }
++    double result = PyFloat_AsDouble(part);
++    if (result == -1.0 && PyErr_Occurred()) {
++        // Same error as unboxing the attribute value would produce
++        CPy_TypeError("float", part);
++        result = CPY_FLOAT_ERROR;
++    }
++    Py_DECREF(part);
++    return result;
++}
++
++// Convert an int object to a C double. If it's too large, raise the same TypeError
++// as unboxing it to a float would.
++double CPyLong_AsDouble(PyObject *o) {
++    double result = PyLong_AsDouble(o);
++    if (result == -1.0 && PyErr_Occurred()) {
++        CPy_TypeError("float", o);
++        return CPY_FLOAT_ERROR;
++    }
++    return result;
++}
+diff --git a/mypyc/lib-rt/int_ops.c b/mypyc/lib-rt/int_ops.c
+index 708de9350f14f..f5dfa98a595b0 100644
+--- a/mypyc/lib-rt/int_ops.c
++++ b/mypyc/lib-rt/int_ops.c
+@@ -713,3 +713,19 @@ CPyTagged CPyTagged_BitLength(CPyTagged self) {
+     }
+     return bits << 1;
+ }
++
++// Look up o.real or o.imag, where o is an instance of an int subclass, and convert
++// it to a tagged int (see CPyTagged_Real)
++CPyTagged CPyTagged_GetPartSlow(PyObject *o, PyObject *name) {
++    PyObject *part = PyObject_GetAttr(o, name);
++    if (part == NULL) {
++        return CPY_INT_TAG;
++    }
++    if (!PyLong_Check(part)) {
++        // Same error as unboxing the attribute value would produce
++        CPy_TypeError("int", part);
++        Py_DECREF(part);
++        return CPY_INT_TAG;
++    }
++    return CPyTagged_StealFromObject(part);
++}
+diff --git a/mypyc/lib-rt/static_data.c b/mypyc/lib-rt/static_data.c
+index 4416db6cf9ea2..31112734768cc 100644
+--- a/mypyc/lib-rt/static_data.c
++++ b/mypyc/lib-rt/static_data.c
+@@ -54,10 +54,12 @@ intern_strings(void) {
+     INTERN_STRING(dispatch_cache, "dispatch_cache");
+     INTERN_STRING(endswith, "endswith");
+     INTERN_STRING(get_type_hints, "get_type_hints");
++    INTERN_STRING(imag, "imag");
+     INTERN_STRING(keys, "keys");
+     INTERN_STRING(lower, "lower");
+     INTERN_STRING(items, "items");
+     INTERN_STRING(join, "join");
++    INTERN_STRING(real, "real");
+     INTERN_STRING(register_, "register");
+     INTERN_STRING(registry, "registry");
+     INTERN_STRING(send, "send");
+diff --git a/mypyc/lib-rt/static_data.h b/mypyc/lib-rt/static_data.h
+index 38f62bdae6f66..efdf00b562d41 100644
+--- a/mypyc/lib-rt/static_data.h
++++ b/mypyc/lib-rt/static_data.h
+@@ -46,10 +46,12 @@ typedef struct mypyc_interned_str_struct {
+     PyObject *dispatch_cache;
+     PyObject *endswith;
+     PyObject *get_type_hints;
++    PyObject *imag;
+     PyObject *keys;
+     PyObject *lower;
+     PyObject *items;
+     PyObject *join;
++    PyObject *real;
+     PyObject *register_;
+     PyObject *registry;
+     PyObject *send;
+diff --git a/mypyc/primitives/float_ops.py b/mypyc/primitives/float_ops.py
+index 542192add5420..26d7127fe28fe 100644
+--- a/mypyc/primitives/float_ops.py
++++ b/mypyc/primitives/float_ops.py
+@@ -11,7 +11,7 @@
+     object_rprimitive,
+     str_rprimitive,
+ )
+-from mypyc.primitives.registry import binary_op, function_op, load_address_op
++from mypyc.primitives.registry import binary_op, custom_primitive_op, function_op, load_address_op
+ 
+ # Get the 'builtins.float' type object.
+ load_address_op(name="builtins.float", type=object_rprimitive, src="PyFloat_Type")
+@@ -176,3 +176,39 @@
+     c_function_name="PyFloat_Check",
+     error_kind=ERR_NEVER,
+ )
++
++# obj.real, where obj is a float or a complex
++complex_real_op = custom_primitive_op(
++    name="complex.real",
++    arg_types=[object_rprimitive],
++    return_type=float_rprimitive,
++    c_function_name="CPyComplex_Real",
++    error_kind=ERR_MAGIC_OVERLAPPING,
++)
++
++# obj.imag, where obj is a float or a complex
++complex_imag_op = custom_primitive_op(
++    name="complex.imag",
++    arg_types=[object_rprimitive],
++    return_type=float_rprimitive,
++    c_function_name="CPyComplex_Imag",
++    error_kind=ERR_MAGIC_OVERLAPPING,
++)
++
++# obj.real, where obj is an int, a float or a complex (the result can be an int)
++number_real_op = custom_primitive_op(
++    name="number.real",
++    arg_types=[object_rprimitive],
++    return_type=object_rprimitive,
++    c_function_name="CPyNumber_Real",
++    error_kind=ERR_MAGIC,
++)
++
++# obj.imag, where obj is an int, a float or a complex (the result can be an int)
++number_imag_op = custom_primitive_op(
++    name="number.imag",
++    arg_types=[object_rprimitive],
++    return_type=object_rprimitive,
++    c_function_name="CPyNumber_Imag",
++    error_kind=ERR_MAGIC,
++)
+diff --git a/mypyc/primitives/int_ops.py b/mypyc/primitives/int_ops.py
+index 402a2eb6e547d..62b2ee100ee65 100644
+--- a/mypyc/primitives/int_ops.py
++++ b/mypyc/primitives/int_ops.py
+@@ -35,6 +35,7 @@
+ from mypyc.primitives.registry import (
+     binary_op,
+     custom_op,
++    custom_primitive_op,
+     function_op,
+     load_address_op,
+     method_op,
+@@ -357,3 +358,21 @@ def int_unary_op(name: str, c_function_name: str) -> PrimitiveDescription:
+     c_function_name="CPyTagged_BitLength",
+     error_kind=ERR_MAGIC,
+ )
++
++# x.real, where x is an int
++int_real_op = custom_primitive_op(
++    name="int.real",
++    arg_types=[int_rprimitive],
++    return_type=int_rprimitive,
++    c_function_name="CPyTagged_Real",
++    error_kind=ERR_MAGIC,
++)
++
++# x.imag, where x is an int
++int_imag_op = custom_primitive_op(
++    name="int.imag",
++    arg_types=[int_rprimitive],
++    return_type=int_rprimitive,
++    c_function_name="CPyTagged_Imag",
++    error_kind=ERR_MAGIC,
++)

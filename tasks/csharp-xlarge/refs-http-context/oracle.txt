@@ -1,1 +1,0 @@
-Oracle for IHttpContextAccessor: exhaustive pinned-snapshot candidate scan; no language server used.

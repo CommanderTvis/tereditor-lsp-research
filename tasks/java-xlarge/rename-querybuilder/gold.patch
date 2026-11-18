@@ -1,0 +1,390 @@
+diff --git a/lucene/core/src/java/org/apache/lucene/search/package-info.java b/lucene/core/src/java/org/apache/lucene/search/package-info.java
+index b01de70..621b059 100644
+--- a/lucene/core/src/java/org/apache/lucene/search/package-info.java
++++ b/lucene/core/src/java/org/apache/lucene/search/package-info.java
+@@ -366,7 +366,7 @@
+  * <ul>
+  *   <li>{@link org.apache.lucene.search.QueryRescorer}, to rescore using a query. For instance, the
+  *       query string could be parsed as phrase query using {@link
+- *       org.apache.lucene.util.QueryBuilder#createPhraseQuery} instead of a boolean query in order
++ *       org.apache.lucene.util.TextQueryBuilder#createPhraseQuery} instead of a boolean query in order
+  *       to help boost hits which also match the query string as a phrase.
+  *   <li>{@link org.apache.lucene.search.SortRescorer}, to rescore using a {@link
+  *       org.apache.lucene.search.Sort}. For instance, the best 1,000 hits by BM25 score may be
+diff --git a/lucene/core/src/java/org/apache/lucene/util/QueryBuilder.java b/lucene/core/src/java/org/apache/lucene/util/TextQueryBuilder.java
+similarity index 99%
+rename from lucene/core/src/java/org/apache/lucene/util/QueryBuilder.java
+rename to lucene/core/src/java/org/apache/lucene/util/TextQueryBuilder.java
+index cdf03cf..9794d1d 100644
+--- a/lucene/core/src/java/org/apache/lucene/util/QueryBuilder.java
++++ b/lucene/core/src/java/org/apache/lucene/util/TextQueryBuilder.java
+@@ -46,7 +46,7 @@ import org.apache.lucene.util.graph.GraphTokenStreamFiniteStrings;
+  * <p>Example usage:
+  *
+  * <pre class="prettyprint">
+- *   QueryBuilder builder = new QueryBuilder(analyzer);
++ *   TextQueryBuilder builder = new TextQueryBuilder(analyzer);
+  *   Query a = builder.createBooleanQuery("body", "just a test");
+  *   Query b = builder.createPhraseQuery("body", "another test");
+  *   Query c = builder.createMinShouldMatchQuery("body", "another test", 0.5f);
+@@ -56,7 +56,7 @@ import org.apache.lucene.util.graph.GraphTokenStreamFiniteStrings;
+  * analysis chain. Factory methods such as {@code newTermQuery} are provided so that the generated
+  * queries can be customized.
+  */
+-public class QueryBuilder {
++public class TextQueryBuilder {
+   protected Analyzer analyzer;
+   protected boolean enablePositionIncrements = true;
+   protected boolean enableGraphQueries = true;
+@@ -75,8 +75,8 @@ public class QueryBuilder {
+     }
+   }
+ 
+-  /** Creates a new QueryBuilder using the given analyzer. */
+-  public QueryBuilder(Analyzer analyzer) {
++  /** Creates a new TextQueryBuilder using the given analyzer. */
++  public TextQueryBuilder(Analyzer analyzer) {
+     this.analyzer = analyzer;
+   }
+ 
+diff --git a/lucene/core/src/test/org/apache/lucene/util/TestQueryBuilder.java b/lucene/core/src/test/org/apache/lucene/util/TestQueryBuilder.java
+index 2ea575d..18817f6 100644
+--- a/lucene/core/src/test/org/apache/lucene/util/TestQueryBuilder.java
++++ b/lucene/core/src/test/org/apache/lucene/util/TestQueryBuilder.java
+@@ -47,7 +47,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+ 
+   public void testTerm() {
+     TermQuery expected = new TermQuery(new Term("field", "test"));
+-    QueryBuilder builder = new QueryBuilder(new MockAnalyzer(random()));
++    TextQueryBuilder builder = new TextQueryBuilder(new MockAnalyzer(random()));
+     assertEquals(expected, builder.createBooleanQuery("field", "test"));
+   }
+ 
+@@ -55,7 +55,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+     BooleanQuery.Builder expected = new BooleanQuery.Builder();
+     expected.add(new TermQuery(new Term("field", "foo")), BooleanClause.Occur.SHOULD);
+     expected.add(new TermQuery(new Term("field", "bar")), BooleanClause.Occur.SHOULD);
+-    QueryBuilder builder = new QueryBuilder(new MockAnalyzer(random()));
++    TextQueryBuilder builder = new TextQueryBuilder(new MockAnalyzer(random()));
+     assertEquals(expected.build(), builder.createBooleanQuery("field", "foo bar"));
+   }
+ 
+@@ -63,20 +63,20 @@ public class TestQueryBuilder extends LuceneTestCase {
+     BooleanQuery.Builder expected = new BooleanQuery.Builder();
+     expected.add(new TermQuery(new Term("field", "foo")), BooleanClause.Occur.MUST);
+     expected.add(new TermQuery(new Term("field", "bar")), BooleanClause.Occur.MUST);
+-    QueryBuilder builder = new QueryBuilder(new MockAnalyzer(random()));
++    TextQueryBuilder builder = new TextQueryBuilder(new MockAnalyzer(random()));
+     assertEquals(
+         expected.build(), builder.createBooleanQuery("field", "foo bar", BooleanClause.Occur.MUST));
+   }
+ 
+   public void testMinShouldMatchNone() {
+-    QueryBuilder builder = new QueryBuilder(new MockAnalyzer(random()));
++    TextQueryBuilder builder = new TextQueryBuilder(new MockAnalyzer(random()));
+     assertEquals(
+         builder.createBooleanQuery("field", "one two three four"),
+         builder.createMinShouldMatchQuery("field", "one two three four", 0f));
+   }
+ 
+   public void testMinShouldMatchAll() {
+-    QueryBuilder builder = new QueryBuilder(new MockAnalyzer(random()));
++    TextQueryBuilder builder = new TextQueryBuilder(new MockAnalyzer(random()));
+     assertEquals(
+         builder.createBooleanQuery("field", "one two three four", BooleanClause.Occur.MUST),
+         builder.createMinShouldMatchQuery("field", "one two three four", 1f));
+@@ -91,7 +91,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+     expectedB.setMinimumNumberShouldMatch(0);
+     Query expected = expectedB.build();
+ 
+-    QueryBuilder builder = new QueryBuilder(new MockAnalyzer(random()));
++    TextQueryBuilder builder = new TextQueryBuilder(new MockAnalyzer(random()));
+     // assertEquals(expected, builder.createMinShouldMatchQuery("field", "one two three four",
+     // 0.1f));
+     // assertEquals(expected, builder.createMinShouldMatchQuery("field", "one two three four",
+@@ -123,12 +123,12 @@ public class TestQueryBuilder extends LuceneTestCase {
+ 
+     Analyzer analyzer = new MockAnalyzer(random(), MockTokenizer.WHITESPACE, false, stopList);
+ 
+-    QueryBuilder builder = new QueryBuilder(analyzer);
++    TextQueryBuilder builder = new TextQueryBuilder(analyzer);
+     assertEquals(expected, builder.createPhraseQuery("field", "1 stop 2"));
+   }
+ 
+   public void testEmpty() {
+-    QueryBuilder builder = new QueryBuilder(new MockAnalyzer(random()));
++    TextQueryBuilder builder = new TextQueryBuilder(new MockAnalyzer(random()));
+     assertNull(builder.createBooleanQuery("field", ""));
+   }
+ 
+@@ -148,7 +148,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+             .addTerm(new Term("field", "dogs"))
+             .addTerm(new Term("field", "dog"))
+             .build();
+-    QueryBuilder builder = new QueryBuilder(new MockSynonymAnalyzer());
++    TextQueryBuilder builder = new TextQueryBuilder(new MockSynonymAnalyzer());
+     assertEquals(expected, builder.createBooleanQuery("field", "dogs"));
+     assertEquals(expected, builder.createPhraseQuery("field", "dogs"));
+     assertEquals(expected, builder.createBooleanQuery("field", "dogs", BooleanClause.Occur.MUST));
+@@ -160,7 +160,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+     MultiPhraseQuery.Builder expectedBuilder = new MultiPhraseQuery.Builder();
+     expectedBuilder.add(new Term("field", "old"));
+     expectedBuilder.add(new Term[] {new Term("field", "dogs"), new Term("field", "dog")});
+-    QueryBuilder builder = new QueryBuilder(new MockSynonymAnalyzer());
++    TextQueryBuilder builder = new TextQueryBuilder(new MockSynonymAnalyzer());
+     assertEquals(expectedBuilder.build(), builder.createPhraseQuery("field", "old dogs"));
+   }
+ 
+@@ -172,7 +172,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+             .add(new TermQuery(new Term("field", "cavy")), BooleanClause.Occur.SHOULD)
+             .build();
+ 
+-    QueryBuilder queryBuilder = new QueryBuilder(new MockSynonymAnalyzer());
++    TextQueryBuilder queryBuilder = new TextQueryBuilder(new MockSynonymAnalyzer());
+     assertEquals(expected, queryBuilder.createPhraseQuery("field", "guinea pig"));
+   }
+ 
+@@ -188,7 +188,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+                 BooleanClause.Occur.SHOULD)
+             .add(new TermQuery(new Term("field", "cavy")), BooleanClause.Occur.SHOULD)
+             .build();
+-    QueryBuilder queryBuilder = new QueryBuilder(new MockSynonymAnalyzer());
++    TextQueryBuilder queryBuilder = new TextQueryBuilder(new MockSynonymAnalyzer());
+     assertEquals(expected, queryBuilder.createPhraseQuery("field", "guinea pig", 4));
+   }
+ 
+@@ -211,7 +211,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+ 
+       BooleanQuery expectedGraphQuery = new BooleanQuery.Builder().add(synQuery, occur).build();
+ 
+-      QueryBuilder queryBuilder = new QueryBuilder(new MockSynonymAnalyzer());
++      TextQueryBuilder queryBuilder = new TextQueryBuilder(new MockSynonymAnalyzer());
+       assertEquals(
+           expectedGraphQuery, queryBuilder.createBooleanQuery("field", "guinea pig", occur));
+ 
+@@ -264,7 +264,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+               .add(syn2, BooleanClause.Occur.SHOULD)
+               .build();
+       BooleanQuery expectedGraphQuery = new BooleanQuery.Builder().add(synQuery, occur).build();
+-      QueryBuilder queryBuilder = new QueryBuilder(new MockSynonymAnalyzer());
++      TextQueryBuilder queryBuilder = new TextQueryBuilder(new MockSynonymAnalyzer());
+       queryBuilder.setAutoGenerateMultiTermSynonymsPhraseQuery(true);
+       assertEquals(
+           expectedGraphQuery, queryBuilder.createBooleanQuery("field", "guinea pig", occur));
+@@ -333,7 +333,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+     expected.add(new TermQuery(new Term("field", "中")), BooleanClause.Occur.SHOULD);
+     expected.add(new TermQuery(new Term("field", "国")), BooleanClause.Occur.SHOULD);
+ 
+-    QueryBuilder builder = new QueryBuilder(analyzer);
++    TextQueryBuilder builder = new TextQueryBuilder(analyzer);
+     assertEquals(expected.build(), builder.createBooleanQuery("field", "中国"));
+   }
+ 
+@@ -343,7 +343,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+ 
+     PhraseQuery expected = new PhraseQuery("field", "中", "国");
+ 
+-    QueryBuilder builder = new QueryBuilder(analyzer);
++    TextQueryBuilder builder = new TextQueryBuilder(analyzer);
+     assertEquals(expected, builder.createPhraseQuery("field", "中国"));
+   }
+ 
+@@ -353,7 +353,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+ 
+     PhraseQuery expected = new PhraseQuery(3, "field", "中", "国");
+ 
+-    QueryBuilder builder = new QueryBuilder(analyzer);
++    TextQueryBuilder builder = new TextQueryBuilder(analyzer);
+     assertEquals(expected, builder.createPhraseQuery("field", "中国", 3));
+   }
+ 
+@@ -401,7 +401,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+             .addTerm(new Term("field", "国"))
+             .addTerm(new Term("field", "國"))
+             .build();
+-    QueryBuilder builder = new QueryBuilder(new MockCJKSynonymAnalyzer());
++    TextQueryBuilder builder = new TextQueryBuilder(new MockCJKSynonymAnalyzer());
+     assertEquals(expected, builder.createBooleanQuery("field", "国"));
+     assertEquals(expected, builder.createPhraseQuery("field", "国"));
+     assertEquals(expected, builder.createBooleanQuery("field", "国", BooleanClause.Occur.MUST));
+@@ -417,7 +417,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+             .addTerm(new Term("field", "國"))
+             .build();
+     expected.add(inner, BooleanClause.Occur.SHOULD);
+-    QueryBuilder builder = new QueryBuilder(new MockCJKSynonymAnalyzer());
++    TextQueryBuilder builder = new TextQueryBuilder(new MockCJKSynonymAnalyzer());
+     assertEquals(expected.build(), builder.createBooleanQuery("field", "中国"));
+   }
+ 
+@@ -437,7 +437,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+             .addTerm(new Term("field", "國"))
+             .build();
+     expected.add(inner2, BooleanClause.Occur.SHOULD);
+-    QueryBuilder builder = new QueryBuilder(new MockCJKSynonymAnalyzer());
++    TextQueryBuilder builder = new TextQueryBuilder(new MockCJKSynonymAnalyzer());
+     assertEquals(expected.build(), builder.createBooleanQuery("field", "中国国"));
+   }
+ 
+@@ -451,7 +451,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+             .addTerm(new Term("field", "國"))
+             .build();
+     expected.add(inner, BooleanClause.Occur.MUST);
+-    QueryBuilder builder = new QueryBuilder(new MockCJKSynonymAnalyzer());
++    TextQueryBuilder builder = new TextQueryBuilder(new MockCJKSynonymAnalyzer());
+     assertEquals(
+         expected.build(), builder.createBooleanQuery("field", "中国", BooleanClause.Occur.MUST));
+   }
+@@ -472,7 +472,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+             .addTerm(new Term("field", "國"))
+             .build();
+     expected.add(inner2, BooleanClause.Occur.MUST);
+-    QueryBuilder builder = new QueryBuilder(new MockCJKSynonymAnalyzer());
++    TextQueryBuilder builder = new TextQueryBuilder(new MockCJKSynonymAnalyzer());
+     assertEquals(
+         expected.build(), builder.createBooleanQuery("field", "中国国", BooleanClause.Occur.MUST));
+   }
+@@ -482,7 +482,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+     MultiPhraseQuery.Builder expectedBuilder = new MultiPhraseQuery.Builder();
+     expectedBuilder.add(new Term("field", "中"));
+     expectedBuilder.add(new Term[] {new Term("field", "国"), new Term("field", "國")});
+-    QueryBuilder builder = new QueryBuilder(new MockCJKSynonymAnalyzer());
++    TextQueryBuilder builder = new TextQueryBuilder(new MockCJKSynonymAnalyzer());
+     assertEquals(expectedBuilder.build(), builder.createPhraseQuery("field", "中国"));
+     expectedBuilder.setSlop(3);
+     assertEquals(expectedBuilder.build(), builder.createPhraseQuery("field", "中国", 3));
+@@ -513,7 +513,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+                 });
+           }
+         };
+-    QueryBuilder builder = new QueryBuilder(analyzer);
++    TextQueryBuilder builder = new TextQueryBuilder(analyzer);
+     assertNull(builder.createBooleanQuery("field", "whatever"));
+   }
+ 
+@@ -532,7 +532,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+         i++;
+       }
+     }
+-    QueryBuilder qb = new QueryBuilder(null);
++    TextQueryBuilder qb = new TextQueryBuilder(null);
+     try (TokenStream ts = new CannedBinaryTokenStream(tokens)) {
+       expectThrows(
+           IndexSearcher.TooManyClauses.class,
+@@ -586,7 +586,7 @@ public class TestQueryBuilder extends LuceneTestCase {
+           }
+         };
+ 
+-    QueryBuilder builder = new QueryBuilder(a);
++    TextQueryBuilder builder = new TextQueryBuilder(a);
+     Query q = builder.createBooleanQuery("field", "hot dogs");
+     Query expected =
+         new BooleanQuery.Builder()
+diff --git a/lucene/highlighter/src/test/org/apache/lucene/search/uhighlight/TestLengthGoalBreakIterator.java b/lucene/highlighter/src/test/org/apache/lucene/search/uhighlight/TestLengthGoalBreakIterator.java
+index 9b5d844..f6718fc 100644
+--- a/lucene/highlighter/src/test/org/apache/lucene/search/uhighlight/TestLengthGoalBreakIterator.java
++++ b/lucene/highlighter/src/test/org/apache/lucene/search/uhighlight/TestLengthGoalBreakIterator.java
+@@ -24,7 +24,7 @@ import org.apache.lucene.search.Query;
+ import org.apache.lucene.tests.analysis.MockAnalyzer;
+ import org.apache.lucene.tests.analysis.MockTokenizer;
+ import org.apache.lucene.tests.util.LuceneTestCase;
+-import org.apache.lucene.util.QueryBuilder;
++import org.apache.lucene.util.TextQueryBuilder;
+ 
+ public class TestLengthGoalBreakIterator extends LuceneTestCase {
+   private static final String FIELD = "body";
+@@ -201,7 +201,7 @@ public class TestLengthGoalBreakIterator extends LuceneTestCase {
+   }
+ 
+   private Query query(String qStr) {
+-    return new QueryBuilder(analyzer).createBooleanQuery(FIELD, qStr);
++    return new TextQueryBuilder(analyzer).createBooleanQuery(FIELD, qStr);
+   }
+ 
+   private String highlightClosestToLen(String content, Query query, int lengthGoal, float fragAlign)
+diff --git a/lucene/highlighter/src/test/org/apache/lucene/search/uhighlight/TestUnifiedHighlighter.java b/lucene/highlighter/src/test/org/apache/lucene/search/uhighlight/TestUnifiedHighlighter.java
+index 98b1ba8..269d05e 100644
+--- a/lucene/highlighter/src/test/org/apache/lucene/search/uhighlight/TestUnifiedHighlighter.java
++++ b/lucene/highlighter/src/test/org/apache/lucene/search/uhighlight/TestUnifiedHighlighter.java
+@@ -64,7 +64,7 @@ import org.apache.lucene.search.uhighlight.UnifiedHighlighter.HighlightFlag;
+ import org.apache.lucene.store.Directory;
+ import org.apache.lucene.tests.analysis.MockAnalyzer;
+ import org.apache.lucene.tests.index.RandomIndexWriter;
+-import org.apache.lucene.util.QueryBuilder;
++import org.apache.lucene.util.TextQueryBuilder;
+ import org.apache.lucene.util.automaton.Automata;
+ import org.apache.lucene.util.automaton.CharacterRunAutomaton;
+ import org.apache.lucene.util.automaton.RegExp;
+@@ -1436,7 +1436,7 @@ public class TestUnifiedHighlighter extends UnifiedHighlighterTestBase {
+       String expectedSnippetWithWeightMatches,
+       String expectedSnippetWithoutWeightMatches)
+       throws IOException {
+-    QueryBuilder queryBuilder = new QueryBuilder(analyzer);
++    TextQueryBuilder queryBuilder = new TextQueryBuilder(analyzer);
+     BooleanQuery.Builder boolQueryBuilder = new BooleanQuery.Builder();
+     Query fieldPhraseQuery = queryBuilder.createPhraseQuery(field, queryText, 2);
+     boolQueryBuilder.add(fieldPhraseQuery, BooleanClause.Occur.SHOULD);
+diff --git a/lucene/highlighter/src/test/org/apache/lucene/search/uhighlight/TestUnifiedHighlighterStrictPhrases.java b/lucene/highlighter/src/test/org/apache/lucene/search/uhighlight/TestUnifiedHighlighterStrictPhrases.java
+index 854c4f6..615dae5 100644
+--- a/lucene/highlighter/src/test/org/apache/lucene/search/uhighlight/TestUnifiedHighlighterStrictPhrases.java
++++ b/lucene/highlighter/src/test/org/apache/lucene/search/uhighlight/TestUnifiedHighlighterStrictPhrases.java
+@@ -56,7 +56,7 @@ import org.apache.lucene.search.WildcardQuery;
+ import org.apache.lucene.search.uhighlight.UnifiedHighlighter.HighlightFlag;
+ import org.apache.lucene.tests.index.RandomIndexWriter;
+ import org.apache.lucene.util.IOUtils;
+-import org.apache.lucene.util.QueryBuilder;
++import org.apache.lucene.util.TextQueryBuilder;
+ import org.junit.After;
+ import org.junit.Before;
+ 
+@@ -146,7 +146,7 @@ public class TestUnifiedHighlighterStrictPhrases extends UnifiedHighlighterTestB
+   }
+ 
+   private PhraseQuery newPhraseQuery(String field, String phrase) {
+-    return (PhraseQuery) new QueryBuilder(indexAnalyzer).createPhraseQuery(field, phrase);
++    return (PhraseQuery) new TextQueryBuilder(indexAnalyzer).createPhraseQuery(field, phrase);
+   }
+ 
+   private PhraseQuery setSlop(PhraseQuery query, int slop) {
+diff --git a/lucene/queryparser/src/java/org/apache/lucene/queryparser/classic/QueryParserBase.java b/lucene/queryparser/src/java/org/apache/lucene/queryparser/classic/QueryParserBase.java
+index 25d3fc6..ff58d96 100644
+--- a/lucene/queryparser/src/java/org/apache/lucene/queryparser/classic/QueryParserBase.java
++++ b/lucene/queryparser/src/java/org/apache/lucene/queryparser/classic/QueryParserBase.java
+@@ -53,14 +53,14 @@ import org.apache.lucene.search.TermRangeQuery;
+ import org.apache.lucene.search.WildcardQuery;
+ import org.apache.lucene.util.BytesRef;
+ import org.apache.lucene.util.BytesRefBuilder;
+-import org.apache.lucene.util.QueryBuilder;
++import org.apache.lucene.util.TextQueryBuilder;
+ import org.apache.lucene.util.automaton.RegExp;
+ 
+ /**
+  * This class is overridden by QueryParser in QueryParser.jj and acts to separate the majority of
+  * the Java code from the .jj grammar file.
+  */
+-public abstract class QueryParserBase extends QueryBuilder
++public abstract class QueryParserBase extends TextQueryBuilder
+     implements CommonQueryParserConfiguration {
+ 
+   static final int CONJ_NONE = 0;
+diff --git a/lucene/queryparser/src/java/org/apache/lucene/queryparser/simple/SimpleQueryParser.java b/lucene/queryparser/src/java/org/apache/lucene/queryparser/simple/SimpleQueryParser.java
+index 171d832..d9b81e3 100644
+--- a/lucene/queryparser/src/java/org/apache/lucene/queryparser/simple/SimpleQueryParser.java
++++ b/lucene/queryparser/src/java/org/apache/lucene/queryparser/simple/SimpleQueryParser.java
+@@ -29,7 +29,7 @@ import org.apache.lucene.search.MatchNoDocsQuery;
+ import org.apache.lucene.search.PrefixQuery;
+ import org.apache.lucene.search.Query;
+ import org.apache.lucene.util.BytesRef;
+-import org.apache.lucene.util.QueryBuilder;
++import org.apache.lucene.util.TextQueryBuilder;
+ import org.apache.lucene.util.automaton.LevenshteinAutomata;
+ 
+ /**
+@@ -98,7 +98,7 @@ import org.apache.lucene.util.automaton.LevenshteinAutomata;
+  *
+  * <p>Note that above examples consider the terms before text processing.
+  */
+-public class SimpleQueryParser extends QueryBuilder {
++public class SimpleQueryParser extends TextQueryBuilder {
+   /** Map of fields to query against with their weights */
+   protected final Map<String, Float> weights;
+ 

@@ -1,0 +1,9 @@
+createLocal
+duplicateLocal
+renameFileLocal
+updateGlobalLocal
+updateLocal
+validateGlobalLocal
+validateGlobalLocalWithLocaleKeyedData
+validateLocal
+validateLocalWithLocaleKeyedData

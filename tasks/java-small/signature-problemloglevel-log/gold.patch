@@ -1,0 +1,78 @@
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogLevel.java b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogLevel.java
+index bac8cd7..b702b0f 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogLevel.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogLevel.java
+@@ -10,7 +10,7 @@ public enum ProblemLogLevel {
+         }
+ 
+         @Override
+-        public void log(Logger logger, String message, Throwable cause) {
++        public void log(Logger logger, Throwable cause, String message) {
+         }
+     },
+     TRACE {
+@@ -22,7 +22,7 @@ public enum ProblemLogLevel {
+         }
+ 
+         @Override
+-        public void log(Logger logger, String message, Throwable cause) {
++        public void log(Logger logger, Throwable cause, String message) {
+             if (logger.isTraceEnabled()) {
+                 logger.trace(message, cause);
+             }
+@@ -37,7 +37,7 @@ public enum ProblemLogLevel {
+         }
+ 
+         @Override
+-        public void log(Logger logger, String message, Throwable cause) {
++        public void log(Logger logger, Throwable cause, String message) {
+             if (logger.isDebugEnabled()) {
+                 logger.debug(message, cause);
+             }
+@@ -52,7 +52,7 @@ public enum ProblemLogLevel {
+         }
+ 
+         @Override
+-        public void log(Logger logger, String message, Throwable cause) {
++        public void log(Logger logger, Throwable cause, String message) {
+             if (logger.isInfoEnabled()) {
+                 logger.info(message, cause);
+             }
+@@ -67,7 +67,7 @@ public enum ProblemLogLevel {
+         }
+ 
+         @Override
+-        public void log(Logger logger, String message, Throwable cause) {
++        public void log(Logger logger, Throwable cause, String message) {
+             if (logger.isEnabled(Logger.Level.WARN)) {
+                 logger.warn(message, cause);
+             }
+@@ -82,7 +82,7 @@ public enum ProblemLogLevel {
+         }
+ 
+         @Override
+-        public void log(Logger logger, String message, Throwable cause) {
++        public void log(Logger logger, Throwable cause, String message) {
+             if (logger.isEnabled(Logger.Level.ERROR)) {
+                 logger.error(message, cause);
+             }
+@@ -91,5 +91,5 @@ public enum ProblemLogLevel {
+ 
+     public abstract void log(Logger logger, String message);
+ 
+-    public abstract void log(Logger logger, String message, Throwable cause);
++    public abstract void log(Logger logger, Throwable cause, String message);
+ }
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogger.java b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogger.java
+index 8945964..0f21cb1 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogger.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogger.java
+@@ -32,7 +32,7 @@ public class ProblemLogger implements ProblemPostProcessor {
+         ProblemLogLevel level = config.resolveLevel(statusCode);
+         String message = serialize(problem);
+         if (config.includeStackTrace(statusCode)) {
+-            level.log(logger, message, context.cause);
++            level.log(logger, context.cause, message);
+         } else {
+             level.log(logger, message);
+         }

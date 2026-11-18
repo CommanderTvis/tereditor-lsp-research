@@ -1,8 +1,0 @@
-type = "pr"
-pr = 732
-issue = 722
-base_commit = "4272265a319a562bceaa537fc1b9b6b40236a881"
-head_commit = "68c7b7512c665d031d110bc56c621f998c22ddf8"
-merged_at = "2020-01-01T13:40:40Z"
-fail_to_pass = ["MethodSpecTest.ensureTrailingNewline", "TypeSpecTest.javadocEnsuresTrailingLine", "TypeSpecTest.multipleMethodAddition"]
-pass_to_pass = "every other test of the module (check.sh)"

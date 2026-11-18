@@ -1,0 +1,129 @@
+diff --git a/pydantic_extra_types/pendulum_dt.py b/pydantic_extra_types/pendulum_dt.py
+index 6c4c49c..e77db55 100644
+--- a/pydantic_extra_types/pendulum_dt.py
++++ b/pydantic_extra_types/pendulum_dt.py
+@@ -97,22 +97,22 @@ class DateTime(_DateTime, metaclass=DateTimeSettings):
+                 raise PydanticCustomError('value_error', 'value is not a valid datetime') from exc
+ 
+ 
+-class Time(_Time):
++class PendulumTime(_Time):
+     """A `pendulum.Time` object. At runtime, this type decomposes into pendulum.Time automatically.
+     This type exists because Pydantic throws a fit on unknown types.
+ 
+     ```python
+     from pydantic import BaseModel
+-    from pydantic_extra_types.pendulum_dt import Time
++    from pydantic_extra_types.pendulum_dt import PendulumTime
+ 
+ 
+     class test_model(BaseModel):
+-        dt: Time
++        dt: PendulumTime
+ 
+ 
+     print(test_model(dt='00:00:00'))
+ 
+-    # > test_model(dt=Time(0, 0, 0))
++    # > test_model(dt=PendulumTime(0, 0, 0))
+     ```
+     """
+ 
+@@ -120,20 +120,20 @@ class Time(_Time):
+ 
+     @classmethod
+     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+-        """Return a Pydantic CoreSchema with the Time validation
++        """Return a Pydantic CoreSchema with the PendulumTime validation
+ 
+         Args:
+             source: The source type to be converted.
+             handler: The handler to get the CoreSchema.
+ 
+         Returns:
+-            A Pydantic CoreSchema with the Time validation.
++            A Pydantic CoreSchema with the PendulumTime validation.
+         """
+         return core_schema.no_info_wrap_validator_function(cls._validate, core_schema.time_schema())
+ 
+     @classmethod
+-    def _validate(cls, value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> Time:
+-        """Validate the Time object and return it.
++    def _validate(cls, value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> PendulumTime:
++        """Validate the PendulumTime object and return it.
+ 
+         Args:
+             value: The value to validate.
+@@ -144,16 +144,16 @@ class Time(_Time):
+         """
+         # if we are passed an existing instance, pass it straight through.
+         if isinstance(value, (_Time, time)):
+-            return Time.instance(value, tz=value.tzinfo)
++            return PendulumTime.instance(value, tz=value.tzinfo)
+ 
+         # otherwise, parse it.
+         try:
+             parsed = parse(value, exact=True)
+             if isinstance(parsed, _DateTime):
+                 dt = DateTime.instance(parsed)
+-                return Time.instance(dt.time())
++                return PendulumTime.instance(dt.time())
+             if isinstance(parsed, _Time):
+-                return Time.instance(parsed)
++                return PendulumTime.instance(parsed)
+             raise ValueError(f'value is not a valid time it is a {type(parsed)}')
+         except Exception as exc:
+             raise PydanticCustomError('value_error', 'value is not a valid time') from exc
+diff --git a/tests/test_pendulum_dt.py b/tests/test_pendulum_dt.py
+index a7e61de..8204a59 100644
+--- a/tests/test_pendulum_dt.py
++++ b/tests/test_pendulum_dt.py
+@@ -5,7 +5,7 @@ import pendulum
+ import pytest
+ from pydantic import BaseModel, TypeAdapter, ValidationError
+ 
+-from pydantic_extra_types.pendulum_dt import Date, DateTime, Duration, Interval, Time
++from pydantic_extra_types.pendulum_dt import Date, DateTime, Duration, Interval, PendulumTime
+ 
+ UTC = tz.utc
+ 
+@@ -17,7 +17,7 @@ class DtModel(BaseModel):
+ 
+ 
+ class TimeModel(BaseModel):
+-    t: Time
++    t: PendulumTime
+ 
+ 
+ class DateTimeNonStrict(DateTime, strict=False):
+@@ -451,7 +451,7 @@ def test_existing_time_instance(instance):
+     assert t.second == instance.second
+     assert t.microsecond == instance.microsecond
+     assert isinstance(t, pendulum.Time)
+-    assert type(t) is Time
++    assert type(t) is PendulumTime
+     if t.tzinfo != instance.tzinfo:
+         date = Date(2022, 1, 22)
+         assert t.tzinfo.utcoffset(DateTime.combine(date, t)) == instance.tzinfo.utcoffset(
+@@ -471,7 +471,7 @@ def test_pendulum_time_from_serialized(dt):
+     dt_actual = pendulum.parse(dt, exact=True)
+     model = TimeModel(t=dt)
+     assert model.t == dt_actual.replace(tzinfo=UTC)
+-    assert type(model.t) is Time
++    assert type(model.t) is PendulumTime
+     assert isinstance(model.t, pendulum.Time)
+ 
+ 
+@@ -568,9 +568,9 @@ def test_pendulum_interval_malformed(interval):
+         (Date, '2021-01-01', pendulum.Date),
+         (Date, date(2021, 1, 1), pendulum.Date),
+         (Date, pendulum.date(2021, 1, 1), pendulum.Date),
+-        (Time, '12:00:00', pendulum.Time),
+-        (Time, time(12, 0, 0), pendulum.Time),
+-        (Time, pendulum.time(12, 0, 0), pendulum.Time),
++        (PendulumTime, '12:00:00', pendulum.Time),
++        (PendulumTime, time(12, 0, 0), pendulum.Time),
++        (PendulumTime, pendulum.time(12, 0, 0), pendulum.Time),
+         (DateTime, '2021-01-01T12:00:00', pendulum.DateTime),
+         (DateTime, datetime(2021, 1, 1, 12, 0, 0), pendulum.DateTime),
+         (DateTime, pendulum.datetime(2021, 1, 1, 12, 0, 0), pendulum.DateTime),

@@ -1,0 +1,17 @@
+diff --git a/compose-lint-checks/src/main/java/slack/lint/compose/util/KtFunctions.kt b/compose-lint-checks/src/main/java/slack/lint/compose/util/KtFunctionsExt.kt
+similarity index 100%
+rename from compose-lint-checks/src/main/java/slack/lint/compose/util/KtFunctions.kt
+rename to compose-lint-checks/src/main/java/slack/lint/compose/util/KtFunctionsExt.kt
+diff --git a/config/license-excludes-kt.txt b/config/license-excludes-kt.txt
+index d6b4065..1e00302 100644
+--- a/config/license-excludes-kt.txt
++++ b/config/license-excludes-kt.txt
+@@ -19,7 +19,7 @@ compose-lint-checks/src/main/java/slack/lint/compose/util/Composables.kt
+ compose-lint-checks/src/main/java/slack/lint/compose/util/KotlinUtils.kt
+ compose-lint-checks/src/main/java/slack/lint/compose/util/KtAnnotateds.kt
+ compose-lint-checks/src/main/java/slack/lint/compose/util/KtCallableDeclarations.kt
+-compose-lint-checks/src/main/java/slack/lint/compose/util/KtFunctions.kt
++compose-lint-checks/src/main/java/slack/lint/compose/util/KtFunctionsExt.kt
+ compose-lint-checks/src/main/java/slack/lint/compose/util/Previews.kt
+ compose-lint-checks/src/main/java/slack/lint/compose/util/PsiElements.kt
+ compose-lint-checks/src/test/java/slack/lint/compose/ComposableFunctionNamingDetectorTest.kt

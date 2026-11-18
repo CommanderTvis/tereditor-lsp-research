@@ -1,0 +1,17 @@
+diff --git a/src/Illuminate/Collections/LazyCollection.php b/src/Illuminate/Collections/LazyCollection.php
+index ef074a84b807..36bccbc446ef 100644
+--- a/src/Illuminate/Collections/LazyCollection.php
++++ b/src/Illuminate/Collections/LazyCollection.php
+@@ -1574,8 +1574,10 @@ public function take($limit)
+                     $position = ($position + 1) % $limit;
+                 }
+ 
+-                for ($i = 0, $end = min($limit, count($ringBuffer)); $i < $end; $i++) {
+-                    $pointer = ($position + $i) % $limit;
++                $ringBufferCount = count($ringBuffer);
++
++                for ($i = 0, $end = min($limit, $ringBufferCount); $i < $end; $i++) {
++                    $pointer = $ringBufferCount < $limit ? $i : ($position + $i) % $limit;
+                     yield $ringBuffer[$pointer][0] => $ringBuffer[$pointer][1];
+                 }
+             });

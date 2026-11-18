@@ -1,9 +1,0 @@
-// Grading: prints the example application's configured main class.
-allprojects {
-  if (path == ':example') {
-    tasks.register('studyMainClass') {
-      def mc = providers.provider { project.extensions.getByName('application').mainClass.get() }
-      doLast { println("STUDY_MAIN_CLASS=" + mc.get()) }
-    }
-  }
-}

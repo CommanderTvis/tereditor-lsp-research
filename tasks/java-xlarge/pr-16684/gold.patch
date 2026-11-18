@@ -1,0 +1,215 @@
+diff --git a/lucene/CHANGES.txt b/lucene/CHANGES.txt
+index 6b32b5549658..42567bd644e1 100644
+--- a/lucene/CHANGES.txt
++++ b/lucene/CHANGES.txt
+@@ -480,6 +480,9 @@ Optimizations
+   vectors writers now state what file they are writing, and the raw vectors a quantized format keeps
+   only to rescore say so as they are written. (Jim Ferenczi)
+ 
++* GITHUB#16684: Merges now open stored fields for themselves and state that they read the data file
++  sequentially, instead of reusing the mapping searches read at random. (Jim Ferenczi)
++
+ * GITHUB#16682: Carry file open hints on merge and flush contexts, which used to drop them. An HNSW
+   format now carries the random access hint for the vectors it reads, rather than the flat format
+   holding them claiming it whatever reads them. Add NoReuseHint, set by stored fields, term vectors
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/StoredFieldsReader.java b/lucene/core/src/java/org/apache/lucene/codecs/StoredFieldsReader.java
+index 1c0ebe357fe6..df927a260b12 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/StoredFieldsReader.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/StoredFieldsReader.java
+@@ -54,7 +54,15 @@ protected StoredFieldsReader() {}
+    *
+    * <p>The default implementation returns {@code this}
+    */
+-  public StoredFieldsReader getMergeInstance() {
++  public StoredFieldsReader getMergeInstance() throws IOException {
+     return this;
+   }
++
++  /**
++   * Optional: release what {@link #getMergeInstance()} set up, once the merge is over. Whatever is
++   * not released here is released by {@link #close()}.
++   *
++   * <p>The default implementation is empty
++   */
++  public void finishMerge() throws IOException {}
+ }
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/compressing/Lucene90CompressingStoredFieldsReader.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/compressing/Lucene90CompressingStoredFieldsReader.java
+index 98f7ccb24234..90f087b13bcf 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/compressing/Lucene90CompressingStoredFieldsReader.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/compressing/Lucene90CompressingStoredFieldsReader.java
+@@ -39,7 +39,9 @@
+ import static org.apache.lucene.codecs.lucene90.compressing.Lucene90CompressingStoredFieldsWriter.VERSION_START;
+ 
+ import java.io.EOFException;
++import java.io.FileNotFoundException;
+ import java.io.IOException;
++import java.nio.file.NoSuchFileException;
+ import java.util.Arrays;
+ import org.apache.lucene.codecs.CodecUtil;
+ import org.apache.lucene.codecs.StoredFieldsReader;
+@@ -99,14 +101,29 @@ public final class Lucene90CompressingStoredFieldsReader extends StoredFieldsRea
+   // clustering similar documents together. NOTE: this cache must be small since it's fully scanned.
+   private final long[] prefetchedBlockIDCache;
+   private int prefetchedBlockIDCacheIndex;
+-  private boolean closed;
++  private volatile boolean closed;
++  // what a merge needs to map the data file for itself
++  private final Directory directory;
++  private final String fieldsStreamFN;
++  private final IOContext context;
++  // the reader this one was cloned from, which owns the mapping merges read
++  private final Lucene90CompressingStoredFieldsReader original;
++  private IndexInput mergeFieldsStream;
++  // merge instances handed out and not yet finished
++  private int mergeInstances;
++  // set once this merge instance has released the mapping
++  private boolean mergeFinished;
+ 
+   // used by clone
+   private Lucene90CompressingStoredFieldsReader(
+-      Lucene90CompressingStoredFieldsReader reader, boolean merging) {
++      Lucene90CompressingStoredFieldsReader reader, boolean merging, IndexInput fieldsStream) {
+     this.version = reader.version;
+     this.fieldInfos = reader.fieldInfos;
+-    this.fieldsStream = reader.fieldsStream.clone();
++    this.fieldsStream = fieldsStream;
++    this.directory = reader.directory;
++    this.fieldsStreamFN = reader.fieldsStreamFN;
++    this.context = reader.context;
++    this.original = reader.original;
+     this.indexReader = reader.indexReader.clone();
+     this.maxPointer = reader.maxPointer;
+     this.chunkSize = reader.chunkSize;
+@@ -137,9 +154,11 @@ public Lucene90CompressingStoredFieldsReader(
+     final String segment = si.name;
+     fieldInfos = fn;
+     numDocs = si.maxDoc();
++    this.directory = d;
++    this.context = context;
++    this.original = this;
+ 
+-    final String fieldsStreamFN =
+-        IndexFileNames.segmentFileName(segment, segmentSuffix, FIELDS_EXTENSION);
++    this.fieldsStreamFN = IndexFileNames.segmentFileName(segment, segmentSuffix, FIELDS_EXTENSION);
+     ChecksumIndexInput metaIn = null;
+     try {
+       // Open the data file
+@@ -255,11 +274,16 @@ private void ensureOpen() throws AlreadyClosedException {
+   @Override
+   public void close() throws IOException {
+     if (!closed) {
+-      IOUtils.close(indexReader, fieldsStream);
++      IOUtils.close(indexReader, fieldsStream, mergeFieldsStreamToClose());
+       closed = true;
+     }
+   }
+ 
++  /** The mapping a merge opened, read under the lock that guards it, closed outside it. */
++  private synchronized IndexInput mergeFieldsStreamToClose() {
++    return original == this && mergeFieldsStream != fieldsStream ? mergeFieldsStream : null;
++  }
++
+   private static void readField(DataInput in, StoredFieldVisitor visitor, FieldInfo info, int bits)
+       throws IOException {
+     switch (bits & TYPE_MASK) {
+@@ -694,13 +718,74 @@ public void document(int docID, StoredFieldVisitor visitor) throws IOException {
+   @Override
+   public StoredFieldsReader clone() {
+     ensureOpen();
+-    return new Lucene90CompressingStoredFieldsReader(this, false);
++    return new Lucene90CompressingStoredFieldsReader(this, false, fieldsStream.clone());
+   }
+ 
+   @Override
+-  public StoredFieldsReader getMergeInstance() {
++  public StoredFieldsReader getMergeInstance() throws IOException {
+     ensureOpen();
+-    return new Lucene90CompressingStoredFieldsReader(this, true);
++    IndexInput stream = original.mergeFieldsStream();
++    boolean success = false;
++    try {
++      StoredFieldsReader mergeInstance =
++          new Lucene90CompressingStoredFieldsReader(this, true, stream.clone());
++      success = true;
++      return mergeInstance;
++    } finally {
++      if (success == false) {
++        original.releaseMergeFieldsStream();
++      }
++    }
++  }
++
++  /**
++   * The data file as a merge reads it, front to back. Advice applies to a whole mapping, so a merge
++   * maps the file again. Mapped on the first merge, released by {@link #finishMerge()}.
++   */
++  private synchronized IndexInput mergeFieldsStream() throws IOException {
++    assert original == this;
++    ensureOpen();
++    if (mergeFieldsStream == null) {
++      if (context.context() == IOContext.Context.MERGE) {
++        // opened by a merge to begin with, so it already advises sequential reads
++        mergeFieldsStream = fieldsStream;
++      } else {
++        try {
++          mergeFieldsStream =
++              directory.openInput(
++                  fieldsStreamFN,
++                  IOContext.merge()
++                      .withHints(
++                          FileTypeHint.DATA, DataAccessHint.SEQUENTIAL, NoReuseHint.INSTANCE));
++        } catch (FileNotFoundException | NoSuchFileException _) {
++          // an open reader outlives its files, so fall back to the mapping it already holds
++          mergeFieldsStream = fieldsStream;
++        }
++      }
++    }
++    mergeInstances++;
++    return mergeFieldsStream;
++  }
++
++  /** Releases the mapping once no other merge instance holds it. A later merge maps it again. */
++  @Override
++  public void finishMerge() throws IOException {
++    if (merging == false || mergeFinished) {
++      return;
++    }
++    mergeFinished = true;
++    original.releaseMergeFieldsStream();
++  }
++
++  private synchronized void releaseMergeFieldsStream() throws IOException {
++    assert original == this;
++    if (closed || mergeInstances == 0 || --mergeInstances > 0) {
++      return;
++    }
++    if (mergeFieldsStream != null && mergeFieldsStream != fieldsStream) {
++      mergeFieldsStream.close();
++    }
++    mergeFieldsStream = null;
+   }
+ 
+   int getVersion() {
+diff --git a/lucene/core/src/java/org/apache/lucene/index/SegmentMerger.java b/lucene/core/src/java/org/apache/lucene/index/SegmentMerger.java
+index 321780406ad7..deb370228ccb 100644
+--- a/lucene/core/src/java/org/apache/lucene/index/SegmentMerger.java
++++ b/lucene/core/src/java/org/apache/lucene/index/SegmentMerger.java
+@@ -28,6 +28,7 @@
+ import org.apache.lucene.codecs.NormsConsumer;
+ import org.apache.lucene.codecs.NormsProducer;
+ import org.apache.lucene.codecs.PointsWriter;
++import org.apache.lucene.codecs.StoredFieldsReader;
+ import org.apache.lucene.codecs.StoredFieldsWriter;
+ import org.apache.lucene.codecs.TermVectorsWriter;
+ import org.apache.lucene.store.Directory;
+@@ -334,5 +335,10 @@ void cleanupMerge() throws IOException {
+         reader.finishMerge();
+       }
+     }
++    for (StoredFieldsReader reader : mergeState.storedFieldsReaders) {
++      if (reader != null) {
++        reader.finishMerge();
++      }
++    }
+   }
+ }

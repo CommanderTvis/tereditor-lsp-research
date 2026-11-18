@@ -1,14 +1,11 @@
 #!/bin/sh
-# Compile the package-level Sass entrypoints. This is the meaningful offline check for the CSS-only contestant.
+# Build-and-test for carbon (Sass): every Sass entry point (compile.sh) of the work tree must compile to the same CSS as
+# at the project's pinned commit, whose outputs grade-setup.sh stored in node_modules/.study-ref (every synthetic task
+# is a behaviour-preserving refactoring). Mined tasks run their own Jest tests (their grade.sh).
 set -e
-out=.study/css-out
-rm -rf "$out"
-mkdir -p "$out"
-count=0
-find packages -path '*/scss/index.scss' -type f | sort | while IFS= read -r f; do
-  name=$(printf '%s' "${f#packages/}" | tr '/' '_')
-  sass --no-source-map --style=expanded --quiet --load-path=node_modules "$f" "$out/$name.css"
-  count=$((count + 1))
-done
-test "$(find "$out" -type f -name '*.css' | wc -l | tr -d ' ')" -gt 0
-echo "check: Sass entrypoints compile"
+sh /project/compile.sh /tmp/check-out
+ref=node_modules/.study-ref
+[ -d "$ref" ] || { echo "check: no reference compilation (grade-setup.sh)" >&2; exit 1; }
+rm -f /tmp/check-out/.entries
+diff -r "$ref" /tmp/check-out > /tmp/check.diff || { head -80 /tmp/check.diff; echo "check: compiled CSS differs" >&2; exit 1; }
+echo "check: $(ls /tmp/check-out | grep -c '\.css$') entry points compile to identical CSS"

@@ -1,14 +1,23 @@
-# cpp, xlarge: chosen by size, see docs/PROJECTS.md. Tasks are present; an earlier local Apple container bootstrap
-# failure kept it from being set up here, so validate and probe it on the cloud VM (native backend) or OrbStack.
+# cpp, xlarge: DuckDB, an in-process analytical SQL database. C++17 with unity builds, a large virtual-class
+# hierarchy (physical operators, functions, catalog entries), SQL logic tests (test/sql/**/*.test, run by the unittest
+# runner) and Catch2 C++ tests (test/*/*.cpp).
+# duckdb kept (opencv fallback not needed): a cold build of the unittest runner with its C++ tests (Release -O1 -g0,
+# in-tree extensions core_functions, parquet, json, icu) takes about 17 to 21 minutes on 3 CPUs (arm64, native). The
+# prebuilt tree (build/, git-ignored, so part of the grading overlay) is made by grade-setup.sh once per commit;
+# check.sh rebuilds incrementally against it: the three mined tasks grade (gold patch) in 31 to 130 s, far inside the
+# limit. grade_timeout_s is 1800 in the tasks as headroom for a slower machine.
 lang = "cpp"
 size = "xlarge"
 status = "curated"
-repo = "https://github.com/postgres/postgres"
-tag = "REL_18_7"
-commit = "f5c41f6681c910b3f69951bf6fb97c6d74605d25"
-loc = 1082184
-loc_by_language = { "C" = 965144, "C++" = 915, "C Header" = 116125 }
+repo = "https://github.com/duckdb/duckdb"
+tag = "v2.0.0"
+commit = "d54cbbe3df17e8e5ce68312f483b4155836112aa"
+loc = 845455
+loc_by_language = { "C++" = 620500, "C++ Header" = 206510, "C Header" = 18100, "C" = 345 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-task_types = ["refs", "inspect", "dispatch", "pr", "pr", "pr"]
-fallback_synthetic = ["refs", "inspect", "dispatch"]
-substitutions = ["three unavailable mined slots use documented fallback PR task directories"]
+task_types = ["dispatch", "inspect", "refs", "pr", "pr", "pr"]
+size_note = "0.85M code lines, inside the xlarge band (0.7M to 3M), below the 0.92M estimated before measuring"
+
+[probe]
+ok = false
+note = "clangd unavailable on arm64; probe deferred to the x64 cloud VM"

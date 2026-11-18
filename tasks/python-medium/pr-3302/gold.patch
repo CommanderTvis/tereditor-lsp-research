@@ -1,0 +1,45 @@
+diff --git a/astroid/brain/brain_builtin_inference.py b/astroid/brain/brain_builtin_inference.py
+index 6cf70215fe..b92a9ef82c 100644
+--- a/astroid/brain/brain_builtin_inference.py
++++ b/astroid/brain/brain_builtin_inference.py
+@@ -1147,11 +1147,12 @@ def _infer_str_format_call(
+         formatted_string = formatter.format(
+             format_template, *pos_values, **keyword_values
+         )
+-    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
++    except (AttributeError, IndexError, KeyError, TypeError, ValueError, OverflowError):
+         # AttributeError: named field in format string was not found in the arguments
+         # IndexError: there are too few arguments to interpolate
+         # TypeError: Unsupported format string
+         # ValueError: Unknown format code
++        # OverflowError: "c" with an out-of-range code point, e.g. "{:c}".format(-1)
+         return iter([util.Uninferable])
+ 
+     return iter([nodes.const_factory(formatted_string)])
+diff --git a/astroid/nodes/node_classes.py b/astroid/nodes/node_classes.py
+index 4010ae48d9..290b48119f 100644
+--- a/astroid/nodes/node_classes.py
++++ b/astroid/nodes/node_classes.py
+@@ -4770,9 +4770,10 @@ def _infer(
+                         end_col_offset=self.end_col_offset,
+                     )
+                     continue
+-                except (ValueError, TypeError, MemoryError):
++                except (ValueError, TypeError, MemoryError, OverflowError):
+                     # ValueError/TypeError: invalid format spec
+                     # MemoryError: format spec with huge width (e.g. f'{0:11111111111}')
++                    # OverflowError: "c" with an out-of-range code point (e.g. f'{-1:c}')
+                     yield util.Uninferable
+                     uninferable_already_generated = True
+                 continue
+diff --git a/doc/whatsnew/fragments/3301.bugfix b/doc/whatsnew/fragments/3301.bugfix
+new file mode 100644
+index 0000000000..0378b77792
+--- /dev/null
++++ b/doc/whatsnew/fragments/3301.bugfix
+@@ -0,0 +1,5 @@
++Fix a crash when inferring an f-string or ``str.format()`` call whose ``c`` format
++spec gets an out-of-range code point, such as ``f"{-1:c}"``. These now infer to
++``Uninferable``, like the ``%c`` case fixed in #3254.
++
++Closes #3301

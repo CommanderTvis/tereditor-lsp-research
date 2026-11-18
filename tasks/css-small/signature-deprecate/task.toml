@@ -1,0 +1,5 @@
+type = "signature"
+origin = "synthetic: reorder a mixin's parameters through every call site (devrig change signature)"
+symbol = "deprecate (core/scss/mixins/bootstrap/_deprecate.scss)"
+selection = "Candidates: functions and mixins defined once with at least 2 parameters, used at least 3 times in at least 2 other files, and named in a comment or in the docs; 18 candidates, sorted, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk), first taken: mixin deprecate. Change: swap the first two parameters."
+grade_timeout_s = 1200

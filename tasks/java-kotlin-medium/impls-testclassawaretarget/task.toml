@@ -1,0 +1,4 @@
+type = "impls"
+origin = "devrig find-implementations; Java interface implemented through a Kotlin abstract base, in Kotlin classes of two modules"
+symbol = "au.com.dius.pact.provider.junit.target.TestClassAwareTarget"
+selection = "seed 20261110. Candidates: public interfaces and abstract classes declared in the main source sets (Java and Kotlin, every module that compiles) with at least 5 transitive concrete implementing or deriving classes (nested, anonymous and companion classes excluded) in at least 2 modules, read from the compiled classes (javap); sorted by name: AbstractBaseMockServer, MockServer, Generator, ValueResolver, BaseTarget, TestClassAwareTarget, TestTarget, Target (8 candidates); index int(rand()*8)+1 after srand(20261110) = 6 (TestClassAwareTarget). Fixed after seeing candidates: the rule (5 implementations, 2 modules, main code of every module) was set after a first scan of the hierarchy."

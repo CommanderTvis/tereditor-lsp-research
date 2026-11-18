@@ -1,13 +1,14 @@
 # Mined pull requests: typescript-medium (hono)
 
-Candidates from `sh harness/gen/mine-prs.sh typescript-medium` (28 qualify, all in pr-candidates.jsonl in seeded
-order), taken strictly in order. The 2022 base commits use Yarn 1 and jest with the miniflare environment:
-dependencies come from the committed yarn.lock through `pnpm import` (same versions, no Yarn needed), and jest runs
-on the grading toolchain's Node 22. `gold.patch` is the pull request's whole non-test change, including the
-generated `deno_dist/` copies it committed; the tests exercise `src/` only.
+Modern rule (docs/MEMORIZATION.md): opened on or after 2026-07-01 and merged. 39 candidates qualify (pr-candidates.jsonl,
+seeded order); the first three that build and validate are the tasks. The memorization probe is a measurement, not a
+filter: each task's memprobe.jsonl is kept.
 
-| PR | Outcome | Reason |
-| --- | --- | --- |
-| 454 | see validate | |
-| 531 | see validate | |
-| 513 | see validate | |
+| PR | Outcome |
+| --- | --- |
+| 5340 | task pr-5340 |
+| 5423 | task pr-5423 |
+| 5376 | task pr-5376 |
+
+Candidates 5142 was also built and validated before the rule change; it is not among the first three and was removed.
+grade.sh runs the test files the pull request changed through check.sh (type-check, then vitest on those files).

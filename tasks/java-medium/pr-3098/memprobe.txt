@@ -1,0 +1,4 @@
+{"task": "tasks/java-medium/pr-3098", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 17, "fresh_lines": 17, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.00227749}
+{"task": "tasks/java-medium/pr-3098", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 17, "fresh_lines": 17, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.030346900000000003}
+{"task": "tasks/java-medium/pr-3098", "model": "claude-opus-5-5", "answered": true, "gold_lines": 17, "fresh_lines": 17, "verbatim_share": 0.176, "names_all_files": true, "cost_usd": 0.09582179999999998}
+SCORE tasks/java-medium/pr-3098 worst verbatim share 0.18 (gold lines 17)

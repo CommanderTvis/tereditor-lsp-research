@@ -1,13 +1,21 @@
-# Python, medium: rich, terminal rendering. Renderables reached through protocols (__rich_console__), a class hierarchy
-# of Markdown elements and progress columns, many lazily imported modules.
+# Python, medium: astroid, the Python AST library behind pylint. A node class hierarchy (nodes/, scoped_nodes/), a
+# visitor-style transform and inference machinery with generators and context objects, brain plugins for the standard library.
 lang = "python"
 size = "medium"
 status = "curated"
-repo = "https://github.com/Textualize/rich"
-tag = "v15.0.0"
-commit = "6ac483cbea39cab124dfd3483bba70ffafb71050"
-loc = 44961
-loc_by_language = { "Python" = 44961 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+repo = "https://github.com/pylint-dev/astroid"
+tag = "v4.3.4"
+commit = "be377c401ea0a9b6f8c3d23184700598ae573eef"
+loc = 52301
+loc_by_language = { "Python" = 52301 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md (harness/size/count.sh at the pinned commit)"
 stripped = []
 task_types = ["move", "signature", "impls", "pr", "pr", "pr"]
+
+[probe]
+# ./study probe python-medium (enforced), 2026-11-17.
+ok = false
+seconds_to_first_answer = 0.39
+references = "incomplete after 185 s: UseInferenceDefault from astroid/exceptions.py finds uses in astroid/__init__.py and the brain plugins but misses astroid/inference_tip.py:48, astroid/nodes/node_ng.py:147 and tests/brain/test_brain.py:443"
+definition = "complete in 19.7 s: InferenceContext resolves to astroid/context.py:29 (after 205 s of server start-up)"
+diagnostics = "complete in 1.2 s: astroid/constraint.py checked, 6 diagnostics (lines 91, 132, 158, 159, 187, 290)"

@@ -1,0 +1,1029 @@
+diff --git a/benchmarks/content-length/.gitignore b/benchmarks/content-length/.gitignore
+new file mode 100644
+index 0000000..3c1b3b2
+--- /dev/null
++++ b/benchmarks/content-length/.gitignore
+@@ -0,0 +1 @@
++.work/
+diff --git a/benchmarks/content-length/README.md b/benchmarks/content-length/README.md
+new file mode 100644
+index 0000000..d97a328
+--- /dev/null
++++ b/benchmarks/content-length/README.md
+@@ -0,0 +1,94 @@
++# Content-Length benchmarks
++
++Compare the original caller-header mutation, a copy of plain header records, and
++an HTTP/1 `_contentLength` candidate with compatibility guards. Dependencies are
++resolved from the repository's frozen lockfile (currently Hono 4.13.9).
++The harness records the installed Hono version without requiring a particular
++release.
++
++Use the same Node.js release and frozen dependencies for all variants in a
++comparison. Repeat the measurements with other Node releases as needed.
++The existing Node 20.x, 22.x and 24.x CI matrix runs the compatibility tests
++as part of the full suite, checking native serialization and fallback paths.
++
++```sh
++pnpm install --frozen-lockfile
++node benchmarks/content-length/prepare.mjs 82ba34e6b19da49ca500d4cac95b5fb25ee48cc8
++node benchmarks/content-length/run.mjs micro
++node benchmarks/content-length/run.mjs pipeline
++BENCH_BOMBARDIER=/path/to/bombardier node benchmarks/content-length/run.mjs http
++node benchmarks/content-length/summarize.mjs benchmarks/content-length/.work/{micro,pipeline,http}-v*.jsonl
++```
++
++Run each measurement with the desired Node executable, sequentially on an idle
++machine. Build preparation uses the current working tree for the candidate and
++Git snapshots for the baseline/copy, without changing the checkout. Rebuild after
++changing the candidate. Generated snapshots, bundles, metadata and results go in
++`.work/`. Choose a new `BENCH_RESULTS` path when repeating a run; existing results are
++never overwritten.
++Preparation records the candidate commit, uncommitted source diff and bundle
++hashes. Each result includes the commit and measured bundle hash so committed
++and experimental candidates remain identifiable. The runner verifies these
++hashes before timing and rejects missing or modified prepared variants, or a
++Hono version changed since preparation.
++
++To compare against a baseline that already uses native length, set
++`BENCH_SKIP_COPY=1` for both preparation and measurement. This omits the
++historical copy variant, which requires the original mutation implementation:
++
++```sh
++BENCH_SKIP_COPY=1 node benchmarks/content-length/prepare.mjs BASE_REF
++BENCH_SKIP_COPY=1 node benchmarks/content-length/run.mjs pipeline
++```
++
++- `micro`: lightweight Response creation, native ServerResponse creation, cache
++  handling and Node's real header serializer; `end()` is a no-op. Each process
++  warms up for 300,000 iterations, then reports the median of five 200,000-iteration
++  samples. Natural GC is included; forced GC is disabled by default because it
++  can invalidate optimized code before a timed sample.
++- `pipeline`: the same, including the incoming request adapter, Hono dispatch,
++  context creation and `c.json()`/`c.text()`. Awaits each listener call so
++  resolved Promise adoption jobs are included and do not accumulate between samples.
++- `http`: real TCP keep-alive traffic using Bombardier v2.0.2, 64 connections,
++  `GOMAXPROCS=2`, one second of warm-up and four seconds measured per process.
++  Records the server's user + system CPU time as well as RPS. Client and server
++  share the same machine. CPU timing includes client startup/shutdown boundaries.
++
++Each mode defaults to five rounds and rotates variant order. `BENCH_ROUNDS` and
++`BENCH_SECONDS` override those settings. HTTP cases are a small `c.json()` response,
++JSON with seven additional headers, and `c.text()` with no custom headers as
++controls. Pipeline and HTTP results record the actual header representation
++before timing, without materializing `response.headers`. Ordinary `c.json()`
++uses `Headers` in Hono 4.12.8 and a plain record in 4.13.8/4.13.9, so these versions
++exercise different adapter paths. The `micro` cases exercise plain records
++directly, independently of Hono's response construction. Summaries separate
++results by Hono version and recorded header representation.
++Validate response status/body before loading the endpoint; failures in load
++generation are errors, not successful benchmark samples.
++
++For nanoseconds lower is better; for RPS higher is better. The reported ranges
++are observed run-to-run ranges, not confidence intervals. Microbenchmarks cannot
++establish end-to-end throughput. Small RPS differences on a shared machine do
++not establish either a speedup or an absence of regression.
++
++The GC mode and warm-up count are recorded in each microbenchmark row.
++`BENCH_GC=forced BENCH_WARMUP=100000` reproduces the original exploratory method;
++use it only for comparison, since forced GC can invalidate optimized code.
++
++For the one-variable-at-a-time investigation (after preparation):
++
++```sh
++ABLATION_NODE=/path/to/node node benchmarks/content-length/ablation.mjs
++ABLATION_GC=natural ABLATION_NODE=/path/to/node node benchmarks/content-length/ablation.mjs
++```
++
++The first command reproduces the forced-GC experiment and compares isolated
++`json8` with `json` followed by `json8`. The second measures both cases with
++natural GC and longer warm-up. Both default to five process-level rounds and
++refuse to overwrite previous output.
++
++To compare cloning with property addition in isolation:
++
++```sh
++BENCH_RESULTS=/tmp/clone-cost.jsonl node benchmarks/content-length/clone-cost.mjs /path/to/node20 /path/to/node24
++```
+diff --git a/benchmarks/content-length/ablation.mjs b/benchmarks/content-length/ablation.mjs
+new file mode 100644
+index 0000000..f009738
+--- /dev/null
++++ b/benchmarks/content-length/ablation.mjs
+@@ -0,0 +1,94 @@
++// Diagnostic variants only: run prepare.mjs before this script.
++import { spawnSync } from 'node:child_process'
++import { appendFileSync, mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
++import { fileURLToPath } from 'node:url'
++import { createHash } from 'node:crypto'
++const work = new URL('./.work/', import.meta.url)
++const baseline = readFileSync(new URL('dist/baseline/index.mjs', work), 'utf8')
++const guarded = readFileSync(new URL('dist/guarded/index.mjs', work), 'utf8')
++const original = `\tif (!hasContentLength) {
++\t\tif (typeof body === "string") header["Content-Length"] = Buffer.byteLength(body);
++\t\telse if (body instanceof Uint8Array) header["Content-Length"] = body.byteLength;
++\t\telse if (body instanceof Blob) header["Content-Length"] = body.size;
++\t}`
++if (baseline.split(original).length !== 2)
++  throw new Error('Unexpected baseline; regenerate and inspect it')
++const local = `\tif (!hasContentLength) {
++\t\tif (typeof body === "string") { let length = Buffer.byteLength(body); header["Content-Length"] = length; }
++\t\telse if (body instanceof Uint8Array) { let length = body.byteLength; header["Content-Length"] = length; }
++\t\telse if (body instanceof Blob) { let length = body.size; header["Content-Length"] = length; }
++\t}`
++const merged = `\tif (!hasContentLength) {
++\t\tlet length;
++\t\tif (typeof body === "string") length = Buffer.byteLength(body);
++\t\telse if (body instanceof Uint8Array) length = body.byteLength;
++\t\telse if (body instanceof Blob) length = body.size;
++\t\tif (length !== undefined) header["Content-Length"] = length;
++\t}`
++const variants = {
++  baseline,
++  'baseline-repeat': baseline,
++  'let-local': baseline.replace(original, local),
++  'let-merged': baseline.replace(original, merged),
++  guarded,
++}
++for (const [name, code] of Object.entries(variants)) {
++  mkdirSync(new URL(`dist/${name}/`, work), { recursive: true })
++  writeFileSync(new URL(`dist/${name}/index.mjs`, work), code)
++}
++const naturalGC = process.env.ABLATION_GC === 'natural'
++let worker = readFileSync(new URL('./pipeline.mjs', import.meta.url), 'utf8')
++  .replace('`./.work/dist/${variant}/index.mjs`', '`./dist/${variant}/index.mjs`')
++  .replace("'./header-path.mjs'", "'../header-path.mjs'")
++  .replace('Object.entries(cases)', "process.argv[3].split(',').map(kind => [kind, cases[kind]])")
++worker = worker
++  .replace("const forceGC = process.env.BENCH_GC === 'forced'", `const forceGC = ${!naturalGC}`)
++  .replace(
++    'const warmupIterations = Number(process.env.BENCH_WARMUP || 300000)',
++    `const warmupIterations = ${naturalGC ? 300000 : 100000}`
++  )
++writeFileSync(new URL('ablation-worker.mjs', work), worker)
++writeFileSync(
++  new URL('ablation-manifest.json', work),
++  JSON.stringify(
++    Object.fromEntries(
++      Object.entries(variants).map(([name, code]) => [
++        name,
++        { sha256: createHash('sha256').update(code).digest('hex'), length: code.length },
++      ])
++    ),
++    null,
++    2
++  )
++)
++if (process.argv[2] === '--prepare-only') process.exit(0)
++const node = process.env.ABLATION_NODE || process.execPath
++const rounds = Number(process.env.ABLATION_ROUNDS || 5)
++const output = new URL(
++  `ablation-${node.split('/').slice(-3, -1).join('-') || 'node'}${naturalGC ? '-natural-gc' : ''}.jsonl`,
++  work
++)
++if (existsSync(output)) throw new Error(`Output exists: ${output}`)
++const names = Object.keys(variants)
++for (let round = 0; round < rounds; round++) {
++  for (const order of naturalGC
++    ? ['json,json8']
++    : round % 2
++      ? ['json,json8', 'json8']
++      : ['json8', 'json,json8']) {
++    for (let j = 0; j < names.length; j++) {
++      const variant = names[(j + round) % names.length]
++      const result = spawnSync(
++        node,
++        ['--expose-gc', fileURLToPath(new URL('ablation-worker.mjs', work)), variant, order],
++        { encoding: 'utf8' }
++      )
++      if (result.status !== 0) throw new Error(result.stderr)
++      for (const line of result.stdout.trim().split('\n')) {
++        const row = { round, order, gc: naturalGC ? 'natural' : 'forced', ...JSON.parse(line) }
++        appendFileSync(output, JSON.stringify(row) + '\n')
++        console.log(JSON.stringify(row))
++      }
++    }
++  }
++}
+diff --git a/benchmarks/content-length/clone-cost.cjs b/benchmarks/content-length/clone-cost.cjs
+new file mode 100644
+index 0000000..004e1e7
+--- /dev/null
++++ b/benchmarks/content-length/clone-cost.cjs
+@@ -0,0 +1,54 @@
++'use strict'
++const variant = process.argv[2]
++const make =
++  variant === 'update'
++    ? () => ({ 'Content-Type': 'application/json', 'Content-Length': 0 })
++    : () => ({ 'Content-Type': 'application/json' })
++const ops = {
++  identity: (h) => h,
++  clone: (h) => ({ ...h }),
++  add: (h) => {
++    h['Content-Length'] = 27
++    return h
++  },
++  copyadd: (h) => {
++    const c = { ...h }
++    c['Content-Length'] = 27
++    return c
++  },
++  update: (h) => {
++    h['Content-Length'] = 27
++    return h
++  },
++}
++const op = ops[variant]
++if (!op) throw Error('Unknown variant')
++const batch = 4096
++const input = new Array(batch)
++const output = new Array(batch)
++let sink = 0
++function run(count) {
++  let ns = 0n
++  for (let start = 0; start < count; start += batch) {
++    for (let i = 0; i < batch; i++) input[i] = make()
++    const before = process.hrtime.bigint()
++    for (let i = 0; i < batch; i++) output[i] = op(input[i])
++    ns += process.hrtime.bigint() - before
++    for (let i = 0; i < batch; i++)
++      sink += output[i]['Content-Type'].length + (output[i]['Content-Length'] || 0)
++  }
++  return Number(ns) / (Math.ceil(count / batch) * batch)
++}
++run(500000)
++const samples = Array.from({ length: 7 }, () => run(1000000)).sort((a, b) => a - b)
++console.log(
++  JSON.stringify({
++    node: process.version,
++    v8: process.versions.v8,
++    variant,
++    medianNs: samples[3],
++    samples,
++    batch,
++    sink,
++  })
++)
+diff --git a/benchmarks/content-length/clone-cost.mjs b/benchmarks/content-length/clone-cost.mjs
+new file mode 100644
+index 0000000..99a2baf
+--- /dev/null
++++ b/benchmarks/content-length/clone-cost.mjs
+@@ -0,0 +1,26 @@
++import { execFileSync } from 'node:child_process'
++import { appendFileSync, existsSync } from 'node:fs'
++import { fileURLToPath } from 'node:url'
++
++// Pass fixed Node executables to compare engine versions. Each case gets a
++// fresh process, with rotating case order and alternating version order.
++const nodes = process.argv.slice(2)
++if (!nodes.length) nodes.push(process.execPath)
++const output =
++  process.env.BENCH_RESULTS || fileURLToPath(new URL('./.work/clone-cost.jsonl', import.meta.url))
++if (existsSync(output)) throw new Error(`Refusing to overwrite ${output}`)
++const worker = fileURLToPath(new URL('./clone-cost.cjs', import.meta.url))
++const variants = ['identity', 'clone', 'add', 'copyadd', 'update']
++for (let round = 0; round < 5; round++) {
++  for (const node of round % 2 ? [...nodes].reverse() : nodes) {
++    for (let k = 0; k < variants.length; k++) {
++      const variant = variants[(k + round) % variants.length]
++      const row = {
++        round,
++        ...JSON.parse(execFileSync(node, [worker, variant], { encoding: 'utf8' })),
++      }
++      appendFileSync(output, JSON.stringify(row) + '\n')
++    }
++  }
++  console.log(`Completed round ${round + 1}`)
++}
+diff --git a/benchmarks/content-length/header-path.mjs b/benchmarks/content-length/header-path.mjs
+new file mode 100644
+index 0000000..cd70276
+--- /dev/null
++++ b/benchmarks/content-length/header-path.mjs
+@@ -0,0 +1,11 @@
++// Inspect the cache without materializing response.headers or changing the measured path.
++export const headerPath = (response) => {
++  const cache =
++    response[Object.getOwnPropertySymbols(response).find((key) => key.description === 'cache')]
++  if (!cache) return 'uncached'
++  const headers = cache[2]
++  if (!headers) return 'default'
++  if (headers instanceof Headers) return 'Headers'
++  if (Array.isArray(headers)) return 'tuples'
++  return 'plain'
++}
+diff --git a/benchmarks/content-length/micro.mjs b/benchmarks/content-length/micro.mjs
+new file mode 100644
+index 0000000..eeb23a8
+--- /dev/null
++++ b/benchmarks/content-length/micro.mjs
+@@ -0,0 +1,62 @@
++import { ServerResponse } from 'node:http'
++const forceGC = process.env.BENCH_GC === 'forced'
++const warmupIterations = Number(process.env.BENCH_WARMUP || 300000)
++if (!Number.isSafeInteger(warmupIterations) || warmupIterations < 1)
++  throw new Error('BENCH_WARMUP must be a positive integer')
++const variant = process.argv[2]
++const { responseViaCache, LightweightResponse } = await import(`./.work/dist/${variant}/index.mjs`)
++class MeasuredResponse extends ServerResponse {
++  end() {
++    return this
++  }
++}
++const request = { method: 'GET', httpVersionMajor: 1, httpVersionMinor: 1 }
++const factories = {
++  plain1: () => ({ 'content-type': 'text/plain' }),
++  plain8: () => ({
++    'content-type': 'text/plain',
++    'x-a': '1',
++    'x-b': '2',
++    'x-c': '3',
++    'x-d': '4',
++    'x-e': '5',
++    'x-f': '6',
++    'x-g': '7',
++  }),
++  noheaders: () => undefined,
++}
++let sink = 0
++for (const [kind, makeHeaders] of Object.entries(factories)) {
++  const run = (count) => {
++    const start = process.hrtime.bigint()
++    for (let i = 0; i < count; i++) {
++      const headers = makeHeaders()
++      const outgoing = new MeasuredResponse(request)
++      responseViaCache(new LightweightResponse('hello', { headers }), outgoing)
++      sink += outgoing._header.length
++    }
++    return Number(process.hrtime.bigint() - start) / count
++  }
++  run(warmupIterations)
++  const samples = []
++  for (let i = 0; i < 5; i++) {
++    if (forceGC) global.gc()
++    samples.push(run(200000))
++  }
++  samples.sort((a, b) => a - b)
++  console.log(
++    JSON.stringify({
++      node: process.version,
++      variant,
++      gc: forceGC ? 'forced' : 'natural',
++      warmupIterations,
++      iterationsPerSample: 200000,
++      sampleCount: 5,
++      kind,
++      medianNs: +samples[2].toFixed(1),
++      minNs: +samples[0].toFixed(1),
++      maxNs: +samples.at(-1).toFixed(1),
++      sink,
++    })
++  )
++}
+diff --git a/benchmarks/content-length/pipeline.mjs b/benchmarks/content-length/pipeline.mjs
+new file mode 100644
+index 0000000..f638339
+--- /dev/null
++++ b/benchmarks/content-length/pipeline.mjs
+@@ -0,0 +1,76 @@
++import { IncomingMessage, ServerResponse } from 'node:http'
++import { Socket } from 'node:net'
++import { Hono } from 'hono'
++import { headerPath } from './header-path.mjs'
++const forceGC = process.env.BENCH_GC === 'forced'
++const warmupIterations = Number(process.env.BENCH_WARMUP || 300000)
++if (!Number.isSafeInteger(warmupIterations) || warmupIterations < 1)
++  throw new Error('BENCH_WARMUP must be a positive integer')
++const variant = process.argv[2]
++const { getRequestListener } = await import(`./.work/dist/${variant}/index.mjs`)
++class MeasuredResponse extends ServerResponse {
++  end() {
++    return this
++  }
++}
++const request = new IncomingMessage(new Socket())
++request.method = 'GET'
++request.httpVersionMajor = 1
++request.httpVersionMinor = 1
++request.url = '/'
++request.rawHeaders = ['Host', 'localhost']
++request.headers = { host: 'localhost' }
++const payload = { message: 'Hello, world!' }
++const cases = {
++  json: (c) => c.json(payload),
++  json8: (c) =>
++    c.json(payload, 200, {
++      'x-a': '1',
++      'x-b': '2',
++      'x-c': '3',
++      'x-d': '4',
++      'x-e': '5',
++      'x-f': '6',
++      'x-g': '7',
++    }),
++  text: (c) => c.text('Hello, world!'),
++}
++let sink = 0
++for (const [kind, handler] of Object.entries(cases)) {
++  const app = new Hono().get('/', handler)
++  const listener = getRequestListener(app.fetch)
++  const headers = headerPath(await app.fetch(new Request('http://localhost/')))
++  const run = async (count) => {
++    const start = process.hrtime.bigint()
++    for (let i = 0; i < count; i++) {
++      const outgoing = new MeasuredResponse(request)
++      await listener(request, outgoing)
++      if (!outgoing._header) throw Error('Response was not synchronous')
++      sink += outgoing._header.length
++    }
++    return Number(process.hrtime.bigint() - start) / count
++  }
++  await run(warmupIterations)
++  const samples = []
++  for (let i = 0; i < 5; i++) {
++    if (forceGC) global.gc()
++    samples.push(await run(200000))
++  }
++  samples.sort((a, b) => a - b)
++  console.log(
++    JSON.stringify({
++      node: process.version,
++      variant,
++      gc: forceGC ? 'forced' : 'natural',
++      warmupIterations,
++      iterationsPerSample: 200000,
++      sampleCount: 5,
++      kind,
++      headers,
++      medianNs: +samples[2].toFixed(1),
++      minNs: +samples[0].toFixed(1),
++      maxNs: +samples.at(-1).toFixed(1),
++      sink,
++    })
++  )
++}
+diff --git a/benchmarks/content-length/prepare.mjs b/benchmarks/content-length/prepare.mjs
+new file mode 100644
+index 0000000..4dcda83
+--- /dev/null
++++ b/benchmarks/content-length/prepare.mjs
+@@ -0,0 +1,102 @@
++import { execFileSync } from 'node:child_process'
++import { createHash } from 'node:crypto'
++import { cpSync, mkdirSync, readFileSync, symlinkSync, writeFileSync, existsSync } from 'node:fs'
++import { dirname, resolve } from 'node:path'
++import { fileURLToPath } from 'node:url'
++import { build } from 'tsdown'
++
++const root = fileURLToPath(new URL('../../', import.meta.url))
++const work = fileURLToPath(new URL('./.work/', import.meta.url))
++const honoVersion = JSON.parse(
++  readFileSync(resolve(root, 'node_modules/hono/package.json'), 'utf8')
++).version
++const base = process.argv[2]
++if (!base) throw new Error('Usage: node benchmarks/content-length/prepare.mjs BASE_REF')
++const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
++const revision = git('rev-parse', `${base}^{commit}`).trim()
++const variants =
++  process.env.BENCH_SKIP_COPY === '1' ? ['baseline', 'guarded'] : ['baseline', 'copy', 'guarded']
++mkdirSync(work, { recursive: true })
++if (!existsSync(resolve(work, 'node_modules'))) {
++  symlinkSync(resolve(root, 'node_modules'), resolve(work, 'node_modules'), 'junction')
++}
++const files = git('ls-tree', '-r', '--name-only', revision, 'src').trim().split('\n')
++for (const variant of variants) {
++  const dir = resolve(work, variant)
++  mkdirSync(dir, { recursive: true })
++  if (variant === 'guarded') {
++    cpSync(resolve(root, 'src'), resolve(dir, 'src'), { recursive: true })
++  } else {
++    for (const file of files) {
++      const target = resolve(dir, file)
++      mkdirSync(dirname(target), { recursive: true })
++      writeFileSync(target, git('show', `${revision}:${file}`))
++    }
++  }
++  const listenerPath = resolve(dir, 'src/listener.ts')
++  let listener = readFileSync(listenerPath, 'utf8')
++  if (variant === 'copy') {
++    if (listener.includes('canAutoLength'))
++      throw new Error('Baseline must precede the Content-Length experiment')
++    const start = listener.indexOf('  let hasContentLength = false')
++    const marker = '\n  // in `responseViaCache`'
++    const end = listener.indexOf(marker, start)
++    if (start === -1 || end === -1) throw new Error('Unsupported baseline listener')
++    const section = listener.slice(start, end)
++    const insertion = section.lastIndexOf('\n  }')
++    listener =
++      listener.slice(0, start) +
++      section.slice(0, insertion) +
++      `
++    if (!hasContentLength && (typeof body === 'string' || body instanceof Uint8Array || body instanceof Blob)) {
++      header = { ...header }
++    }` +
++      section.slice(insertion) +
++      listener.slice(end)
++  }
++  if (!listener.includes('const responseViaCache =')) throw new Error('Missing cache handler')
++  writeFileSync(
++    listenerPath,
++    listener.replace('const responseViaCache =', 'export const responseViaCache =')
++  )
++  const indexPath = resolve(dir, 'src/index.ts')
++  writeFileSync(
++    indexPath,
++    readFileSync(indexPath, 'utf8') +
++      `
++export { responseViaCache } from './listener'
++export { Response as LightweightResponse } from './response'
++`
++  )
++  await build({
++    config: false,
++    entry: [indexPath],
++    outDir: resolve(work, 'dist', variant),
++    format: ['esm'],
++    dts: false,
++    target: false,
++    external: ['hono'],
++    clean: true,
++  })
++}
++writeFileSync(
++  resolve(work, 'metadata.json'),
++  JSON.stringify(
++    {
++      base: revision,
++      candidate: git('rev-parse', 'HEAD').trim(),
++      candidateDiff: git('diff', 'HEAD', '--', 'src'),
++      bundles: Object.fromEntries(
++        variants.map((variant) => [
++          variant,
++          createHash('sha256')
++            .update(readFileSync(resolve(work, 'dist', variant, 'index.mjs')))
++            .digest('hex'),
++        ])
++      ),
++      hono: honoVersion,
++    },
++    null,
++    2
++  )
++)
+diff --git a/benchmarks/content-length/run.mjs b/benchmarks/content-length/run.mjs
+new file mode 100644
+index 0000000..72b5513
+--- /dev/null
++++ b/benchmarks/content-length/run.mjs
+@@ -0,0 +1,116 @@
++import { fork, spawn, spawnSync } from 'node:child_process'
++import { createHash } from 'node:crypto'
++import { once } from 'node:events'
++import { appendFileSync, existsSync, readFileSync } from 'node:fs'
++import { resolve } from 'node:path'
++import { fileURLToPath } from 'node:url'
++
++const mode = process.argv[2] || 'micro'
++if (!['micro', 'pipeline', 'http'].includes(mode)) throw new Error('Use micro, pipeline or http')
++const rounds = Number(process.env.BENCH_ROUNDS || 5)
++const seconds = Number(process.env.BENCH_SECONDS || 4)
++if (!Number.isInteger(rounds) || rounds < 1 || !Number.isFinite(seconds) || seconds <= 0)
++  throw new Error('BENCH_ROUNDS and BENCH_SECONDS must be positive')
++const variants =
++  process.env.BENCH_SKIP_COPY === '1' ? ['baseline', 'guarded'] : ['baseline', 'copy', 'guarded']
++const output = resolve(
++  process.env.BENCH_RESULTS ||
++    fileURLToPath(new URL(`./.work/${mode}-${process.version}.jsonl`, import.meta.url))
++)
++if (existsSync(output))
++  throw new Error(`Refusing to overwrite ${output}; choose a new BENCH_RESULTS path`)
++const metadata = JSON.parse(readFileSync(new URL('./.work/metadata.json', import.meta.url), 'utf8'))
++const honoVersion = JSON.parse(
++  readFileSync(new URL('../../node_modules/hono/package.json', import.meta.url), 'utf8')
++).version
++if (metadata.hono !== honoVersion) throw new Error('Hono version changed; run prepare.mjs again')
++for (const variant of variants) {
++  if (!metadata.bundles?.[variant])
++    throw new Error('Run prepare.mjs with the same BENCH_SKIP_COPY setting')
++  const bundle = readFileSync(new URL(`./.work/dist/${variant}/index.mjs`, import.meta.url))
++  if (createHash('sha256').update(bundle).digest('hex') !== metadata.bundles[variant])
++    throw new Error(`Prepared ${variant} bundle changed; run prepare.mjs again`)
++}
++const save = (row) => {
++  const value = {
++    ...row,
++    mode,
++    base: metadata.base,
++    candidate: metadata.candidate,
++    bundleSha256: metadata.bundles[row.variant],
++    hono: metadata.hono,
++  }
++  appendFileSync(output, JSON.stringify(value) + '\n')
++  console.log(JSON.stringify(value))
++}
++const load = (url, duration) =>
++  new Promise((resolve, reject) => {
++    const child = spawn(
++      process.env.BENCH_BOMBARDIER || 'bombardier',
++      ['-c', '64', '-d', `${duration}s`, '-p', 'r', '-o', 'json', url],
++      { env: { ...process.env, GOMAXPROCS: '2' } }
++    )
++    let out = '',
++      err = ''
++    child.stdout.on('data', (x) => (out += x))
++    child.stderr.on('data', (x) => (err += x))
++    child.on('error', reject)
++    child.on('exit', (code) => (code === 0 ? resolve(JSON.parse(out)) : reject(new Error(err))))
++  })
++const send = async (child, message) => {
++  const event = once(child, 'message', { signal: AbortSignal.timeout(10000) })
++  child.send(message)
++  return (await event)[0]
++}
++for (let round = 0; round < rounds; round++) {
++  for (const kind of mode === 'http' ? ['json', 'json8', 'text'] : ['all']) {
++    for (let j = 0; j < variants.length; j++) {
++      const variant = variants[(j + round) % variants.length]
++      if (mode !== 'http') {
++        const result = spawnSync(
++          process.execPath,
++          ['--expose-gc', fileURLToPath(new URL(`./${mode}.mjs`, import.meta.url)), variant],
++          { encoding: 'utf8' }
++        )
++        if (result.status !== 0) throw new Error(result.stderr)
++        for (const line of result.stdout.trim().split('\n')) save({ round, ...JSON.parse(line) })
++        continue
++      }
++      const child = fork(new URL('./server.mjs', import.meta.url), [variant], {
++        stdio: ['ignore', 'ignore', 'inherit', 'ipc'],
++      })
++      try {
++        const { port, headerPaths, ...runtime } = (
++          await once(child, 'message', { signal: AbortSignal.timeout(10000) })
++        )[0]
++        const url = `http://127.0.0.1:${port}/${kind}`
++        const response = await fetch(url)
++        const expected = kind === 'text' ? 'Hello, world!' : '{"message":"Hello, world!"}'
++        if (response.status !== 200 || (await response.text()) !== expected)
++          throw new Error('Response mismatch')
++        await load(url, 1)
++        await send(child, 'start')
++        const benchmark = await load(url, seconds)
++        const stats = await send(child, 'end')
++        const result = benchmark.result
++        if (
++          result.req1xx ||
++          result.req3xx ||
++          result.req4xx ||
++          result.req5xx ||
++          result.others ||
++          result.errors ||
++          !result.req2xx
++        )
++          throw new Error(`Load test failed: ${JSON.stringify(result)}`)
++        save({ round, variant, kind, headers: headerPaths[kind], ...runtime, ...stats, benchmark })
++      } finally {
++        if (child.exitCode === null && child.signalCode === null) {
++          const exited = once(child, 'exit')
++          child.kill('SIGTERM')
++          await exited
++        }
++      }
++    }
++  }
++}
+diff --git a/benchmarks/content-length/server.mjs b/benchmarks/content-length/server.mjs
+new file mode 100644
+index 0000000..ac90c91
+--- /dev/null
++++ b/benchmarks/content-length/server.mjs
+@@ -0,0 +1,41 @@
++import { Hono } from 'hono'
++import { headerPath } from './header-path.mjs'
++const { createAdaptorServer } = await import(`./.work/dist/${process.argv[2]}/index.mjs`)
++const app = new Hono()
++const payload = { message: 'Hello, world!' }
++app.get('/json', (c) => c.json(payload))
++app.get('/json8', (c) =>
++  c.json(payload, 200, {
++    'x-a': '1',
++    'x-b': '2',
++    'x-c': '3',
++    'x-d': '4',
++    'x-e': '5',
++    'x-f': '6',
++    'x-g': '7',
++  })
++)
++app.get('/text', (c) => c.text('Hello, world!'))
++const server = createAdaptorServer({ fetch: app.fetch })
++const headerPaths = {}
++for (const kind of ['json', 'json8', 'text']) {
++  headerPaths[kind] = headerPath(await app.fetch(new Request(`http://localhost/${kind}`)))
++}
++let start
++process.on('message', (message) => {
++  if (message === 'start') {
++    start = process.cpuUsage()
++    process.send('started')
++  }
++  if (message === 'end')
++    process.send({ cpu: process.cpuUsage(start), memory: process.memoryUsage() })
++  if (message === 'stop') server.close(() => process.exit())
++})
++server.listen(0, '127.0.0.1', () =>
++  process.send({
++    port: server.address().port,
++    node: process.version,
++    v8: process.versions.v8,
++    headerPaths,
++  })
++)
+diff --git a/benchmarks/content-length/summarize.mjs b/benchmarks/content-length/summarize.mjs
+new file mode 100644
+index 0000000..126425c
+--- /dev/null
++++ b/benchmarks/content-length/summarize.mjs
+@@ -0,0 +1,42 @@
++import { readFileSync } from 'node:fs'
++const groups = new Map()
++for (const path of process.argv.slice(2)) {
++  for (const line of readFileSync(path, 'utf8').trim().split('\n')) {
++    const row = JSON.parse(line)
++    const mode =
++      row.mode ||
++      (row.benchmark
++        ? 'http'
++        : ['plain1', 'plain8', 'noheaders'].includes(row.kind)
++          ? 'micro'
++          : 'pipeline')
++    const key = `${row.node} | ${row.hono || 'unrecorded'} | ${mode} | ${row.kind} | ${row.headers || 'unrecorded'}`
++    if (!groups.has(key)) groups.set(key, {})
++    const variants = groups.get(key)
++    ;(variants[row.variant] ||= []).push(row)
++  }
++}
++const median = (values) => {
++  const sorted = values.toSorted((a, b) => a - b)
++  const middle = Math.floor(sorted.length / 2)
++  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2
++}
++console.log(
++  '| Node | Hono | Mode | Case | Headers | Variant | n | Median (range) | Delta | CPU µs/request |\n|---|---|---|---|---|---|---:|---:|---:|---:|'
++)
++for (const [key, variants] of groups) {
++  const http = !!variants.baseline[0].benchmark
++  const metric = (r) =>
++    http ? r.benchmark.result.req2xx / r.benchmark.result.timeTakenSeconds : r.medianNs
++  const baseline = median(variants.baseline.map(metric))
++  for (const [name, rows] of Object.entries(variants)) {
++    const values = rows.map(metric)
++    const mid = median(values)
++    const cpu = http
++      ? median(rows.map((r) => (r.cpu.user + r.cpu.system) / r.benchmark.result.req2xx)).toFixed(3)
++      : '—'
++    console.log(
++      `| ${key} | ${name} | ${rows.length} | ${mid.toFixed(1)} (${Math.min(...values).toFixed(1)}–${Math.max(...values).toFixed(1)}) ${http ? 'req/s' : 'ns'} | ${((mid / baseline - 1) * 100).toFixed(2)}% | ${cpu} |`
++    )
++  }
++}
+diff --git a/package.json b/package.json
+index 40fd9dc..ba0019f 100644
+--- a/package.json
++++ b/package.json
+@@ -113,7 +113,7 @@
+     "@types/ws": "^8.18.1",
+     "@whatwg-node/fetch": "^0.9.14",
+     "eslint": "^9.10.0",
+-    "hono": "^4.12.8",
++    "hono": "^4.13.9",
+     "np": "^11.2.1",
+     "prettier": "^3.2.4",
+     "publint": "^0.3.18",
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 375d8b1..05220c9 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -24,8 +24,8 @@ importers:
+         specifier: ^9.10.0
+         version: 9.39.4
+       hono:
+-        specifier: ^4.12.8
+-        version: 4.12.8
++        specifier: ^4.13.9
++        version: 4.13.9
+       np:
+         specifier: ^11.2.1
+         version: 11.2.1(@types/node@20.19.37)(typescript@5.9.3)
+@@ -52,7 +52,7 @@ importers:
+     dependencies:
+       '@hono/node-server':
+         specifier: ^2.1.0
+-        version: 2.1.0(hono@4.12.8)
++        version: 2.1.0(hono@4.13.9)
+       srvx:
+         specifier: ^0.12.5
+         version: 0.12.5
+@@ -1536,8 +1536,8 @@ packages:
+     resolution: {integrity: sha512-CsNUt5x9LUdx6hnk/E2SZLsDyvfqANZSUq4+D3D8RzDJ2M+HDTIkF60ibS1vHaK55vzgiZw1bEPFG9yH7l33wA==}
+     engines: {node: '>=12'}
+ 
+-  hono@4.12.8:
+-    resolution: {integrity: sha512-VJCEvtrezO1IAR+kqEYnxUOoStaQPGrCmX3j4wDTNOcD1uRPFpGlwQUIW8niPuvHXaTUxeOUl5MMDGrl+tmO9A==}
++  hono@4.13.9:
++    resolution: {integrity: sha512-7dMkQmZoC4E6F7AtaQSPhlWAdnBti+j7rreMZl8QB4jFiEhP9TWbGWUMi8WYzBCgmgulxuvLQupKqo+Co6Omyg==}
+     engines: {node: '>=16.9.0'}
+ 
+   hookable@6.1.0:
+@@ -2899,9 +2899,9 @@ snapshots:
+       - eslint-plugin-import
+       - supports-color
+ 
+-  '@hono/node-server@2.1.0(hono@4.12.8)':
++  '@hono/node-server@2.1.0(hono@4.13.9)':
+     dependencies:
+-      hono: 4.12.8
++      hono: 4.13.9
+ 
+   '@humanfs/core@0.19.1': {}
+ 
+@@ -4110,7 +4110,7 @@ snapshots:
+ 
+   has-flag@5.0.1: {}
+ 
+-  hono@4.12.8: {}
++  hono@4.13.9: {}
+ 
+   hookable@6.1.0: {}
+ 
+diff --git a/src/listener.ts b/src/listener.ts
+index c8c2763..cb8076d 100644
+--- a/src/listener.ts
++++ b/src/listener.ts
+@@ -1,4 +1,5 @@
+-import type { IncomingMessage, ServerResponse, OutgoingHttpHeaders } from 'node:http'
++import { ServerResponse } from 'node:http'
++import type { IncomingMessage, OutgoingHttpHeaders } from 'node:http'
+ import { Http2ServerRequest, constants as h2constants } from 'node:http2'
+ import type { Http2ServerResponse } from 'node:http2'
+ import type { Writable } from 'node:stream'
+@@ -30,6 +31,11 @@ type OutgoingHasOutgoingEnded = Http2ServerResponse & {
+ type IncomingHasDrainState = (IncomingMessage | Http2ServerRequest) & {
+   [incomingDraining]?: boolean
+ }
++type Http1ResponseWithContentLength = ServerResponse & {
++  _contentLength: number | null
++  _hasBody: boolean
++  _removedContLen: boolean
++}
+ 
+ const DRAIN_TIMEOUT_MS = 500
+ const MAX_DRAIN_BYTES = 64 * 1024 * 1024
+@@ -150,6 +156,10 @@ const handleResponseError = (e: unknown, outgoing: ServerResponse | Http2ServerR
+   } else {
+     console.error(e)
+     if (!outgoing.headersSent) {
++      if (outgoing instanceof ServerResponse) {
++        // writeHead() may have failed after the fast path set the original body's length.
++        ;(outgoing as Http1ResponseWithContentLength)._contentLength = null
++      }
+       outgoing.writeHead(500, { 'Content-Type': 'text/plain' })
+     }
+     outgoing.end(`Error: ${err.message}`)
+@@ -165,6 +175,48 @@ const flushHeaders = (outgoing: ServerResponse | Http2ServerResponse) => {
+   }
+ }
+ 
++// Node's HTTP/1 serializer can add Content-Length without adding a header field.
++// These private fields are covered by compatibility tests in CI. Fall back
++// when automatic insertion would omit the header or preserve a framing header.
++const trySetContentLength = (
++  outgoing: ServerResponse | Http2ServerResponse,
++  status: number,
++  length: number
++): boolean => {
++  const http1 = outgoing as Http1ResponseWithContentLength
++  if (
++    http1._contentLength === null &&
++    http1._hasBody &&
++    http1.useChunkedEncodingByDefault &&
++    !http1._removedContLen &&
++    status >= 200 &&
++    status !== 204 &&
++    status !== 304 &&
++    !outgoing.hasHeader('content-length') &&
++    !outgoing.hasHeader('transfer-encoding') &&
++    !outgoing.hasHeader('trailer')
++  ) {
++    http1._contentLength = length
++    return true
++  }
++  return false
++}
++
++const writeDefaultHeaders = (
++  outgoing: ServerResponse | Http2ServerResponse,
++  status: number,
++  length: number
++): void => {
++  if (trySetContentLength(outgoing, status, length)) {
++    outgoing.writeHead(status, { 'Content-Type': defaultContentType })
++  } else {
++    outgoing.writeHead(status, {
++      'Content-Type': defaultContentType,
++      'Content-Length': length,
++    })
++  }
++}
++
+ const responseViaCache = async (
+   res: Response,
+   outgoing: ServerResponse | Http2ServerResponse
+@@ -172,29 +224,19 @@ const responseViaCache = async (
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   let [status, body, header] = (res as any)[cacheKey] as InternalCache
+ 
+-  // Fast path: no custom headers — create the final header object in one shot
+-  // (avoids shape transitions from mutating a single-key object).
++  // Fast path: no custom headers. Let Node add the length when possible.
+   if (!header) {
+     if (body === null) {
+       outgoing.writeHead(status)
+       outgoing.end()
+     } else if (typeof body === 'string') {
+-      outgoing.writeHead(status, {
+-        'Content-Type': defaultContentType,
+-        'Content-Length': Buffer.byteLength(body),
+-      })
++      writeDefaultHeaders(outgoing, status, Buffer.byteLength(body))
+       outgoing.end(body)
+     } else if (body instanceof Uint8Array) {
+-      outgoing.writeHead(status, {
+-        'Content-Type': defaultContentType,
+-        'Content-Length': body.byteLength,
+-      })
++      writeDefaultHeaders(outgoing, status, body.byteLength)
+       outgoing.end(body)
+     } else if (body instanceof Blob) {
+-      outgoing.writeHead(status, {
+-        'Content-Type': defaultContentType,
+-        'Content-Length': body.size,
+-      })
++      writeDefaultHeaders(outgoing, status, body.size)
+       outgoing.end(new Uint8Array(await body.arrayBuffer()))
+     } else {
+       outgoing.writeHead(status, { 'Content-Type': defaultContentType })
+@@ -208,6 +250,8 @@ const responseViaCache = async (
+   }
+ 
+   let hasContentLength = false
++  let plainHeaders = false
++  let canAutoLength = true
+   if (header instanceof Headers) {
+     hasContentLength = header.has('content-length')
+     header = buildOutgoingHttpHeaders(header, body === null ? undefined : defaultContentType)
+@@ -216,22 +260,39 @@ const responseViaCache = async (
+     hasContentLength = headerObj.has('content-length')
+     header = buildOutgoingHttpHeaders(headerObj, body === null ? undefined : defaultContentType)
+   } else {
++    plainHeaders = true
+     for (const key in header) {
+       if (key.length === 14 && key.toLowerCase() === 'content-length') {
+         hasContentLength = true
+         break
+       }
++      if (
++        (key.length === 17 && key.toLowerCase() === 'transfer-encoding') ||
++        (key.length === 7 && key.toLowerCase() === 'trailer')
++      ) {
++        canAutoLength = false
++      }
+     }
+   }
+ 
+   // in `responseViaCache`, if body is not stream, Transfer-Encoding is considered not chunked
+   if (!hasContentLength) {
++    let length: number | undefined
+     if (typeof body === 'string') {
+-      header['Content-Length'] = Buffer.byteLength(body)
++      length = Buffer.byteLength(body)
+     } else if (body instanceof Uint8Array) {
+-      header['Content-Length'] = body.byteLength
++      length = body.byteLength
+     } else if (body instanceof Blob) {
+-      header['Content-Length'] = body.size
++      length = body.size
++    }
++    if (
++      length !== undefined &&
++      (!plainHeaders || !canAutoLength || !trySetContentLength(outgoing, status, length))
++    ) {
++      if (plainHeaders) {
++        header = { ...header }
++      }
++      header['Content-Length'] = length
+     }
+   }
+ 

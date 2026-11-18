@@ -1,0 +1,11 @@
+type = "pr"
+origin = "mined: laravel/framework#61610 (issue #61499), docs/TASKS.md \"Mined pull requests\""
+pr = 61610
+issue = 61499
+base_commit = "b7d97e53a5f28d1a992a977cc45d542550d20ff9"
+merge_commit = "eb2ee2a89421af46d044a628a84b0dea3ab57f1c"
+merged_at = "2026-09-16T17:22:25Z"
+fail_to_pass = ["Illuminate\\Tests\\Routing\\RoutingUrlGeneratorTest::testEncodedRouteParametersAreNotEncodedAgain"]
+pass_to_pass = "the other tests of tests/Routing/RoutingUrlGeneratorTest.php"
+loc_base = 355052
+loc_base_method = "scc 3.5.0 PHP code lines at base_commit (vendor/ excluded, tests included)"

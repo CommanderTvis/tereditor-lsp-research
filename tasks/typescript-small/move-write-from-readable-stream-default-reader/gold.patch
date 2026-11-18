@@ -1,0 +1,163 @@
+diff --git a/src/internal/writeFromReadableStreamDefaultReader.ts b/src/internal/writeFromReadableStreamDefaultReader.ts
+new file mode 100644
+index 0000000..0518859
+--- /dev/null
++++ b/src/internal/writeFromReadableStreamDefaultReader.ts
+@@ -0,0 +1,55 @@
++import type { Http2ServerResponse } from 'node:http2'
++import type { Writable } from 'node:stream'
++
++export function writeFromReadableStreamDefaultReader(
++  reader: ReadableStreamDefaultReader<Uint8Array>,
++  writable: Writable,
++  currentReadPromise?: Promise<ReadableStreamReadResult<Uint8Array>> | undefined
++) {
++  const cancel = (error?: unknown) => {
++    reader.cancel(error).catch(() => {})
++  }
++
++  const stream = (writable as unknown as Partial<Http2ServerResponse>).stream
++  if (writable.destroyed || stream?.closed || stream?.destroyed) {
++    cancel()
++    return reader.closed
++  }
++
++  writable.on('close', cancel)
++  writable.on('error', cancel)
++  ;(currentReadPromise ?? reader.read()).then(flow, handleStreamError)
++
++  return reader.closed.finally(() => {
++    writable.off('close', cancel)
++    writable.off('error', cancel)
++  })
++
++  // eslint-disable-next-line @typescript-eslint/no-explicit-any
++  function handleStreamError(error: any) {
++    if (error) {
++      writable.destroy(error)
++    }
++  }
++
++  function onDrain() {
++    reader.read().then(flow, handleStreamError)
++  }
++
++  function flow({ done, value }: ReadableStreamReadResult<Uint8Array>): void {
++    try {
++      if (done) {
++        writable.end()
++      } else if (!writable.write(value)) {
++        writable.once('drain', onDrain)
++      } else {
++        // Do not return this promise. Returning it makes the promise of the current `then` wait for
++        // the next read, so while `write()` keeps returning `true` every chunk adds a promise to a
++        // chain that is only released when the stream ends.
++        reader.read().then(flow, handleStreamError)
++      }
++    } catch (e) {
++      handleStreamError(e)
++    }
++  }
++}
+diff --git a/src/listener.ts b/src/listener.ts
+index cf49fc1..f7f9b66 100644
+--- a/src/listener.ts
++++ b/src/listener.ts
+@@ -18,9 +18,9 @@ import type { CustomErrorHandler, FetchCallback, HttpBindings } from './types'
+ import {
+   readWithoutBlocking,
+   writeFromReadableStream,
+-  writeFromReadableStreamDefaultReader,
+   buildOutgoingHttpHeaders,
+ } from './utils'
++import { writeFromReadableStreamDefaultReader } from './internal/writeFromReadableStreamDefaultReader'
+ import { X_ALREADY_SENT } from './utils/response/constants'
+ 
+ const outgoingEnded = Symbol('outgoingEnded')
+diff --git a/src/utils.ts b/src/utils.ts
+index 5008bb1..785c5c4 100644
+--- a/src/utils.ts
++++ b/src/utils.ts
+@@ -1,6 +1,6 @@
+ import type { OutgoingHttpHeaders } from 'node:http'
+-import type { Http2ServerResponse } from 'node:http2'
+ import type { Writable } from 'node:stream'
++import { writeFromReadableStreamDefaultReader } from './internal/writeFromReadableStreamDefaultReader'
+ 
+ export async function readWithoutBlocking(
+   readPromise: Promise<ReadableStreamReadResult<Uint8Array>>
+@@ -8,59 +8,6 @@ export async function readWithoutBlocking(
+   return Promise.race([readPromise, Promise.resolve().then(() => Promise.resolve(undefined))])
+ }
+ 
+-export function writeFromReadableStreamDefaultReader(
+-  reader: ReadableStreamDefaultReader<Uint8Array>,
+-  writable: Writable,
+-  currentReadPromise?: Promise<ReadableStreamReadResult<Uint8Array>> | undefined
+-) {
+-  const cancel = (error?: unknown) => {
+-    reader.cancel(error).catch(() => {})
+-  }
+-
+-  const stream = (writable as unknown as Partial<Http2ServerResponse>).stream
+-  if (writable.destroyed || stream?.closed || stream?.destroyed) {
+-    cancel()
+-    return reader.closed
+-  }
+-
+-  writable.on('close', cancel)
+-  writable.on('error', cancel)
+-  ;(currentReadPromise ?? reader.read()).then(flow, handleStreamError)
+-
+-  return reader.closed.finally(() => {
+-    writable.off('close', cancel)
+-    writable.off('error', cancel)
+-  })
+-
+-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+-  function handleStreamError(error: any) {
+-    if (error) {
+-      writable.destroy(error)
+-    }
+-  }
+-
+-  function onDrain() {
+-    reader.read().then(flow, handleStreamError)
+-  }
+-
+-  function flow({ done, value }: ReadableStreamReadResult<Uint8Array>): void {
+-    try {
+-      if (done) {
+-        writable.end()
+-      } else if (!writable.write(value)) {
+-        writable.once('drain', onDrain)
+-      } else {
+-        // Do not return this promise. Returning it makes the promise of the current `then` wait for
+-        // the next read, so while `write()` keeps returning `true` every chunk adds a promise to a
+-        // chain that is only released when the stream ends.
+-        reader.read().then(flow, handleStreamError)
+-      }
+-    } catch (e) {
+-      handleStreamError(e)
+-    }
+-  }
+-}
+-
+ export function writeFromReadableStream(stream: ReadableStream<Uint8Array>, writable: Writable) {
+   if (stream.locked) {
+     throw new TypeError('ReadableStream is locked.')
+diff --git a/test/utils.test.ts b/test/utils.test.ts
+index 7796988..9906362 100644
+--- a/test/utils.test.ts
++++ b/test/utils.test.ts
+@@ -3,9 +3,9 @@ import { queryObjects } from 'node:v8'
+ import {
+   buildOutgoingHttpHeaders,
+   writeFromReadableStream,
+-  writeFromReadableStreamDefaultReader,
+   readWithoutBlocking,
+ } from '../src/utils'
++import { writeFromReadableStreamDefaultReader } from '../src/internal/writeFromReadableStreamDefaultReader'
+ 
+ describe('buildOutgoingHttpHeaders', () => {
+   it('original content-type is preserved', () => {

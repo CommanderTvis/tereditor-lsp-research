@@ -1,0 +1,6 @@
+au.com.dius.pact.provider.junit.target.HttpTarget
+au.com.dius.pact.provider.junit.target.MessageTarget
+au.com.dius.pact.provider.spring.target.MockMvcTarget
+au.com.dius.pact.provider.spring.target.SpringAwareMessageTarget
+au.com.dius.pact.provider.spring.target.SpringBootHttpTarget
+au.com.dius.pact.provider.spring.target.WebFluxTarget

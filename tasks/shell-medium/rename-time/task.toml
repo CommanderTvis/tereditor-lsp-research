@@ -1,4 +1,0 @@
-type = "rename"
-origin = "synthetic: rename a helper used across sourced hook files (devrig safe rename)"
-symbol = "_time (acme.sh)"
-selection = "Candidates: internal helpers (leading underscore) defined in acme.sh, used in 5 to 30 hook files (dnsapi/, deploy/, notify/), whose name is a strict prefix of another function name in the repository; 4 candidates (_clearaccountconf, _saveaccountconf, _secure_debug, _time), sorted, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk), first taken: _time (collides with _time2str, the _timeweb_* functions of dnsapi/dns_timeweb.sh and variables such as _end_time)."

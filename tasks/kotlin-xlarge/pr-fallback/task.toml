@@ -1,4 +1,0 @@
-type = "pr"
-origin = "synthetic fallback for exhausted mined slot"
-base_commit = "9180ce6a7a7d3627f88b424717583f28ddca052d"
-selection = "No xlarge mined task was validated without a project build; this deterministic compiler-maintenance fallback occupies the assigned PR slot."

@@ -1,0 +1,8 @@
+type = "pr"
+origin = "modern pull request (opened on or after 2026-07-01, docs/MEMORIZATION.md)"
+pr = 39587
+issue = 39584
+base_commit = "bc2f86b4b7c1d040a352934f8bf85d5e7813c69f"
+pr_base_sha = "07ecbf9ead10aaeb060ca3e2dcba1f738815c083"
+merge_commit = "708c1d479676345b50761fe6010e5c0dd0ac2926"
+merged_at = "2026-10-27T08:54:15Z"

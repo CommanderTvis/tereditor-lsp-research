@@ -1,0 +1,369 @@
+diff --git a/nvm.sh b/nvm.sh
+index ffc1941..b35f814 100755
+--- a/nvm.sh
++++ b/nvm.sh
+@@ -1190,7 +1190,7 @@ nvm_ensure_version_installed() {
+     if nvm_explain_excluded_version "${PROVIDED_VERSION}"; then
+       return 1
+     fi
+-    if VERSION="$(nvm_resolve_alias "${PROVIDED_VERSION}")"; then
++    if VERSION="$(nvm_follow_alias "${PROVIDED_VERSION}")"; then
+       nvm_err "N/A: version \"${PROVIDED_VERSION} -> ${VERSION}\" is not yet installed."
+     else
+       local PREFIXED_VERSION
+@@ -1269,10 +1269,10 @@ nvm_version() {
+     esac
+     PATTERN="${PATTERN#* }"
+   done
+-  # like `nvm_resolve_alias`, these flags replace those of an alias they precede
++  # like `nvm_follow_alias`, these flags replace those of an alias they precede
+   if [ -n "${NVM_LTS_FILTER}${NVM_ONLY_ALIAS}" ]; then
+     local NVM_FLAGGED_TARGET
+-    if NVM_FLAGGED_TARGET="$(nvm_resolve_alias "${PATTERN}" 2>/dev/null)" && [ "_${NVM_FLAGGED_TARGET}" != '_∞' ]; then
++    if NVM_FLAGGED_TARGET="$(nvm_follow_alias "${PATTERN}" 2>/dev/null)" && [ "_${NVM_FLAGGED_TARGET}" != '_∞' ]; then
+       while :; do
+         case "${NVM_FLAGGED_TARGET}" in
+           --*' '*) NVM_FLAGGED_TARGET="${NVM_FLAGGED_TARGET#* }" ;;
+@@ -2051,7 +2051,7 @@ nvm_ls_current() {
+   fi
+ }
+ 
+-nvm_resolve_alias() {
++nvm_follow_alias() {
+   if [ -z "${1-}" ]; then
+     return 1
+   fi
+@@ -2147,7 +2147,7 @@ nvm_resolve_local_alias() {
+ 
+   local VERSION
+   local EXIT_CODE
+-  VERSION="$(nvm_resolve_alias "${1-}")"
++  VERSION="$(nvm_follow_alias "${1-}")"
+   EXIT_CODE=$?
+   if [ -z "${VERSION}" ]; then
+     return $EXIT_CODE
+@@ -2446,7 +2446,7 @@ nvm_ls() {
+     ;;
+     *)
+       local ALIAS_TARGET
+-      ALIAS_TARGET="$(nvm_resolve_alias "${PATTERN}" 2>/dev/null || nvm_echo)"
++      ALIAS_TARGET="$(nvm_follow_alias "${PATTERN}" 2>/dev/null || nvm_echo)"
+       if [ "_${ALIAS_TARGET}" = '_system' ] && (nvm_has_system_iojs || nvm_has_system_node); then
+         local SYSTEM_VERSION
+         SYSTEM_VERSION="$(nvm deactivate >/dev/null 2>&1 && node -v 2>/dev/null)"
+@@ -3036,7 +3036,7 @@ nvm_get_remote_aliases() {
+       *[[:cntrl:]]*) continue ;;
+     esac
+ 
+-    NVM_ALIAS_TARGET="$(nvm_resolve_alias "${NVM_ALIAS_NAME}" 2>/dev/null)" || continue
++    NVM_ALIAS_TARGET="$(nvm_follow_alias "${NVM_ALIAS_NAME}" 2>/dev/null)" || continue
+     case "${NVM_ALIAS_TARGET}" in
+       # flags, like `--lts`, select among installed versions, not remote ones
+       '' | --* | *[[:cntrl:]]*) continue ;;
+@@ -5237,9 +5237,9 @@ nvm() {
+         OFFLINE_PATTERN="${provided_version}"
+         if [ -n "${LTS-}" ]; then
+           if [ "${LTS}" = '*' ]; then
+-            OFFLINE_PATTERN="$(nvm_resolve_alias 'lts/*' 2>/dev/null || nvm_echo)"
++            OFFLINE_PATTERN="$(nvm_follow_alias 'lts/*' 2>/dev/null || nvm_echo)"
+           else
+-            OFFLINE_PATTERN="$(nvm_resolve_alias "lts/${LTS}" 2>/dev/null || nvm_echo)"
++            OFFLINE_PATTERN="$(nvm_follow_alias "lts/${LTS}" 2>/dev/null || nvm_echo)"
+           fi
+           if [ -z "${OFFLINE_PATTERN}" ]; then
+             nvm_err "LTS alias '${LTS}' not found locally. Run \`nvm ls-remote --lts\` first to populate LTS aliases."
+@@ -6687,7 +6687,7 @@ nvm() {
+         nvm_version nvm_rc_version nvm_match_version \
+         nvm_ensure_default_set nvm_get_arch nvm_get_os \
+         nvm_print_implicit_alias nvm_validate_implicit_alias \
+-        nvm_resolve_alias nvm_ls_current nvm_alias \
++        nvm_follow_alias nvm_ls_current nvm_alias \
+         nvm_binary_available nvm_change_path nvm_strip_path \
+         nvm_num_version_groups nvm_format_version nvm_ensure_version_prefix \
+         nvm_normalize_version nvm_is_valid_version nvm_normalize_lts \
+@@ -6863,7 +6863,7 @@ nvm_auto() {
+           else
+             # a default alias whose flags need recorded LTS status can't get it while a shell starts up
+             local NVM_DEFAULT_TARGET
+-            NVM_DEFAULT_TARGET="$(nvm_resolve_alias default 2>/dev/null ||:)"
++            NVM_DEFAULT_TARGET="$(nvm_follow_alias default 2>/dev/null ||:)"
+             local NVM_DEFAULT_NEEDS_LTS_STATUS
+             NVM_DEFAULT_NEEDS_LTS_STATUS=0
+             local NVM_DEFAULT_ONLY
+diff --git a/test/fast/Aliases/circular/nvm_resolve_alias b/test/fast/Aliases/circular/nvm_resolve_alias
+index 37f9ca2..4af6f67 100755
+--- a/test/fast/Aliases/circular/nvm_resolve_alias
++++ b/test/fast/Aliases/circular/nvm_resolve_alias
+@@ -6,32 +6,32 @@ die () { echo "$@" ; exit 1; }
+ : nvm.sh
+ \. ../../../../nvm.sh
+ 
+-ALIAS="$(nvm_resolve_alias loopback | strip_colors)"
+-[ "_$ALIAS" = "_∞" ] || die "nvm_resolve_alias loopback was not ∞; got $ALIAS"
++ALIAS="$(nvm_follow_alias loopback | strip_colors)"
++[ "_$ALIAS" = "_∞" ] || die "nvm_follow_alias loopback was not ∞; got $ALIAS"
+ OUTPUT="$(nvm alias loopback | strip_colors)"
+ EXPECTED_OUTPUT="loopback -> loopback (-> ∞)"
+ [ "_$OUTPUT" = "_$EXPECTED_OUTPUT" ] || die "nvm alias loopback was not $EXPECTED_OUTPUT; got $OUTPUT"
+ 
+-ALIAS="$(nvm_resolve_alias one | strip_colors)"
+-[ "_$ALIAS" = "_∞" ] || die "nvm_resolve_alias one was not ∞; got $ALIAS"
++ALIAS="$(nvm_follow_alias one | strip_colors)"
++[ "_$ALIAS" = "_∞" ] || die "nvm_follow_alias one was not ∞; got $ALIAS"
+ OUTPUT="$(nvm alias one | strip_colors)"
+ EXPECTED_OUTPUT="one -> two (-> ∞)"
+ [ "_$OUTPUT" = "_$EXPECTED_OUTPUT" ] || die "nvm alias one was not $EXPECTED_OUTPUT; got $OUTPUT"
+ 
+-ALIAS="$(nvm_resolve_alias two | strip_colors)"
+-[ "_$ALIAS" = "_∞" ] || die "nvm_resolve_alias two was not ∞; got $ALIAS"
++ALIAS="$(nvm_follow_alias two | strip_colors)"
++[ "_$ALIAS" = "_∞" ] || die "nvm_follow_alias two was not ∞; got $ALIAS"
+ OUTPUT="$(nvm alias two | strip_colors)"
+ EXPECTED_OUTPUT="two -> three (-> ∞)"
+ [ "_$OUTPUT" = "_$EXPECTED_OUTPUT" ] || die "nvm alias two was not $EXPECTED_OUTPUT; got $OUTPUT"
+ 
+-ALIAS="$(nvm_resolve_alias three | strip_colors)"
+-[ "_$ALIAS" = "_∞" ] || die "nvm_resolve_alias three was not ∞; got $ALIAS"
++ALIAS="$(nvm_follow_alias three | strip_colors)"
++[ "_$ALIAS" = "_∞" ] || die "nvm_follow_alias three was not ∞; got $ALIAS"
+ OUTPUT="$(nvm alias three | strip_colors)"
+ EXPECTED_OUTPUT="three -> one (-> ∞)"
+ [ "_$OUTPUT" = "_$EXPECTED_OUTPUT" ] || die "nvm alias three was not $EXPECTED_OUTPUT; got $OUTPUT"
+ 
+-ALIAS="$(nvm_resolve_alias four | strip_colors)"
+-[ "_$ALIAS" = "_∞" ] || die "nvm_resolve_alias four was not ∞; got $ALIAS"
++ALIAS="$(nvm_follow_alias four | strip_colors)"
++[ "_$ALIAS" = "_∞" ] || die "nvm_follow_alias four was not ∞; got $ALIAS"
+ OUTPUT="$(nvm alias four | strip_colors)"
+ EXPECTED_OUTPUT="four -> two (-> ∞)"
+ [ "_$OUTPUT" = "_$EXPECTED_OUTPUT" ] || die "nvm alias four was not $EXPECTED_OUTPUT; got $OUTPUT"
+diff --git a/test/fast/Aliases/nvm_resolve_alias b/test/fast/Aliases/nvm_resolve_alias
+index 960c92b..8f47731 100755
+--- a/test/fast/Aliases/nvm_resolve_alias
++++ b/test/fast/Aliases/nvm_resolve_alias
+@@ -7,33 +7,33 @@ export NVM_DIR="$(cd ../../.. && pwd)"
+ : nvm.sh
+ \. "${NVM_DIR}/nvm.sh"
+ 
+-EXIT_CODE=$(nvm_resolve_alias ; echo $?)
+-[ $EXIT_CODE = "1" ] || die "nvm_resolve_alias without an argument did not return 1; got $EXIT_CODE"
++EXIT_CODE=$(nvm_follow_alias ; echo $?)
++[ $EXIT_CODE = "1" ] || die "nvm_follow_alias without an argument did not return 1; got $EXIT_CODE"
+ 
+ for i in $(seq 1 10)
+   do
+-  STABLE_ALIAS="$(nvm_resolve_alias test-stable-$i)"
++  STABLE_ALIAS="$(nvm_follow_alias test-stable-$i)"
+   [ "_$STABLE_ALIAS" = "_v0.0.$i" ] \
+-    || die "'nvm_resolve_alias test-stable-$i' was not v0.0.$i; got $STABLE_ALIAS"
+-  UNSTABLE_ALIAS="$(nvm_resolve_alias test-unstable-$i)"
++    || die "'nvm_follow_alias test-stable-$i' was not v0.0.$i; got $STABLE_ALIAS"
++  UNSTABLE_ALIAS="$(nvm_follow_alias test-unstable-$i)"
+   [ "_$UNSTABLE_ALIAS" = "_v0.1.$i" ] \
+-    || die "'nvm_resolve_alias test-unstable-$i' was not v0.1.$i; got $UNSTABLE_ALIAS"
++    || die "'nvm_follow_alias test-unstable-$i' was not v0.1.$i; got $UNSTABLE_ALIAS"
+ done
+ 
+-EXIT_CODE=$(nvm_resolve_alias nonexistent ; echo $?)
+-[ $EXIT_CODE = "2" ] || die "'nvm_resolve_alias nonexistent' did not return 2; got $EXIT_CODE"
++EXIT_CODE=$(nvm_follow_alias nonexistent ; echo $?)
++[ $EXIT_CODE = "2" ] || die "'nvm_follow_alias nonexistent' did not return 2; got $EXIT_CODE"
+ 
+-STABLE="$(nvm_resolve_alias stable)"
+-[ "_$STABLE" = "_v0.0" ] || die "'nvm_resolve_alias stable' was not v0.0; got $STABLE"
++STABLE="$(nvm_follow_alias stable)"
++[ "_$STABLE" = "_v0.0" ] || die "'nvm_follow_alias stable' was not v0.0; got $STABLE"
+ 
+-NODE="$(nvm_resolve_alias node)"
+-[ "_$NODE" = "_stable" ] || die "'nvm_resolve_alias node' was not stable; got $NODE"
++NODE="$(nvm_follow_alias node)"
++[ "_$NODE" = "_stable" ] || die "'nvm_follow_alias node' was not stable; got $NODE"
+ 
+-UNSTABLE="$(nvm_resolve_alias unstable)"
+-[ "_$UNSTABLE" = "_v0.1" ] || die "'nvm_resolve_alias unstable' was not v0.1; got $UNSTABLE"
++UNSTABLE="$(nvm_follow_alias unstable)"
++[ "_$UNSTABLE" = "_v0.1" ] || die "'nvm_follow_alias unstable' was not v0.1; got $UNSTABLE"
+ 
+-IOJS="$(nvm_resolve_alias iojs)"
+-[ "_$IOJS" = "_iojs-v0.2" ] || die "'nvm_resolve_alias iojs' was not iojs-v0.2; got $IOJS"
++IOJS="$(nvm_follow_alias iojs)"
++[ "_$IOJS" = "_iojs-v0.2" ] || die "'nvm_follow_alias iojs' was not iojs-v0.2; got $IOJS"
+ 
+ echo "
+ 
+@@ -43,8 +43,8 @@ v0.0.3
+ " > ../../../alias/test-multi-lines
+ 
+ EXPECTED='v0.0.1'
+-ACTUAL="$(nvm_resolve_alias test-multi-lines)"
+-EXIT_CODE="$(nvm_resolve_alias test-multi-lines 2>&1 >/dev/null; echo $?)"
++ACTUAL="$(nvm_follow_alias test-multi-lines)"
++EXIT_CODE="$(nvm_follow_alias test-multi-lines 2>&1 >/dev/null; echo $?)"
+ 
+ [ "${ACTUAL}" = "${EXPECTED}" ] || die "expected >${EXPECTED}<, got >${ACTUAL}<"
+ [ "${EXIT_CODE}" = '0' ] || die "expected exit code 0, got ${EXIT_CODE}"
+diff --git a/test/fast/Aliases/nvm_resolve_alias handles cycles b/test/fast/Aliases/nvm_resolve_alias handles cycles
+index 63f5bbe..b8f2c52 100755
+--- a/test/fast/Aliases/nvm_resolve_alias handles cycles	
++++ b/test/fast/Aliases/nvm_resolve_alias handles cycles	
+@@ -10,7 +10,7 @@ export NVM_DIR="$(cd ../../.. && pwd)"
+ # 1-hop self-reference: alias points to itself
+ echo 'self' > '../../../alias/self'
+ 
+-ACTUAL="$(nvm_resolve_alias self)"
++ACTUAL="$(nvm_follow_alias self)"
+ EXPECTED='∞'
+ [ "${ACTUAL}" = "${EXPECTED}" ] || die "expected >${EXPECTED}< for self-reference, got >${ACTUAL}<"
+ 
+@@ -21,7 +21,7 @@ echo 'link2' > '../../../alias/link1'
+ echo 'link3' > '../../../alias/link2'
+ echo 'link1' > '../../../alias/link3'
+ 
+-ACTUAL="$(nvm_resolve_alias link1)"
++ACTUAL="$(nvm_follow_alias link1)"
+ EXPECTED='∞'
+ [ "${ACTUAL}" = "${EXPECTED}" ] || die "expected >${EXPECTED}< for 3-hop cycle, got >${ACTUAL}<"
+ 
+@@ -31,7 +31,7 @@ rm -f '../../../alias/link1' '../../../alias/link2' '../../../alias/link3'
+ echo 'midway' > '../../../alias/foo bar'
+ echo 'foo bar' > '../../../alias/midway'
+ 
+-ACTUAL="$(nvm_resolve_alias 'foo bar')"
++ACTUAL="$(nvm_follow_alias 'foo bar')"
+ EXPECTED='∞'
+ [ "${ACTUAL}" = "${EXPECTED}" ] || die "expected >${EXPECTED}< for space-name cycle, got >${ACTUAL}<"
+ 
+@@ -45,7 +45,7 @@ echo 'midway' > '../../../alias/foo bar'
+ echo 'bar' > '../../../alias/midway'
+ echo '0.0.99' > '../../../alias/bar'
+ 
+-ACTUAL="$(nvm_resolve_alias 'foo bar')"
++ACTUAL="$(nvm_follow_alias 'foo bar')"
+ EXPECTED='v0.0.99'
+ [ "${ACTUAL}" = "${EXPECTED}" ] || die "expected >${EXPECTED}< for space-name chain, got >${ACTUAL}<"
+ 
+@@ -60,14 +60,14 @@ rm -f '../../../alias/foo bar' '../../../alias/midway' '../../../alias/bar'
+ echo 'a.b' > '../../../alias/axb'
+ echo '0.0.99' > '../../../alias/a.b'
+ 
+-ACTUAL="$(nvm_resolve_alias axb)"
++ACTUAL="$(nvm_follow_alias axb)"
+ EXPECTED='v0.0.99'
+ [ "${ACTUAL}" = "${EXPECTED}" ] || die "expected >${EXPECTED}< for metachar-name chain, got >${ACTUAL}<"
+ 
+ # ... while a genuine cycle through a metachar name is still detected
+ echo 'axb' > '../../../alias/a.b'
+ 
+-ACTUAL="$(nvm_resolve_alias axb)"
++ACTUAL="$(nvm_follow_alias axb)"
+ EXPECTED='∞'
+ [ "${ACTUAL}" = "${EXPECTED}" ] || die "expected >${EXPECTED}< for metachar-name cycle, got >${ACTUAL}<"
+ 
+diff --git a/test/fast/Aliases/nvm_resolve_alias handles deep chain b/test/fast/Aliases/nvm_resolve_alias handles deep chain
+index 435d35e..aab7d3f 100755
+--- a/test/fast/Aliases/nvm_resolve_alias handles deep chain	
++++ b/test/fast/Aliases/nvm_resolve_alias handles deep chain	
+@@ -13,7 +13,7 @@ echo 'hop3' > ../../../alias/hop2
+ echo 'hop4' > ../../../alias/hop3
+ echo '0.0.99' > ../../../alias/hop4
+ 
+-ACTUAL="$(nvm_resolve_alias hop1)"
++ACTUAL="$(nvm_follow_alias hop1)"
+ EXPECTED='v0.0.99'
+ [ "${ACTUAL}" = "${EXPECTED}" ] || die "expected >${EXPECTED}< for 4-deep chain, got >${ACTUAL}<"
+ 
+diff --git a/test/fast/Aliases/nvm_resolve_alias with nonexistent target b/test/fast/Aliases/nvm_resolve_alias with nonexistent target
+index 48eb959..0b006ec 100755
+--- a/test/fast/Aliases/nvm_resolve_alias with nonexistent target	
++++ b/test/fast/Aliases/nvm_resolve_alias with nonexistent target	
+@@ -10,9 +10,9 @@ export NVM_DIR="$(cd ../../.. && pwd)"
+ # Create an alias pointing to a version that does not exist as an alias
+ echo '99.99.99' > ../../../alias/test-edge-noexist
+ 
+-ACTUAL="$(nvm_resolve_alias test-edge-noexist)"
++ACTUAL="$(nvm_follow_alias test-edge-noexist)"
+ EXPECTED='v99.99.99'
+-EXIT_CODE="$(nvm_resolve_alias test-edge-noexist >/dev/null 2>&1; echo $?)"
++EXIT_CODE="$(nvm_follow_alias test-edge-noexist >/dev/null 2>&1; echo $?)"
+ [ "${ACTUAL}" = "${EXPECTED}" ] || die "expected >${EXPECTED}<, got >${ACTUAL}<"
+ [ "${EXIT_CODE}" = '0' ] || die "expected exit code 0, got ${EXIT_CODE}"
+ 
+diff --git a/test/fast/Aliases/percent in alias name/nvm_resolve_alias b/test/fast/Aliases/percent in alias name/nvm_resolve_alias
+index 4d44af6..581fb6d 100755
+--- a/test/fast/Aliases/percent in alias name/nvm_resolve_alias	
++++ b/test/fast/Aliases/percent in alias name/nvm_resolve_alias	
+@@ -7,11 +7,11 @@ die () { echo "$@" ; exit 1; }
+ \. ../../../../nvm.sh
+ 
+ # An alias whose name contains % should resolve directly
+-try nvm_resolve_alias 'test-%s-alias'
+-[ "$CAPTURED_EXIT_CODE" = "0" ] || die "nvm_resolve_alias test-%s-alias failed with exit code $CAPTURED_EXIT_CODE"
+-[ "$CAPTURED_STDOUT" = "v0.0.1" ] || die "nvm_resolve_alias test-%s-alias was not v0.0.1; got $CAPTURED_STDOUT"
++try nvm_follow_alias 'test-%s-alias'
++[ "$CAPTURED_EXIT_CODE" = "0" ] || die "nvm_follow_alias test-%s-alias failed with exit code $CAPTURED_EXIT_CODE"
++[ "$CAPTURED_STDOUT" = "v0.0.1" ] || die "nvm_follow_alias test-%s-alias was not v0.0.1; got $CAPTURED_STDOUT"
+ 
+ # An alias chain that passes through a %-containing alias name should resolve
+-try nvm_resolve_alias test-pct-chain
+-[ "$CAPTURED_EXIT_CODE" = "0" ] || die "nvm_resolve_alias test-pct-chain failed with exit code $CAPTURED_EXIT_CODE"
+-[ "$CAPTURED_STDOUT" = "v0.0.1" ] || die "nvm_resolve_alias test-pct-chain was not v0.0.1; got $CAPTURED_STDOUT"
++try nvm_follow_alias test-pct-chain
++[ "$CAPTURED_EXIT_CODE" = "0" ] || die "nvm_follow_alias test-pct-chain failed with exit code $CAPTURED_EXIT_CODE"
++[ "$CAPTURED_STDOUT" = "v0.0.1" ] || die "nvm_follow_alias test-pct-chain was not v0.0.1; got $CAPTURED_STDOUT"
+diff --git a/test/fast/Unit tests/nvm_alias path traversal b/test/fast/Unit tests/nvm_alias path traversal
+index 1dff7c4..89f5d26 100755
+--- a/test/fast/Unit tests/nvm_alias path traversal	
++++ b/test/fast/Unit tests/nvm_alias path traversal	
+@@ -42,9 +42,9 @@ done
+ 
+ # the disclosure path the advisory reports: resolution must not echo the file
+ for TRAVERSAL in '../../outside' 'lts/../../../outside'; do
+-  OUTPUT="$(nvm_resolve_alias "${TRAVERSAL}" 2>&1)"
++  OUTPUT="$(nvm_follow_alias "${TRAVERSAL}" 2>&1)"
+   case "${OUTPUT}" in
+-    *SECRET_OUTSIDE_NVM_DIR*) die "'nvm_resolve_alias ${TRAVERSAL}' leaked a file outside \$NVM_DIR" ;;
++    *SECRET_OUTSIDE_NVM_DIR*) die "'nvm_follow_alias ${TRAVERSAL}' leaked a file outside \$NVM_DIR" ;;
+   esac
+ done
+ 
+diff --git a/test/fast/Unit tests/nvm_normalize_lts non-numeric offset b/test/fast/Unit tests/nvm_normalize_lts non-numeric offset
+index 419901a..80edbd6 100755
+--- a/test/fast/Unit tests/nvm_normalize_lts non-numeric offset	
++++ b/test/fast/Unit tests/nvm_normalize_lts non-numeric offset	
+@@ -49,8 +49,8 @@ nvm_alias "${INJECTED}" >/dev/null 2>&1
+ 
+ # an alias file written by an older nvm from a hostile mirror's index.tab
+ echo "${INJECTED}" > "$NVM_DIR/alias/lts/iron"
+-nvm_resolve_alias 'lts/*' >/dev/null 2>&1
+-[ ! -e "${MARKER}" ] || die "nvm_resolve_alias evaluated a stored ${INJECTED}"
++nvm_follow_alias 'lts/*' >/dev/null 2>&1
++[ ! -e "${MARKER}" ] || die "nvm_follow_alias evaluated a stored ${INJECTED}"
+ 
+ cleanup
+ echo "nvm_normalize_lts non-numeric offset: passed"
+diff --git a/test/slow/nvm use/Running 'nvm use --lts' uses latest LTS version b/test/slow/nvm use/Running 'nvm use --lts' uses latest LTS version
+index f5b9ec0..2432ddb 100755
+--- a/test/slow/nvm use/Running 'nvm use --lts' uses latest LTS version	
++++ b/test/slow/nvm use/Running 'nvm use --lts' uses latest LTS version	
+@@ -10,7 +10,7 @@ nvm deactivate >/dev/null 2>&1 || die 'deactivate failed'
+ 
+ nvm use --lts || die 'nvm use --lts failed'
+ OUTPUT="$(nvm current)"
+-EXPECTED_OUTPUT="$(nvm_resolve_alias 'lts/*')"
++EXPECTED_OUTPUT="$(nvm_follow_alias 'lts/*')"
+ 
+ [ "_$OUTPUT" = "_$EXPECTED_OUTPUT" ] \
+   || die "'nvm use --lts' + 'nvm current' did not output '$EXPECTED_OUTPUT'; got '$OUTPUT'"
+diff --git a/test/slow/nvm use/Running 'nvm use --lts=foo' uses latest 'foo' LTS version b/test/slow/nvm use/Running 'nvm use --lts=foo' uses latest 'foo' LTS version
+index 0801673..a907ecb 100755
+--- a/test/slow/nvm use/Running 'nvm use --lts=foo' uses latest 'foo' LTS version	
++++ b/test/slow/nvm use/Running 'nvm use --lts=foo' uses latest 'foo' LTS version	
+@@ -10,7 +10,7 @@ nvm deactivate 2>&1 >/dev/null || die 'deactivate failed'
+ 
+ nvm use --lts=testing || die 'nvm use --lts=testing failed'
+ OUTPUT="$(nvm current)"
+-EXPECTED_OUTPUT="$(nvm_resolve_alias 'lts/testing')"
++EXPECTED_OUTPUT="$(nvm_follow_alias 'lts/testing')"
+ 
+ [ "_$OUTPUT" = "_$EXPECTED_OUTPUT" ] \
+   || die "'nvm use --lts=testing' + 'nvm current' did not output '$EXPECTED_OUTPUT'; got '$OUTPUT'"

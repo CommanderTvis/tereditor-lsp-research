@@ -12,12 +12,12 @@ loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 stripped = []
 task_types = ["move", "signature", "callers", "pr", "pr", "pr"]
 # clangd's compile_commands.json is written by prepare.sh with jq (no compiler in the server sandbox).
-# Mined candidates: harness/gen/mine-prs.sh finds none, because it requires baseRefName to equal today's default
-# branch (main), while every pre-2022 pull request was merged into master (renamed since);
-# tasks/cpp-medium/pr-candidates.jsonl was produced by a copy of the script that also accepts master when the default
-# branch is main (see tasks/cpp-medium/pr-log.md).
+# Mined: 9 qualifying pull requests after 2026-07-01 (tasks/cpp-medium/pr-log.md); 4896, 4902, 4962 taken.
 
 [probe]
+# The values below are from the earlier curation run (2026-11-14); no clangd exists for arm64, so they are not
+# re-measured here: probe deferred to the x64 cloud VM.
+note = "clangd unavailable on arm64; probe deferred to the x64 cloud VM"
 # ./study probe cpp-medium (enforced), tereditor c6b343bd, clangd 23.1.5, 2026-11-14.
 ok = true
 seconds_to_first_answer = 0.14

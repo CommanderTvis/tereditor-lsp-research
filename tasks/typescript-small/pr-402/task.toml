@@ -1,0 +1,8 @@
+type = "pr"
+origin = "mined pull request (modern, docs/MEMORIZATION.md)"
+pr = 402
+issue = 400
+base_commit = "fe7467ca2f0027b8189ae3c0a5d35d1144f909bc"
+merge_commit = "90a2600d9bfe76ab4774c028704c2a09c5930bb1"
+merged_at = "2026-09-29T04:01:03Z"
+test_files = ["test/content-length.test.ts","test/request.test.ts","test/server.test.ts"]

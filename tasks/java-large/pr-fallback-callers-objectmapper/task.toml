@@ -1,8 +1,0 @@
-type = "pr"
-selection = "Fallback slot selected in assignment order after no validated pre-2022 PR was available; subject is the first stable public symbol in the pinned snapshot matching the project probe surface."
-symbol = "ObjectMapper"
-path = "src/main/java/tools/jackson/databind/ObjectMapper.java"
-origin = "documented synthetic fallback PR; no qualifying/current-toolchain mined candidate was available"
-fallback_for = "callers"
-pr = "fallback-java-large-callers-objectmapper"
-issue = "fallback-java-large-callers-objectmapper"

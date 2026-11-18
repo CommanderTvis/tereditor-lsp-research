@@ -1,0 +1,7 @@
+type = "move"
+origin = "synthetic: move a mixin into a partial of its own and wire it through the forwarding chain (devrig move)"
+symbol = "mask-icon"
+from = "core/scss/mixins/_mixins.scss"
+to = "core/scss/mixins/_mask-icon.scss"
+selection = "Candidates: mixins defined exactly once, in a partial that defines at least one other mixin or function, included from at least 3 other files of core/scss (tests excluded), not in the vendored rfs partial, and named in a comment or in the docs; 8 candidates (border-radius, caret, focus-ring, mask-icon, media-breakpoint-down, media-print, scrollbar, subheader), sorted, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk), first taken: mask-icon (transition is first in the shuffle of the 13 mixins that meet the use rule, but its partial defines nothing else, so it is not a candidate). Destination: a new partial in the same directory named after the mixin."
+grade_timeout_s = 1200

@@ -1,0 +1,10 @@
+src/EFCore/Storage/Internal/ExecutionStrategyFactory.cs:14
+src/EFCore/Storage/Internal/ExecutionStrategyFactory.cs:23
+src/EFCore/Storage/NonRetryingExecutionStrategy.cs:21
+src/EFCore/Storage/NonRetryingExecutionStrategy.cs:27
+src/EFCore/Storage/NonRetryingExecutionStrategy.cs:34
+src/EFCore.Relational/Storage/RelationalExecutionStrategyFactory.cs:49
+test/EFCore.SqlServer.FunctionalTests/Query/PrecompiledSqlPregenerationQuerySqlServerTest.cs:259
+test/EFCore.SqlServer.FunctionalTests/Query/AdHocPrecompiledQuerySqlServerTest.cs:154
+test/EFCore.SqlServer.FunctionalTests/Query/PrecompiledQuerySqlServerTest.cs:2229
+test/EFCore.SqlServer.FunctionalTests/SqlServerDatabaseCreatorTest.cs:650

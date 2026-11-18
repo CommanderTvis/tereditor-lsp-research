@@ -1,20 +1,21 @@
-# css, small: chosen by size, see docs/PROJECTS.md. Sass bundles are compiled with dart-sass; mined PR slots were
-# replaced because this CSS-only grading group has no JavaScript test runner.
+# css, small: tabler (docs/PROJECTS.md lists Bootstrap 9.6 and Bulma 14.0 as the other considered Sass projects). primer/css was replaced because
+# none of its modern pull requests closes an issue. The owner accepted the deviation from the band (3k to 12k); Sass only,
+# compiled CSS in dist/ is output.
 lang = "css"
 size = "small"
-status = "ready"
-repo = "https://github.com/primer/css"
-tag = "v22.3.0"
-commit = "a59d1b9d7adad1e37f40c14ce213bcd94e41db9b"
-loc = 5552
-loc_by_language = { "Sass" = 5552 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-task_types = ["move", "signature", "dispatch", "pr", "pr", "pr"]
-substitutions = ["three unavailable mined slots use documented fallback PR task directories; the three assigned synthetic tasks are preserved"]
+status = "curated"
+repo = "https://github.com/tabler/tabler"
+tag = "@tabler/core@1.7.5"
+commit = "4257ebcd1cd5494f71b84c485fd15749fc6d5f92"
+loc = 20351
+loc_by_language = { "Sass" = 20351 }
+loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md, harness/size/measure.sh (Sass/SCSS only; the repository also has 30k lines of TypeScript, 30k of Astro and 19k of MDX that are not counted)"
+size_note = "20.4k Sass code lines, 70% above the small band (3k to 12k); owner-accepted deviation"
+task_types = ["move", "signature", "dispatch"]
 
 [probe]
 ok = false
-seconds_to_first_answer = 0.0
-references = "not run: container setup was stopped before the project snapshot was available"
-definition = "not run"
-diagnostics = "not run"
+seconds_to_first_answer = 0.45
+references = "incomplete after 180 s (tereditor pin of harness/tereditor.env): references at the definition of divide in core/scss/mixins/_functions.scss return only the uses inside that file (lines 202, 216, 290); the uses in core/scss/_variables.scss and core/scss/mixins/bootstrap/_grid.scss, reached through @use ... as * across modules, are not found"
+definition = "incomplete: the definition of the focus-ring mixin by name returns nothing"
+diagnostics = "clean for core/scss/mixins/_functions.scss"

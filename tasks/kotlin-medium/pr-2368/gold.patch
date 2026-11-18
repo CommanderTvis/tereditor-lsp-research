@@ -1,0 +1,92 @@
+diff --git a/docs/changelog.md b/docs/changelog.md
+index a21b64dd..21a7a06a 100644
+--- a/docs/changelog.md
++++ b/docs/changelog.md
+@@ -13,6 +13,7 @@ Change Log
+  * Fix: `TypeVariableName.equals`/`hashCode` no longer overflow on recursively bound generics like `Enum<E : Enum<E>>`. (#1737)
+  * Fix: `get` and `set` operator function names are no longer escaped with backticks. (#1869)
+  * Fix: Don't special case varargs in `KSAnnotation.toAnnotationSpec`. (#2360)
++ * Fix: `KSType.toTypeName()` with the default `TypeParameterResolver.EMPTY` now resolves type parameters from their enclosing declarations instead of throwing. (#2065)
+  * Fix: Emit context parameters after annotations in `FunSpec` and `PropertySpec`. (#2374)
+  * Fix: An expression body no longer leaks indentation into later declarations. (#1421)
+ 
+diff --git a/interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/Annotations.kt b/interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/Annotations.kt
+index 10b4d722..3fc73185 100644
+--- a/interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/Annotations.kt
++++ b/interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/Annotations.kt
+@@ -35,7 +35,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName
+  */
+ @JvmOverloads
+ public fun KSAnnotation.toAnnotationSpec(omitDefaultValues: Boolean = false): AnnotationSpec {
+-  val typeName = annotationType.resolve().toTypeName()
++  val typeName = annotationType.toTypeName()
+ 
+   val builder =
+     if (typeName is ClassName) {
+diff --git a/interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/KsTypes.kt b/interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/KsTypes.kt
+index dcf0d72e..ad51e6d9 100644
+--- a/interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/KsTypes.kt
++++ b/interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/KsTypes.kt
+@@ -17,6 +17,9 @@ package com.squareup.kotlinpoet.ksp
+ 
+ import com.google.devtools.ksp.symbol.KSCallableReference
+ import com.google.devtools.ksp.symbol.KSClassDeclaration
++import com.google.devtools.ksp.symbol.KSDeclaration
++import com.google.devtools.ksp.symbol.KSFunctionDeclaration
++import com.google.devtools.ksp.symbol.KSNode
+ import com.google.devtools.ksp.symbol.KSType
+ import com.google.devtools.ksp.symbol.KSTypeAlias
+ import com.google.devtools.ksp.symbol.KSTypeArgument
+@@ -90,9 +93,9 @@ internal fun KSType.toTypeName(
+   val type =
+     when (val decl = declaration) {
+       is KSClassDeclaration -> {
+-        decl.toClassName().withTypeArguments(arguments.map { it.toTypeName(typeParamResolver) })
++        decl.toClassName().withTypeArguments(typeArguments.map { it.toTypeName(typeParamResolver) })
+       }
+-      is KSTypeParameter -> typeParamResolver[decl.name.getShortName()]
++      is KSTypeParameter -> resolveTypeParameter(decl, typeParamResolver)
+       is KSTypeAlias -> {
+         var typeAlias: KSTypeAlias = decl
+         var arguments = arguments
+@@ -225,6 +228,39 @@ public fun KSTypeReference.toTypeName(
+       )
+       .copy(nullable = type.isMarkedNullable, suspending = type.isSuspendFunctionType)
+   } else {
+-    type.toTypeName(typeParamResolver, type.arguments)
++    val typeArgs = elem?.typeArguments?.takeIf { it.isNotEmpty() } ?: type.arguments
++    type.toTypeName(typeParamResolver, typeArgs)
+   }
+ }
++
++private fun resolveTypeParameter(
++  typeParameter: KSTypeParameter,
++  typeParamResolver: TypeParameterResolver,
++): TypeVariableName {
++  val name = typeParameter.name.getShortName()
++  if (typeParamResolver !== TypeParameterResolver.EMPTY) {
++    return typeParamResolver[name]
++  }
++  return typeParameter.enclosingTypeParameterResolver()[name]
++}
++
++private fun KSNode.enclosingTypeParameterResolver(): TypeParameterResolver {
++  val owners = mutableListOf<List<KSTypeParameter>>()
++  var current: KSNode? = this
++  while (current != null) {
++    val typeParameters =
++      when (current) {
++        is KSClassDeclaration -> current.typeParameters
++        is KSFunctionDeclaration -> current.typeParameters
++        is KSTypeAlias -> current.typeParameters
++        else -> emptyList()
++      }
++    if (typeParameters.isNotEmpty()) {
++      owners += typeParameters
++    }
++    current = (current as? KSDeclaration)?.parentDeclaration ?: current.parent
++  }
++  return owners.asReversed().fold(null as TypeParameterResolver?) { parent, parameters ->
++    parameters.toTypeParameterResolver(parent)
++  } ?: TypeParameterResolver.EMPTY
++}

@@ -1,0 +1,4 @@
+{"task": "tasks/java-kotlin-medium/pr-1939", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 60, "fresh_lines": 60, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.00244489}
+{"task": "tasks/java-kotlin-medium/pr-1939", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 60, "fresh_lines": 60, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0321949}
+{"task": "tasks/java-kotlin-medium/pr-1939", "model": "claude-opus-5-5", "answered": true, "gold_lines": 60, "fresh_lines": 60, "verbatim_share": 0.033, "names_all_files": false, "cost_usd": 0.0813058}
+SCORE tasks/java-kotlin-medium/pr-1939 worst verbatim share 0.03 (gold lines 60)

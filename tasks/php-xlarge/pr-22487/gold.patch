@@ -1,0 +1,213 @@
+diff --git a/src/Core/Content/Media/Commands/GenerateMediaTypesCommand.php b/src/Core/Content/Media/Commands/GenerateMediaTypesCommand.php
+index c29a8ba1b76..68169cd8e62 100644
+--- a/src/Core/Content/Media/Commands/GenerateMediaTypesCommand.php
++++ b/src/Core/Content/Media/Commands/GenerateMediaTypesCommand.php
+@@ -89,7 +89,7 @@ private function getMediaCount(Context $context): int
+         $criteria = new Criteria();
+         $criteria->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT);
+         $criteria->setLimit(1);
+-        $result = $this->mediaRepository->search($criteria, $context);
++        $result = $this->mediaRepository->searchIds($criteria, $context);
+ 
+         return $result->getTotal();
+     }
+diff --git a/src/Core/Content/Media/Commands/GenerateThumbnailsCommand.php b/src/Core/Content/Media/Commands/GenerateThumbnailsCommand.php
+index 03d672a985f..688649391d3 100644
+--- a/src/Core/Content/Media/Commands/GenerateThumbnailsCommand.php
++++ b/src/Core/Content/Media/Commands/GenerateThumbnailsCommand.php
+@@ -150,13 +150,13 @@ private function getFolderFilterFromInput(InputInterface $input, Context $contex
+         $criteria = (new Criteria())
+             ->addFilter(new EqualsFilter('name', $rawInput));
+ 
+-        $searchResult = $this->mediaFolderRepository->search($criteria, $context);
++        $searchResult = $this->mediaFolderRepository->searchIds($criteria, $context);
+ 
+         if ($searchResult->getTotal() === 0) {
+             throw MediaException::mediaFolderNameNotFound($rawInput);
+         }
+ 
+-        return new EqualsAnyFilter('mediaFolderId', $searchResult->getEntities()->getIds());
++        return new EqualsAnyFilter('mediaFolderId', $searchResult->getIds());
+     }
+ 
+     /**
+diff --git a/src/Core/Framework/Demodata/Generator/MediaGenerator.php b/src/Core/Framework/Demodata/Generator/MediaGenerator.php
+index fb2ee6a4f0c..2c592627b6d 100644
+--- a/src/Core/Framework/Demodata/Generator/MediaGenerator.php
++++ b/src/Core/Framework/Demodata/Generator/MediaGenerator.php
+@@ -232,29 +232,27 @@ private function getOrCreateDefaultFolder(DemodataContext $context, bool $isDown
+ 
+         $criteria = new Criteria();
+         $criteria->addFilter(new EqualsFilter('entity', $entity));
+-        $criteria->addAssociation('folder');
+         $criteria->setLimit(1);
+ 
+-        $defaultFolders = $this->defaultFolderRepository->search($criteria, $context->getContext());
+-
+-        if ($defaultFolders->getEntities()->count() <= 0) {
++        $defaultFolderId = $this->defaultFolderRepository->searchIds($criteria, $context->getContext())->firstId();
++        if ($defaultFolderId === null) {
+             return $mediaFolderId;
+         }
+ 
+-        $defaultFolder = $defaultFolders->getEntities()->first();
+-        if (!$defaultFolder) {
+-            return $mediaFolderId;
+-        }
++        $folderCriteria = new Criteria();
++        $folderCriteria->addFilter(new EqualsFilter('defaultFolderId', $defaultFolderId));
++        $folderCriteria->setLimit(1);
+ 
+-        if ($defaultFolder->getFolder()) {
+-            return $defaultFolder->getFolder()->getId();
++        $existingFolderId = $this->folderRepository->searchIds($folderCriteria, $context->getContext())->firstId();
++        if ($existingFolderId !== null) {
++            return $existingFolderId;
+         }
+ 
+         $mediaFolderId = Uuid::randomHex();
+         $this->folderRepository->upsert([
+             [
+                 'id' => $mediaFolderId,
+-                'defaultFolderId' => $defaultFolder->getId(),
++                'defaultFolderId' => $defaultFolderId,
+                 'name' => $name,
+                 'useParentConfiguration' => false,
+                 'configuration' => $configuration,
+diff --git a/src/Core/Framework/Demodata/Generator/SalesChannelDomainGenerator.php b/src/Core/Framework/Demodata/Generator/SalesChannelDomainGenerator.php
+index 2d746fd524c..9a1857b690d 100644
+--- a/src/Core/Framework/Demodata/Generator/SalesChannelDomainGenerator.php
++++ b/src/Core/Framework/Demodata/Generator/SalesChannelDomainGenerator.php
+@@ -56,7 +56,7 @@ public function generate(int $numberOfItems, DemodataContext $context, array $op
+         }
+ 
+         // If there is already more than one sales channel domain, do nothing.
+-        if ($this->getCurrentSalesChannelDomains($context, $storefrontSalesChannelId)->count() > 1) {
++        if ($this->countCurrentSalesChannelDomains($context, $storefrontSalesChannelId) > 1) {
+             $context->getConsole()->note('Skipping sales_channel_domain generation. Already exists.');
+ 
+             return;
+@@ -150,13 +150,13 @@ private function getSnippetSetByIso(DemodataContext $context, string $iso): ?str
+         return $snippetSetRepository->searchIds($criteria, $context->getContext())->firstId();
+     }
+ 
+-    private function getCurrentSalesChannelDomains(DemodataContext $context, string $storefrontSalesChannelId): SalesChannelDomainCollection
++    private function countCurrentSalesChannelDomains(DemodataContext $context, string $storefrontSalesChannelId): int
+     {
+         /** @var EntityRepository<SalesChannelDomainCollection> $salesChannelDomainRepository */
+         $salesChannelDomainRepository = $this->registry->getRepository('sales_channel_domain');
+         $criteria = new Criteria();
+         $criteria->addFilter(new EqualsFilter('salesChannelId', $storefrontSalesChannelId));
+ 
+-        return $salesChannelDomainRepository->search($criteria, $context->getContext())->getEntities();
++        return \count($salesChannelDomainRepository->searchIds($criteria, $context->getContext())->getIds());
+     }
+ }
+diff --git a/src/Core/Maintenance/SalesChannel/Command/SalesChannelReplaceUrlCommand.php b/src/Core/Maintenance/SalesChannel/Command/SalesChannelReplaceUrlCommand.php
+index 9e5b65d646d..dc372801e7a 100644
+--- a/src/Core/Maintenance/SalesChannel/Command/SalesChannelReplaceUrlCommand.php
++++ b/src/Core/Maintenance/SalesChannel/Command/SalesChannelReplaceUrlCommand.php
+@@ -8,7 +8,6 @@
+ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+ use Shopware\Core\Framework\Log\Package;
+ use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
+-use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
+ use Symfony\Component\Console\Attribute\AsCommand;
+ use Symfony\Component\Console\Command\Command;
+ use Symfony\Component\Console\Input\InputArgument;
+@@ -55,15 +54,15 @@ protected function execute(InputInterface $input, OutputInterface $output): int
+             return self::FAILURE;
+         }
+ 
+-        $domain = $this->findDomainByUrl($previousUrl, $context);
+-        if (!$domain instanceof SalesChannelDomainEntity) {
++        $domainId = $this->findDomainIdByUrl($previousUrl, $context);
++        if ($domainId === null) {
+             $io->error('No sales channels found with URL ' . $previousUrl);
+ 
+             return self::FAILURE;
+         }
+ 
+         $this->salesChannelDomainRepository->update([[
+-            'id' => $domain->getId(),
++            'id' => $domainId,
+             'url' => $newUrl,
+         ]], $context);
+ 
+@@ -92,12 +91,12 @@ private function validateUrls(string $previousUrl, string $newUrl, SymfonyStyle
+         return false;
+     }
+ 
+-    private function findDomainByUrl(string $url, Context $context): ?SalesChannelDomainEntity
++    private function findDomainIdByUrl(string $url, Context $context): ?string
+     {
+         $criteria = new Criteria();
+         $criteria->addFilter(new EqualsFilter('url', $url));
+         $criteria->setLimit(1);
+ 
+-        return $this->salesChannelDomainRepository->search($criteria, $context)->getEntities()->first();
++        return $this->salesChannelDomainRepository->searchIds($criteria, $context)->firstId();
+     }
+ }
+diff --git a/src/Storefront/Theme/Command/ThemeChangeCommand.php b/src/Storefront/Theme/Command/ThemeChangeCommand.php
+index ac3080194ad..3cde60a42a4 100644
+--- a/src/Storefront/Theme/Command/ThemeChangeCommand.php
++++ b/src/Storefront/Theme/Command/ThemeChangeCommand.php
+@@ -118,8 +118,8 @@ protected function execute(InputInterface $input, OutputInterface $output): int
+         $criteria = (new Criteria())
+             ->addFilter(new EqualsFilter('technicalName', $themeName));
+ 
+-        $theme = $this->themeRepository->search($criteria, $this->context)->getEntities()->first();
+-        if (!$theme) {
++        $themeId = $this->themeRepository->searchIds($criteria, $this->context)->firstId();
++        if ($themeId === null) {
+             $this->io->error('Invalid theme name');
+ 
+             return self::INVALID;
+@@ -134,11 +134,11 @@ protected function execute(InputInterface $input, OutputInterface $output): int
+ 
+         foreach ($selectedSalesChannel as $salesChannel) {
+             $this->io->writeln(
+-                \sprintf('Set and compiling theme "%s" (%s) as new theme for sales channel "%s"', $themeName, $theme->getId(), $salesChannel->getName() ?? $salesChannel->getId())
++                \sprintf('Set and compiling theme "%s" (%s) as new theme for sales channel "%s"', $themeName, $themeId, $salesChannel->getName() ?? $salesChannel->getId())
+             );
+ 
+             $this->themeService->assignTheme(
+-                $theme->getId(),
++                $themeId,
+                 $salesChannel->getId(),
+                 $this->context,
+                 $input->getOption('no-compile')
+diff --git a/src/Storefront/Theme/Message/CompileThemeHandler.php b/src/Storefront/Theme/Message/CompileThemeHandler.php
+index d3eb831f37b..8d64298102d 100644
+--- a/src/Storefront/Theme/Message/CompileThemeHandler.php
++++ b/src/Storefront/Theme/Message/CompileThemeHandler.php
+@@ -96,11 +96,11 @@ public function __invoke(CompileThemeMessage $message): void
+             return;
+         }
+ 
+-        $salesChannel = $this->saleschannelRepository->search(
++        $salesChannelExists = $this->saleschannelRepository->searchIds(
+             new Criteria([$message->getSalesChannelId()]),
+             $message->getContext()
+-        )->getEntities()->first();
+-        if (!$salesChannel) {
++        )->has($message->getSalesChannelId());
++        if (!$salesChannelExists) {
+             throw ThemeException::salesChannelNotFound($message->getSalesChannelId());
+         }
+ 
+diff --git a/src/Storefront/Theme/ThemeService.php b/src/Storefront/Theme/ThemeService.php
+index 6bc5157a3aa..276adca7284 100644
+--- a/src/Storefront/Theme/ThemeService.php
++++ b/src/Storefront/Theme/ThemeService.php
+@@ -302,8 +302,7 @@ public function assignTheme(string $themeId, string $salesChannelId, Context $co
+ 
+     public function resetTheme(string $themeId, Context $context): void
+     {
+-        $theme = $this->themeRepository->search(new Criteria([$themeId]), $context)->getEntities()->first();
+-        if (!$theme) {
++        if (!$this->themeRepository->searchIds(new Criteria([$themeId]), $context)->has($themeId)) {
+             throw ThemeException::couldNotFindThemeById($themeId);
+         }
+ 

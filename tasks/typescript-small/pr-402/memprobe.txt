@@ -1,0 +1,4 @@
+{"task": "tasks/typescript-small/pr-402", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 402, "fresh_lines": 401, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.00114929}
+{"task": "tasks/typescript-small/pr-402", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 402, "fresh_lines": 401, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0182409}
+{"task": "tasks/typescript-small/pr-402", "model": "claude-opus-5-5", "answered": true, "gold_lines": 402, "fresh_lines": 401, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.0491818}
+SCORE tasks/typescript-small/pr-402 worst verbatim share 0.00 (gold lines 402)

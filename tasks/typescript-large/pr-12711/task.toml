@@ -1,0 +1,8 @@
+type = "pr"
+origin = "mined pull request (modern, docs/MEMORIZATION.md)"
+pr = 12711
+issue = 12710
+base_commit = "5543c7c462a85b79746ae61205ddd43c1d8de157"
+merge_commit = "04ff4daedcf60fa4ffd0d5d33bbafaac1a9bbc96"
+merged_at = "2026-07-29T08:16:22Z"
+test_files = ["test/functional/persistence/many-to-many/persistence-many-to-many.test.ts"]

@@ -1,0 +1,111 @@
+test/fast/Unit tests/Running 'nvm use --save' works as expected'
+test/fast/Unit tests/Running 'nvm use --save' works with a .nvmrc in the parent dir
+test/fast/Unit tests/Running 'nvm use --silent --save' doesn't output anything
+test/fast/Unit tests/assert_not_ok
+test/fast/Unit tests/assert_ok
+test/fast/Unit tests/make_echo
+test/fast/Unit tests/nvm install --offline
+test/fast/Unit tests/nvm install -s and -b conflict
+test/fast/Unit tests/nvm install NVM_NO_SOURCE_FALLBACK
+test/fast/Unit tests/nvm install verifies the installed version
+test/fast/Unit tests/nvm ls-remote with nounset should not fail
+test/fast/Unit tests/nvm set_colors
+test/fast/Unit tests/nvm version-remote
+test/fast/Unit tests/nvm_acquire_install_lock
+test/fast/Unit tests/nvm_add_iojs_prefix
+test/fast/Unit tests/nvm_alias
+test/fast/Unit tests/nvm_alias LTS-N
+test/fast/Unit tests/nvm_alias handles comments
+test/fast/Unit tests/nvm_alias_path
+test/fast/Unit tests/nvm_change_path
+test/fast/Unit tests/nvm_check_for_help
+test/fast/Unit tests/nvm_clang_version
+test/fast/Unit tests/nvm_command_info
+test/fast/Unit tests/nvm_compute_checksum
+test/fast/Unit tests/nvm_curl_libz_support
+test/fast/Unit tests/nvm_curl_use_compression
+test/fast/Unit tests/nvm_curl_version
+test/fast/Unit tests/nvm_die_on_prefix
+test/fast/Unit tests/nvm_download and curl helpers bypass shadowed curl
+test/fast/Unit tests/nvm_download no eval injection
+test/fast/Unit tests/nvm_download wget Authorization header
+test/fast/Unit tests/nvm_download_artifact
+test/fast/Unit tests/nvm_download_artifact version injection
+test/fast/Unit tests/nvm_ensure_default_set
+test/fast/Unit tests/nvm_ensure_version_installed
+test/fast/Unit tests/nvm_ensure_version_prefix
+test/fast/Unit tests/nvm_extract_tarball
+test/fast/Unit tests/nvm_find_project_dir
+test/fast/Unit tests/nvm_find_up
+test/fast/Unit tests/nvm_format_version
+test/fast/Unit tests/nvm_get_arch alpine
+test/fast/Unit tests/nvm_get_checksum
+test/fast/Unit tests/nvm_get_checksum awk injection
+test/fast/Unit tests/nvm_get_checksum_alg
+test/fast/Unit tests/nvm_get_checksum_binary
+test/fast/Unit tests/nvm_get_colors
+test/fast/Unit tests/nvm_get_default_packages
+test/fast/Unit tests/nvm_get_default_packages mawk compat
+test/fast/Unit tests/nvm_get_download_slug
+test/fast/Unit tests/nvm_get_latest missing curl or wget
+test/fast/Unit tests/nvm_get_minor_version
+test/fast/Unit tests/nvm_get_mirror
+test/fast/Unit tests/nvm_has
+test/fast/Unit tests/nvm_has_colors
+test/fast/Unit tests/nvm_has_non_aliased
+test/fast/Unit tests/nvm_has_solaris_binary
+test/fast/Unit tests/nvm_has_system_iojs
+test/fast/Unit tests/nvm_has_system_node
+test/fast/Unit tests/nvm_hash_reset
+test/fast/Unit tests/nvm_install_binary_nosource
+test/fast/Unit tests/nvm_install_latest_npm
+test/fast/Unit tests/nvm_install_lock_name
+test/fast/Unit tests/nvm_install_source SHELL override
+test/fast/Unit tests/nvm_iojs_prefix
+test/fast/Unit tests/nvm_iojs_version_has_solaris_binary
+test/fast/Unit tests/nvm_is_alias
+test/fast/Unit tests/nvm_is_iojs_version
+test/fast/Unit tests/nvm_is_merged_node_version
+test/fast/Unit tests/nvm_is_natural_num
+test/fast/Unit tests/nvm_is_valid_version
+test/fast/Unit tests/nvm_is_version_installed
+test/fast/Unit tests/nvm_ls handles hash in pattern
+test/fast/Unit tests/nvm_ls_remote
+test/fast/Unit tests/nvm_ls_remote LTS aliases
+test/fast/Unit tests/nvm_ls_remote LTS codename traversal
+test/fast/Unit tests/nvm_ls_remote nightly
+test/fast/Unit tests/nvm_ls_remote_iojs
+test/fast/Unit tests/nvm_make_alias
+test/fast/Unit tests/nvm_node_prefix
+test/fast/Unit tests/nvm_node_version_has_solaris_binary
+test/fast/Unit tests/nvm_normalize_lts
+test/fast/Unit tests/nvm_num_version_groups
+test/fast/Unit tests/nvm_offline_version
+test/fast/Unit tests/nvm_print_alias_file
+test/fast/Unit tests/nvm_print_alias_path
+test/fast/Unit tests/nvm_print_color_code
+test/fast/Unit tests/nvm_print_color_legend
+test/fast/Unit tests/nvm_print_default_alias
+test/fast/Unit tests/nvm_print_implicit_alias errors
+test/fast/Unit tests/nvm_print_implicit_alias success
+test/fast/Unit tests/nvm_print_npm_version
+test/fast/Unit tests/nvm_rc_version errors when no version and no .nvmrc
+test/fast/Unit tests/nvm_release_install_lock
+test/fast/Unit tests/nvm_remote_version
+test/fast/Unit tests/nvm_remote_versions
+test/fast/Unit tests/nvm_remote_versions propagates iojs failure
+test/fast/Unit tests/nvm_sanitize_auth_header
+test/fast/Unit tests/nvm_strip_iojs_prefix
+test/fast/Unit tests/nvm_strip_path
+test/fast/Unit tests/nvm_tree_contains_path
+test/fast/Unit tests/nvm_use_if_needed
+test/fast/Unit tests/nvm_validate_implicit_alias
+test/fast/Unit tests/nvm_validate_install
+test/fast/Unit tests/nvm_version
+test/fast/Unit tests/nvm_version_dir
+test/fast/Unit tests/nvm_version_greater
+test/fast/Unit tests/nvm_version_path
+test/fast/Unit tests/nvm_wrap_with_color_code
+test/fast/Unit tests/nvm_write_nvmrc
+test/fast/Unit tests/security_wget_injection
+test/fast/Unit tests/zsh options survive nvm_list_aliases and nvm_ls

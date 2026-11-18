@@ -1,4 +1,0 @@
-type = "rename"
-origin = "synthetic fallback; fixed xlarge assignment"
-symbol = "org.jetbrains.kotlin.fir.FirSession"
-selection = "Second fixed public compiler symbol selected before any run; paired with the xlarge rename task rotation."

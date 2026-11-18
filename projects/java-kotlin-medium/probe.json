@@ -1,1 +1,7 @@
-[]
+[
+  {"name":"references of PactDslRequestWithoutPath by name (Kotlin, Java and Groovy users)","args":{"operation":"references","query":"PactDslRequestWithoutPath","path":"consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestWithoutPath.kt"},"expect":["consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslWithProvider.kt:64","consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/BaseProviderRule.java:247"]},
+  {"name":"definition of PactDslRequestWithoutPath from a return type","args":{"operation":"definition","path":"consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslWithProvider.kt","line":63,"column":42},"expect":["consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestWithoutPath.kt:29"]},
+  {"name":"definition of PactDslRequestWithoutPath from Java code in another module","args":{"operation":"definition","path":"consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/BaseProviderRule.java","line":246,"column":6},"expect":["consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslRequestWithoutPath.kt:29"]},
+  {"name":"diagnostics clean file","tool":"lsp_diagnostics","args":{"paths":["consumer/src/main/kotlin/au/com/dius/pact/consumer/dsl/PactDslWithProvider.kt"]},"expect":[]},
+  {"name":"servers","tool":"lsp_status","args":{"operation":"servers"},"expect":[]}
+]

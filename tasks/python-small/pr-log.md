@@ -1,20 +1,15 @@
-# Mined pull requests: python-small (toolz)
+# Mined pull requests: python-small (pydantic-extra-types)
 
-Candidates from `sh harness/gen/mine-prs.sh python-small` (11 qualify), taken strictly in the order of
-`pr-candidates.jsonl`. Each was checked with CPython 3.12 and pytest (the `grade-python` toolchain): the pull
-request's test files at its merge applied to its base commit must fail, and pass with its non-test change.
-Fail-to-pass = tests passing after and not before; pass-to-pass = tests of the changed test files passing both before
-and after. Tests that fail both before and after on CPython 3.12 (old code using APIs removed from Python) are in
-neither list. A candidate is skipped when it has no fail-to-pass test on CPython 3.12, or its test files cannot be
-collected after the change.
+`sh harness/gen/mine-prs.sh python-small`: 19 modern pull requests qualify (opened on or after 2026-07-01, merged, closing
+an issue, tests plus source). Taken strictly in the order of `pr-candidates.jsonl`; each was run with CPython 3.12 and the
+dependency versions of the repository's `uv.lock` (grade-setup.sh): its test files applied to the base commit (must
+fail), then with its non-test change (must pass).
 
 | Order | PR | Issue | Outcome |
 | --- | --- | --- | --- |
-| 1 | #78 | #77 Remove is not lazy | skipped: no fail-to-pass test on CPython 3.12 (`filter` is already lazy on Python 3; the bug was Python 2 only) |
-| 2 | #108 | #43 complement | task `pr-108` (6 fail-to-pass; 8 curry tests of the file fail before and after: `inspect.getargspec` is gone in 3.12) |
-| 3 | #355 | #725 Can't pickle function delayed | skipped: needs an older Python (`toolz/functoolz.py` at the base has a SyntaxError on 3.12: unparenthesised generator argument); the linked issue is also a dask issue |
-| 4 | #15 | #14 Currying standard functions | skipped: needs an older Python (`toolz/tests/test_curried.py` cannot be collected after the change: `inspect.getargspec`) |
-| 5 | #9 | #6 Add assoc and update_in to dicttoolz | task `pr-9` (5 fail-to-pass: the test module imports the new functions) |
-| 6 | #399 | #387 `partition_all` fails for sequence of `pd.DataFrame`s | task `pr-399` (1 fail-to-pass, 46 pass-to-pass; `test_nth` and `test_random_sample` fail before and after on 3.12) |
+| 1 | #409 | Unhandled validation error when parsing Color | task `pr-409` (6 fail-to-pass, 111 pass-to-pass; `test_types_color.py`, `test_ulid.py`) |
+| 2 | #446 | PhoneNumberValidator with number_format='NATIONAL' drops the ... | task `pr-446` (6 fail-to-pass, 32 pass-to-pass) |
+| 3 | #439 | Slashes get cut off in CronStr | task `pr-439` (1 fail-to-pass, 5 pass-to-pass) |
 
-Stopped at three valid tasks; candidates 7 to 11 were not examined.
+Stopped at three accepted tasks. The memorization probe is a measurement (`memprobe.txt` in each task): worst verbatim share
+1.00 for #409 (a one-line gold patch), 0.00 for #446 and #439.

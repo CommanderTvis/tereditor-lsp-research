@@ -1,0 +1,10 @@
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags enabled should enable unprefixed v12 flags when the v12 release flag is enabled
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags notifyAvailableFlag should notify when a v12 flag is available but not enabled
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags notifyAvailableFlag should only notify once per flag
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags notifyAvailableFlag should not notify when the flag is already enabled
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags notifyAvailableFlag should not notify for non-v12 flags
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags notifyAvailableFlag should not notify for the release flag itself
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags notifyAvailableFlag should include the flag description when there is one
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags notifyAvailableFlag should point at the release flag, which enables every v12 flag
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags notifyAvailableFlag should notify for the unprefixed v12 flag enable-focus-wrap-without-sentinels
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags notifyAvailableFlag should stay silent for an unprefixed v12 flag that is enabled

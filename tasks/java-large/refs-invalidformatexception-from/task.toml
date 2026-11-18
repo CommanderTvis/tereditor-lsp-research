@@ -1,0 +1,5 @@
+type = "refs"
+origin = "devrig find-usages; same-named static factories on sibling exception classes"
+symbol = "tools.jackson.databind.exc.InvalidFormatException#from(JsonParser, String, Object, Class)"
+selection = "seed 20261110. Candidates: public static methods declared once in their top-level public class of src/main/java (not overloaded there), whose name is declared in at least 2 classes of src/main/java and that are called as Class.name( on 8 to 80 lines in at least 4 files other than the declaring one; sorted by Class#name: 8 candidates (BasicPolymorphicTypeValidator#builder, DateTimeParseException#from, DecimalNode#valueOf, IntNode#valueOf, InvalidFormatException#from, LongNode#valueOf, MissingNode#getInstance, StringNode#valueOf); index int(rand()*8)+1 after srand(20261110) = 5 (InvalidFormatException#from). Fixed after seeing earlier candidate lists: the static-only restriction (overridden methods give ambiguous compiler oracles) and the qualified-call count."
+# the oracle is derived with javac in the grading sandbox (derive-oracle.sh)

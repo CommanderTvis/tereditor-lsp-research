@@ -1,5 +1,4 @@
-# csharp, large: Jellyfin. Mined candidates were not validated in the available run; all PR slots use documented
-# synthetic fallbacks (tasks/csharp-large/).
+# csharp, large: Jellyfin. Mined tasks are modern pull requests (tasks/csharp-large/pr-log.md).
 lang = "csharp"
 size = "large"
 status = "curated"
@@ -10,4 +9,9 @@ loc = 254851
 loc_by_language = { "C#" = 254851 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 task_types = ["rename", "rename-file", "callers", "pr", "pr", "pr"]
-substitutions = ["two unavailable mined slots use explicit `pr-fallback-2` and `pr-fallback-3`; the real pr-6422 task and three original synthetic tasks are preserved"]
+substitutions = []
+
+[probe]
+ok = true
+seconds_to_first_answer = 66
+note = "references (cross-project) and diagnostics correct (references 66 s, server ready about 250 s). The first definition probe queried the ambiguous name ImageProcessor (3 symbols) and was reported ambiguous by design; probe.json now queries by position, not re-run"

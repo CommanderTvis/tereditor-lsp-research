@@ -1,0 +1,631 @@
+﻿using System.Runtime.CompilerServices;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace MediatR.Extensions.Microsoft.DependencyInjection.Tests;
+
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Pipeline;
+using Shouldly;
+using Xunit;
+using static PipelineTests;
+
+// Stream behaviors and request pre/post processors with type parameters inferred from constraints (#1180).
+// Pipeline behavior coverage lives in PipelineTests.
+public class OpenGenericConstraintInferenceTests
+{
+    public interface ITxStreamRequest<TDbContext> : IStreamRequest<Pong> where TDbContext : ITxDbContext { }
+
+    public class TxStreamRequest : ITxStreamRequest<TxAppDbContext> { }
+
+    public class TxStreamRequestHandler : IStreamRequestHandler<TxStreamRequest, Pong>
+    {
+        private readonly Logger _output;
+        public TxStreamRequestHandler(Logger output) => _output = output;
+
+        public async IAsyncEnumerable<Pong> Handle(TxStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            yield return await Task.FromResult(new Pong { Message = "Pong" });
+        }
+    }
+
+    public class ContextStreamBehavior<TRequest, TResponse, TDbContext> : IStreamPipelineBehavior<TRequest, TResponse>
+        where TRequest : ITxStreamRequest<TDbContext>
+        where TDbContext : ITxDbContext
+    {
+        private readonly Logger _output;
+        public ContextStreamBehavior(Logger output) => _output = output;
+
+        public async IAsyncEnumerable<TResponse> Handle(TRequest request, StreamHandlerDelegate<TResponse> next, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            _output.Messages.Add($"Stream before {typeof(TDbContext).Name}");
+            await foreach (var item in next().WithCancellation(cancellationToken))
+            {
+                yield return item;
+            }
+            _output.Messages.Add($"Stream after {typeof(TDbContext).Name}");
+        }
+    }
+
+    public class UninferrableStreamBehavior<TRequest, TResponse, TExtra> : IStreamPipelineBehavior<TRequest, TResponse>
+        where TRequest : IStreamRequest<TResponse>
+        where TExtra : new()
+    {
+        public IAsyncEnumerable<TResponse> Handle(TRequest request, StreamHandlerDelegate<TResponse> next, CancellationToken cancellationToken) => next();
+    }
+
+    public class ContextPreProcessor<TRequest, TDbContext> : IRequestPreProcessor<TRequest>
+        where TRequest : IInvariantTxCommand<TDbContext>
+        where TDbContext : ITxDbContext
+    {
+        private readonly Logger _output;
+        public ContextPreProcessor(Logger output) => _output = output;
+
+        public Task Process(TRequest request, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add($"Pre {typeof(TDbContext).Name}");
+            return Task.CompletedTask;
+        }
+    }
+
+    public class ContextPostProcessor<TRequest, TResponse, TDbContext> : IRequestPostProcessor<TRequest, TResponse>
+        where TRequest : IInvariantTxCommand<TDbContext>
+        where TDbContext : ITxDbContext
+    {
+        private readonly Logger _output;
+        public ContextPostProcessor(Logger output) => _output = output;
+
+        public Task Process(TRequest request, TResponse response, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add($"Post {typeof(TDbContext).Name}");
+            return Task.CompletedTask;
+        }
+    }
+
+    private static (IMediator Mediator, Logger Output) BuildMediator(Action<MediatRServiceConfiguration> configure)
+    {
+        var output = new Logger();
+        IServiceCollection services = new ServiceCollection();
+        services.AddSingleton(output);
+        services.AddFakeLogging();
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(typeof(OpenGenericConstraintInferenceTests).Assembly);
+            configure(cfg);
+        });
+        var provider = services.BuildServiceProvider();
+        return (provider.GetRequiredService<IMediator>(), output);
+    }
+
+    [Fact]
+    public async Task Should_apply_open_stream_behavior_with_type_parameter_bound_from_request_constraint()
+    {
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenStreamBehavior(typeof(ContextStreamBehavior<,,>)));
+
+        await foreach (var _ in mediator.CreateStream(new TxStreamRequest())) { }
+
+        output.Messages.ShouldBe(new[] { "Stream before TxAppDbContext", "Handler", "Stream after TxAppDbContext" });
+    }
+
+    [Fact]
+    public void Should_throw_when_open_stream_behavior_type_parameter_cannot_be_inferred()
+    {
+        var ex = Should.Throw<InvalidOperationException>(() =>
+            BuildMediator(cfg => cfg.AddOpenStreamBehavior(typeof(UninferrableStreamBehavior<,,>))));
+
+        ex.Message.ShouldContain("TExtra");
+    }
+
+    [Fact]
+    public async Task Should_apply_open_pre_processor_with_type_parameter_bound_from_request_constraint()
+    {
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenRequestPreProcessor(typeof(ContextPreProcessor<,>)));
+
+        await mediator.Send(new ContextTxCommand());
+
+        output.Messages.ShouldBe(new[] { "Pre TxAppDbContext", "Handler" });
+    }
+
+    [Fact]
+    public async Task Should_apply_open_post_processor_with_type_parameter_bound_from_request_constraint()
+    {
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenRequestPostProcessor(typeof(ContextPostProcessor<,,>)));
+
+        await mediator.Send(new ContextTxCommand());
+
+        output.Messages.ShouldBe(new[] { "Handler", "Post TxAppDbContext" });
+    }
+
+    [Fact]
+    public async Task Should_not_apply_open_pre_processor_with_extra_type_parameter_to_unrelated_requests()
+    {
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenRequestPreProcessor(typeof(ContextPreProcessor<,>)));
+
+        await mediator.Send(new CovariantTxCommand());
+
+        output.Messages.ShouldBe(new[] { "Handler" });
+    }
+
+    // Review follow-ups: array arguments, multiple constraint links, variance on fixed arguments,
+    // and implementations that close the service interface more than once
+
+    public interface IArrayMarker<T> { }
+    public class ArrayCommand : IRequest, IArrayMarker<int[]> { }
+
+    public class ArrayCommandHandler : IRequestHandler<ArrayCommand>
+    {
+        private readonly Logger _output;
+        public ArrayCommandHandler(Logger output) => _output = output;
+        public Task Handle(ArrayCommand request, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            return Task.CompletedTask;
+        }
+    }
+
+    public class ArrayElementBehavior<TRequest, TResponse, TItem> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : IArrayMarker<TItem[]>
+    {
+        private readonly Logger _output;
+        public ArrayElementBehavior(Logger output) => _output = output;
+        public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add($"Array behavior {typeof(TItem).Name}");
+            return next();
+        }
+    }
+
+    public class BaseThing { }
+    public class DerivedThing : BaseThing { }
+    public interface ICovariantLink<out T> { }
+    public interface IInvariantLink<T> { }
+
+    public class LinkResponse : IInvariantLink<BaseThing> { }
+    public class LinkRequest : IRequest<LinkResponse>, ICovariantLink<DerivedThing> { }
+
+    public class LinkRequestHandler : IRequestHandler<LinkRequest, LinkResponse>
+    {
+        private readonly Logger _output;
+        public LinkRequestHandler(Logger output) => _output = output;
+        public Task<LinkResponse> Handle(LinkRequest request, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            return Task.FromResult(new LinkResponse());
+        }
+    }
+
+    // The request's constraint is tried first and infers DerivedThing, which the response's invariant
+    // constraint rejects; only the response's constraint infers BaseThing, which satisfies both
+    public class TwoLinkBehavior<TRequest, TResponse, TThing> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : ICovariantLink<TThing>
+        where TResponse : IInvariantLink<TThing>
+    {
+        private readonly Logger _output;
+        public TwoLinkBehavior(Logger output) => _output = output;
+        public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add($"Link behavior {typeof(TThing).Name}");
+            return next();
+        }
+    }
+
+    public interface IVariantTagMarker<out TContext, TTag> { }
+    public class VariantTagCommand : IRequest, IVariantTagMarker<TxAppDbContext, int> { }
+
+    public class VariantTagCommandHandler : IRequestHandler<VariantTagCommand>
+    {
+        private readonly Logger _output;
+        public VariantTagCommandHandler(Logger output) => _output = output;
+        public Task Handle(VariantTagCommand request, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            return Task.CompletedTask;
+        }
+    }
+
+    public class VariantTagBehavior<TRequest, TResponse, TTag> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : IVariantTagMarker<ITxDbContext, TTag>
+    {
+        private readonly Logger _output;
+        public VariantTagBehavior(Logger output) => _output = output;
+        public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add($"Tag behavior {typeof(TTag).Name}");
+            return next();
+        }
+    }
+
+    public class DualFooRequest : IRequest<Pong> { }
+    public class DualBarRequest : IRequest<Pong> { }
+
+    public class DualFooRequestHandler : IRequestHandler<DualFooRequest, Pong>
+    {
+        private readonly Logger _output;
+        public DualFooRequestHandler(Logger output) => _output = output;
+        public Task<Pong> Handle(DualFooRequest request, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            return Task.FromResult(new Pong());
+        }
+    }
+
+    public class DualBarRequestHandler : IRequestHandler<DualBarRequest, Pong>
+    {
+        private readonly Logger _output;
+        public DualBarRequestHandler(Logger output) => _output = output;
+        public Task<Pong> Handle(DualBarRequest request, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            return Task.FromResult(new Pong());
+        }
+    }
+
+    public class DualBehavior<TResponse> : IPipelineBehavior<DualFooRequest, TResponse>, IPipelineBehavior<DualBarRequest, TResponse>
+    {
+        private readonly Logger _output;
+        public DualBehavior(Logger output) => _output = output;
+
+        public Task<TResponse> Handle(DualFooRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Dual behavior Foo");
+            return next();
+        }
+
+        public Task<TResponse> Handle(DualBarRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Dual behavior Bar");
+            return next();
+        }
+    }
+
+    [Fact]
+    public async Task Should_infer_type_parameter_from_array_element_in_constraint()
+    {
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenBehavior(typeof(ArrayElementBehavior<,,>)));
+
+        await mediator.Send(new ArrayCommand());
+
+        output.Messages.ShouldBe(new[] { "Array behavior Int32", "Handler" });
+    }
+
+    [Fact]
+    public async Task Should_try_every_constraint_link_when_inferring_type_parameter()
+    {
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenBehavior(typeof(TwoLinkBehavior<,,>)));
+
+        await mediator.Send(new LinkRequest());
+
+        output.Messages.ShouldBe(new[] { "Link behavior BaseThing", "Handler" });
+    }
+
+    [Fact]
+    public async Task Should_infer_type_parameter_when_fixed_constraint_argument_is_satisfied_by_variance()
+    {
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenBehavior(typeof(VariantTagBehavior<,,>)));
+
+        await mediator.Send(new VariantTagCommand());
+
+        output.Messages.ShouldBe(new[] { "Tag behavior Int32", "Handler" });
+    }
+
+    [Fact]
+    public async Task Should_close_every_service_interface_an_open_behavior_implements()
+    {
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenBehavior(typeof(DualBehavior<>)));
+
+        await mediator.Send(new DualFooRequest());
+        await mediator.Send(new DualBarRequest());
+
+        output.Messages.ShouldBe(new[] { "Dual behavior Foo", "Handler", "Dual behavior Bar", "Handler" });
+    }
+
+    // Repeated parameters that line up with different types under variance, and many independent constraint links
+
+    public interface IPair<out TLeft, out TRight> { }
+    public class PairCommand : IRequest, IPair<DerivedThing, BaseThing> { }
+
+    public class PairCommandHandler : IRequestHandler<PairCommand>
+    {
+        private readonly Logger _output;
+        public PairCommandHandler(Logger output) => _output = output;
+        public Task Handle(PairCommand request, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            return Task.CompletedTask;
+        }
+    }
+
+    // TItem lines up with DerivedThing and BaseThing; only BaseThing satisfies both covariant positions
+    public class PairBehavior<TRequest, TResponse, TItem> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : IPair<TItem, TItem>
+    {
+        private readonly Logger _output;
+        public PairBehavior(Logger output) => _output = output;
+        public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add($"Pair behavior {typeof(TItem).Name}");
+            return next();
+        }
+    }
+
+    public interface ISlot1<T> { }
+    public interface ISlot2<T> { }
+    public interface ISlot3<T> { }
+    public interface ISlot4<T> { }
+    public interface ISlot5<T> { }
+    public interface ISlot6<T> { }
+    public interface ISlot7<T> { }
+    public interface ISlot8<T> { }
+    public interface ISlot9<T> { }
+    public interface ISlot10<T> { }
+    public interface ISlot11<T> { }
+    public interface ISlot12<T> { }
+    public interface ISlot13<T> { }
+    public interface ISlot14<T> { }
+    public interface ISlot15<T> { }
+    public interface ISlot16<T> { }
+
+    public class SlotCommand : IRequest, ISlot1<int>, ISlot2<int>, ISlot3<int>, ISlot4<int>, ISlot5<int>, ISlot6<int>, ISlot7<int>, ISlot8<int>, ISlot9<int>, ISlot10<int>, ISlot11<int>, ISlot12<int>, ISlot13<int>, ISlot14<int>, ISlot15<int>, ISlot16<int> { }
+
+    public class SlotCommandHandler : IRequestHandler<SlotCommand>
+    {
+        private readonly Logger _output;
+        public SlotCommandHandler(Logger output) => _output = output;
+        public Task Handle(SlotCommand request, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            return Task.CompletedTask;
+        }
+    }
+
+    public class ManySlotBehavior<TRequest, TResponse, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : ISlot1<T1>, ISlot2<T2>, ISlot3<T3>, ISlot4<T4>, ISlot5<T5>, ISlot6<T6>, ISlot7<T7>, ISlot8<T8>, ISlot9<T9>, ISlot10<T10>, ISlot11<T11>, ISlot12<T12>, ISlot13<T13>, ISlot14<T14>, ISlot15<T15>, ISlot16<T16>
+    {
+        private readonly Logger _output;
+        public ManySlotBehavior(Logger output) => _output = output;
+        public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Slot behavior");
+            return next();
+        }
+    }
+
+    [Fact]
+    public async Task Should_try_every_occurrence_of_a_repeated_type_parameter_in_a_constraint()
+    {
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenBehavior(typeof(PairBehavior<,,>)));
+
+        await mediator.Send(new PairCommand());
+
+        output.Messages.ShouldBe(new[] { "Pair behavior BaseThing", "Handler" });
+    }
+
+    [Fact]
+    public async Task Should_infer_many_independent_type_parameters_without_exploring_every_ordering()
+    {
+        // Exploring the 16 constraint links one at a time visits every ordering (16!) or, with pruning, every subset (2^16);
+        // collecting candidates from all links before branching needs a single pass
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenBehavior(typeof(ManySlotBehavior<,,,,,,,,,,,,,,,,,>)));
+        stopwatch.Stop();
+
+        await mediator.Send(new SlotCommand());
+
+        output.Messages.ShouldBe(new[] { "Slot behavior", "Handler" });
+        stopwatch.Elapsed.ShouldBeLessThan(TimeSpan.FromMilliseconds(500));
+    }
+
+    // Unknown parameters inferred across different constraints, and nested constraint arguments under variance
+
+    public interface IPairFor<out TLeft, out TRight> { }
+    public class CrossLinkResponse : IPairFor<DerivedThing, BaseThing> { }
+    public class CrossLinkRequest : IRequest<CrossLinkResponse>, IPairFor<BaseThing, DerivedThing> { }
+
+    public class CrossLinkRequestHandler : IRequestHandler<CrossLinkRequest, CrossLinkResponse>
+    {
+        private readonly Logger _output;
+        public CrossLinkRequestHandler(Logger output) => _output = output;
+        public Task<CrossLinkResponse> Handle(CrossLinkRequest request, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            return Task.FromResult(new CrossLinkResponse());
+        }
+    }
+
+    // Each constraint alone infers (BaseThing, DerivedThing) or (DerivedThing, BaseThing), and neither satisfies both;
+    // only combining candidates across constraints finds (BaseThing, BaseThing)
+    public class CrossLinkBehavior<TRequest, TResponse, TLeft, TRight> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : IPairFor<TLeft, TRight>
+        where TResponse : IPairFor<TLeft, TRight>
+    {
+        private readonly Logger _output;
+        public CrossLinkBehavior(Logger output) => _output = output;
+        public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add($"Cross-link behavior {typeof(TLeft).Name},{typeof(TRight).Name}");
+            return next();
+        }
+    }
+
+    public interface ICovariantMarker<out T> { }
+    public class NestedVarianceCommand : IRequest, ICovariantMarker<List<int>> { }
+
+    public class NestedVarianceCommandHandler : IRequestHandler<NestedVarianceCommand>
+    {
+        private readonly Logger _output;
+        public NestedVarianceCommandHandler(Logger output) => _output = output;
+        public Task Handle(NestedVarianceCommand request, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            return Task.CompletedTask;
+        }
+    }
+
+    public class NestedVarianceBehavior<TRequest, TResponse, TItem> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : ICovariantMarker<IEnumerable<TItem>>
+    {
+        private readonly Logger _output;
+        public NestedVarianceBehavior(Logger output) => _output = output;
+        public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add($"Nested variance behavior {typeof(TItem).Name}");
+            return next();
+        }
+    }
+
+    [Fact]
+    public async Task Should_combine_candidates_across_constraints_when_inferring_several_type_parameters()
+    {
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenBehavior(typeof(CrossLinkBehavior<,,,>)));
+
+        await mediator.Send(new CrossLinkRequest());
+
+        output.Messages.ShouldBe(new[] { "Cross-link behavior BaseThing,BaseThing", "Handler" });
+    }
+
+    [Fact]
+    public async Task Should_infer_nested_constraint_argument_through_implemented_interfaces_under_variance()
+    {
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenBehavior(typeof(NestedVarianceBehavior<,,>)));
+
+        await mediator.Send(new NestedVarianceCommand());
+
+        output.Messages.ShouldBe(new[] { "Nested variance behavior Int32", "Handler" });
+    }
+
+    // A chained constraint can revise a parameter that was already inferred directly (#1185)
+
+    public interface IInvariantMarker<T> { }
+    public class ChainHolder : ICovariantMarker<BaseThing> { }
+    public class ChainCommand : IRequest, ICovariantMarker<DerivedThing>, IInvariantMarker<ChainHolder> { }
+
+    public class ChainCommandHandler : IRequestHandler<ChainCommand>
+    {
+        private readonly Logger _output;
+        public ChainCommandHandler(Logger output) => _output = output;
+        public Task Handle(ChainCommand request, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            return Task.CompletedTask;
+        }
+    }
+
+    // TRequest alone infers TItem = DerivedThing, but THolder only satisfies ICovariantMarker<BaseThing>;
+    // TItem = BaseThing comes from the constraint on THolder
+    public class ChainBehavior<TRequest, TResponse, TItem, THolder> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : ICovariantMarker<TItem>, IInvariantMarker<THolder>
+        where THolder : ICovariantMarker<TItem>
+    {
+        private readonly Logger _output;
+        public ChainBehavior(Logger output) => _output = output;
+        public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add($"Chain behavior {typeof(TItem).Name},{typeof(THolder).Name}");
+            return next();
+        }
+    }
+
+    [Fact]
+    public async Task Should_revise_inferred_type_parameter_from_chained_constraint()
+    {
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenBehavior(typeof(ChainBehavior<,,,>)));
+
+        await mediator.Send(new ChainCommand());
+
+        output.Messages.ShouldBe(new[] { "Chain behavior BaseThing,ChainHolder", "Handler" });
+    }
+
+    // Two roots, each starting an invariant chain of 16 links; only the first chain ends in IStepEnd.
+    // Pooling the candidates of both chains gives 2^16 combinations unless partial bindings are pruned
+
+    public interface IStepRoot<T> { }
+    public interface IStep<T> { }
+    public interface IStepEnd { }
+    public class AStep1 : IStep<AStep2> { }
+    public class AStep2 : IStep<AStep3> { }
+    public class AStep3 : IStep<AStep4> { }
+    public class AStep4 : IStep<AStep5> { }
+    public class AStep5 : IStep<AStep6> { }
+    public class AStep6 : IStep<AStep7> { }
+    public class AStep7 : IStep<AStep8> { }
+    public class AStep8 : IStep<AStep9> { }
+    public class AStep9 : IStep<AStep10> { }
+    public class AStep10 : IStep<AStep11> { }
+    public class AStep11 : IStep<AStep12> { }
+    public class AStep12 : IStep<AStep13> { }
+    public class AStep13 : IStep<AStep14> { }
+    public class AStep14 : IStep<AStep15> { }
+    public class AStep15 : IStep<AStep16> { }
+    public class AStep16 : IStepEnd { }
+    public class BStep1 : IStep<BStep2> { }
+    public class BStep2 : IStep<BStep3> { }
+    public class BStep3 : IStep<BStep4> { }
+    public class BStep4 : IStep<BStep5> { }
+    public class BStep5 : IStep<BStep6> { }
+    public class BStep6 : IStep<BStep7> { }
+    public class BStep7 : IStep<BStep8> { }
+    public class BStep8 : IStep<BStep9> { }
+    public class BStep9 : IStep<BStep10> { }
+    public class BStep10 : IStep<BStep11> { }
+    public class BStep11 : IStep<BStep12> { }
+    public class BStep12 : IStep<BStep13> { }
+    public class BStep13 : IStep<BStep14> { }
+    public class BStep14 : IStep<BStep15> { }
+    public class BStep15 : IStep<BStep16> { }
+    public class BStep16 { }
+    public class TwoChainCommand : IRequest, IStepRoot<AStep1>, IStepRoot<BStep1> { }
+
+    public class TwoChainCommandHandler : IRequestHandler<TwoChainCommand>
+    {
+        private readonly Logger _output;
+        public TwoChainCommandHandler(Logger output) => _output = output;
+        public Task Handle(TwoChainCommand request, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add("Handler");
+            return Task.CompletedTask;
+        }
+    }
+
+    public class TwoChainBehavior<TRequest, TResponse, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : IStepRoot<T1>
+        where T1 : IStep<T2>
+        where T2 : IStep<T3>
+        where T3 : IStep<T4>
+        where T4 : IStep<T5>
+        where T5 : IStep<T6>
+        where T6 : IStep<T7>
+        where T7 : IStep<T8>
+        where T8 : IStep<T9>
+        where T9 : IStep<T10>
+        where T10 : IStep<T11>
+        where T11 : IStep<T12>
+        where T12 : IStep<T13>
+        where T13 : IStep<T14>
+        where T14 : IStep<T15>
+        where T15 : IStep<T16>
+        where T16 : IStepEnd
+    {
+        private readonly Logger _output;
+        public TwoChainBehavior(Logger output) => _output = output;
+        public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        {
+            _output.Messages.Add($"Two-chain behavior {typeof(T1).Name}");
+            return next();
+        }
+    }
+
+    [Fact]
+    public async Task Should_keep_chained_candidates_from_different_roots_apart()
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var (mediator, output) = BuildMediator(cfg => cfg.AddOpenBehavior(typeof(TwoChainBehavior<,,,,,,,,,,,,,,,,,>)));
+
+        await mediator.Send(new TwoChainCommand());
+
+        output.Messages.ShouldBe(new[] { "Two-chain behavior AStep1", "Handler" });
+        stopwatch.Elapsed.ShouldBeLessThan(TimeSpan.FromMilliseconds(500));
+    }
+}

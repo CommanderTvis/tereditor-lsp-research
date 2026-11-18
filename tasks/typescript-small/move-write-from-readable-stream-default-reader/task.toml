@@ -1,0 +1,6 @@
+type = "move"
+origin = "synthetic, move a declaration into another module"
+symbol = "writeFromReadableStreamDefaultReader"
+from = "src/utils.ts"
+to = "src/internal/writeFromReadableStreamDefaultReader.ts"
+selection = "Exported top-level functions and consts of src/**/*.ts (index.ts excluded, classes and Global* aliases excluded) that src/index.ts does not re-export, imported by name in at least 2 other files of src/ or test/, and that also occur in a comment or in README.md (preference rule: a later review counts stale mentions); 3 candidates (cacheKey, newHeadersFromIncoming, writeFromReadableStreamDefaultReader), sorted by name, seeded shuffle awk srand(20261110), first taken. Destination fixed by rule: a new module src/internal/<name>.ts."

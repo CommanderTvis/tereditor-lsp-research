@@ -1,0 +1,112 @@
+core/scss/tests/scss.test.mjs :: add treats a null operand as the identity
+core/scss/tests/scss.test.mjs :: add adds two compatible numbers directly
+core/scss/tests/scss.test.mjs :: add falls back to calc() for incompatible units
+core/scss/tests/scss.test.mjs :: add builds a plain expression when calc is disabled
+core/scss/tests/scss.test.mjs :: subtract returns null when both operands are null
+core/scss/tests/scss.test.mjs :: subtract handles a single null operand
+core/scss/tests/scss.test.mjs :: subtract subtracts two compatible numbers directly
+core/scss/tests/scss.test.mjs :: subtract falls back to calc() for incompatible units
+core/scss/tests/scss.test.mjs :: valid-radius clamps a negative value to 0
+core/scss/tests/scss.test.mjs :: valid-radius leaves a non-negative value untouched
+core/scss/tests/scss.test.mjs :: valid-radius clamps only the negative members of a list
+core/scss/tests/scss.test.mjs :: squircle-radius keeps 0 as 0
+core/scss/tests/scss.test.mjs :: squircle-radius scales a non-zero radius by 2.5 via calc()
+core/scss/tests/scss.test.mjs :: box-shadow emits a single shadow value
+core/scss/tests/scss.test.mjs :: box-shadow passes a keyword through untouched
+core/scss/tests/scss.test.mjs :: box-shadow joins multiple shadows into a comma list
+core/scss/tests/scss.test.mjs :: box-shadow filters out null values
+core/scss/tests/scss.test.mjs :: breakpoint-next / breakpoint-prev returns the neighbouring breakpoint name
+core/scss/tests/scss.test.mjs :: breakpoint-next / breakpoint-prev returns null past the last / before the first breakpoint
+core/scss/tests/scss.test.mjs :: breakpoint-min returns the min width, or null for the zero breakpoint
+core/scss/tests/scss.test.mjs :: breakpoint-max subtracts 0.02px to avoid min/max overlap
+core/scss/tests/scss.test.mjs :: breakpoint-infix is blank for the smallest breakpoint and dash-prefixed otherwise
+core/scss/tests/scss.test.mjs :: card-gradient-background keeps the % unit on every zero-value gradient stop
+core/scss/tests/scss.test.mjs :: caret-* border helpers caret-down points the border triangle downward
+core/scss/tests/scss.test.mjs :: caret-* border helpers caret-up points the border triangle upward
+core/scss/tests/scss.test.mjs :: caret-* border helpers caret-start omits the left border
+core/scss/tests/scss.test.mjs :: caret mixin renders an ::after caret rotated for the down direction
+core/scss/tests/scss.test.mjs :: caret mixin uses ::before and clears ::after for the start direction
+core/scss/tests/scss.test.mjs :: color-contrast picks black text on a light background
+core/scss/tests/scss.test.mjs :: color-contrast picks white text on a dark background
+core/scss/tests/scss.test.mjs :: color-contrast falls back to the highest-contrast colour when none qualifies
+core/scss/tests/scss.test.mjs :: color-mode scopes content under the theme attribute selectors
+core/scss/tests/scss.test.mjs :: luminance is 0 for black and 1 for white
+core/scss/tests/scss.test.mjs :: contrast-ratio is 21 for the black/white extreme
+core/scss/tests/scss.test.mjs :: contrast-ratio is 1 for a colour against itself
+core/scss/tests/scss.test.mjs :: shade-color / tint-color shade mixes the colour toward black
+core/scss/tests/scss.test.mjs :: shade-color / tint-color tint mixes the colour toward white
+core/scss/tests/scss.test.mjs :: shift-color shades when the weight is positive
+core/scss/tests/scss.test.mjs :: shift-color tints when the weight is negative
+core/scss/tests/scss.test.mjs :: to-rgb returns the comma-separated rgb channels
+core/scss/tests/scss.test.mjs :: opaque flattens a translucent foreground over the background
+core/scss/tests/scss.test.mjs :: opaque returns the foreground unchanged when it is fully opaque
+core/scss/tests/scss.test.mjs :: to-percentage converts a unitless number to a percentage
+core/scss/tests/scss.test.mjs :: to-percentage passes a value that already has a unit straight through
+core/scss/tests/scss.test.mjs :: color-transparent returns the colour untouched when alpha is 1
+core/scss/tests/scss.test.mjs :: color-transparent builds a color-mix() with the alpha as a percentage otherwise
+core/scss/tests/scss.test.mjs :: url-svg percent-encodes '#' so the data URI stays valid
+core/scss/tests/scss.test.mjs :: url-svg injects the SVG xmlns attribute
+core/scss/tests/scss.test.mjs :: map-loop maps every value through the named function
+core/scss/tests/scss.test.mjs :: varify prefixes each entry as a space-separated var() list
+core/scss/tests/scss.test.mjs :: rgba-css-var builds a color-mix() from the identifier and target opacity
+core/scss/tests/scss.test.mjs :: rgba-css-var special-cases the body background
+core/scss/tests/scss.test.mjs :: divide divides two unitless numbers
+core/scss/tests/scss.test.mjs :: divide returns a fractional result
+core/scss/tests/scss.test.mjs :: divide returns 0 when the dividend is 0
+core/scss/tests/scss.test.mjs :: divide keeps the correct sign for mixed-sign operands
+core/scss/tests/scss.test.mjs :: divide propagates the dividend unit when the divisor is unitless
+core/scss/tests/scss.test.mjs :: divide cancels matching units to a unitless result
+core/scss/tests/scss.test.mjs :: divide rounds to the requested precision
+core/scss/tests/scss.test.mjs :: escape-svg returns a non data-URI string unchanged
+core/scss/tests/scss.test.mjs :: escape-svg percent-encodes reserved characters inside an SVG data URI
+core/scss/tests/scss.test.mjs :: generate-utility generates a class per key from a values map
+core/scss/tests/scss.test.mjs :: generate-utility zips a plain list of values into key/value pairs
+core/scss/tests/scss.test.mjs :: generate-utility emits every property when several are given
+core/scss/tests/scss.test.mjs :: generate-utility sets a custom property instead of a declaration in css-var mode
+core/scss/tests/scss.test.mjs :: generate-utility adds a pseudo-class variant for each declared state
+core/scss/tests/scss.test.mjs :: generate-utility injects the responsive infix into the class name
+core/scss/tests/scss.test.mjs :: generate-utility (responsive property) only a `responsive: true` utility gets breakpoint-infixed variants
+core/scss/tests/scss.test.mjs :: make-col sets a fixed width as a percentage of the column count
+core/scss/tests/scss.test.mjs :: make-col grows to fill the row when no size is given
+core/scss/tests/scss.test.mjs :: make-col-auto sizes to the content
+core/scss/tests/scss.test.mjs :: make-col-offset offsets by a percentage of the column count
+core/scss/tests/scss.test.mjs :: make-col-offset collapses a zero offset to 0 (not 0%)
+core/scss/tests/scss.test.mjs :: row-cols splits children into equal fractions of the row
+core/scss/tests/scss.test.mjs :: make-row sets the gutter custom properties and negative margins
+core/scss/tests/scss.test.mjs :: make-col-ready primes a column with full width and gutter padding
+core/scss/tests/scss.test.mjs :: negativify-map prefixes keys with `n` and negates the values
+core/scss/tests/scss.test.mjs :: negativify-map leaves a 0 key untouched
+core/scss/tests/scss.test.mjs :: map-get-multiple keeps only the requested keys, preserving map order
+core/scss/tests/scss.test.mjs :: map-merge-multiple merges maps left-to-right, later keys winning
+core/scss/tests/scss.test.mjs :: media-breakpoint-up wraps content in a min-width query
+core/scss/tests/scss.test.mjs :: media-breakpoint-up emits content directly for the zero breakpoint
+core/scss/tests/scss.test.mjs :: media-breakpoint-down wraps content in a max-width query (value - 0.02px)
+core/scss/tests/scss.test.mjs :: media-breakpoint-down emits content directly for the zero breakpoint
+core/scss/tests/scss.test.mjs :: media-breakpoint-between combines a min-width and a max-width query
+core/scss/tests/scss.test.mjs :: media-breakpoint-only spans from the breakpoint min to the next breakpoint max
+core/scss/tests/scss.test.mjs :: media-breakpoint-down-than targets everything below the previous breakpoint
+core/scss/tests/scss.test.mjs :: media-breakpoint-down-than emits content directly when there is no previous breakpoint
+core/scss/tests/scss.test.mjs :: media-breakpoint-down-than resolves the previous breakpoint from a custom $breakpoints map
+core/scss/tests/scss.test.mjs :: clearfix mixin emits a clearing ::after pseudo-element
+core/scss/tests/scss.test.mjs :: visually-hidden mixin hides the element while keeping it accessible
+core/scss/tests/scss.test.mjs :: subheader mixin outputs the full subheader with colour and line-height
+core/scss/tests/scss.test.mjs :: subheader mixin drops colour and line-height when the flags are false
+core/scss/tests/scss.test.mjs :: autodark-image mixin inverts the image via filter
+core/scss/tests/scss.test.mjs :: elements-list mixin sets up a wrapping flex list with the default gap
+core/scss/tests/scss.test.mjs :: elements-list mixin honours a custom gap argument
+core/scss/tests/scss.test.mjs :: focus-ring mixin outputs the ring without a border by default
+core/scss/tests/scss.test.mjs :: focus-ring mixin adds a border colour when requested
+core/scss/tests/scss.test.mjs :: media-print mixin wraps content in a print media query
+core/scss/tests/scss.test.mjs :: scrollbar mixin emits the webkit scrollbar rule set
+core/scss/tests/scss.test.mjs :: rfs-value passes rem values through and keeps 0
+core/scss/tests/scss.test.mjs :: rfs-value normalises px to rem
+core/scss/tests/scss.test.mjs :: rfs-fluid-value leaves values at or below the base size unchanged
+core/scss/tests/scss.test.mjs :: rfs-fluid-value produces a responsive calc() above the base size
+core/scss/tests/scss.test.mjs :: str-replace replaces a single occurrence
+core/scss/tests/scss.test.mjs :: str-replace replaces every occurrence, not just the first
+core/scss/tests/scss.test.mjs :: str-replace returns the string unchanged when the search is not found
+core/scss/tests/scss.test.mjs :: str-replace removes the search string when no replacement is given
+core/scss/tests/scss.test.mjs :: str-replace handles a replacement longer than the search string
+core/scss/tests/scss.test.mjs :: str-replace returns an empty string unchanged
+core/scss/tests/scss.test.mjs :: transition emits the transition plus a reduced-motion reset
+core/scss/tests/scss.test.mjs :: transition skips the reduced-motion reset when the value is none

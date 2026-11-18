@@ -1,7 +1,7 @@
 [
-  {"name": "references toFailures (cross-file)", "args": {"operation": "references", "query": "toFailures", "path": "src/utils.ts"},
-   "expect": ["src/struct.ts:47", "src/structs/refinements.ts:156"]},
-  {"name": "definition of Struct from another module", "args": {"operation": "definition", "query": "Struct"},
-   "expect": ["src/struct.ts:10"]},
+  {"name": "references buildOutgoingHttpHeaders (cross-file)", "args": {"operation": "references", "query": "buildOutgoingHttpHeaders", "path": "src/utils.ts"},
+   "expect": ["src/listener.ts:262", "src/listener.ts:349"]},
+  {"name": "definition of getRequestListener from another module", "args": {"operation": "definition", "query": "getRequestListener"},
+   "expect": ["src/listener.ts:417"]},
   {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["src/error.ts"]}, "expect": []}
 ]

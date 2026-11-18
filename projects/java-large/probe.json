@@ -1,1 +1,7 @@
-[]
+[
+  {"name":"references of InvalidFormatException.from at its declaration (cross-file)","args":{"operation":"references","path":"src/main/java/tools/jackson/databind/exc/InvalidFormatException.java","line":36,"column":41},"expect":["src/main/java/tools/jackson/databind/DeserializationContext.java:2089","src/main/java/tools/jackson/databind/deser/jdk/UUIDDeserializer.java:136","src/test/java/tools/jackson/databind/exc/ThrowableSerializationTest.java:86"]},
+  {"name":"definition of from() from a call site in another package","args":{"operation":"definition","path":"src/main/java/tools/jackson/databind/deser/jdk/UUIDDeserializer.java","line":135,"column":41},"expect":["src/main/java/tools/jackson/databind/exc/InvalidFormatException.java:37"]},
+  {"name":"references of ObjectIdWriter by name (declaring file given)","args":{"operation":"references","query":"ObjectIdWriter","path":"src/main/java/tools/jackson/databind/ser/impl/ObjectIdWriter.java"},"expect":["src/main/java/tools/jackson/databind/ser/WritableObjectId.java:38","src/main/java/tools/jackson/databind/ser/BeanSerializer.java:58"]},
+  {"name":"diagnostics clean file","tool":"lsp_diagnostics","args":{"paths":["src/main/java/tools/jackson/databind/exc/InvalidFormatException.java"]},"expect":[]},
+  {"name":"servers","tool":"lsp_status","args":{"operation":"servers"},"expect":[]}
+]

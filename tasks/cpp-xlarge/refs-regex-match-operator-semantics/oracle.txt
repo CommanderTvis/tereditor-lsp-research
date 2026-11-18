@@ -1,0 +1,11 @@
+src/common/enum_util.cpp:5339
+src/common/enum_util.cpp:5340
+src/common/enum_util.cpp:5346
+src/common/enum_util.cpp:5351
+src/common/enum_util.cpp:5352
+src/include/duckdb/common/enum_util.hpp:1356
+src/include/duckdb/common/enum_util.hpp:2314
+src/include/duckdb/main/settings.hpp:2318
+src/include/duckdb/parser/parser_options.hpp:36
+src/main/settings/custom_settings.cpp:2076
+src/parser/peg/transformer/transform_expression.cpp:949

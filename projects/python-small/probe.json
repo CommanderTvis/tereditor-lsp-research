@@ -1,7 +1,7 @@
 [
-  {"name": "references get (cross-file)", "args": {"operation": "references", "query": "get", "path": "toolz/itertoolz.py"},
-   "expect": ["toolz/tests/test_itertoolz.py:204", "bench/test_get.py:8"]},
-  {"name": "definition of curry from another module", "args": {"operation": "definition", "query": "curry"},
-   "expect": ["toolz/functoolz.py:169"]},
-  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["toolz/dicttoolz.py"]}, "expect": []}
+  {"name": "references Color (cross-file)", "args": {"operation": "references", "query": "Color", "path": "pydantic_extra_types/color.py"},
+   "expect": ["pydantic_extra_types/color.py:222", "tests/test_json_schema.py:66"]},
+  {"name": "definition of PaymentCardNumber from another module", "args": {"operation": "definition", "query": "PaymentCardNumber"},
+   "expect": ["pydantic_extra_types/payment.py:35"]},
+  {"name": "diagnostics on a file", "tool": "lsp_diagnostics", "args": {"paths": ["pydantic_extra_types/isbn.py"]}, "expect": []}
 ]

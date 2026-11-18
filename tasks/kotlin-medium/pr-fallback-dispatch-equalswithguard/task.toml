@@ -1,7 +1,0 @@
-type = "pr"
-symbol = "com.squareup.kotlinpoet.TypeName.equalsWithGuard and its 5 overrides"
-selection = "Function names declared in at least 5 files of kotlinpoet's commonMain and jvmMain, except equals, hashCode and toString; sorted: addAnnotation, addAnnotations, addKdoc, addModifiers, build, builder, copy, emit, equalsWithGuard, get, toBuilder (11 candidates); k = 1 + int(rand() * 11) after srand(20261110) = 9. The expression was written before the oracle was run: two lambda types whose return types are two parameterizations of LIST, so that three levels of the hierarchy take part."
-origin = "documented synthetic fallback PR; no qualifying/current-toolchain mined candidate was available"
-fallback_for = "dispatch"
-pr = "fallback-kotlin-medium-dispatch-equalswithguard"
-issue = "fallback-kotlin-medium-dispatch-equalswithguard"

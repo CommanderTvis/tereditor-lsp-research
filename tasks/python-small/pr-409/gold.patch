@@ -1,0 +1,25 @@
+diff --git a/pydantic_extra_types/color.py b/pydantic_extra_types/color.py
+index a2ddb2b..8739030 100644
+--- a/pydantic_extra_types/color.py
++++ b/pydantic_extra_types/color.py
+@@ -388,7 +388,7 @@ def parse_float_alpha(value: None | str | float | int) -> float | None:
+             alpha = float(value[:-1]) / 100
+         else:
+             alpha = float(value)
+-    except ValueError as e:
++    except (ValueError, TypeError) as e:
+         raise PydanticCustomError(
+             'color_error',
+             'value is not a valid color: alpha values must be a valid float',
+diff --git a/pydantic_extra_types/ulid.py b/pydantic_extra_types/ulid.py
+index d6275c3..53689d3 100644
+--- a/pydantic_extra_types/ulid.py
++++ b/pydantic_extra_types/ulid.py
+@@ -63,6 +63,6 @@ def _validate_ulid(cls, value: Any, handler: core_schema.ValidatorFunctionWrapHa
+                 ulid = value
+             else:
+                 ulid = _ULID.from_bytes(value)
+-        except ValueError as e:
++        except (ValueError, TypeError) as e:
+             raise PydanticCustomError('ulid_format', 'Unrecognized format') from e
+         return handler(ulid)

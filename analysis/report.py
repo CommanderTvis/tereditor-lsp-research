@@ -1,12 +1,12 @@
-"""The pre-registered analysis (docs/ANALYSIS_PLAN.md) over results/<plan>/runs.csv.
+"""The analysis of docs/ANALYSIS_PLAN.md over results/<plan>/runs.csv: descriptive and paired.
 
-Writes results/<plan>/report/: report.md (tables), *.csv (every number in the tables), *.png (figures).
+Writes results/<plan>/report/: report.md (tables), *.csv (every number in the tables), overview.png.
 """
 from __future__ import annotations
 
-import itertools
 import json
 import os
+import re
 import sys
 import warnings
 
@@ -14,40 +14,18 @@ import numpy as np
 import pandas as pd
 
 warnings.filterwarnings("ignore")
-ARMS = ["baseline", "optional", "enforced", "intellij-optional", "intellij-enforced"]
-PAIRS = [("optional", "baseline"), ("enforced", "baseline"), ("enforced", "optional"),
-         ("intellij-optional", "baseline"), ("intellij-enforced", "baseline"),
-         ("intellij-optional", "optional"), ("intellij-enforced", "enforced")]
+ARMS = ["baseline", "baseline-review", "optional", "enforced", "intellij-optional", "intellij-enforced"]
+# Every arm against baseline; each LSP arm against the self-review habit; IntelliJ against the tereditor arm of its mode.
+PAIRS = ([(a, "baseline") for a in ARMS if a != "baseline"]
+         + [(a, "baseline-review") for a in ("optional", "enforced", "intellij-optional", "intellij-enforced")]
+         + [("intellij-optional", "optional"), ("intellij-enforced", "enforced")])
 RNG_SEED = 20261110
-B = 10_000
+B = 2000          # resamples of tasks for the interval of spread
+MIN_TASKS = 10    # strata with fewer tasks show counts and no interval
 
 
-def holm(p: list[float]) -> list[float]:
-    order = np.argsort(p)
-    m = len(p)
-    adj = np.empty(m)
-    running = 0.0
-    for rank, i in enumerate(order):
-        running = max(running, (m - rank) * p[i])
-        adj[i] = min(1.0, running)
-    return list(adj)
-
-
-def bh(p: list[float]) -> list[float]:
-    p = np.asarray(p, dtype=float)
-    m = len(p)
-    if m == 0:
-        return []
-    order = np.argsort(p)
-    ranked = p[order] * m / (np.arange(m) + 1)
-    ranked = np.minimum.accumulate(ranked[::-1])[::-1]
-    adj = np.empty(m)
-    adj[order] = np.minimum(ranked, 1.0)
-    return list(adj)
-
-
-def task_means(df: pd.DataFrame, col: str, a: str, b: str, log: bool = False) -> pd.DataFrame:
-    """Per task x model, the mean of col in arm a and arm b (paired cells only)."""
+def cells(df: pd.DataFrame, col: str, a: str, b: str, log: bool = False) -> pd.DataFrame:
+    """Per task x model, the mean of col in arm a and in arm b (paired cells only)."""
     d = df[df.arm.isin([a, b])].copy()
     if log:
         d = d[d[col] > 0]
@@ -58,72 +36,42 @@ def task_means(df: pd.DataFrame, col: str, a: str, b: str, log: bool = False) ->
     return m.dropna(subset=[a, b])
 
 
-def cluster_bootstrap(cells: pd.DataFrame, a: str, b: str, stat, rng) -> tuple[float, float, float]:
-    """Resample tasks (with all their model cells); stat maps a frame of cells to a number."""
-    tasks = cells.index.get_level_values("task_key").unique()
-    groups = {t: cells.xs(t, level="task_key", drop_level=False) for t in tasks}
-    point = stat(cells)
+def interval(c: pd.DataFrame, stat, rng):
+    """Percentile interval of stat over resamples of tasks (all of a task's cells move together)."""
+    tasks = c.index.get_level_values("task_key").unique()
+    groups = {t: c.xs(t, level="task_key", drop_level=False) for t in tasks}
     draws = []
     for _ in range(B):
         pick = rng.choice(len(tasks), size=len(tasks), replace=True)
         draws.append(stat(pd.concat([groups[tasks[i]] for i in pick])))
-    lo, hi = np.percentile(draws, [2.5, 97.5])
-    return point, lo, hi
+    return tuple(np.percentile(draws, [2.5, 97.5]))
 
 
-def sign_flip_p(cells: pd.DataFrame, a: str, b: str, rng) -> float:
-    """Paired permutation test on per-task differences (models averaged within task)."""
-    diff = (cells[a] - cells[b]).groupby(level="task_key").mean().to_numpy()
-    if len(diff) == 0 or np.allclose(diff, 0):
-        return 1.0
-    obs = abs(diff.mean())
-    flips = rng.choice([-1, 1], size=(B, len(diff)))
-    perm = np.abs((flips * diff).mean(axis=1))
-    return float((np.sum(perm >= obs - 1e-12) + 1) / (B + 1))
+def row(label, outcome, contrast, c, a, b, stat, better, rng):
+    d = c[a] - c[b]
+    tasks = c.index.get_level_values("task_key").nunique()
+    lo = hi = np.nan
+    if tasks >= MIN_TASKS:
+        lo, hi = interval(c, stat, rng)
+    return dict(stratum=label, outcome=outcome, contrast=contrast, estimate=stat(c), ci_lo=lo, ci_hi=hi,
+                better=int((better(d)).sum()), same=int((d.abs() < 1e-12).sum()), worse=int((better(-d)).sum()),
+                tasks=tasks, cells=len(c))
 
 
 def contrast_table(df: pd.DataFrame, label: str, rng) -> pd.DataFrame:
     out = []
     for a, b in PAIRS:
-        s = task_means(df, "success_f", a, b)
+        s = cells(df, "success_f", a, b)
         if len(s):
-            pt, lo, hi = cluster_bootstrap(s, a, b, lambda c: (c[a] - c[b]).mean() * 100, rng)
-            out.append(dict(stratum=label, outcome="success (pp)", contrast=f"{a} - {b}", estimate=pt, ci_lo=lo,
-                            ci_hi=hi, p=sign_flip_p(s, a, b, rng), tasks=s.index.get_level_values(0).nunique(),
-                            cells=len(s)))
-        c = task_means(df, "cost_f", a, b, log=True)
-        if len(c):
-            pt, lo, hi = cluster_bootstrap(c, a, b, lambda x: float(np.exp((x[a] - x[b]).mean())), rng)
-            out.append(dict(stratum=label, outcome="cost ratio", contrast=f"{a} / {b}", estimate=pt, ci_lo=lo,
-                            ci_hi=hi, p=sign_flip_p(c, a, b, rng), tasks=c.index.get_level_values(0).nunique(),
-                            cells=len(c)))
+            out.append(row(label, "success (pp)", f"{a} - {b}", s, a, b, lambda c: (c[a] - c[b]).mean() * 100, lambda d: d > 1e-12, rng))
+        c = cells(df, "cost_f", a, b, log=True)
+        if len(c):  # log scale: a lower value is cheaper, so "better" counts cells where a was cheaper
+            out.append(row(label, "cost ratio", f"{a} / {b}", c, a, b, lambda x: float(np.exp((x[a] - x[b]).mean())), lambda d: d < -1e-12, rng))
+        if "flaws_f" in df and df.flaws_f.notna().any():
+            f = cells(df.dropna(subset=["flaws_f"]), "flaws_f", a, b)
+            if len(f):
+                out.append(row(label, "flaws (mean diff)", f"{a} - {b}", f, a, b, lambda x: (x[a] - x[b]).mean(), lambda d: d < -1e-12, rng))
     return pd.DataFrame(out)
-
-
-def mixed_models(df: pd.DataFrame) -> str:
-    lines = []
-    try:
-        import statsmodels.formula.api as smf
-        from statsmodels.genmod.bayes_mixed_glm import BinomialBayesMixedGLM
-
-        d = df.copy()
-        d["arm"] = pd.Categorical(d.arm, categories=ARMS)
-        glmm = BinomialBayesMixedGLM.from_formula("success_f ~ C(arm) * C(model)", {"task": "0 + C(task_key)"}, d)
-        fit = glmm.fit_vb()
-        lines.append("### Success: logistic mixed model, random intercept per task (variational Bayes)\n")
-        lines.append("```\n" + str(fit.summary()) + "\n```\n")
-        gee = smf.gee("success_f ~ C(arm) * C(model)", "task_key", d, family=__import__("statsmodels.api").api.families.Binomial(),
-                      cov_struct=__import__("statsmodels.api").api.cov_struct.Exchangeable()).fit()
-        lines.append("### Success: GEE, exchangeable within task (robustness)\n")
-        lines.append("```\n" + str(gee.summary()) + "\n```\n")
-        c = d[d.cost_f > 0].copy()
-        c["log_cost"] = np.log(c.cost_f)
-        lmm = smf.mixedlm("log_cost ~ C(arm) * C(model)", c, groups=c["task_key"]).fit()
-        lines.append("### log(cost): linear mixed model, random intercept per task\n")
-        lines.append("```\n" + str(lmm.summary()) + "\n```\n")
-    except Exception as exc:  # small pilots may not support the full model
-        lines.append(f"Mixed models not fitted: {exc!r}\n")
-    return "\n".join(lines)
 
 
 def fmt(t: pd.DataFrame) -> str:
@@ -131,16 +79,13 @@ def fmt(t: pd.DataFrame) -> str:
         return "_no data_\n"
     t = t.copy()
     for col in ("estimate", "ci_lo", "ci_hi"):
-        t[col] = t[col].map(lambda v: f"{v:.3f}" if abs(v) < 10 else f"{v:.1f}")
-    for col in ("p", "p_adj"):
-        if col in t:
-            t[col] = t[col].map(lambda v: f"{v:.4f}")
+        t[col] = t[col].map(lambda v: "" if pd.isna(v) else (f"{v:.3f}" if abs(v) < 10 else f"{v:.1f}"))
     return t.to_markdown(index=False) + "\n"
 
 
 def describe(df: pd.DataFrame) -> pd.DataFrame:
     g = df.groupby(["model", "arm"])
-    return pd.DataFrame({
+    d = {
         "runs": g.size(),
         "success": g.success_f.mean().round(3),
         "mean_cost_usd": g.cost_f.mean().round(4),
@@ -152,11 +97,25 @@ def describe(df: pd.DataFrame) -> pd.DataFrame:
         "mean_grep": (g.grep_tool.mean() + g.bash_search.mean()).round(2),
         "mean_read": (g.read_tool.mean() + g.bash_read.mean()).round(2),
         "capped": g.capped_f.mean().round(3),
-    }).reset_index()
+    }
+    if "flaws_f" in df and df.flaws_f.notna().any():
+        d["mean_flaws"] = g.flaws_f.mean().round(2)
+    return pd.DataFrame(d).reset_index()
+
+
+def probe_score(task_key: str, root: str) -> float:
+    """Highest verbatim share over the models, from the memprobe output saved in the task directory (NaN if none)."""
+    p = os.path.join(root, "tasks", task_key, "memprobe.txt")
+    try:
+        shares = re.findall(r"worst verbatim share ([0-9.]+)", open(p).read())
+        return float(shares[-1]) if shares else np.nan
+    except OSError:
+        return np.nan
 
 
 def main(plan: str) -> None:
-    base = os.path.join(os.environ.get("STUDY_ROOT", "."), "results", plan)
+    root = os.environ.get("STUDY_ROOT", ".")
+    base = os.path.join(root, "results", plan)
     rep = os.path.join(base, "report")
     os.makedirs(rep, exist_ok=True)
     df = pd.read_csv(os.path.join(base, "runs.csv"))
@@ -168,33 +127,36 @@ def main(plan: str) -> None:
     df["cost_f"] = pd.to_numeric(df.cost_usd, errors="coerce").fillna(0.0)
     df["lsp_used_f"] = df.lsp_used.astype(str).str.lower().eq("true").astype(float)
     df["capped_f"] = df.capped.astype(str).str.lower().eq("true").astype(float)
+    if "flaws" in df:
+        df["flaws_f"] = pd.to_numeric(df.flaws, errors="coerce")
     rng = np.random.default_rng(RNG_SEED)
 
-    md = [f"# Report: {plan}\n", f"Runs finished: {n_all}; excluded (contamination or never reached the model): "
-          f"{len(excluded)}; analysed: {len(df)}; tasks: {df.task_key.nunique()}; total cost: "
-          f"${df.cost_f.sum():.2f}.\n"]
+    md = [f"# Report: {plan}\n",
+          "Descriptive and paired: differences observed on these tasks, with a task-resampling interval for the spread. "
+          f"Strata under {MIN_TASKS} tasks show counts only.\n",
+          f"Runs finished: {n_all}; excluded (contamination or never reached the model): {len(excluded)}; analysed: "
+          f"{len(df)}; tasks: {df.task_key.nunique()}; total cost: ${df.cost_f.sum():.2f}.\n"]
     desc = describe(df)
     desc.to_csv(os.path.join(rep, "descriptive.csv"), index=False)
-    md += ["## Descriptive, by model and arm\n", desc.to_markdown(index=False) + "\n"]
+    md += ["## By model and arm\n", desc.to_markdown(index=False) + "\n"]
 
-    prim = contrast_table(df, "all", rng)
-    if not prim.empty:
-        prim["p_adj"] = holm(prim.p.tolist())
-    prim.to_csv(os.path.join(rep, "primary.csv"), index=False)
-    md += ["## Primary contrasts (task-clustered bootstrap 95% CI; paired sign-flip p; Holm over all primary contrasts)\n", fmt(prim)]
+    main_t = contrast_table(df, "all", rng)
+    main_t.to_csv(os.path.join(rep, "contrasts.csv"), index=False)
+    md += ["## Contrasts on the tasks both arms ran (better / same / worse = cells where the first arm did better, equal, worse; "
+           "for cost, better = cheaper)\n", fmt(main_t)]
 
-    md += ["## Mixed models\n", mixed_models(df)]
-
+    df["probe_score"] = df.task_key.map(lambda k: probe_score(k, root))
+    med = df.probe_score.median()
+    if df.probe_score.notna().any():
+        df["probe_half"] = np.where(df.probe_score > med, "probe score above median", "probe score at or below median")
+    strata = ["model", "lang", "size", "task_type"] + (["probe_half"] if "probe_half" in df else [])
     sec = []
-    for col in ("model", "lang", "size", "task_type"):
-        fam = pd.concat([contrast_table(df[df[col] == v], f"{col}={v}", rng) for v in sorted(df[col].unique())],
+    for col in strata:
+        fam = pd.concat([contrast_table(df[df[col] == v], f"{col}={v}", rng) for v in sorted(df[col].dropna().unique())],
                         ignore_index=True)
-        if not fam.empty:
-            fam["p_adj"] = bh(fam.p.tolist())
         fam.to_csv(os.path.join(rep, f"by_{col}.csv"), index=False)
-        sec += [f"### By {col} (Benjamini-Hochberg within this family)\n", fmt(fam)]
-        sec.append("")
-    md += ["## Secondary contrasts (exploratory)\n"] + sec
+        sec += [f"### By {col}\n", fmt(fam), ""]
+    md += ["## The same contrasts by stratum\n"] + sec
 
     opt = df[df.arm == "optional"]
     if len(opt):
@@ -222,7 +184,7 @@ def main(plan: str) -> None:
         fig, axes = plt.subplots(1, 2, figsize=(11, 4))
         for ax, (col, title) in zip(axes, (("success_f", "Success rate"), ("cost_f", "Mean cost (USD)"))):
             t = df.groupby(["model", "arm"])[col].mean().unstack("arm").reindex(columns=[a for a in ARMS if a in set(df.arm)])
-            t.plot.bar(ax=ax, rot=0, color=["#8c8c8c", "#4c78a8", "#f58518", "#54a24b", "#e45756"][: len(t.columns)])
+            t.plot.bar(ax=ax, rot=0)
             ax.set_title(title)
             ax.set_xlabel("")
         fig.tight_layout()

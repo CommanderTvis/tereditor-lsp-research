@@ -1,1 +1,7 @@
-[]
+[
+ {"name":"references of Planner.planToGoal at its declaration (cross-file)","args":{"operation":"references","path":"embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt","line":51,"column":8},"expect":["embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/validation/GoapPathToCompletionValidator.kt:218","embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt:64"]},
+ {"name":"definition of planToGoal from a call site","args":{"operation":"definition","path":"embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/validation/GoapPathToCompletionValidator.kt","line":217,"column":31},"expect":["embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt:52"]},
+ {"name":"implementations of LlmReferenceProvider.reference","args":{"operation":"implementation","path":"embabel-agent-api/src/main/kotlin/com/embabel/agent/api/reference/LlmReferenceProvider.kt","line":34,"column":8},"expect":["embabel-agent-api/src/main/kotlin/com/embabel/agent/api/reference/LocalDirectoryReference.kt:39"]},
+ {"name":"diagnostics clean file","tool":"lsp_diagnostics","args":{"paths":["embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt"]},"expect":[]},
+ {"name":"servers","tool":"lsp_status","args":{"operation":"servers"},"expect":[]}
+]

@@ -1,13 +1,21 @@
-# php, xlarge: Drupal. Mined work is replaced by documented synthetic fallbacks because no PR was build-validated
-# in the bounded curation run.
+# PHP, xlarge: Shopware (platform monorepo: Core, Administration, Storefront, Elasticsearch). Dependency injection by service
+# tags and XML, a data abstraction layer with generated entity classes, events, subscribers and decorators; tests run on PHPUnit.
+# Only the unit tests (tests/unit) are used: the integration tests need MySQL, which the grading toolchain does not have.
 lang = "php"
 size = "xlarge"
 status = "curated"
-repo = "https://github.com/drupal/drupal"
-tag = "11.4.12"
-commit = "aa556ff13046baca57d5f69fac25c96fc30b4f43"
-loc = 984961
-loc_by_language = { "PHP" = 984961 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-task_types = ["callers", "refs", "inspect", "pr", "pr", "pr"]
-substitutions = ["one unavailable mined slot uses explicit `pr-fallback-3`; three synthetic tasks are retained"]
+repo = "https://github.com/shopware/shopware"
+tag = "v6.7.16.0"
+commit = "02f69c6c3fa85319c3472ad3333b90d74adde9c5"
+loc = 1102367
+loc_by_language = { "PHP" = 1102367 }
+loc_method = "scc 3.5.0 code lines at the pinned commit, docs/PROJECTS.md (vendor/ excluded, tests included)"
+stripped = ["AGENTS.md", "CLAUDE.md", ".claude", ".agents"]
+grading_note = "tests/unit only: check.sh runs PHPUnit with /project/unit-bootstrap.php instead of src/Core/TestBootstrap.php (which installs into MySQL), registering the feature flags of feature.yaml as a booted kernel would; mined pull requests keep only their tests/unit files as runnable tests."
+task_types = ["inspect", "refs", "callers", "pr", "pr", "pr"]
+
+[probe]
+# ./study probe php-xlarge (enforced), tereditor pinned in harness/tereditor.env, Intelephense, 2026-11-17.
+ok = false
+seconds_to_first_answer = 0
+note = "Cross-file references and diagnostics work; definition by name of Context did not return the declaration (src/Core/Framework/Context.php:18). definition of Context by name: complete=false, first answer 1s, missing src/Core/Framework/Context.php:18; references MediaEntity::getThumbnails (cross-file): complete=true, first answer 0s, missing ; diagnostics clean file: complete=true, first answer 0s, missing"

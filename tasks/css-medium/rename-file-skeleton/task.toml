@@ -1,0 +1,6 @@
+type = "rename-file"
+origin = "synthetic: rename a Sass partial that many stylesheets, mirrors in other packages, a file list, a snapshot and docs refer to (devrig rename file)"
+from = "packages/styles/scss/utilities/_skeleton.scss"
+to = "packages/styles/scss/utilities/_skeleton-animation.scss"
+selection = "Candidates: Sass partials under packages/ whose file name is shared with at least one other partial, referenced by @use, @forward or @import (relative or @carbon/<package> paths resolved to the file) from 8 to 60 other files, excluding index files and the partial of the rename task; 19 candidates, sorted, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk), first taken: packages/styles/scss/utilities/_skeleton.scss (38 referring files; the mirrors packages/{react,carbon-components,carbon-components-react}/scss/utilities/_skeleton.scss forward to it and keep their own names). The new name is fixed by the prompt. Held-out tests: the updated skeleton-test.js and the public-entry-point snapshot of @carbon/styles."
+grade_timeout_s = 1200

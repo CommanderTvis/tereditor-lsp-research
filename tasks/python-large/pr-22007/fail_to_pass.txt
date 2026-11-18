@@ -1,0 +1,2 @@
+mypy/test/testcheck.py::TypeCheckSuite::check-overloading.test::testOverloadUnionCallableSubtype
+mypy/test/testcheck.py::TypeCheckSuite::check-overloading.test::testOverloadOverridesUnionCallable

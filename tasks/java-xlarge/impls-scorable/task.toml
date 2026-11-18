@@ -1,0 +1,4 @@
+type = "impls"
+origin = "synthetic; class-file oracle (docs/TASKS.md)"
+symbol = "org.apache.lucene.search.Scorable"
+selection = "public abstract classes and interfaces declared at top level in package org.apache.lucene.search of lucene/core whose number of concrete, non-anonymous, non-local transitive subtypes in the compiled production classes (all modules, test-framework included) is at least 20: 12 types, sorted by name and shuffled with awk 'BEGIN{srand(20261110)}'; first = Scorable (49 subtypes, 45 outside lucene/test-framework)"

@@ -1,3 +1,0 @@
-type = "refs"
-origin = "devrig find-usages; Barber text-retrieval baseline"
-symbol = "toolz.itertoolz.get"

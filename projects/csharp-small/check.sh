@@ -20,4 +20,4 @@ if [ "$(echo "$all" | wc -l)" -eq 1 ]; then dotnet build "$(ls *.sln | head -n1)
 else dotnet build "$tp" -f "$tfm" -nologo -v q $props; fi
 [ "${1:-}" = build ] && exit 0
 filter="FullyQualifiedName!=MediatR.Tests.GenericRequestHandlerTests.ShouldThrowExceptionWhenTimeoutOccurs"
-dotnet test "$tp" -f "$tfm" --no-build -nologo -v q $props --filter "$filter${TEST_FILTER:+&$TEST_FILTER}"
+dotnet test "$tp" -f "$tfm" --no-build -nologo -v "${TEST_VERBOSITY:-q}" $props --filter "$filter${TEST_FILTER:+&$TEST_FILTER}"

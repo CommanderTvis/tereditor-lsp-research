@@ -10,7 +10,11 @@ loc = 7582
 stripped = []
 loc_by_language = { "C#" = 7582 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-# Assigned (docs/TASKS.md): rename, rename-file, impls + 3 pr. Only 2 mined pull requests validate (tasks/csharp-small/
-# pr-log.md); the third place is the next refactoring type in the rotation, move.
+# Assigned (docs/TASKS.md): rename, rename-file, impls + 3 pr (modern pull requests, tasks/csharp-small/pr-log.md; 5 qualified).
 task_types = ["rename", "rename-file", "impls", "pr", "pr", "pr"]
-substitutions = ["the third mined slot uses explicit task `pr-fallback-3`; no synthetic task was relabelled"]
+substitutions = []
+
+[probe]
+ok = true
+seconds_to_first_answer = 56
+note = "references, definition, implementations and diagnostics all correct (results/probe/csharp-small-enforced)"

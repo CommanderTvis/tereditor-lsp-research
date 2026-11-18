@@ -1,0 +1,1 @@
+Rename the method `getData()` of the `Dedoc\Scramble\Infer\Contracts\ClassDefinition` contract to `getDefinitionData()`: in the contract, in every class that implements it, and at every place that calls it or refers to it by name, in the library and the tests. Do not keep the old name as an alias. Updating documentation files and comments is optional.

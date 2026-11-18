@@ -1,0 +1,9 @@
+type = "pr"
+pr = 4896
+issue = 4851
+base_commit = "e76a9520a3c339d2cb6a1510db43a05ea9bd8ae6"
+merged_at = "2026-08-30T15:05:50Z"
+head_commit = "79afe09c1c5f45779c4d818a59aaf0203d7a0d4f"
+origin = "mined pull request github.com/fmtlib/fmt/pull/4896"
+test_files = ["test/format-test.cc"]
+grade_timeout_s = 2400

@@ -1,0 +1,7 @@
+type = "pr"
+base_commit = "cf65c0fae2054798f920394076a1fa73f68d5797"
+merged_at = "2026-07-05T06:54:07Z"
+pr = 69680
+issue = 65490
+merge_commit = "7b5028ef32df64247126a176d13c4c6007f85c99"
+toolchain = "CPython 3.12 + pytest (grade-python)"

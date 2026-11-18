@@ -1,0 +1,102 @@
+diff --git a/src/Support/OperationExtensions/RequestEssentialsExtension.php b/src/Support/OperationExtensions/RequestEssentialsExtension.php
+index 27d120bfd..a209eced9 100644
+--- a/src/Support/OperationExtensions/RequestEssentialsExtension.php
++++ b/src/Support/OperationExtensions/RequestEssentialsExtension.php
+@@ -43,7 +43,9 @@ public function __construct(
+      */
+     private function getDefaultTags(Operation $operation, RouteInfo $routeInfo): array
+     {
+-        $defaultName = (string) Str::of(class_basename($routeInfo->className()))->replace('Controller', '');
++        $defaultName = $routeInfo->isClassBased()
++            ? (string) Str::of(class_basename($routeInfo->className()))->replace('Controller', '')
++            : null;
+ 
+         if ($groupAttrsInstances = $this->getTagsAnnotatedByGroups($routeInfo)) {
+             $attributeInstance = $groupAttrsInstances[0]->newInstance();
+@@ -200,8 +202,8 @@ private function getOperationId(RouteInfo $routeInfo)
+                 return null;
+             })(),
+             unique: collect(explode('\\', Str::endsWith($routeClassName, 'Controller') ? Str::replaceLast('Controller', '', $routeClassName) : $routeClassName))
+-                ->filter()
+                 ->push($routeInfo->methodName())
++                ->filter()
+                 ->map(function ($part) {
+                     if ($part === Str::upper($part)) {
+                         return Str::lower($part);
+diff --git a/src/Support/RouteInfo.php b/src/Support/RouteInfo.php
+index f016f05ce..05c2ee09b 100644
+--- a/src/Support/RouteInfo.php
++++ b/src/Support/RouteInfo.php
+@@ -12,6 +12,7 @@
+ use Dedoc\Scramble\Support\OperationExtensions\ParameterExtractor\InferredParameter;
+ use Dedoc\Scramble\Support\Type\FunctionType;
+ use Illuminate\Routing\Route;
++use Illuminate\Routing\RouteAction;
+ use Laravel\SerializableClosure\Support\ReflectionClosure;
+ use LogicException;
+ use PhpParser\Node\FunctionLike;
+@@ -52,7 +53,7 @@ public function __construct(
+ 
+     public function isClassBased(): bool
+     {
+-        return is_string($this->route->getAction('uses'));
++        return is_string($this->route->getAction('uses')) && ! $this->isSerializedClosure();
+     }
+ 
+     public function className(): ?string
+@@ -169,11 +170,13 @@ public function getActionReflector(): MethodReflector|ClosureReflector
+             return MethodReflector::make(...explode('@', $this->route->getAction('uses')));
+         }
+ 
+-        if ($this->route->getAction('uses') instanceof Closure) {
+-            return ClosureReflector::make($this->route->getAction('uses'));
++        $callable = $this->route->getAction('uses');
++
++        if ($this->isSerializedClosure()) {
++            $callable = unserialize($callable)->getClosure();
+         }
+ 
+-        throw new LogicException('Cannot determine the action reflector');
++        return ClosureReflector::make($callable);
+     }
+ 
+     public function getActionDefinition(): ?Infer\Definition\FunctionLikeDefinition
+@@ -203,6 +206,11 @@ public function getActionType(): ?FunctionType
+         return $this->getActionDefinition()?->type;
+     }
+ 
++    protected function isSerializedClosure(): bool
++    {
++        return RouteAction::containsSerializedClosure($this->route->action);
++    }
++
+     /**
+      * @deprecated use `getActionType`
+      *
+diff --git a/src/Support/RouteProviders/RouteProvider.php b/src/Support/RouteProviders/RouteProvider.php
+index b2ae8e237..41503ddee 100644
+--- a/src/Support/RouteProviders/RouteProvider.php
++++ b/src/Support/RouteProviders/RouteProvider.php
+@@ -30,12 +30,7 @@ public function get(GeneratorConfig $config): Collection
+         return collect(RouteFacade::getRoutes()->getRoutes())
+             ->pipe(function (Collection $c) {
+                 $onlyRoutes = $c->filter(function (Route $route) {
+-
+-                    if (! is_string($route->getAction('controller'))) {
+-                        return false;
+-                    }
+-
+-                    if (! is_string($route->getAction('uses'))) {
++                    if (! $route->getControllerClass()) {
+                         return false;
+                     }
+ 
+@@ -58,7 +53,7 @@ public function get(GeneratorConfig $config): Collection
+             })
+             ->filter($config->routes())
+             ->filter(function (Route $route) use ($config) {
+-                if (! is_string($route->getAction('uses'))) {
++                if (! $route->getControllerClass()) {
+                     return true;
+                 }
+ 

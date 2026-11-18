@@ -1,7 +1,7 @@
 #!/bin/sh
 # Installs node_modules (type declarations for the TypeScript server) with the managed Bun; no install scripts run.
-# Upstream git-ignores node_modules/; Bun's own lockfile is excluded here. Bun may write the workspace list into
-# package.json while migrating another lockfile; the tracked package.json files are restored afterwards so the agent
+# Upstream git-ignores node_modules/ and uses pnpm: Bun migrates the pnpm lockfile, may write the workspace list into
+# package.json files, and writes its own lockfile; the tracked package.json files are restored afterwards so the agent
 # starts from a clean tree.
 set -eu
 find . -name package.json -not -path '*/node_modules/*' | tar -cf /tmp/package-json.tar -T -

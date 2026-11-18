@@ -1,4 +1,0 @@
-type = "impls"
-origin = "devrig find implementations"
-symbol = "rich.highlighter.RegexHighlighter"
-selection = "classes defined in non-test rich/ modules with at least 5 transitive subclasses spread over at least 3 files in all .py files of the snapshot (python3 select.py <snapshot> rich, an ast walk, bases resolved by simple name); sorted by path:line: rich/highlighter.py:17 Highlighter, rich/highlighter.py:61 RegexHighlighter, rich/jupyter.py:36 JupyterMixin (3 candidates); index random.Random(20261110).randrange(3) = 1 (CPython 3.12)"

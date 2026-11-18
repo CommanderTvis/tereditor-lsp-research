@@ -1,0 +1,4 @@
+type = "signature"
+origin = "synthetic: insert a parameter through an interface, its implementations and call sites (docs/TASKS.md)"
+symbol = "Yajra\\DataTables\\Contracts\\Formatter::format"
+selection = "Every method declared in an interface under src/ with at least 2 parameters and implemented by at least one class under src/ or tests/: 2 candidates (DataTable::filter, Formatter::format), sorted Interface::method. Seeded shuffle awk 'BEGIN{srand(20261110)}' (macOS awk 20200816, printf %.12f rand(), sort -n), first item. Change rule, fixed before the draw: insert a new parameter immediately before the method's last parameter, with a meaning plausible for the method. The method name format also names Carbon::format and DateTime::format, called in the same files and mentioned in CHANGELOG.md, which a text search cannot tell apart."

@@ -1,8 +1,12 @@
-// Grading only: the build asks for a JDK 8 toolchain (jvmToolchain(8)), which Gradle would download, but a downloaded
-// JDK cannot run in the grading sandbox (no FHS loader). Every JVM compilation and test uses the sandbox's JDK 21.
-gradle.projectsEvaluated {
-  allprojects {
+// Grading and server preparation only: the build asks for a JDK 26 toolchain (libs.versions.jdk), which Gradle would
+// download, but the study's sandboxes carry JDK 21 and no downloaded JDK can run in them. Every JVM compilation and
+// test uses the sandbox's JDK 21 (the sources are compiled with --release 17 either way). afterEvaluate, not
+// projectsEvaluated: the build configures projects on demand.
+allprojects {
+  afterEvaluate {
+    if (rootProject.name != 'compose-lints') return
     def java = extensions.findByType(JavaPluginExtension)
     if (java != null) java.toolchain.languageVersion.set(JavaLanguageVersion.of(21))
   }
 }
+

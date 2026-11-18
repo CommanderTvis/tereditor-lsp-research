@@ -1,0 +1,4 @@
+type = "refs"
+origin = "synthetic; hand-classified exhaustive list (docs/TASKS.md)"
+symbol = "org.gradle.api.problems.internal.DefaultLineInFileLocation"
+selection = "top-level public classes and interfaces declared under platforms/core-runtime/*/src/main/java whose simple name appears as a whole word in 5 to 30 .java, .kt or .groovy files of the repository and is declared by more than one type (class, interface, enum, record or object): 57 types, sorted by name and shuffled with awk 'BEGIN{srand(20261110)}'; picks in order: JvmProcessSupport (rename), DefaultLineInFileLocation (refs; three types of that name in the repository)"

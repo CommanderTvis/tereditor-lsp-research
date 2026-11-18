@@ -1,17 +1,21 @@
-# PHP, small: league/container, a PSR-11 dependency injection container. Interfaces with several implementations,
-# traits mixed into many classes, and short method names (get, has, add, inflect, getId) shared by unrelated classes.
+# PHP, small: yajra/laravel-datatables, the jQuery DataTables API for Laravel. Query-builder, Eloquent, collection and
+# resource engines behind one contract, many traits and short method names (filter, order, search, make) shared by
+# unrelated classes; tests run on testbench.
 lang = "php"
 size = "small"
 status = "curated"
-repo = "https://github.com/thephpleague/container"
-tag = "5.2.0"
-commit = "58accbc032f0090a9bd08326f93062c5a658b2c5"
-loc = 3800
-loc_by_language = { "PHP" = 3800 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
+repo = "https://github.com/yajra/laravel-datatables"
+tag = "v13.3.1"
+commit = "76de727015b29ebaa4d50f91daab4199583989d7"
+loc = 6526
+loc_by_language = { "PHP" = 6526 }
+loc_method = "scc 3.5.0 code lines at the pinned commit, docs/PROJECTS.md (vendor/ excluded, tests included)"
 stripped = []
-# Assigned (docs/TASKS.md): move, signature, inspect + 3 pr. No mined pull request runs on PHP 8.4
-# (tasks/php-small/pr-log.md), so the 3 pr places are filled with the next types of the rotation.
 task_types = ["move", "signature", "inspect", "pr", "pr", "pr"]
-substitutions = ["all three unavailable mined slots use explicit `pr-fallback-*` tasks; the three original synthetic tasks are preserved"]
-pr_fill = "rename, rename-file, refs: all 4 mined candidates need PHPUnit 4 or 6 and PHP 5/7 (tasks/php-small/pr-log.md)"
+pr_note = "3 of 8 qualifying modern pull requests used (in seeded order: #3294, #3295, #3300); see tasks/php-small/pr-log.md"
+
+[probe]
+# ./study probe php-small (enforced), tereditor pinned in harness/tereditor.env, Intelephense, 2026-11-17.
+ok = false
+seconds_to_first_answer = 0
+note = "By-name definition and implementations of an interface missed the expected location; references and diagnostics work. definition of DataTableAbstract by name: complete=false, first answer 1s, missing src/DataTableAbstract.php:26; references Formatter (cross-file): complete=true, first answer 0s, missing ; implementations of Formatter: complete=false, first answer 0s, missing tests/Formatters/DateFormatter.php:9; diagnostics clean file: complete=true, first answer 0s, missing"

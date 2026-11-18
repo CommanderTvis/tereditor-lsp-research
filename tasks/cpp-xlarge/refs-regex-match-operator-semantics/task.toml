@@ -1,0 +1,4 @@
+type = "refs"
+origin = "compiler-driven rename (references)"
+symbol = "RegexMatchOperatorSemantics (enum class, src/include/duckdb/common/enums/regex_match_operator_semantics.hpp)"
+selection = "enum class names declared in src/include/duckdb/common/enums/*.hpp (107) whose name occurs as a whole word (git grep -lw over src, extension, tools, test) in at least 3 and at most 12 files: 50 candidates sorted by name; index awk 'BEGIN{srand(20261110); print int(rand()*50)+1}' = 37"

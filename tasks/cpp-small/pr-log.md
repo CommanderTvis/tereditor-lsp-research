@@ -1,17 +1,14 @@
-# Mined pull requests: cpp-small (tinyxml2)
+# Mined pull requests: cpp-small (MD4C)
 
-`sh harness/gen/mine-prs.sh cpp-small` keeps no pull request: the project's only test file is `xmltest.cpp`, which
-none of the script's test-file patterns matches, so no pull request "adds or changes tests". `pr-candidates.jsonl` was
-written by a copy of the script whose test pattern additionally accepts `(^|/)[a-z0-9]*test\.(c|cc|cpp)$` (otherwise
-identical, same seed): 3 pull requests qualify, in seeded order 293, 333, 496.
+`sh harness/gen/mine-prs.sh cpp-small` keeps 8 pull requests (opened on or after 2026-07-01, merged into master, closing an issue, changing tests and C sources). Candidates were taken strictly in the seeded order of `pr-candidates.jsonl`; three were accepted.
 
 | Candidate | Issue | Base commit | Outcome |
 | --- | --- | --- | --- |
-| 293 | 291 | 0f922e7c9af73d411646f7faddf909cc9c42ca0e | taken: `pr-293` |
-| 333 | 332 | e5e5541af6c22abb6122e82d636c1f92d33d98c5 | taken: `pr-333` |
-| 496 | 340 | cd47f8e0d3d7ced34d17c14224351d21cda1c8a9 | taken: `pr-496` |
+| 388 | 365 | 3e7ace20d262028baf702db9850520f017c25591 | taken: `pr-388` (VALID) |
+| 416 | 413 | 00788b157b2b6ef3efd8659b66f6521229f382d7 | taken: `pr-416` (VALID) |
+| 421 | 380 | 10fa4f4410a58cdd03cb4de1ade6efbbe7de59a4 | skipped: does not validate. Its only test change is a new case in `test/pathological-tests.py` (an OSS-Fuzz input); the case passes at the base commit too, so there is no fail to pass |
+| 439 | 435 | c8d7a7e8f68667d27b56fdfd15db6d3cd82272b2 | taken: `pr-439` (VALID) |
 
-Each task: `gold.patch` is the pull request's change to `tinyxml2.cpp`/`tinyxml2.h` (merge base to head),
-`hidden/xmltest.cpp` its head's test program, `grade.sh` builds the library with that program and requires it to exit
-0 with ", Fail 0" (all of its checks, the new ones being the fail-to-pass ones). Built with `c++ -std=gnu++11` directly,
-since the CMake files of 2015 and 2016 differ from today's.
+Not tried (three tasks reached): 446, 465, 418, 385.
+
+Each task: `gold.patch` is the pull request's change to non-test files (merge base to head), `hidden/` its head's versions of the test files it changed, `grade.sh` runs `check.sh` (CMake build, then every suite through `scripts/run-tests.py`: spec, extension specs, regressions, coverage, pathological inputs). The grading toolchain's `python3` runs the suites. `memprobe.txt` holds the memorization probe (verbatim share 0.00 for every model on all three).

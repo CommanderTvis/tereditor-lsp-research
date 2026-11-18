@@ -1,0 +1,2 @@
+core/scss/tests/scss.test.mjs :: caret mixin renders an ::after caret rotated for the down direction
+core/scss/tests/scss.test.mjs :: caret mixin uses ::before and clears ::after for the left direction

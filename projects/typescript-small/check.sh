@@ -1,17 +1,6 @@
 #!/bin/sh
-# Build-and-test for superstruct, as its own `test` script does at the commit being graded:
-# - since the switch to npm and vitest (the pinned commit): type-check the library and the tests, then vitest;
-# - before it (the base commits of the mined pull requests, yarn and mocha): emit the declarations the tests import,
-#   type-check, build the CommonJS bundle the tests load, then mocha.
+# Build-and-test for node-server at the commit being graded: type-check sources and tests, then vitest (the whole Node
+# suite, or only the test files given as arguments; a task's grade.sh passes the affected tests).
 set -e
-if [ -f test/register.cjs ]; then
-  npx tsc --emitDeclarationOnly --declarationMap --outDir ./lib
-  npx tsc --noEmit
-  npx tsc --project ./test/tsconfig.json --noEmit
-  npx rollup --config ./config/rollup-cjs.js
-  npx mocha --require ./test/register.cjs --require source-map-support/register ./test/index.ts
-else
-  npx tsc --noEmit
-  npx tsc --project ./test/tsconfig.json --noEmit
-  npx vitest run
-fi
+npx tsc --noEmit
+npx vitest run "$@"

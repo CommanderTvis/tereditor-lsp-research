@@ -1,0 +1,10 @@
+type = "pr"
+pr = 16026
+issue = 16025
+base_commit = "da47cd5bf47ccff66b5f406b1b4677bda0136d42"
+merged_at = "2026-10-21T10:35:48Z"
+head_commit = "d6cafbd982f18d8a358c3742862bf86994b142e3"
+origin = "mined pull request github.com/redis/redis/pull/16026"
+test_files = ["tests/unit/hotkeys.tcl"]
+grade_timeout_s = 1200
+# grade_timeout_s raised to 1200: cold build of the server plus the Tcl unit

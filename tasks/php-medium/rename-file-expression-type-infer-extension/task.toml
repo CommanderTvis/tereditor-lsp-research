@@ -1,0 +1,5 @@
+type = "rename-file"
+origin = "synthetic: rename a source file and the type it declares (PSR-4: file name = type name), updating every reference (docs/TASKS.md)"
+symbol = "Dedoc\\Scramble\\Infer\\Extensions\\ExpressionTypeInferExtension"
+target = "Dedoc\\Scramble\\Infer\\Extensions\\ExpressionTypeInferenceExtension"
+selection = "Every class, interface, trait or enum declared under src/ outside Contracts directories whose short name occurs as a whole word in at least 5 other .php files under src/ and tests/ (rg -lw; medium projects: at least 5 files): 172 candidates, sorted by fully qualified name. Seeded shuffle awk 'BEGIN{srand(20261110)}' (macOS awk 20200816, printf %.12f rand(), sort -n), first item. The old name is a prefix of unrelated names (ExpressionTypeInferExtensionTest, ExpressionTypeInferringExtensions), which a careless text replacement would also touch."

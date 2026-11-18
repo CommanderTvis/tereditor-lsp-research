@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic, which definition runs for a call through indirection"
+symbol = "updateJobs"
+selection = "Shorthand members of the object that sqliteAdapter (packages/db-sqlite/src/index.ts) passes to createDatabaseAdapter whose name is exported by at least 3 files of packages/ (indirection through the adapter object with same-named definitions elsewhere); 13 candidates (commitTransaction, connect, count, create, find, findDistinct, findGlobal, findGlobalVersions, findOne, findVersions, init, updateGlobal, updateJobs), sorted by name, seeded shuffle awk srand(20261110), first taken. updateJobs is also described in docs/migration-guide/v4.mdx."

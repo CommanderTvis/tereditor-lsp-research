@@ -146,8 +146,8 @@ Selected as SWE-bench selects them, with the study's own cutoff:
 - Hidden tests are the pull request's test changes; `gold.patch` is its non-test change and is used only by
   `./study validate` (the tests can pass). Nothing grades an agent by comparing its patch with it: modern pull requests
   are partly unreviewed and carry the flaws this study measures.
-- Memorization probe: before a candidate becomes a task, `harness/memprobe/memprobe.py` runs all three models on its
-  issue with no tools, and the task is dropped under the thresholds of docs/MEMORIZATION.md.
+- Memorization probe: `harness/memprobe/memprobe.py` runs all three models on each accepted task's issue with no tools.
+  It is a covariate and a check on the training cutoff, never a filter (docs/MEMORIZATION.md).
 
 ## Answers
 

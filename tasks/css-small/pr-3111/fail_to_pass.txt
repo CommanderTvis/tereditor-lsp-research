@@ -1,0 +1,6 @@
+core/scss/tests/input-group-flat.test.mjs :: input-group-flat validation carries the valid border color over to the input-group-text
+core/scss/tests/input-group-flat.test.mjs :: input-group-flat validation carries the invalid border color over to the input-group-text
+core/scss/tests/input-group-flat.test.mjs :: input-group-flat validation follows .was-validated for the :valid pseudo-class
+core/scss/tests/input-group-flat.test.mjs :: input-group-flat validation follows .was-validated for the :invalid pseudo-class
+core/scss/tests/input-group-flat.test.mjs :: input-group-flat validation keeps the valid color while the group has focus
+core/scss/tests/input-group-flat.test.mjs :: input-group-flat validation keeps the invalid color while the group has focus

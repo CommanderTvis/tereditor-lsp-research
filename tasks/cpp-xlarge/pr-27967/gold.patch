@@ -1,0 +1,13 @@
+diff --git a/src/include/duckdb/main/http/http_util.hpp b/src/include/duckdb/main/http/http_util.hpp
+index c03b20522d87..24ec50552291 100644
+--- a/src/include/duckdb/main/http/http_util.hpp
++++ b/src/include/duckdb/main/http/http_util.hpp
+@@ -274,7 +274,7 @@ struct PutRequestInfo : public BaseRequest {
+ 
+ 	const_data_ptr_t buffer_in;
+ 	idx_t buffer_in_len;
+-	const string &content_type;
++	string content_type;
+ };
+ 
+ struct HeadRequestInfo : public BaseRequest {

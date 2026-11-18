@@ -1,0 +1,14 @@
+src/Core/Content/Flow/Dispatching/FlowFactory.php:57
+src/Core/Content/Product/Aggregate/ProductPrice/ProductPriceCollection.php:37
+src/Core/Content/Product/DataAbstractionLayer/CheapestPrice/CheapestPriceAccessorBuilder.php:146
+src/Core/Content/Product/DataAbstractionLayer/CheapestPrice/CheapestPriceAccessorBuilder.php:43
+src/Core/Content/Product/DataAbstractionLayer/CheapestPrice/CheapestPriceContainer.php:260
+src/Core/Framework/DataAbstractionLayer/Dbal/FieldAccessorBuilder/PriceFieldAccessorBuilder.php:146
+src/Core/Framework/DataAbstractionLayer/Dbal/FieldAccessorBuilder/PriceFieldAccessorBuilder.php:37
+src/Core/Framework/Script/AppContextCreator.php:44
+src/Core/Framework/Sso/SsoUser/SsoUserInvitationMailService.php:103
+src/Core/System/SalesChannel/BaseSalesChannelContext.php:95
+src/Core/System/SalesChannel/SalesChannelContext.php:251
+src/Elasticsearch/Framework/DataAbstractionLayer/CriteriaParser.php:126
+src/Elasticsearch/Framework/DataAbstractionLayer/CriteriaParser.php:454
+src/Elasticsearch/Framework/DataAbstractionLayer/CriteriaParser.php:468

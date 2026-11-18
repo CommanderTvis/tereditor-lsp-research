@@ -1,0 +1,1590 @@
+diff --git a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene102/OffHeapBinarizedVectorValues.java b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene102/OffHeapBinarizedVectorValues.java
+index bfd1046..468277a 100644
+--- a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene102/OffHeapBinarizedVectorValues.java
++++ b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene102/OffHeapBinarizedVectorValues.java
+@@ -21,7 +21,7 @@ import static org.apache.lucene.util.quantization.OptimizedScalarQuantizer.discr
+ import java.io.IOException;
+ import java.nio.ByteBuffer;
+ import org.apache.lucene.codecs.hnsw.FlatVectorsScorer;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.codecs.lucene95.OrdToDocDISIReaderConfiguration;
+ import org.apache.lucene.index.VectorSimilarityFunction;
+ import org.apache.lucene.search.DocIdSetIterator;
+@@ -257,7 +257,7 @@ public abstract class OffHeapBinarizedVectorValues extends BinarizedByteVectorVa
+   /** Sparse off-heap binarized vector values */
+   private static class SparseOffHeapVectorValues extends OffHeapBinarizedVectorValues {
+     private final DirectMonotonicReader ordToDoc;
+-    private final IndexedDISI disi;
++    private final JumpTableDISI disi;
+     // dataIn was used to init a new IndexedDIS for #randomAccess()
+     private final IndexInput dataIn;
+     private final OrdToDocDISIReaderConfiguration configuration;
+@@ -329,7 +329,7 @@ public abstract class OffHeapBinarizedVectorValues extends BinarizedByteVectorVa
+ 
+     @Override
+     public DocIndexIterator iterator() {
+-      return IndexedDISI.asDocIndexIterator(disi);
++      return JumpTableDISI.asDocIndexIterator(disi);
+     }
+ 
+     @Override
+diff --git a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene92/Lucene92HnswVectorsFormat.java b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene92/Lucene92HnswVectorsFormat.java
+index 89ddf1a..9aa55a6 100644
+--- a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene92/Lucene92HnswVectorsFormat.java
++++ b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene92/Lucene92HnswVectorsFormat.java
+@@ -21,7 +21,7 @@ import java.io.IOException;
+ import org.apache.lucene.codecs.KnnVectorsFormat;
+ import org.apache.lucene.codecs.KnnVectorsReader;
+ import org.apache.lucene.codecs.KnnVectorsWriter;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.SegmentReadState;
+ import org.apache.lucene.index.SegmentWriteState;
+ import org.apache.lucene.search.DocIdSetIterator;
+@@ -40,7 +40,7 @@ import org.apache.lucene.util.hnsw.HnswGraph;
+  * <ul>
+  *   <li>Floating-point vector data ordered by field, document ordinal, and vector dimension. The
+  *       floats are stored in little-endian byte order
+- *   <li>DocIds encoded by {@link IndexedDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)},
++ *   <li>DocIds encoded by {@link JumpTableDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)},
+  *       note that only in sparse case
+  *   <li>OrdToDoc was encoded by {@link org.apache.lucene.util.packed.DirectMonotonicWriter}, note
+  *       that only in sparse case
+@@ -80,7 +80,7 @@ import org.apache.lucene.util.hnsw.HnswGraph;
+  *   <li><b>[int]</b> the number of documents having values for this field
+  *   <li><b>[int8]</b> if equals to -1, dense – all documents have values for a field. If equals to
+  *       0, sparse – some documents missing values.
+- *   <li>DocIds were encoded by {@link IndexedDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)}
++ *   <li>DocIds were encoded by {@link JumpTableDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)}
+  *   <li>OrdToDoc was encoded by {@link org.apache.lucene.util.packed.DirectMonotonicWriter}, note
+  *       that only in sparse case
+  *   <li><b>[int]</b> the maximum number of connections (neighbours) that each node can have
+diff --git a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene92/OffHeapFloatVectorValues.java b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene92/OffHeapFloatVectorValues.java
+index 7c87bac..43ecee8 100644
+--- a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene92/OffHeapFloatVectorValues.java
++++ b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene92/OffHeapFloatVectorValues.java
+@@ -18,7 +18,7 @@
+ package org.apache.lucene.backward_codecs.lucene92;
+ 
+ import java.io.IOException;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.FloatVectorValues;
+ import org.apache.lucene.index.VectorSimilarityFunction;
+ import org.apache.lucene.search.DocIdSetIterator;
+@@ -137,7 +137,7 @@ abstract class OffHeapFloatVectorValues extends FloatVectorValues {
+ 
+   private static class SparseOffHeapVectorValues extends OffHeapFloatVectorValues {
+     private final DirectMonotonicReader ordToDoc;
+-    private final IndexedDISI disi;
++    private final JumpTableDISI disi;
+     // dataIn was used to init a new IndexedDIS for #randomAccess()
+     private final IndexInput dataIn;
+     private final Lucene92HnswVectorsReader.FieldEntry fieldEntry;
+@@ -156,7 +156,7 @@ abstract class OffHeapFloatVectorValues extends FloatVectorValues {
+       this.dataIn = dataIn;
+       this.ordToDoc = DirectMonotonicReader.getInstance(fieldEntry.meta(), addressesData);
+       this.disi =
+-          new IndexedDISI(
++          new JumpTableDISI(
+               dataIn,
+               fieldEntry.docsWithFieldOffset(),
+               fieldEntry.docsWithFieldLength(),
+@@ -173,7 +173,7 @@ abstract class OffHeapFloatVectorValues extends FloatVectorValues {
+ 
+     @Override
+     public DocIndexIterator iterator() {
+-      return IndexedDISI.asDocIndexIterator(disi);
++      return JumpTableDISI.asDocIndexIterator(disi);
+     }
+ 
+     @Override
+diff --git a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene94/Lucene94HnswVectorsFormat.java b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene94/Lucene94HnswVectorsFormat.java
+index a180f8f..91da41a 100644
+--- a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene94/Lucene94HnswVectorsFormat.java
++++ b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene94/Lucene94HnswVectorsFormat.java
+@@ -21,7 +21,7 @@ import java.io.IOException;
+ import org.apache.lucene.codecs.KnnVectorsFormat;
+ import org.apache.lucene.codecs.KnnVectorsReader;
+ import org.apache.lucene.codecs.KnnVectorsWriter;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.SegmentReadState;
+ import org.apache.lucene.index.SegmentWriteState;
+ import org.apache.lucene.search.DocIdSetIterator;
+@@ -41,7 +41,7 @@ import org.apache.lucene.util.hnsw.HnswGraph;
+  *   <li>Vector data ordered by field, document ordinal, and vector dimension. When the
+  *       vectorEncoding is BYTE, each sample is stored as a single byte. When it is FLOAT32, each
+  *       sample is stored as an IEEE float in little-endian byte order.
+- *   <li>DocIds encoded by {@link IndexedDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)},
++ *   <li>DocIds encoded by {@link JumpTableDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)},
+  *       note that only in sparse case
+  *   <li>OrdToDoc was encoded by {@link org.apache.lucene.util.packed.DirectMonotonicWriter}, note
+  *       that only in sparse case
+@@ -81,7 +81,7 @@ import org.apache.lucene.util.hnsw.HnswGraph;
+  *   <li><b>[int]</b> the number of documents having values for this field
+  *   <li><b>[int8]</b> if equals to -1, dense – all documents have values for a field. If equals to
+  *       0, sparse – some documents missing values.
+- *   <li>DocIds were encoded by {@link IndexedDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)}
++ *   <li>DocIds were encoded by {@link JumpTableDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)}
+  *   <li>OrdToDoc was encoded by {@link org.apache.lucene.util.packed.DirectMonotonicWriter}, note
+  *       that only in sparse case
+  *   <li><b>[int]</b> the maximum number of connections (neighbours) that each node can have
+diff --git a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene94/OffHeapByteVectorValues.java b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene94/OffHeapByteVectorValues.java
+index 0c428bb..52a2368 100644
+--- a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene94/OffHeapByteVectorValues.java
++++ b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene94/OffHeapByteVectorValues.java
+@@ -19,7 +19,7 @@ package org.apache.lucene.backward_codecs.lucene94;
+ 
+ import java.io.IOException;
+ import java.nio.ByteBuffer;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.ByteVectorValues;
+ import org.apache.lucene.index.VectorEncoding;
+ import org.apache.lucene.index.VectorSimilarityFunction;
+@@ -151,7 +151,7 @@ abstract class OffHeapByteVectorValues extends ByteVectorValues {
+ 
+   private static class SparseOffHeapVectorValues extends OffHeapByteVectorValues {
+     private final DirectMonotonicReader ordToDoc;
+-    private final IndexedDISI disi;
++    private final JumpTableDISI disi;
+     // dataIn was used to init a new IndexedDIS for #randomAccess()
+     private final IndexInput dataIn;
+     private final Lucene94HnswVectorsReader.FieldEntry fieldEntry;
+@@ -171,7 +171,7 @@ abstract class OffHeapByteVectorValues extends ByteVectorValues {
+       this.dataIn = dataIn;
+       this.ordToDoc = DirectMonotonicReader.getInstance(fieldEntry.meta(), addressesData);
+       this.disi =
+-          new IndexedDISI(
++          new JumpTableDISI(
+               dataIn,
+               fieldEntry.docsWithFieldOffset(),
+               fieldEntry.docsWithFieldLength(),
+@@ -217,7 +217,7 @@ abstract class OffHeapByteVectorValues extends ByteVectorValues {
+     @Override
+     public VectorScorer scorer(byte[] query) throws IOException {
+       SparseOffHeapVectorValues copy = this.copy();
+-      IndexedDISI disi = copy.disi;
++      JumpTableDISI disi = copy.disi;
+       return new VectorScorer() {
+         @Override
+         public float score() throws IOException {
+diff --git a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene94/OffHeapFloatVectorValues.java b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene94/OffHeapFloatVectorValues.java
+index b21df90..28c5567 100644
+--- a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene94/OffHeapFloatVectorValues.java
++++ b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene94/OffHeapFloatVectorValues.java
+@@ -18,7 +18,7 @@
+ package org.apache.lucene.backward_codecs.lucene94;
+ 
+ import java.io.IOException;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.FloatVectorValues;
+ import org.apache.lucene.index.VectorSimilarityFunction;
+ import org.apache.lucene.search.DocIdSetIterator;
+@@ -149,7 +149,7 @@ abstract class OffHeapFloatVectorValues extends FloatVectorValues {
+ 
+   private static class SparseOffHeapVectorValues extends OffHeapFloatVectorValues {
+     private final DirectMonotonicReader ordToDoc;
+-    private final IndexedDISI disi;
++    private final JumpTableDISI disi;
+     // dataIn was used to init a new IndexedDIS for #randomAccess()
+     private final IndexInput dataIn;
+     private final Lucene94HnswVectorsReader.FieldEntry fieldEntry;
+@@ -169,7 +169,7 @@ abstract class OffHeapFloatVectorValues extends FloatVectorValues {
+       this.dataIn = dataIn;
+       this.ordToDoc = DirectMonotonicReader.getInstance(fieldEntry.meta(), addressesData);
+       this.disi =
+-          new IndexedDISI(
++          new JumpTableDISI(
+               dataIn,
+               fieldEntry.docsWithFieldOffset(),
+               fieldEntry.docsWithFieldLength(),
+@@ -186,7 +186,7 @@ abstract class OffHeapFloatVectorValues extends FloatVectorValues {
+ 
+     @Override
+     public DocIndexIterator iterator() {
+-      return IndexedDISI.asDocIndexIterator(disi);
++      return JumpTableDISI.asDocIndexIterator(disi);
+     }
+ 
+     @Override
+diff --git a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene95/Lucene95HnswVectorsFormat.java b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene95/Lucene95HnswVectorsFormat.java
+index 16a98d0..309a0cd 100644
+--- a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene95/Lucene95HnswVectorsFormat.java
++++ b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene95/Lucene95HnswVectorsFormat.java
+@@ -21,7 +21,7 @@ import java.io.IOException;
+ import org.apache.lucene.codecs.KnnVectorsFormat;
+ import org.apache.lucene.codecs.KnnVectorsReader;
+ import org.apache.lucene.codecs.KnnVectorsWriter;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.SegmentReadState;
+ import org.apache.lucene.index.SegmentWriteState;
+ import org.apache.lucene.search.DocIdSetIterator;
+@@ -41,7 +41,7 @@ import org.apache.lucene.util.hnsw.HnswGraph;
+  *   <li>Vector data ordered by field, document ordinal, and vector dimension. When the
+  *       vectorEncoding is BYTE, each sample is stored as a single byte. When it is FLOAT32, each
+  *       sample is stored as an IEEE float in little-endian byte order.
+- *   <li>DocIds encoded by {@link IndexedDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)},
++ *   <li>DocIds encoded by {@link JumpTableDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)},
+  *       note that only in sparse case
+  *   <li>OrdToDoc was encoded by {@link org.apache.lucene.util.packed.DirectMonotonicWriter}, note
+  *       that only in sparse case
+@@ -81,7 +81,7 @@ import org.apache.lucene.util.hnsw.HnswGraph;
+  *   <li><b>[int]</b> the number of documents having values for this field
+  *   <li><b>[int8]</b> if equals to -1, dense – all documents have values for a field. If equals to
+  *       0, sparse – some documents missing values.
+- *   <li>DocIds were encoded by {@link IndexedDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)}
++ *   <li>DocIds were encoded by {@link JumpTableDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)}
+  *   <li>OrdToDoc was encoded by {@link org.apache.lucene.util.packed.DirectMonotonicWriter}, note
+  *       that only in sparse case
+  *   <li><b>[vint]</b> the maximum number of connections (neighbours) that each node can have
+diff --git a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene99/OffHeapQuantizedByteVectorValues.java b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene99/OffHeapQuantizedByteVectorValues.java
+index c64ea69..e0039b2 100644
+--- a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene99/OffHeapQuantizedByteVectorValues.java
++++ b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene99/OffHeapQuantizedByteVectorValues.java
+@@ -20,7 +20,7 @@ package org.apache.lucene.backward_codecs.lucene99;
+ import java.io.IOException;
+ import java.nio.ByteBuffer;
+ import org.apache.lucene.codecs.hnsw.FlatVectorsScorer;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.codecs.lucene95.OrdToDocDISIReaderConfiguration;
+ import org.apache.lucene.index.VectorSimilarityFunction;
+ import org.apache.lucene.search.DocIdSetIterator;
+@@ -272,7 +272,7 @@ public abstract class OffHeapQuantizedByteVectorValues extends LegacyQuantizedBy
+ 
+   private static class SparseOffHeapVectorValues extends OffHeapQuantizedByteVectorValues {
+     private final DirectMonotonicReader ordToDoc;
+-    private final IndexedDISI disi;
++    private final JumpTableDISI disi;
+     // dataIn was used to init a new IndexedDIS for #randomAccess()
+     private final IndexInput dataIn;
+     private final OrdToDocDISIReaderConfiguration configuration;
+@@ -297,7 +297,7 @@ public abstract class OffHeapQuantizedByteVectorValues extends LegacyQuantizedBy
+ 
+     @Override
+     public DocIndexIterator iterator() {
+-      return IndexedDISI.asDocIndexIterator(disi);
++      return JumpTableDISI.asDocIndexIterator(disi);
+     }
+ 
+     @Override
+diff --git a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene99/OffHeapQuantizedFloatVectorValues.java b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene99/OffHeapQuantizedFloatVectorValues.java
+index 8e6484c..21e1220 100644
+--- a/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene99/OffHeapQuantizedFloatVectorValues.java
++++ b/lucene/backward-codecs/src/java/org/apache/lucene/backward_codecs/lucene99/OffHeapQuantizedFloatVectorValues.java
+@@ -20,7 +20,7 @@ package org.apache.lucene.backward_codecs.lucene99;
+ import java.io.IOException;
+ import java.nio.ByteBuffer;
+ import org.apache.lucene.codecs.hnsw.FlatVectorsScorer;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.codecs.lucene95.HasIndexSlice;
+ import org.apache.lucene.codecs.lucene95.OrdToDocDISIReaderConfiguration;
+ import org.apache.lucene.index.FloatVectorValues;
+@@ -232,7 +232,7 @@ abstract class OffHeapQuantizedFloatVectorValues extends FloatVectorValues
+ 
+   private static class SparseOffHeapVectorValues extends OffHeapQuantizedFloatVectorValues {
+     private final DirectMonotonicReader ordToDoc;
+-    private final IndexedDISI disi;
++    private final JumpTableDISI disi;
+     // dataIn was used to init a new IndexedDIS for #randomAccess()
+     private final IndexInput dataIn;
+     private final OrdToDocDISIReaderConfiguration configuration;
+@@ -257,7 +257,7 @@ abstract class OffHeapQuantizedFloatVectorValues extends FloatVectorValues
+ 
+     @Override
+     public DocIndexIterator iterator() {
+-      return IndexedDISI.asDocIndexIterator(disi);
++      return JumpTableDISI.asDocIndexIterator(disi);
+     }
+ 
+     @Override
+diff --git a/lucene/backward-codecs/src/test/org/apache/lucene/backward_codecs/lucene92/Lucene92HnswVectorsWriter.java b/lucene/backward-codecs/src/test/org/apache/lucene/backward_codecs/lucene92/Lucene92HnswVectorsWriter.java
+index 917e5dd..15509c4 100644
+--- a/lucene/backward-codecs/src/test/org/apache/lucene/backward_codecs/lucene92/Lucene92HnswVectorsWriter.java
++++ b/lucene/backward-codecs/src/test/org/apache/lucene/backward_codecs/lucene92/Lucene92HnswVectorsWriter.java
+@@ -26,7 +26,7 @@ import java.util.Arrays;
+ import org.apache.lucene.codecs.BufferingKnnVectorsWriter;
+ import org.apache.lucene.codecs.CodecUtil;
+ import org.apache.lucene.codecs.hnsw.DefaultFlatVectorScorer;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.ByteVectorValues;
+ import org.apache.lucene.index.DocsWithFieldSet;
+ import org.apache.lucene.index.FieldInfo;
+@@ -237,11 +237,11 @@ public final class Lucene92HnswVectorsWriter extends BufferingKnnVectorsWriter {
+       long offset = vectorData.getFilePointer();
+       meta.writeLong(offset); // docsWithFieldOffset
+       final short jumpTableEntryCount =
+-          IndexedDISI.writeBitSet(
+-              docsWithField.iterator(), vectorData, IndexedDISI.DEFAULT_DENSE_RANK_POWER);
++          JumpTableDISI.writeBitSet(
++              docsWithField.iterator(), vectorData, JumpTableDISI.DEFAULT_DENSE_RANK_POWER);
+       meta.writeLong(vectorData.getFilePointer() - offset); // docsWithFieldLength
+       meta.writeShort(jumpTableEntryCount);
+-      meta.writeByte(IndexedDISI.DEFAULT_DENSE_RANK_POWER);
++      meta.writeByte(JumpTableDISI.DEFAULT_DENSE_RANK_POWER);
+ 
+       // write ordToDoc mapping
+       long start = vectorData.getFilePointer();
+diff --git a/lucene/backward-codecs/src/test/org/apache/lucene/backward_codecs/lucene94/Lucene94HnswVectorsWriter.java b/lucene/backward-codecs/src/test/org/apache/lucene/backward_codecs/lucene94/Lucene94HnswVectorsWriter.java
+index b319233..978b3bb 100644
+--- a/lucene/backward-codecs/src/test/org/apache/lucene/backward_codecs/lucene94/Lucene94HnswVectorsWriter.java
++++ b/lucene/backward-codecs/src/test/org/apache/lucene/backward_codecs/lucene94/Lucene94HnswVectorsWriter.java
+@@ -30,7 +30,7 @@ import org.apache.lucene.codecs.CodecUtil;
+ import org.apache.lucene.codecs.KnnFieldVectorsWriter;
+ import org.apache.lucene.codecs.KnnVectorsWriter;
+ import org.apache.lucene.codecs.hnsw.DefaultFlatVectorScorer;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.ByteVectorValues;
+ import org.apache.lucene.index.DocsWithFieldSet;
+ import org.apache.lucene.index.FieldInfo;
+@@ -552,11 +552,11 @@ public final class Lucene94HnswVectorsWriter extends KnnVectorsWriter {
+       long offset = vectorData.getFilePointer();
+       meta.writeLong(offset); // docsWithFieldOffset
+       final short jumpTableEntryCount =
+-          IndexedDISI.writeBitSet(
+-              docsWithField.iterator(), vectorData, IndexedDISI.DEFAULT_DENSE_RANK_POWER);
++          JumpTableDISI.writeBitSet(
++              docsWithField.iterator(), vectorData, JumpTableDISI.DEFAULT_DENSE_RANK_POWER);
+       meta.writeLong(vectorData.getFilePointer() - offset); // docsWithFieldLength
+       meta.writeShort(jumpTableEntryCount);
+-      meta.writeByte(IndexedDISI.DEFAULT_DENSE_RANK_POWER);
++      meta.writeByte(JumpTableDISI.DEFAULT_DENSE_RANK_POWER);
+ 
+       // write ordToDoc mapping
+       long start = vectorData.getFilePointer();
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene104/OffHeapScalarQuantizedFloatVectorValues.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene104/OffHeapScalarQuantizedFloatVectorValues.java
+index 8fa87a2..435eef8 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene104/OffHeapScalarQuantizedFloatVectorValues.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene104/OffHeapScalarQuantizedFloatVectorValues.java
+@@ -22,7 +22,7 @@ import static org.apache.lucene.util.quantization.OptimizedScalarQuantizer.deQua
+ import java.io.IOException;
+ import java.nio.ByteBuffer;
+ import org.apache.lucene.codecs.hnsw.FlatVectorsScorer;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.codecs.lucene95.HasIndexSlice;
+ import org.apache.lucene.codecs.lucene95.OrdToDocDISIReaderConfiguration;
+ import org.apache.lucene.index.FloatVectorValues;
+@@ -272,7 +272,7 @@ abstract class OffHeapScalarQuantizedFloatVectorValues extends FloatVectorValues
+   /** Sparse off-heap scalar quantized vector values */
+   private static class SparseOffHeapVectorValues extends OffHeapScalarQuantizedFloatVectorValues {
+     private final DirectMonotonicReader ordToDoc;
+-    private final IndexedDISI disi;
++    private final JumpTableDISI disi;
+     // dataIn was used to init a new IndexedDIS for #randomAccess()
+     private final IndexInput dataIn;
+     private final OrdToDocDISIReaderConfiguration configuration;
+@@ -335,7 +335,7 @@ abstract class OffHeapScalarQuantizedFloatVectorValues extends FloatVectorValues
+ 
+     @Override
+     public DocIndexIterator iterator() {
+-      return IndexedDISI.asDocIndexIterator(disi);
++      return JumpTableDISI.asDocIndexIterator(disi);
+     }
+ 
+     @Override
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene104/OffHeapScalarQuantizedVectorValues.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene104/OffHeapScalarQuantizedVectorValues.java
+index e8dea9c..1b179f9 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene104/OffHeapScalarQuantizedVectorValues.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene104/OffHeapScalarQuantizedVectorValues.java
+@@ -19,7 +19,7 @@ package org.apache.lucene.codecs.lucene104;
+ import java.io.IOException;
+ import java.nio.ByteBuffer;
+ import org.apache.lucene.codecs.hnsw.FlatVectorsScorer;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.codecs.lucene95.OrdToDocDISIReaderConfiguration;
+ import org.apache.lucene.index.VectorSimilarityFunction;
+ import org.apache.lucene.search.DocIdSetIterator;
+@@ -343,7 +343,7 @@ public abstract class OffHeapScalarQuantizedVectorValues extends QuantizedByteVe
+   /** Sparse off-heap scalar quantized vector values */
+   private static class SparseOffHeapVectorValues extends OffHeapScalarQuantizedVectorValues {
+     private final DirectMonotonicReader ordToDoc;
+-    private final IndexedDISI disi;
++    private final JumpTableDISI disi;
+     // dataIn was used to init a new IndexedDIS for #randomAccess()
+     private final IndexInput dataIn;
+     private final OrdToDocDISIReaderConfiguration configuration;
+@@ -420,7 +420,7 @@ public abstract class OffHeapScalarQuantizedVectorValues extends QuantizedByteVe
+ 
+     @Override
+     public DocIndexIterator iterator() {
+-      return IndexedDISI.asDocIndexIterator(disi);
++      return JumpTableDISI.asDocIndexIterator(disi);
+     }
+ 
+     @Override
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/IndexedDISI.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/JumpTableDISI.java
+similarity index 91%
+rename from lucene/core/src/java/org/apache/lucene/codecs/lucene90/IndexedDISI.java
+rename to lucene/core/src/java/org/apache/lucene/codecs/lucene90/JumpTableDISI.java
+index 83350e5..b1117dd 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/IndexedDISI.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/JumpTableDISI.java
+@@ -93,7 +93,7 @@ import org.apache.lucene.util.RoaringDocIdSet;
+  *
+  * @lucene.internal
+  */
+-public final class IndexedDISI extends AbstractDocIdSetIterator {
++public final class JumpTableDISI extends AbstractDocIdSetIterator {
+ 
+   // jump-table time/space trade-offs to consider:
+   // The block offsets and the block indexes could be stored in more compressed form with
+@@ -160,12 +160,12 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+    * increasing gap-less order. DENSE blocks uses {@link #DEFAULT_DENSE_RANK_POWER} of 9 (every 512
+    * docIDs / 8 longs). The caller must keep track of the number of jump-table entries (returned by
+    * this method) as well as the denseRankPower (9 for this method) and provide them when
+-   * constructing an IndexedDISI for reading.
++   * constructing an JumpTableDISI for reading.
+    *
+    * @param it the document IDs.
+    * @param out destination for the blocks.
+    * @return the number of jump-table entries following the blocks, -1 for no entries. This should
+-   *     be stored in meta and used when creating an instance of IndexedDISI.
++   *     be stored in meta and used when creating an instance of JumpTableDISI.
+    * @throws IOException if there was an error writing to out.
+    */
+   static short writeBitSet(DocIdSetIterator it, IndexOutput out) throws IOException {
+@@ -176,7 +176,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+    * Writes the docIDs from it to out, in logical blocks, one for each 65536 docIDs in monotonically
+    * increasing gap-less order. The caller must keep track of the number of jump-table entries
+    * (returned by this method) as well as the denseRankPower and provide them when constructing an
+-   * IndexedDISI for reading.
++   * JumpTableDISI for reading.
+    *
+    * @param it the document IDs.
+    * @param out destination for the blocks.
+@@ -184,9 +184,9 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+    *     2^denseRankPower} docIDs. Values &lt; 7 (every 128 docIDs) or &gt; 15 (every 32768 docIDs)
+    *     disables DENSE rank. Recommended values are 8-12: Every 256-4096 docIDs or 4-64 longs.
+    *     {@link #DEFAULT_DENSE_RANK_POWER} is 9: Every 512 docIDs. This should be stored in meta and
+-   *     used when creating an instance of IndexedDISI.
++   *     used when creating an instance of JumpTableDISI.
+    * @return the number of jump-table entries following the blocks, -1 for no entries. This should
+-   *     be stored in meta and used when creating an instance of IndexedDISI.
++   *     be stored in meta and used when creating an instance of JumpTableDISI.
+    * @throws IOException if there was an error writing to out.
+    */
+   public static short writeBitSet(DocIdSetIterator it, IndexOutput out, byte denseRankPower)
+@@ -279,7 +279,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+ 
+   /**
+    * This constructor always creates a new blockSlice and a new jumpTable from in, to ensure that
+-   * operations are independent from the caller. See {@link #IndexedDISI(IndexInput,
++   * operations are independent from the caller. See {@link #JumpTableDISI(IndexInput,
+    * RandomAccessInput, int, byte, long)} for re-use of blockSlice and jumpTable.
+    *
+    * @param in backing data.
+@@ -292,7 +292,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+    *     #writeBitSet(DocIdSetIterator, IndexOutput, byte)}
+    * @param cost normally the number of logical docIDs.
+    */
+-  public IndexedDISI(
++  public JumpTableDISI(
+       IndexInput in,
+       long offset,
+       long length,
+@@ -322,7 +322,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+    *     #writeBitSet(DocIdSetIterator, IndexOutput, byte)}
+    * @param cost normally the number of logical docIDs.
+    */
+-  IndexedDISI(
++  JumpTableDISI(
+       IndexInput blockSlice,
+       RandomAccessInput jumpTable,
+       int jumpTableEntryCount,
+@@ -358,13 +358,13 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+   }
+ 
+   /**
+-   * Helper method for using {@link #IndexedDISI(IndexInput, RandomAccessInput, int, byte, long)}.
+-   * Creates a disiSlice for the IndexedDISI data blocks, without the jump-table.
++   * Helper method for using {@link #JumpTableDISI(IndexInput, RandomAccessInput, int, byte, long)}.
++   * Creates a disiSlice for the JumpTableDISI data blocks, without the jump-table.
+    *
+    * @param slice backing data, holding both blocks and jump-table.
+    * @param sliceDescription human readable slice designation.
+    * @param offset relative to the backing data.
+-   * @param length full length of the IndexedDISI, including blocks and jump-table data.
++   * @param length full length of the JumpTableDISI, including blocks and jump-table data.
+    * @param jumpTableEntryCount the number of blocks covered by the jump-table.
+    * @return a jumpTable containing the block jump-data or null if no such table exists.
+    * @throws IOException if a RandomAccessInput could not be created from slice.
+@@ -377,12 +377,12 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+   }
+ 
+   /**
+-   * Helper method for using {@link #IndexedDISI(IndexInput, RandomAccessInput, int, byte, long)}.
++   * Helper method for using {@link #JumpTableDISI(IndexInput, RandomAccessInput, int, byte, long)}.
+    * Creates a RandomAccessInput covering only the jump-table data or null.
+    *
+    * @param slice backing data, holding both blocks and jump-table.
+    * @param offset relative to the backing data.
+-   * @param length full length of the IndexedDISI, including blocks and jump-table data.
++   * @param length full length of the JumpTableDISI, including blocks and jump-table data.
+    * @param jumpTableEntryCount the number of blocks covered by the jump-table.
+    * @return a jumpTable containing the block jump-data or null if no such table exists.
+    * @throws IOException if a RandomAccessInput could not be created from slice.
+@@ -422,10 +422,10 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+   int gap;
+ 
+   /**
+-   * Returns an iterator that delegates to the IndexedDISI. Advancing this iterator will advance the
+-   * underlying IndexedDISI, and vice-versa.
++   * Returns an iterator that delegates to the JumpTableDISI. Advancing this iterator will advance the
++   * underlying JumpTableDISI, and vice-versa.
+    */
+-  public static KnnVectorValues.DocIndexIterator asDocIndexIterator(IndexedDISI disi) {
++  public static KnnVectorValues.DocIndexIterator asDocIndexIterator(JumpTableDISI disi) {
+     // can we replace with fromDISI?
+     return new KnnVectorValues.DocIndexIterator() {
+       @Override
+@@ -544,7 +544,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+       // are loaded on first in-block advance, if said advance is > X docIDs. The hope being that a
+       // small first
+       // advance means that subsequent advances will be small too.
+-      // Another alternative is to maintain an extra slice for DENSE rank, but IndexedDISI is
++      // Another alternative is to maintain an extra slice for DENSE rank, but JumpTableDISI is
+       // already slice-heavy.
+       if (denseRankPower != -1) {
+         slice.readBytes(denseRankTable, 0, denseRankTable.length);
+@@ -577,7 +577,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+   enum Method {
+     SPARSE {
+       @Override
+-      boolean advanceWithinBlock(IndexedDISI disi, int target) throws IOException {
++      boolean advanceWithinBlock(JumpTableDISI disi, int target) throws IOException {
+         final int targetInBlock = target & 0xFFFF;
+         // TODO: binary search
+         for (; disi.index < disi.nextBlockIndex; ) {
+@@ -594,7 +594,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+       }
+ 
+       @Override
+-      boolean advanceExactWithinBlock(IndexedDISI disi, int target) throws IOException {
++      boolean advanceExactWithinBlock(JumpTableDISI disi, int target) throws IOException {
+         final int targetInBlock = target & 0xFFFF;
+         // TODO: binary search
+         if (disi.nextExistDocInBlock > targetInBlock) {
+@@ -623,7 +623,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+       }
+ 
+       @Override
+-      boolean intoBitSetWithinBlock(IndexedDISI disi, int upTo, FixedBitSet bitSet, int offset)
++      boolean intoBitSetWithinBlock(JumpTableDISI disi, int upTo, FixedBitSet bitSet, int offset)
+           throws IOException {
+         bitSet.set(disi.doc - offset);
+         for (; disi.index < disi.nextBlockIndex; ) {
+@@ -642,13 +642,13 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+       }
+ 
+       @Override
+-      int docIDRunEnd(IndexedDISI disi) throws IOException {
++      int docIDRunEnd(JumpTableDISI disi) throws IOException {
+         return disi.doc + 1;
+       }
+     },
+     DENSE {
+       @Override
+-      boolean advanceWithinBlock(IndexedDISI disi, int target) throws IOException {
++      boolean advanceWithinBlock(JumpTableDISI disi, int target) throws IOException {
+         final int targetInBlock = target & 0xFFFF;
+         final int targetWordIndex = targetInBlock >>> 6;
+ 
+@@ -691,7 +691,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+       }
+ 
+       @Override
+-      boolean advanceExactWithinBlock(IndexedDISI disi, int target) throws IOException {
++      boolean advanceExactWithinBlock(JumpTableDISI disi, int target) throws IOException {
+         final int targetInBlock = target & 0xFFFF;
+         final int targetWordIndex = targetInBlock >>> 6;
+ 
+@@ -715,7 +715,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+       }
+ 
+       @Override
+-      boolean intoBitSetWithinBlock(IndexedDISI disi, int upTo, FixedBitSet bitSet, int offset)
++      boolean intoBitSetWithinBlock(JumpTableDISI disi, int upTo, FixedBitSet bitSet, int offset)
+           throws IOException {
+         if (disi.bitSet == null) {
+           disi.bitSet = new FixedBitSet(BLOCK_SIZE);
+@@ -754,7 +754,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+       }
+ 
+       @Override
+-      int docIDRunEnd(IndexedDISI disi) throws IOException {
++      int docIDRunEnd(JumpTableDISI disi) throws IOException {
+         if (disi.word == -1L) {
+           return (disi.doc | 0x3F) + 1;
+         }
+@@ -763,20 +763,20 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+     },
+     ALL {
+       @Override
+-      boolean advanceWithinBlock(IndexedDISI disi, int target) {
++      boolean advanceWithinBlock(JumpTableDISI disi, int target) {
+         disi.doc = target;
+         disi.index = target - disi.gap;
+         return true;
+       }
+ 
+       @Override
+-      boolean advanceExactWithinBlock(IndexedDISI disi, int target) {
++      boolean advanceExactWithinBlock(JumpTableDISI disi, int target) {
+         disi.index = target - disi.gap;
+         return true;
+       }
+ 
+       @Override
+-      boolean intoBitSetWithinBlock(IndexedDISI disi, int upTo, FixedBitSet bitSet, int offset) {
++      boolean intoBitSetWithinBlock(JumpTableDISI disi, int upTo, FixedBitSet bitSet, int offset) {
+         final int blockEnd = disi.block | 0xFFFF;
+         if (upTo <= blockEnd) {
+           bitSet.set(disi.doc - offset, upTo - offset);
+@@ -789,7 +789,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+       }
+ 
+       @Override
+-      int docIDRunEnd(IndexedDISI disi) throws IOException {
++      int docIDRunEnd(JumpTableDISI disi) throws IOException {
+         return (disi.doc | 0xFFFF) + 1;
+       }
+     };
+@@ -798,28 +798,28 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+      * Advance to the first doc from the block that is equal to or greater than {@code target}.
+      * Return true if there is such a doc and false otherwise.
+      */
+-    abstract boolean advanceWithinBlock(IndexedDISI disi, int target) throws IOException;
++    abstract boolean advanceWithinBlock(JumpTableDISI disi, int target) throws IOException;
+ 
+     /**
+      * Advance the iterator exactly to the position corresponding to the given {@code target} and
+      * return whether this document exists.
+      */
+-    abstract boolean advanceExactWithinBlock(IndexedDISI disi, int target) throws IOException;
++    abstract boolean advanceExactWithinBlock(JumpTableDISI disi, int target) throws IOException;
+ 
+     /**
+      * Similar to {@link DocIdSetIterator#intoBitSet}, load docs in this block into a bitset. This
+      * method returns true if there are remaining docs (gte upTo) in the block, otherwise false.
+-     * When false return, fp of {@link IndexedDISI#slice} is at {@link IndexedDISI#blockEnd} and
+-     * {@link IndexedDISI#index} is correct but other status vars are undefined. Caller should
++     * When false return, fp of {@link JumpTableDISI#slice} is at {@link JumpTableDISI#blockEnd} and
++     * {@link JumpTableDISI#index} is correct but other status vars are undefined. Caller should
+      * decode the header of next block by {@link #readBlockHeader()}.
+      *
+-     * <p>Caller need to make sure {@link IndexedDISI#doc} greater than or equals to {@link
+-     * IndexedDISI#block} and less than {@code upTo} when calling this.
++     * <p>Caller need to make sure {@link JumpTableDISI#doc} greater than or equals to {@link
++     * JumpTableDISI#block} and less than {@code upTo} when calling this.
+      */
+     abstract boolean intoBitSetWithinBlock(
+-        IndexedDISI disi, int upTo, FixedBitSet bitSet, int offset) throws IOException;
++        JumpTableDISI disi, int upTo, FixedBitSet bitSet, int offset) throws IOException;
+ 
+-    abstract int docIDRunEnd(IndexedDISI disi) throws IOException;
++    abstract int docIDRunEnd(JumpTableDISI disi) throws IOException;
+   }
+ 
+   /**
+@@ -832,7 +832,7 @@ public final class IndexedDISI extends AbstractDocIdSetIterator {
+    * @param targetInBlock lower 16 bits of the target
+    * @throws IOException if a DISI seek failed.
+    */
+-  private static void rankSkip(IndexedDISI disi, int targetInBlock) throws IOException {
++  private static void rankSkip(JumpTableDISI disi, int targetInBlock) throws IOException {
+     assert disi.denseRankPower >= 0 : disi.denseRankPower;
+     // Resolve the rank as close to targetInBlock as possible (maximum distance is 8 longs)
+     // Note: rankOrigoOffset is tracked on block open, so it is absolute (e.g. don't add origo)
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90DocValuesConsumer.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90DocValuesConsumer.java
+index 847cfc5..6cab761 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90DocValuesConsumer.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90DocValuesConsumer.java
+@@ -164,17 +164,17 @@ final class Lucene90DocValuesConsumer extends DocValuesConsumer {
+   }
+ 
+   /**
+-   * Writes a sparse field's {@link IndexedDISI} to the {@code .dvp} file and records its offset,
++   * Writes a sparse field's {@link JumpTableDISI} to the {@code .dvp} file and records its offset,
+    * length and shape in the metadata.
+    */
+   private void writeDISI(DocIdSetIterator values) throws IOException {
+     final long offset = disiData.getFilePointer();
+     meta.writeLong(offset); // docsWithFieldOffset (into .dvp)
+     final short jumpTableEntryCount =
+-        IndexedDISI.writeBitSet(values, disiData, IndexedDISI.DEFAULT_DENSE_RANK_POWER);
++        JumpTableDISI.writeBitSet(values, disiData, JumpTableDISI.DEFAULT_DENSE_RANK_POWER);
+     meta.writeLong(disiData.getFilePointer() - offset); // docsWithFieldLength (region in .dvp)
+     meta.writeShort(jumpTableEntryCount);
+-    meta.writeByte(IndexedDISI.DEFAULT_DENSE_RANK_POWER);
++    meta.writeByte(JumpTableDISI.DEFAULT_DENSE_RANK_POWER);
+   }
+ 
+   @Override
+@@ -473,7 +473,7 @@ final class Lucene90DocValuesConsumer extends DocValuesConsumer {
+       meta.writeLong(0L); // docsWithFieldLength
+       meta.writeShort((short) -1); // jumpTableEntryCount
+       meta.writeByte((byte) -1); // denseRankPower
+-    } else { // meta[disi.offset, disi.length]: IndexedDISI region in .dvp for documents with values
++    } else { // meta[disi.offset, disi.length]: JumpTableDISI region in .dvp for documents with values
+       values = valuesProducer.getSortedNumeric(field);
+       writeDISI(values);
+     }
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90DocValuesFormat.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90DocValuesFormat.java
+index 777e76d..ba2e5eb 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90DocValuesFormat.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90DocValuesFormat.java
+@@ -133,7 +133,7 @@ import org.apache.lucene.util.packed.DirectWriter;
+  *   <li><code>.dvd</code>: DocValues data
+  *   <li><code>.dvm</code>: DocValues metadata
+  *   <li><code>.dvs</code>: DocValues skip index (since version 1)
+- *   <li><code>.dvp</code>: DocValues presence, i.e. the {@link IndexedDISI} for sparse fields
++ *   <li><code>.dvp</code>: DocValues presence, i.e. the {@link JumpTableDISI} for sparse fields
+  *       (since version 3)
+  * </ol>
+  *
+@@ -198,7 +198,7 @@ public final class Lucene90DocValuesFormat extends DocValuesFormat {
+   static final int VERSION_START = 0;
+   static final int VERSION_SKIPPER_SEPARATE_FILE = 1;
+   static final int VERSION_SKIPPER_MAX_VALUE_COUNT = 2;
+-  // Moves the sparse-field IndexedDISI from .dvd into a dedicated .dvp file.
++  // Moves the sparse-field JumpTableDISI from .dvd into a dedicated .dvp file.
+   static final int VERSION_DISI_SEPARATE_FILE = 3;
+   static final int VERSION_CURRENT = VERSION_DISI_SEPARATE_FILE;
+ 
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90DocValuesProducer.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90DocValuesProducer.java
+index c9e4bc1..7440424 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90DocValuesProducer.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90DocValuesProducer.java
+@@ -68,8 +68,8 @@ final class Lucene90DocValuesProducer extends DocValuesProducer {
+   private final IntObjectHashMap<DocValuesSkipperEntry> skippers;
+   private final IndexInput data;
+   private final IndexInput skipIndexData;
+-  // Sparse-field presence (IndexedDISI) file. Null for pre-VERSION_DISI_SEPARATE_FILE segments,
+-  // which still keep the IndexedDISI in .dvd.
++  // Sparse-field presence (JumpTableDISI) file. Null for pre-VERSION_DISI_SEPARATE_FILE segments,
++  // which still keep the JumpTableDISI in .dvd.
+   private final IndexInput disiData;
+   private final int maxDoc;
+   private int version = -1;
+@@ -263,13 +263,13 @@ final class Lucene90DocValuesProducer extends DocValuesProducer {
+   }
+ 
+   /**
+-   * Builds a sparse field's {@link IndexedDISI}.
++   * Builds a sparse field's {@link JumpTableDISI}.
+    *
+    * <p>Since {@link Lucene90DocValuesFormat#VERSION_DISI_SEPARATE_FILE} the bytes live in the
+    * {@code .dvp} file; for older segments they are inline in {@code .dvd}. The offset, length and
+    * shape are read from the metadata in both cases.
+    */
+-  private IndexedDISI newIndexedDISI(
++  private JumpTableDISI newIndexedDISI(
+       long docsWithFieldOffset,
+       long docsWithFieldLength,
+       short jumpTableEntryCount,
+@@ -277,7 +277,7 @@ final class Lucene90DocValuesProducer extends DocValuesProducer {
+       long numValues)
+       throws IOException {
+     final IndexInput in = disiData != null ? disiData : data;
+-    return new IndexedDISI(
++    return new JumpTableDISI(
+         in,
+         docsWithFieldOffset,
+         docsWithFieldLength,
+@@ -840,9 +840,9 @@ final class Lucene90DocValuesProducer extends DocValuesProducer {
+ 
+   private abstract static class SparseNumericDocValues extends NumericDocValues {
+ 
+-    final IndexedDISI disi;
++    final JumpTableDISI disi;
+ 
+-    SparseNumericDocValues(IndexedDISI disi) {
++    SparseNumericDocValues(JumpTableDISI disi) {
+       this.disi = disi;
+     }
+ 
+@@ -1083,7 +1083,7 @@ final class Lucene90DocValuesProducer extends DocValuesProducer {
+       }
+     } else {
+       // sparse
+-      final IndexedDISI disi =
++      final JumpTableDISI disi =
+           newIndexedDISI(
+               entry.docsWithFieldOffset,
+               entry.docsWithFieldLength,
+@@ -1269,9 +1269,9 @@ final class Lucene90DocValuesProducer extends DocValuesProducer {
+ 
+   private abstract static class SparseBinaryDocValues extends BinaryDocValues {
+ 
+-    final IndexedDISI disi;
++    final JumpTableDISI disi;
+ 
+-    SparseBinaryDocValues(IndexedDISI disi) {
++    SparseBinaryDocValues(JumpTableDISI disi) {
+       this.disi = disi;
+     }
+ 
+@@ -1421,7 +1421,7 @@ final class Lucene90DocValuesProducer extends DocValuesProducer {
+       }
+     } else {
+       // sparse
+-      final IndexedDISI disi =
++      final JumpTableDISI disi =
+           newIndexedDISI(
+               entry.docsWithFieldOffset,
+               entry.docsWithFieldLength,
+@@ -1558,7 +1558,7 @@ final class Lucene90DocValuesProducer extends DocValuesProducer {
+           }
+         };
+       } else if (ordsEntry.docsWithFieldOffset >= 0) { // sparse but non-empty
+-        final IndexedDISI disi =
++        final JumpTableDISI disi =
+             newIndexedDISI(
+                 ordsEntry.docsWithFieldOffset,
+                 ordsEntry.docsWithFieldLength,
+@@ -2147,7 +2147,7 @@ final class Lucene90DocValuesProducer extends DocValuesProducer {
+       };
+     } else {
+       // sparse
+-      final IndexedDISI disi =
++      final JumpTableDISI disi =
+           newIndexedDISI(
+               entry.docsWithFieldOffset,
+               entry.docsWithFieldLength,
+@@ -2383,7 +2383,7 @@ final class Lucene90DocValuesProducer extends DocValuesProducer {
+           }
+         };
+       } else if (ordsEntry.docsWithFieldOffset >= 0) { // sparse but non-empty
+-        final IndexedDISI disi =
++        final JumpTableDISI disi =
+             newIndexedDISI(
+                 ordsEntry.docsWithFieldOffset,
+                 ordsEntry.docsWithFieldLength,
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90NormsConsumer.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90NormsConsumer.java
+index 5157cab..189b26c 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90NormsConsumer.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90NormsConsumer.java
+@@ -118,10 +118,10 @@ final class Lucene90NormsConsumer extends NormsConsumer {
+       meta.writeLong(offset); // docsWithFieldOffset
+       values = normsProducer.getNorms(field);
+       final short jumpTableEntryCount =
+-          IndexedDISI.writeBitSet(values, data, IndexedDISI.DEFAULT_DENSE_RANK_POWER);
++          JumpTableDISI.writeBitSet(values, data, JumpTableDISI.DEFAULT_DENSE_RANK_POWER);
+       meta.writeLong(data.getFilePointer() - offset); // docsWithFieldLength
+       meta.writeShort(jumpTableEntryCount);
+-      meta.writeByte(IndexedDISI.DEFAULT_DENSE_RANK_POWER);
++      meta.writeByte(JumpTableDISI.DEFAULT_DENSE_RANK_POWER);
+     }
+ 
+     meta.writeInt(numDocsWithValue);
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90NormsFormat.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90NormsFormat.java
+index b0d60c2..db5b35e 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90NormsFormat.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90NormsFormat.java
+@@ -71,7 +71,7 @@ import org.apache.lucene.store.DataOutput;
+  *       <p>Norms data (.nvd) --&gt; Header,&lt; Data &gt;<sup>NumFields</sup>,Footer
+  *       <ul>
+  *         <li>Header --&gt; {@link CodecUtil#writeIndexHeader IndexHeader}
+- *         <li>DocsWithFieldData --&gt; {@link IndexedDISI#writeBitSet Bit set of MaxDoc bits}
++ *         <li>DocsWithFieldData --&gt; {@link JumpTableDISI#writeBitSet Bit set of MaxDoc bits}
+  *         <li>NormsData --&gt; {@link DataOutput#writeByte(byte) byte}<sup>NumDocsWithField *
+  *             BytesPerValue</sup>
+  *         <li>Footer --&gt; {@link CodecUtil#writeFooter CodecFooter}
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90NormsProducer.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90NormsProducer.java
+index eee20a7..2ca4c58 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90NormsProducer.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene90/Lucene90NormsProducer.java
+@@ -180,9 +180,9 @@ final class Lucene90NormsProducer extends NormsProducer implements Cloneable {
+ 
+   abstract static class SparseNormsIterator extends NumericDocValues {
+ 
+-    final IndexedDISI disi;
++    final JumpTableDISI disi;
+ 
+-    SparseNormsIterator(IndexedDISI disi) {
++    SparseNormsIterator(JumpTableDISI disi) {
+       this.disi = disi;
+     }
+ 
+@@ -266,7 +266,7 @@ final class Lucene90NormsProducer extends NormsProducer implements Cloneable {
+ 
+   private IndexInput getDisiInput(FieldInfo field, NormsEntry entry) throws IOException {
+     if (merging == false) {
+-      return IndexedDISI.createBlockSlice(
++      return JumpTableDISI.createBlockSlice(
+           data,
+           "docs",
+           entry.docsWithFieldOffset,
+@@ -277,7 +277,7 @@ final class Lucene90NormsProducer extends NormsProducer implements Cloneable {
+     IndexInput in = disiInputs.get(field.number);
+     if (in == null) {
+       in =
+-          IndexedDISI.createBlockSlice(
++          JumpTableDISI.createBlockSlice(
+               data,
+               "docs",
+               entry.docsWithFieldOffset,
+@@ -305,13 +305,13 @@ final class Lucene90NormsProducer extends NormsProducer implements Cloneable {
+ 
+       @Override
+       public byte readByte() throws IOException {
+-        throw new UnsupportedOperationException("Unused by IndexedDISI");
++        throw new UnsupportedOperationException("Unused by JumpTableDISI");
+       }
+ 
+       @Override
+       public IndexInput slice(String sliceDescription, long offset, long length)
+           throws IOException {
+-        throw new UnsupportedOperationException("Unused by IndexedDISI");
++        throw new UnsupportedOperationException("Unused by JumpTableDISI");
+       }
+ 
+       @Override
+@@ -345,7 +345,7 @@ final class Lucene90NormsProducer extends NormsProducer implements Cloneable {
+ 
+       @Override
+       public void close() throws IOException {
+-        throw new UnsupportedOperationException("Unused by IndexedDISI");
++        throw new UnsupportedOperationException("Unused by JumpTableDISI");
+       }
+ 
+       @Override
+@@ -362,7 +362,7 @@ final class Lucene90NormsProducer extends NormsProducer implements Cloneable {
+     }
+     if (jumpTable == null) {
+       jumpTable =
+-          IndexedDISI.createJumpTable(
++          JumpTableDISI.createJumpTable(
+               data,
+               entry.docsWithFieldOffset,
+               entry.docsWithFieldLength,
+@@ -436,8 +436,8 @@ final class Lucene90NormsProducer extends NormsProducer implements Cloneable {
+       // sparse
+       final IndexInput disiInput = getDisiInput(field, entry);
+       final RandomAccessInput disiJumpTable = getDisiJumpTable(field, entry);
+-      final IndexedDISI disi =
+-          new IndexedDISI(
++      final JumpTableDISI disi =
++          new JumpTableDISI(
+               disiInput,
+               disiJumpTable,
+               entry.jumpTableEntryCount,
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene95/OffHeapByteVectorValues.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene95/OffHeapByteVectorValues.java
+index 6bc9963..5705c0f 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene95/OffHeapByteVectorValues.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene95/OffHeapByteVectorValues.java
+@@ -20,7 +20,7 @@ package org.apache.lucene.codecs.lucene95;
+ import java.io.IOException;
+ import java.nio.ByteBuffer;
+ import org.apache.lucene.codecs.hnsw.FlatVectorsScorer;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.ByteVectorValues;
+ import org.apache.lucene.index.VectorEncoding;
+ import org.apache.lucene.index.VectorSimilarityFunction;
+@@ -200,7 +200,7 @@ public abstract class OffHeapByteVectorValues extends ByteVectorValues implement
+ 
+   private static class SparseOffHeapVectorValues extends OffHeapByteVectorValues {
+     private final DirectMonotonicReader ordToDoc;
+-    private final IndexedDISI disi;
++    private final JumpTableDISI disi;
+     // dataIn was used to init a new IndexedDIS for #randomAccess()
+     private final IndexInput dataIn;
+     private final OrdToDocDISIReaderConfiguration configuration;
+@@ -228,7 +228,7 @@ public abstract class OffHeapByteVectorValues extends ByteVectorValues implement
+       this.dataIn = dataIn;
+       this.ordToDoc = DirectMonotonicReader.getInstance(configuration.meta, addressesData);
+       this.disi =
+-          new IndexedDISI(
++          new JumpTableDISI(
+               dataIn,
+               configuration.docsWithFieldOffset,
+               configuration.docsWithFieldLength,
+@@ -256,7 +256,7 @@ public abstract class OffHeapByteVectorValues extends ByteVectorValues implement
+ 
+     @Override
+     public DocIndexIterator iterator() {
+-      return IndexedDISI.asDocIndexIterator(disi);
++      return JumpTableDISI.asDocIndexIterator(disi);
+     }
+ 
+     @Override
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene95/OffHeapFloatVectorValues.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene95/OffHeapFloatVectorValues.java
+index 7219f53..42bd774 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene95/OffHeapFloatVectorValues.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene95/OffHeapFloatVectorValues.java
+@@ -19,7 +19,7 @@ package org.apache.lucene.codecs.lucene95;
+ 
+ import java.io.IOException;
+ import org.apache.lucene.codecs.hnsw.FlatVectorsScorer;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.FloatVectorValues;
+ import org.apache.lucene.index.VectorEncoding;
+ import org.apache.lucene.index.VectorSimilarityFunction;
+@@ -202,7 +202,7 @@ public abstract class OffHeapFloatVectorValues extends FloatVectorValues impleme
+ 
+   private static class SparseOffHeapVectorValues extends OffHeapFloatVectorValues {
+     private final DirectMonotonicReader ordToDoc;
+-    private final IndexedDISI disi;
++    private final JumpTableDISI disi;
+     // dataIn was used to init a new IndexedDIS for #randomAccess()
+     private final IndexInput dataIn;
+     private final OrdToDocDISIReaderConfiguration configuration;
+@@ -224,7 +224,7 @@ public abstract class OffHeapFloatVectorValues extends FloatVectorValues impleme
+       this.dataIn = dataIn;
+       this.ordToDoc = DirectMonotonicReader.getInstance(configuration.meta, addressesData);
+       this.disi =
+-          new IndexedDISI(
++          new JumpTableDISI(
+               dataIn,
+               configuration.docsWithFieldOffset,
+               configuration.docsWithFieldLength,
+@@ -270,7 +270,7 @@ public abstract class OffHeapFloatVectorValues extends FloatVectorValues impleme
+ 
+     @Override
+     public DocIndexIterator iterator() {
+-      return IndexedDISI.asDocIndexIterator(disi);
++      return JumpTableDISI.asDocIndexIterator(disi);
+     }
+ 
+     @Override
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene95/OrdToDocDISIReaderConfiguration.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene95/OrdToDocDISIReaderConfiguration.java
+index e4c921d..f83b65c 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene95/OrdToDocDISIReaderConfiguration.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene95/OrdToDocDISIReaderConfiguration.java
+@@ -18,7 +18,7 @@
+ package org.apache.lucene.codecs.lucene95;
+ 
+ import java.io.IOException;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.DocsWithFieldSet;
+ import org.apache.lucene.search.DocIdSetIterator;
+ import org.apache.lucene.store.IndexInput;
+@@ -28,7 +28,7 @@ import org.apache.lucene.util.packed.DirectMonotonicReader;
+ import org.apache.lucene.util.packed.DirectMonotonicWriter;
+ 
+ /**
+- * Configuration for {@link DirectMonotonicReader} and {@link IndexedDISI} for reading sparse
++ * Configuration for {@link DirectMonotonicReader} and {@link JumpTableDISI} for reading sparse
+  * vectors. The format in the static writing methods adheres to the Lucene95HnswVectorsFormat
+  */
+ public class OrdToDocDISIReaderConfiguration {
+@@ -43,7 +43,7 @@ public class OrdToDocDISIReaderConfiguration {
+    *   <li><b>[int8]</b> if equals to -2, empty - no vector values. If equals to -1, dense – all
+    *       documents have values for a field. If equals to 0, sparse – some documents missing
+    *       values.
+-   *   <li>DocIds were encoded by {@link IndexedDISI#writeBitSet(DocIdSetIterator, IndexOutput,
++   *   <li>DocIds were encoded by {@link JumpTableDISI#writeBitSet(DocIdSetIterator, IndexOutput,
+    *       byte)}
+    *   <li>OrdToDoc was encoded by {@link org.apache.lucene.util.packed.DirectMonotonicWriter}, note
+    *       that only in sparse case
+@@ -52,7 +52,7 @@ public class OrdToDocDISIReaderConfiguration {
+    * <p>Within the vectorData the format is as follows:
+    *
+    * <ul>
+-   *   <li>DocIds encoded by {@link IndexedDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)},
++   *   <li>DocIds encoded by {@link JumpTableDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)},
+    *       note that only in sparse case
+    *   <li>OrdToDoc was encoded by {@link org.apache.lucene.util.packed.DirectMonotonicWriter}, note
+    *       that only in sparse case
+@@ -87,11 +87,11 @@ public class OrdToDocDISIReaderConfiguration {
+       long offset = vectorData.getFilePointer();
+       outputMeta.writeLong(offset); // docsWithFieldOffset
+       final short jumpTableEntryCount =
+-          IndexedDISI.writeBitSet(
+-              docsWithField.iterator(), vectorData, IndexedDISI.DEFAULT_DENSE_RANK_POWER);
++          JumpTableDISI.writeBitSet(
++              docsWithField.iterator(), vectorData, JumpTableDISI.DEFAULT_DENSE_RANK_POWER);
+       outputMeta.writeLong(vectorData.getFilePointer() - offset); // docsWithFieldLength
+       outputMeta.writeShort(jumpTableEntryCount);
+-      outputMeta.writeByte(IndexedDISI.DEFAULT_DENSE_RANK_POWER);
++      outputMeta.writeByte(JumpTableDISI.DEFAULT_DENSE_RANK_POWER);
+ 
+       // write ordToDoc mapping
+       long start = vectorData.getFilePointer();
+@@ -114,7 +114,7 @@ public class OrdToDocDISIReaderConfiguration {
+ 
+   /**
+    * Reads in the necessary fields stored in the outputMeta to configure {@link
+-   * DirectMonotonicReader} and {@link IndexedDISI}.
++   * DirectMonotonicReader} and {@link JumpTableDISI}.
+    *
+    * @param inputMeta the inputMeta, previously written to via {@link #writeStoredMeta(int,
+    *     IndexOutput, IndexOutput, int, int, DocsWithFieldSet)}
+@@ -185,12 +185,12 @@ public class OrdToDocDISIReaderConfiguration {
+ 
+   /**
+    * @param dataIn the dataIn
+-   * @return the IndexedDISI for sparse values
++   * @return the JumpTableDISI for sparse values
+    * @throws IOException thrown when reading data fails
+    */
+-  public IndexedDISI getIndexedDISI(IndexInput dataIn) throws IOException {
++  public JumpTableDISI getIndexedDISI(IndexInput dataIn) throws IOException {
+     assert docsWithFieldOffset > -1;
+-    return new IndexedDISI(
++    return new JumpTableDISI(
+         dataIn,
+         docsWithFieldOffset,
+         docsWithFieldLength,
+diff --git a/lucene/core/src/java/org/apache/lucene/codecs/lucene99/Lucene99FlatVectorsFormat.java b/lucene/core/src/java/org/apache/lucene/codecs/lucene99/Lucene99FlatVectorsFormat.java
+index 46be888..38aacc6 100644
+--- a/lucene/core/src/java/org/apache/lucene/codecs/lucene99/Lucene99FlatVectorsFormat.java
++++ b/lucene/core/src/java/org/apache/lucene/codecs/lucene99/Lucene99FlatVectorsFormat.java
+@@ -22,7 +22,7 @@ import org.apache.lucene.codecs.hnsw.FlatVectorsFormat;
+ import org.apache.lucene.codecs.hnsw.FlatVectorsReader;
+ import org.apache.lucene.codecs.hnsw.FlatVectorsScorer;
+ import org.apache.lucene.codecs.hnsw.FlatVectorsWriter;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.SegmentReadState;
+ import org.apache.lucene.index.SegmentWriteState;
+ import org.apache.lucene.search.DocIdSetIterator;
+@@ -39,7 +39,7 @@ import org.apache.lucene.store.IndexOutput;
+  *   <li>Vector data ordered by field, document ordinal, and vector dimension. When the
+  *       vectorEncoding is BYTE, each sample is stored as a single byte. When it is FLOAT32, each
+  *       sample is stored as an IEEE float in little-endian byte order.
+- *   <li>DocIds encoded by {@link IndexedDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)},
++ *   <li>DocIds encoded by {@link JumpTableDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)},
+  *       note that only in sparse case
+  *   <li>OrdToDoc was encoded by {@link org.apache.lucene.util.packed.DirectMonotonicWriter}, note
+  *       that only in sparse case
+@@ -58,7 +58,7 @@ import org.apache.lucene.store.IndexOutput;
+  *   <li><b>[int]</b> the number of documents having values for this field
+  *   <li><b>[int8]</b> if equals to -2, empty - no vector values. If equals to -1, dense – all
+  *       documents have values for a field. If equals to 0, sparse – some documents missing values.
+- *   <li>DocIds were encoded by {@link IndexedDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)}
++ *   <li>DocIds were encoded by {@link JumpTableDISI#writeBitSet(DocIdSetIterator, IndexOutput, byte)}
+  *   <li>OrdToDoc was encoded by {@link org.apache.lucene.util.packed.DirectMonotonicWriter}, note
+  *       that only in sparse case
+  * </ul>
+diff --git a/lucene/core/src/java/org/apache/lucene/search/AbstractKnnVectorQuery.java b/lucene/core/src/java/org/apache/lucene/search/AbstractKnnVectorQuery.java
+index 5113ff0..6ce47a3 100644
+--- a/lucene/core/src/java/org/apache/lucene/search/AbstractKnnVectorQuery.java
++++ b/lucene/core/src/java/org/apache/lucene/search/AbstractKnnVectorQuery.java
+@@ -25,7 +25,7 @@ import java.util.Map;
+ import java.util.Objects;
+ import java.util.concurrent.Callable;
+ import org.apache.lucene.codecs.KnnVectorsReader;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.FieldInfo;
+ import org.apache.lucene.index.IndexReader;
+ import org.apache.lucene.index.KnnVectorValues;
+@@ -452,8 +452,8 @@ abstract class AbstractKnnVectorQuery extends Query {
+       }
+       DocIdSetIterator vectorIterator = scorer.iterator();
+       // Handle sparse
+-      if (vectorIterator instanceof IndexedDISI indexedDISI) {
+-        vectorIterator = IndexedDISI.asDocIndexIterator(indexedDISI);
++      if (vectorIterator instanceof JumpTableDISI indexedDISI) {
++        vectorIterator = JumpTableDISI.asDocIndexIterator(indexedDISI);
+       }
+       // Most underlying iterators are indexed, so we can map the seed docs to the vector docs
+       if (vectorIterator instanceof KnnVectorValues.DocIndexIterator indexIterator) {
+diff --git a/lucene/core/src/java/org/apache/lucene/search/SeededKnnVectorQuery.java b/lucene/core/src/java/org/apache/lucene/search/SeededKnnVectorQuery.java
+index 8ee73c3..9e78ddc 100644
+--- a/lucene/core/src/java/org/apache/lucene/search/SeededKnnVectorQuery.java
++++ b/lucene/core/src/java/org/apache/lucene/search/SeededKnnVectorQuery.java
+@@ -19,7 +19,7 @@ package org.apache.lucene.search;
+ import java.io.IOException;
+ import java.util.Arrays;
+ import java.util.Objects;
+-import org.apache.lucene.codecs.lucene90.IndexedDISI;
++import org.apache.lucene.codecs.lucene90.JumpTableDISI;
+ import org.apache.lucene.index.FieldInfo;
+ import org.apache.lucene.index.KnnVectorValues;
+ import org.apache.lucene.index.LeafReader;
+@@ -342,8 +342,8 @@ public class SeededKnnVectorQuery extends AbstractKnnVectorQuery {
+       }
+       DocIdSetIterator vectorIterator = scorer.iterator();
+       // Handle sparse
+-      if (vectorIterator instanceof IndexedDISI indexedDISI) {
+-        vectorIterator = IndexedDISI.asDocIndexIterator(indexedDISI);
++      if (vectorIterator instanceof JumpTableDISI indexedDISI) {
++        vectorIterator = JumpTableDISI.asDocIndexIterator(indexedDISI);
+       }
+       // Most underlying iterators are indexed, so we can map the seed docs to the vector docs
+       if (vectorIterator instanceof KnnVectorValues.DocIndexIterator indexIterator) {
+diff --git a/lucene/core/src/test/org/apache/lucene/codecs/lucene90/TestIndexedDISI.java b/lucene/core/src/test/org/apache/lucene/codecs/lucene90/TestIndexedDISI.java
+index 974abff..b2b4a88 100644
+--- a/lucene/core/src/test/org/apache/lucene/codecs/lucene90/TestIndexedDISI.java
++++ b/lucene/core/src/test/org/apache/lucene/codecs/lucene90/TestIndexedDISI.java
+@@ -101,7 +101,7 @@ public class TestIndexedDISI extends LuceneTestCase {
+     int jumpTableentryCount;
+     try (IndexOutput out = dir.createOutput("bar", IOContext.DEFAULT)) {
+       jumpTableentryCount =
+-          IndexedDISI.writeBitSet(new BitSetIterator(set, cardinality), out, denseRankPower);
++          JumpTableDISI.writeBitSet(new BitSetIterator(set, cardinality), out, denseRankPower);
+     }
+ 
+     try (IndexInput in = dir.openInput("bar", IOContext.DEFAULT)) {
+@@ -113,8 +113,8 @@ public class TestIndexedDISI extends LuceneTestCase {
+         index++;
+       }
+ 
+-      IndexedDISI disi =
+-          new IndexedDISI(in, 0L, in.length(), jumpTableentryCount, denseRankPower, cardinality);
++      JumpTableDISI disi =
++          new JumpTableDISI(in, 0L, in.length(), jumpTableentryCount, denseRankPower, cardinality);
+       // Advance 1 docID beyond end
+       assertFalse(
+           "There should be no set bit beyond the valid docID range",
+@@ -138,7 +138,7 @@ public class TestIndexedDISI extends LuceneTestCase {
+     }
+   }
+ 
+-  // When doing merges in Lucene80NormsProducer, IndexedDISI are created from slices where the
++  // When doing merges in Lucene80NormsProducer, JumpTableDISI are created from slices where the
+   // offset is not 0
+   public void testPositionNotZero() throws IOException {
+     final int BLOCKS = 10;
+@@ -151,18 +151,18 @@ public class TestIndexedDISI extends LuceneTestCase {
+       int jumpTableEntryCount;
+       try (IndexOutput out = dir.createOutput("foo", IOContext.DEFAULT)) {
+         jumpTableEntryCount =
+-            IndexedDISI.writeBitSet(new BitSetIterator(set, cardinality), out, denseRankPower);
++            JumpTableDISI.writeBitSet(new BitSetIterator(set, cardinality), out, denseRankPower);
+       }
+       try (IndexInput fullInput = dir.openInput("foo", IOContext.DEFAULT)) {
+         IndexInput blockData =
+-            IndexedDISI.createBlockSlice(
++            JumpTableDISI.createBlockSlice(
+                 fullInput, "blocks", 0, fullInput.length(), jumpTableEntryCount);
+         blockData.seek(random().nextInt((int) blockData.length()));
+ 
+         RandomAccessInput jumpTable =
+-            IndexedDISI.createJumpTable(fullInput, 0, fullInput.length(), jumpTableEntryCount);
+-        IndexedDISI disi =
+-            new IndexedDISI(blockData, jumpTable, jumpTableEntryCount, denseRankPower, cardinality);
++            JumpTableDISI.createJumpTable(fullInput, 0, fullInput.length(), jumpTableEntryCount);
++        JumpTableDISI disi =
++            new JumpTableDISI(blockData, jumpTable, jumpTableEntryCount, denseRankPower, cardinality);
+         // This failed at some point during LUCENE-8585 development as it did not reset the slice
+         // position
+         disi.advanceExact(BLOCKS * 65536 - 1);
+@@ -216,21 +216,21 @@ public class TestIndexedDISI extends LuceneTestCase {
+     int jumpTableentryCount;
+     try (IndexOutput out = dir.createOutput("foo", IOContext.DEFAULT)) {
+       jumpTableentryCount =
+-          IndexedDISI.writeBitSet(new BitSetIterator(set, cardinality), out, denseRankPower);
++          JumpTableDISI.writeBitSet(new BitSetIterator(set, cardinality), out, denseRankPower);
+       length = out.getFilePointer();
+     }
+ 
+     try (IndexInput in = dir.openInput("foo", IOContext.DEFAULT)) {
+       for (int i = 0; i < set.length(); i++) {
+-        IndexedDISI disi =
+-            new IndexedDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
++        JumpTableDISI disi =
++            new JumpTableDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
+         assertEquals(
+             "The bit at " + i + " should be correct with advanceExact",
+             set.get(i),
+             disi.advanceExact(i));
+ 
+-        IndexedDISI disi2 =
+-            new IndexedDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
++        JumpTableDISI disi2 =
++            new JumpTableDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
+         disi2.advance(i);
+         // Proper sanity check with jump tables as an error could make them seek backwards
+         assertTrue(
+@@ -310,42 +310,42 @@ public class TestIndexedDISI extends LuceneTestCase {
+           rarely() ? -1 : (byte) (random().nextInt(7) + 7); // sane + chance of disable
+ 
+       // we set MAX_ARRAY_LENGTH bits so the encoding will be sparse
+-      set.set(start, start + IndexedDISI.MAX_ARRAY_LENGTH);
++      set.set(start, start + JumpTableDISI.MAX_ARRAY_LENGTH);
+       long length;
+       int jumpTableEntryCount;
+       try (IndexOutput out = dir.createOutput("sparse", IOContext.DEFAULT)) {
+         jumpTableEntryCount =
+-            IndexedDISI.writeBitSet(
+-                new BitSetIterator(set, IndexedDISI.MAX_ARRAY_LENGTH), out, denseRankPower);
++            JumpTableDISI.writeBitSet(
++                new BitSetIterator(set, JumpTableDISI.MAX_ARRAY_LENGTH), out, denseRankPower);
+         length = out.getFilePointer();
+       }
+       try (IndexInput in = dir.openInput("sparse", IOContext.DEFAULT)) {
+-        IndexedDISI disi =
+-            new IndexedDISI(
+-                in, 0L, length, jumpTableEntryCount, denseRankPower, IndexedDISI.MAX_ARRAY_LENGTH);
++        JumpTableDISI disi =
++            new JumpTableDISI(
++                in, 0L, length, jumpTableEntryCount, denseRankPower, JumpTableDISI.MAX_ARRAY_LENGTH);
+         assertEquals(start, disi.nextDoc());
+-        assertEquals(IndexedDISI.Method.SPARSE, disi.method);
++        assertEquals(JumpTableDISI.Method.SPARSE, disi.method);
+       }
+       doTest(set, dir);
+ 
+       // now we set one more bit so the encoding will be dense
+-      set.set(start + IndexedDISI.MAX_ARRAY_LENGTH + random().nextInt(100));
++      set.set(start + JumpTableDISI.MAX_ARRAY_LENGTH + random().nextInt(100));
+       try (IndexOutput out = dir.createOutput("bar", IOContext.DEFAULT)) {
+-        IndexedDISI.writeBitSet(
+-            new BitSetIterator(set, IndexedDISI.MAX_ARRAY_LENGTH + 1), out, denseRankPower);
++        JumpTableDISI.writeBitSet(
++            new BitSetIterator(set, JumpTableDISI.MAX_ARRAY_LENGTH + 1), out, denseRankPower);
+         length = out.getFilePointer();
+       }
+       try (IndexInput in = dir.openInput("bar", IOContext.DEFAULT)) {
+-        IndexedDISI disi =
+-            new IndexedDISI(
++        JumpTableDISI disi =
++            new JumpTableDISI(
+                 in,
+                 0L,
+                 length,
+                 jumpTableEntryCount,
+                 denseRankPower,
+-                IndexedDISI.MAX_ARRAY_LENGTH + 1);
++                JumpTableDISI.MAX_ARRAY_LENGTH + 1);
+         assertEquals(start, disi.nextDoc());
+-        assertEquals(IndexedDISI.Method.DENSE, disi.method);
++        assertEquals(JumpTableDISI.Method.DENSE, disi.method);
+       }
+       doTest(set, dir);
+     }
+@@ -391,7 +391,7 @@ public class TestIndexedDISI extends LuceneTestCase {
+   public void testDenseBitSizeLessThanBlockSize() throws IOException {
+     final byte denseRankPower = (byte) (random().nextInt(7) + 7);
+     try (Directory dir = newDirectory()) {
+-      // initialize a maxDoc that is less than IndexedDISI.BLOCK_SIZE
++      // initialize a maxDoc that is less than JumpTableDISI.BLOCK_SIZE
+       int maxDoc = random().nextInt(4096 * 2, 65536);
+       FixedBitSet set = new FixedBitSet(maxDoc);
+       for (int i = 0; i < maxDoc; i += 2) { // Set every other to ensure dense
+@@ -401,7 +401,7 @@ public class TestIndexedDISI extends LuceneTestCase {
+       long length;
+       try (IndexOutput out = dir.createOutput("foo", IOContext.DEFAULT)) {
+         jumpTableEntryCount =
+-            IndexedDISI.writeBitSet(
++            JumpTableDISI.writeBitSet(
+                 new BitSetIterator(set, set.cardinality()), out, denseRankPower);
+         length = out.getFilePointer();
+         assertTrue(
+@@ -409,8 +409,8 @@ public class TestIndexedDISI extends LuceneTestCase {
+             0 == jumpTableEntryCount);
+       }
+       try (IndexInput in = dir.openInput("foo", IOContext.DEFAULT)) {
+-        IndexedDISI disi =
+-            new IndexedDISI(in, 0L, length, jumpTableEntryCount, denseRankPower, set.cardinality());
++        JumpTableDISI disi =
++            new JumpTableDISI(in, 0L, length, jumpTableEntryCount, denseRankPower, set.cardinality());
+         FixedBitSet disiSet = new FixedBitSet(maxDoc);
+         // This would throw IOOB if bitset size is not handled correctly as per #14882
+         disiSet.or(disi);
+@@ -452,12 +452,12 @@ public class TestIndexedDISI extends LuceneTestCase {
+       int jumpTableEntryCount = -1;
+       try (IndexOutput out = dir.createOutput("foo", IOContext.DEFAULT)) {
+         jumpTableEntryCount =
+-            IndexedDISI.writeBitSet(
++            JumpTableDISI.writeBitSet(
+                 new BitSetIterator(set, set.cardinality()), out, denseRankPowerWrite);
+         length = out.getFilePointer();
+       }
+       try (IndexInput in = dir.openInput("foo", IOContext.DEFAULT)) {
+-        new IndexedDISI(in, 0L, length, jumpTableEntryCount, denseRankPowerRead, set.cardinality());
++        new JumpTableDISI(in, 0L, length, jumpTableEntryCount, denseRankPowerRead, set.cardinality());
+       }
+       // This tests the legality of the denseRankPower only, so we don't do anything with the disi
+     }
+@@ -477,14 +477,14 @@ public class TestIndexedDISI extends LuceneTestCase {
+       int jumpTableentryCount;
+       try (IndexOutput out = dir.createOutput("foo", IOContext.DEFAULT)) {
+         jumpTableentryCount =
+-            IndexedDISI.writeBitSet(new BitSetIterator(set, cardinality), out, denseRankPower);
++            JumpTableDISI.writeBitSet(new BitSetIterator(set, cardinality), out, denseRankPower);
+         length = out.getFilePointer();
+       }
+ 
+       int step = 16000;
+       try (IndexInput in = dir.openInput("foo", IOContext.DEFAULT)) {
+-        IndexedDISI disi =
+-            new IndexedDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
++        JumpTableDISI disi =
++            new JumpTableDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
+         BitSetIterator disi2 = new BitSetIterator(set, cardinality);
+         assertAdvanceEquality(disi, disi2, step);
+       }
+@@ -526,21 +526,21 @@ public class TestIndexedDISI extends LuceneTestCase {
+     int jumpTableentryCount;
+     try (IndexOutput out = dir.createOutput("foo", IOContext.DEFAULT)) {
+       jumpTableentryCount =
+-          IndexedDISI.writeBitSet(new BitSetIterator(set, cardinality), out, denseRankPower);
++          JumpTableDISI.writeBitSet(new BitSetIterator(set, cardinality), out, denseRankPower);
+       length = out.getFilePointer();
+     }
+ 
+     try (IndexInput in = dir.openInput("foo", IOContext.DEFAULT)) {
+-      IndexedDISI disi =
+-          new IndexedDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
++      JumpTableDISI disi =
++          new JumpTableDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
+       BitSetIterator disi2 = new BitSetIterator(set, cardinality);
+       assertSingleStepEquality(disi, disi2);
+     }
+ 
+     for (int step : new int[] {1, 10, 100, 1000, 10000, 100000}) {
+       try (IndexInput in = dir.openInput("foo", IOContext.DEFAULT)) {
+-        IndexedDISI disi =
+-            new IndexedDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
++        JumpTableDISI disi =
++            new JumpTableDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
+         BitSetIterator disi2 = new BitSetIterator(set, cardinality);
+         assertAdvanceEquality(disi, disi2, step);
+       }
+@@ -548,8 +548,8 @@ public class TestIndexedDISI extends LuceneTestCase {
+ 
+     for (int step : new int[] {10, 100, 1000, 10000, 100000}) {
+       try (IndexInput in = dir.openInput("foo", IOContext.DEFAULT)) {
+-        IndexedDISI disi =
+-            new IndexedDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
++        JumpTableDISI disi =
++            new JumpTableDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
+         BitSetIterator disi2 = new BitSetIterator(set, cardinality);
+         int disi2length = set.length();
+         assertAdvanceExactRandomized(disi, disi2, disi2length, step);
+@@ -558,8 +558,8 @@ public class TestIndexedDISI extends LuceneTestCase {
+ 
+     for (int step : new int[] {100, 1000, 10000, 100000}) {
+       try (IndexInput in = dir.openInput("foo", IOContext.DEFAULT)) {
+-        IndexedDISI disi =
+-            new IndexedDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
++        JumpTableDISI disi =
++            new JumpTableDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
+         BitSetIterator disi2 = new BitSetIterator(set, cardinality);
+         int disi2length = set.length();
+         assertIntoBitsetRandomized(disi, disi2, disi2length, step);
+@@ -568,8 +568,8 @@ public class TestIndexedDISI extends LuceneTestCase {
+ 
+     for (int step : new int[] {100, 1000, 10000, 100000}) {
+       try (IndexInput in = dir.openInput("foo", IOContext.DEFAULT)) {
+-        IndexedDISI disi =
+-            new IndexedDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
++        JumpTableDISI disi =
++            new JumpTableDISI(in, 0L, length, jumpTableentryCount, denseRankPower, cardinality);
+         BitSetIterator disi2 = new BitSetIterator(set, cardinality);
+         int disi2length = set.length();
+         assertDocIDRunEndRandomized(disi, disi2, disi2length, step);
+@@ -580,7 +580,7 @@ public class TestIndexedDISI extends LuceneTestCase {
+   }
+ 
+   private void assertAdvanceExactRandomized(
+-      IndexedDISI disi, BitSetIterator disi2, int disi2length, int step) throws IOException {
++      JumpTableDISI disi, BitSetIterator disi2, int disi2length, int step) throws IOException {
+     int index = -1;
+     Random random = random();
+     for (int target = 0; target < disi2length; ) {
+@@ -606,7 +606,7 @@ public class TestIndexedDISI extends LuceneTestCase {
+   }
+ 
+   private void assertIntoBitsetRandomized(
+-      IndexedDISI disi, BitSetIterator disi2, int disi2length, int step) throws IOException {
++      JumpTableDISI disi, BitSetIterator disi2, int disi2length, int step) throws IOException {
+     int index = -1;
+     FixedBitSet set1 = new FixedBitSet(step);
+     FixedBitSet set2 = new FixedBitSet(step);
+@@ -655,7 +655,7 @@ public class TestIndexedDISI extends LuceneTestCase {
+   }
+ 
+   private void assertDocIDRunEndRandomized(
+-      IndexedDISI disi, BitSetIterator disi2, int disi2length, int step) throws IOException {
++      JumpTableDISI disi, BitSetIterator disi2, int disi2length, int step) throws IOException {
+     for (int target = 0; target < disi2length; ) {
+       target += TestUtil.nextInt(random(), 0, step);
+       if (disi.docID() < target) {
+@@ -672,7 +672,7 @@ public class TestIndexedDISI extends LuceneTestCase {
+     }
+   }
+ 
+-  private void assertSingleStepEquality(IndexedDISI disi, BitSetIterator disi2) throws IOException {
++  private void assertSingleStepEquality(JumpTableDISI disi, BitSetIterator disi2) throws IOException {
+     int i = 0;
+     for (int doc = disi2.nextDoc(); doc != DocIdSetIterator.NO_MORE_DOCS; doc = disi2.nextDoc()) {
+       assertEquals(doc, disi.nextDoc());
+@@ -681,7 +681,7 @@ public class TestIndexedDISI extends LuceneTestCase {
+     assertEquals(DocIdSetIterator.NO_MORE_DOCS, disi.nextDoc());
+   }
+ 
+-  private void assertAdvanceEquality(IndexedDISI disi, BitSetIterator disi2, int step)
++  private void assertAdvanceEquality(JumpTableDISI disi, BitSetIterator disi2, int step)
+       throws IOException {
+     int index = -1;
+     while (true) {
+diff --git a/lucene/core/src/test/org/apache/lucene/codecs/lucene90/TestLucene90DocValuesFormat.java b/lucene/core/src/test/org/apache/lucene/codecs/lucene90/TestLucene90DocValuesFormat.java
+index b151d8c..ca606ce 100644
+--- a/lucene/core/src/test/org/apache/lucene/codecs/lucene90/TestLucene90DocValuesFormat.java
++++ b/lucene/core/src/test/org/apache/lucene/codecs/lucene90/TestLucene90DocValuesFormat.java
+@@ -436,10 +436,10 @@ public class TestLucene90DocValuesFormat extends BaseCompressingDocValuesFormatT
+   public void testSparseDISIStoredInSeparateFile() throws Exception {
+     // A .dvp always gets a header + footer, so just checking it exists proves nothing. Instead
+     // compare a sparse field against a dense-only baseline: only the sparse one should write an
+-    // IndexedDISI, so its .dvp must be bigger.
++    // JumpTableDISI, so its .dvp must be bigger.
+     final int numDocs = 512;
+ 
+-    // Dense baseline: no IndexedDISI, so .dvp is just header + footer.
++    // Dense baseline: no JumpTableDISI, so .dvp is just header + footer.
+     final long denseDvpBytes;
+     try (Directory dir = newDirectory()) {
+       IndexWriterConfig conf =
+@@ -458,7 +458,7 @@ public class TestLucene90DocValuesFormat extends BaseCompressingDocValuesFormatT
+       assertTrue("a segment with doc values should always have a .dvp", denseDvpBytes > 0);
+     }
+ 
+-    // Sparse field: only some docs have a value, so we expect an IndexedDISI in .dvp.
++    // Sparse field: only some docs have a value, so we expect an JumpTableDISI in .dvp.
+     try (Directory dir = newDirectory()) {
+       IndexWriterConfig conf =
+           new IndexWriterConfig(new MockAnalyzer(random()))
+@@ -476,7 +476,7 @@ public class TestLucene90DocValuesFormat extends BaseCompressingDocValuesFormatT
+       }
+       final long sparseDvpBytes = totalBytes(dir, Lucene90DocValuesFormat.DISI_EXTENSION);
+       assertTrue(
+-          "sparse IndexedDISI should live in .dvp (sparse="
++          "sparse JumpTableDISI should live in .dvp (sparse="
+               + sparseDvpBytes
+               + "B, dense="
+               + denseDvpBytes
+@@ -890,11 +890,11 @@ public class TestLucene90DocValuesFormat extends BaseCompressingDocValuesFormatT
+     doTestSparseNumericBlocksOfVariousBitsPerValue(random().nextDouble());
+   }
+ 
+-  // The LUCENE-8585 jump-tables enables O(1) skipping of IndexedDISI blocks, DENSE block lookup
++  // The LUCENE-8585 jump-tables enables O(1) skipping of JumpTableDISI blocks, DENSE block lookup
+   // and numeric multi blocks. This test focuses on testing these jumps.
+   @Nightly
+   public void testNumericFieldJumpTables() throws Exception {
+-    // IndexedDISI block skipping only activated if target >= current+2, so we need at least 5
++    // JumpTableDISI block skipping only activated if target >= current+2, so we need at least 5
+     // blocks to
+     // trigger consecutive block skips
+     final int maxDoc = atLeast(5 * 65536);
+diff --git a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatVectorsFormat.java b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatVectorsFormat.java
+index 9a4afe2..a7186b5 100644
+--- a/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatVectorsFormat.java
++++ b/lucene/sandbox/src/java/org/apache/lucene/sandbox/codecs/dedup/DedupFlatVectorsFormat.java
+@@ -45,7 +45,7 @@ import org.apache.lucene.index.SegmentWriteState;
+  *       <ul>
+  *         <li>The sparse-encoding data (only when some documents lack the field): DocIds encoded by
+  *             {@link
+- *             org.apache.lucene.codecs.lucene90.IndexedDISI#writeBitSet(org.apache.lucene.search.DocIdSetIterator,
++ *             org.apache.lucene.codecs.lucene90.JumpTableDISI#writeBitSet(org.apache.lucene.search.DocIdSetIterator,
+  *             org.apache.lucene.store.IndexOutput, byte)}, followed by the ordinal-to-doc mapping
+  *             encoded by {@link org.apache.lucene.util.packed.DirectMonotonicWriter}.
+  *         <li>The {@code fieldOrdToGroupOrd} map (aligned to 4 bytes): one entry per document

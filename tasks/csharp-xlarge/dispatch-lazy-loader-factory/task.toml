@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic navigation: which definition is selected through indirection"
+symbol = "ILazyLoaderFactory"
+selection = "Rule fixed before looking at candidates: the two-argument registrations 'TryAdd<IX, Impl>();' in TryAddCoreServices of src/EFCore/Infrastructure/EntityFrameworkServicesBuilder.cs, in file order (62 of them); index int(rand()*62)+1 with awk srand(20261110) = 46: ILazyLoaderFactory. The name also appears in doc comments and strings."

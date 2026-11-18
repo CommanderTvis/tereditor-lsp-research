@@ -1,5 +1,5 @@
-# java, large: chosen by size, see docs/PROJECTS.md. Curated: tasks, prepare.sh, Dockerfile.grade, check.sh and
-# probe.json are still to be written (docs/CURATION.md).
+# Java, large: FasterXML/jackson-databind (Maven, Java only); chosen by size, see docs/PROJECTS.md. The pinned release
+# (3.3.0) carries the synthetic tasks; the mined pull requests start from their own base commits on the 3.x branch.
 lang = "java"
 size = "large"
 status = "curated"
@@ -7,7 +7,16 @@ repo = "https://github.com/FasterXML/jackson-databind"
 tag = "jackson-databind-3.3.0"
 commit = "2747e06451e405cfa146caf9408d4cce124e8727"
 loc = 220742
+stripped = ["CLAUDE.md"]
 loc_by_language = { "Java" = 220742 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-task_types = ["move", "signature", "refs", "rename", "rename-file", "callers"]
-pr_fallback = "Assigned PR slots filled by documented synthetic fallback task directories; full project validation remains pending."
+# Assigned (docs/TASKS.md): move, signature, refs + 3 pr (modern pull requests, tasks/java-large/pr-log.md).
+task_types = ["move", "signature", "refs", "pr", "pr", "pr"]
+substitutions = []
+
+[probe_intellij]
+ok = true
+seconds_to_first_answer = 2
+seconds_to_complete = 59
+licence = "intellij server state ready, 5 of 5 calls succeeded"
+note = "references at a declaration across main and test code, definition from a call site, references by name with the declaring file given, diagnostics and lsp_status all complete; the first references call needed 59 s until the project graph was loaded (results/probe/java-large-intellij-enforced). Java has no tereditor server outside IntelliJ, so there is no [probe]."

@@ -1,0 +1,8 @@
+type = "pr"
+origin = "mined pull request (modern, docs/MEMORIZATION.md)"
+pr = 5340
+issue = 5306
+base_commit = "eebdf7be39abf0a872671835ccce0c4f03ea497a"
+merge_commit = "7792f5dc14acaa92056c1bf402241567ff9c7396"
+merged_at = "2026-09-10T00:34:09Z"
+test_files = ["src/jsx/dom/index.test.tsx"]

@@ -1,0 +1,9 @@
+type = "pr"
+base_commit = "799de1d2dcb5339eaa1a2c8ad2a15869b50297a3"
+merged_at = "2026-11-02T21:33:52Z"
+pr = 3959
+issue = 3561
+merge_commit = "bfabdbc278bb89b29c7d0a94c5a032ef00bbb110"
+rest_base_sha = "799de1d2dcb5339eaa1a2c8ad2a15869b50297a3"
+toolchain = "bash + urchin (grade-shell)"
+grade_timeout_s = 1200

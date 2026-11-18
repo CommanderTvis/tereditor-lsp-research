@@ -1,0 +1,7 @@
+[
+  {"name": "references at position (class declaration, other modules)", "args": {"operation": "references", "path": "lucene/core/src/java/org/apache/lucene/util/QueryBuilder.java", "line": 58, "column": 13}, "expect": ["lucene/core/src/test/org/apache/lucene/util/TestQueryBuilder.java:126"]},
+  {"name": "definition of QueryBuilder from SimpleQueryParser (cross-module)", "args": {"operation": "definition", "path": "lucene/queryparser/src/java/org/apache/lucene/queryparser/simple/SimpleQueryParser.java", "line": 100, "column": 39}, "expect": ["lucene/core/src/java/org/apache/lucene/util/QueryBuilder.java:59"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["lucene/core/src/java/org/apache/lucene/util/QueryBuilder.java"]}, "expect": []},
+  {"name": "servers", "tool": "lsp_status", "args": {"operation": "servers"}, "expect": []},
+  {"name": "logs", "tool": "lsp_status", "args": {"operation": "logs", "server": "intellij"}, "expect": []}
+]

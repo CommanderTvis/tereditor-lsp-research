@@ -12,7 +12,7 @@
 set -e
 export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_ROLL_FORWARD=LatestMajor
 props="-p:NuGetAudit=false -p:CheckEolTargetFramework=false -p:EnableSourceLink=false -p:EnableSourceControlManagerQueries=false"
-test_run() { dotnet test "$@" --no-build -nologo -v q $props ${TEST_FILTER:+--filter "$TEST_FILTER"}; }
+test_run() { dotnet test "$@" --no-build -nologo -v "${TEST_VERBOSITY:-q}" $props ${TEST_FILTER:+--filter "$TEST_FILTER"}; }
 if [ -f AutoMapper.slnx ]; then
   dotnet build AutoMapper.slnx -nologo -v q $props
   [ "${1:-}" = build ] && exit 0

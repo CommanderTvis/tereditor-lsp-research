@@ -1,5 +1,7 @@
 [
-  {"name":"references for a shared Carbon mixin","args":{"operation":"references","path":"packages/styles/scss/mixins/_focus-outline.scss","line":1,"column":0},"expect":[]},
-  {"name":"definition of a Sass variable","args":{"operation":"definition","query":"$interactive-01"},"expect":[]},
-  {"name":"diagnostics on a Sass partial","tool":"lsp_diagnostics","args":{"paths":["packages/styles/scss/components/button/_button.scss"]},"expect":[]}
+  {"name": "references of the z function (position, used across components)", "args": {"operation": "references", "path": "packages/styles/scss/utilities/_z-index.scss", "line": 31, "column": 11},
+   "expect": ["packages/styles/scss/components/modal/_modal.scss:39", "packages/styles/scss/components/loading/_loading.scss:90", "packages/styles/scss/components/popover/_popover.scss:96"]},
+  {"name": "definition of the focus-outline mixin by name", "args": {"operation": "definition", "query": "focus-outline"},
+   "expect": ["packages/styles/scss/utilities/_focus-outline.scss:15"]},
+  {"name": "diagnostics on a partial", "tool": "lsp_diagnostics", "args": {"paths": ["packages/styles/scss/utilities/_z-index.scss"]}, "expect": []}
 ]

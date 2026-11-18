@@ -1,0 +1,5 @@
+// Grading only: MockHttpServerSpec starts HTTPS mock servers on fixed ports and fails in the sandbox (14 of its tests, at
+// every commit tried, independently of any change); it is left out of every test task.
+allprojects {
+  tasks.withType(Test).configureEach { filter { excludeTestsMatching 'au.com.dius.pact.consumer.MockHttpServerSpec' } }
+}

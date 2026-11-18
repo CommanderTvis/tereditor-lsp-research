@@ -1,0 +1,4 @@
+type = "callers"
+origin = "synthetic, transitive callers among Local API entry points"
+symbol = "resolveValidationConcurrency"
+selection = "Uniquely named top-level functions of packages/payload/src (not themselves entry points) reached by 3 to 8 of the 13 uniquely named exported functions of packages/payload/src/collections/operations/local/ (static call graph by name, shortest chain of at least 3 calls); 57 candidates, sorted by name, seeded shuffle awk srand(20261110), first taken (resolveValidationConcurrency). The entry points of the prompt are all exported functions of the collection and global local directories; the oracle was then checked by hand for the full set (a backward search over every caller of every function in the chain)."

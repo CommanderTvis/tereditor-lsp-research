@@ -4,7 +4,7 @@ Two language-server stacks compete against the same agent without them: [headles
 servers and IntelliJ's, across every language tereditor serves headless plus Java, four project sizes, three models
 and two prompting regimes.
 
-- [docs/DESIGN.md](docs/DESIGN.md), [docs/ANALYSIS_PLAN.md](docs/ANALYSIS_PLAN.md) (pre-registered),
+- [docs/DESIGN.md](docs/DESIGN.md), [docs/ANALYSIS_PLAN.md](docs/ANALYSIS_PLAN.md),
   [docs/PROJECTS.md](docs/PROJECTS.md), [docs/TASKS.md](docs/TASKS.md).
 
 ## Requirements
@@ -32,5 +32,5 @@ and two prompting regimes.
    ./study analyze mine         # results/mine/report/report.md
    ```
 
-`STUDY_RUNTIME=docker|container` picks the runtime when both exist. Docker is untested; Apple `container` is tested.
+`STUDY_RUNTIME=docker|container` picks the runtime when both exist. Docker (OrbStack on macOS) and Apple `container` are tested.
 The author's run uses one Claude Code cloud session: [docs/CLOUD_RUN.md](docs/CLOUD_RUN.md).

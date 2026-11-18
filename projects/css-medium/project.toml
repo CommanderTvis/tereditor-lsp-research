@@ -1,5 +1,5 @@
-# css, medium: chosen by size, see docs/PROJECTS.md. The Carbon snapshot is prepared for Sass compilation; mined
-# candidates were recorded but cannot be graded without the repository's JavaScript test toolchain.
+# css, medium: chosen by size, see docs/PROJECTS.md. Sass is compiled with dart-sass; mined tasks run the repository's own Jest tests (yarn workspaces installed and the
+# packages the tests need built by grade-setup.sh, no install scripts).
 lang = "css"
 size = "medium"
 status = "ready"
@@ -10,13 +10,13 @@ loc = 64395
 loc_by_language = { "Sass" = 64395 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 task_types = ["rename", "rename-file", "callers", "pr", "pr", "pr"]
-fallback_synthetic = ["rename", "rename-file", "callers"]
 size_note = "largest credible CSS/SCSS project selected for this study"
-substitutions = ["three unavailable mined slots use documented fallback PR task directories; the three assigned synthetic tasks are preserved"]
+
+grade_note = "grade-setup.sh: yarn install --immutable --mode=skip-build (about 2 min, 450 MiB fetched), lerna build of the 11 packages the tests need (about 1.5 min), reference compilation of 208 Sass entry points; the overlay (node_modules and generated files) is about 2.5 GB per base commit. Cold validation of the six tasks took about 9 minutes on 3 CPUs."
 
 [probe]
 ok = false
-seconds_to_first_answer = 0.0
-references = "not run: container setup was stopped before the project snapshot was available"
-definition = "not run"
-diagnostics = "not run"
+seconds_to_first_answer = 0.43
+references = "incomplete after 180 s (tereditor pin of harness/tereditor.env): references at the definition of the z function return only the definition; the call sites in components (modal, loading, popover) are not found (the packages use @use with namespaces and 'as *')"
+definition = "incomplete: the definition of the focus-outline mixin by name returns nothing"
+diagnostics = "clean for packages/styles/scss/utilities/_z-index.scss"

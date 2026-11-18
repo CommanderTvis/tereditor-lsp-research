@@ -1,4 +1,0 @@
-type = "callers"
-origin = "synthetic fallback: exhaustive source-oracle navigation task"
-symbol = "get"
-selection = "Whole-tree candidate scan fixed before authoring; seed = 20261110; no language server used."

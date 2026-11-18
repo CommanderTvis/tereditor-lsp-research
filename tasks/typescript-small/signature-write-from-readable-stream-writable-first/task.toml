@@ -1,0 +1,5 @@
+type = "signature"
+origin = "synthetic, reorder parameters through every call site"
+symbol = "writeFromReadableStream"
+change = "writeFromReadableStream(stream, writable) becomes writeFromReadableStream(writable, stream)"
+selection = "Exported, non-overloaded top-level functions and consts of src/**/*.ts that src/index.ts does not re-export, with at least 2 parameters whose first two declared types differ and at least 3 call sites in src/ and test/; 4 candidates (buildOutgoingHttpHeaders, createStreamBody, newRequest, writeFromReadableStream), sorted by name, seeded shuffle awk srand(20261110), first taken. None of the candidates occurs in a comment or in README.md, so the preference for such symbols could not apply. The change is fixed by rule: swap the first two parameters."

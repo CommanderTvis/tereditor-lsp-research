@@ -1,0 +1,3 @@
+src/Core/Checkout/Cart/Rule/LineItemDimensionHeightRule.php
+src/Core/Checkout/Cart/Rule/LineItemDimensionVolumeRule.php
+src/Core/Checkout/Cart/Rule/LineItemRule.php

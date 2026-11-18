@@ -1,14 +1,20 @@
-# PHP, medium: guzzle, the HTTP client. Handlers behind interfaces (curl, multi-curl, stream, mock), middleware built
-# from closures, PSR-7/17/18 types from vendor packages, and very large test files.
+# PHP, medium: dedoc/scramble, automatic OpenAPI documentation for Laravel. Type inference over PHP-Parser ASTs, many
+# extension points behind interfaces, helper classes and attributes with short names shared across namespaces; tests run
+# on Pest and testbench.
 lang = "php"
 size = "medium"
 status = "curated"
-repo = "https://github.com/guzzle/guzzle"
-tag = "8.3.1"
-commit = "7d9b1f430bb65ac664e120af227bf9a795ad6333"
-loc = 47450
-loc_by_language = { "PHP" = 47450 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-stripped = ["AGENTS.md", "CLAUDE.md"]
+repo = "https://github.com/dedoc/scramble"
+tag = "v0.13.55"
+commit = "e698d00c77a620cf05200102695a0d4107be804d"
+loc = 55575
+loc_by_language = { "PHP" = 55575 }
+loc_method = "scc 3.5.0 code lines at the pinned commit, docs/PROJECTS.md (vendor/ excluded, tests included)"
+stripped = []
 task_types = ["rename", "rename-file", "refs", "pr", "pr", "pr"]
-grading_note = "No node.js in the grading toolchain: check.sh replaces guzzle's node.js test server with offline-bootstrap.php (about 600 of 3,300 tests skipped) and excludes 6 tests by name; the mined tasks run their own test file without the server."
+
+[probe]
+# ./study probe php-medium (enforced), tereditor pinned in harness/tereditor.env, Intelephense, 2026-11-17.
+ok = false
+seconds_to_first_answer = 0
+note = "Cross-file references and diagnostics work; by-name definition and interface implementations missed the expected location. definition of TypeWalker by name: complete=false, first answer 6s, missing src/Support/Type/TypeWalker.php:8; references TypeWalker::map (cross-file): complete=true, first answer 1s, missing ; implementations of ExpressionTypeInferExtension: complete=false, first answer 0s, missing src/Support/InferExtensions/TypeTraceInfer.php; diagnostics clean file: complete=true, first answer 0s, missing"

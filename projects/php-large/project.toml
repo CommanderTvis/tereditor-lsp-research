@@ -1,5 +1,4 @@
-# PHP, large: Laravel framework. Mined work is replaced by documented synthetic fallbacks because no PR was
-# build-validated in the bounded curation run.
+# PHP, large: Laravel framework. Mined tasks are modern pull requests (opened on or after 2026-07-01), see tasks/php-large/pr-log.md.
 lang = "php"
 size = "large"
 status = "curated"
@@ -10,3 +9,10 @@ loc = 368967
 loc_by_language = { "PHP" = 368967 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 task_types = ["move", "signature", "impls", "pr", "pr", "pr"]
+task_shortfall = "signature: tasks/php-large/DROPPED.md"
+
+[probe]
+# ./study probe php-large (enforced), tereditor pinned in harness/tereditor.env, Intelephense, 2026-11-16.
+ok = false
+seconds_to_first_answer = 0
+note = "Cross-file references and diagnostics work; definition by name of HtmlString did not return the expected location (src/Illuminate/Support/HtmlString.php:8)."

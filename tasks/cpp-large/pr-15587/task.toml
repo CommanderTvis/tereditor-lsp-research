@@ -1,0 +1,10 @@
+type = "pr"
+pr = 15587
+issue = 15586
+base_commit = "bf49481ad7cf93d136e7520d321448d9ef65b03a"
+merged_at = "2026-09-04T07:02:51Z"
+head_commit = "0442b196e6ad94554954a8d63e6e74d4f6e4342a"
+origin = "mined pull request github.com/redis/redis/pull/15587"
+test_files = ["tests/unit/type/list-4.tcl"]
+grade_timeout_s = 1200
+# grade_timeout_s raised to 1200: cold build of the server plus the Tcl unit

@@ -1,5 +1,0 @@
-type = "rename-file"
-origin = "synthetic: rename a source file and the class it declares (PSR-4: file name = class name), updating every reference (docs/TASKS.md)"
-symbol = "GuzzleHttp\\Handler\\CurlFactory"
-target = "GuzzleHttp\\Handler\\CurlHandleFactory"
-selection = "Every class, interface, trait or enum declared under src/ whose short name occurs as a whole word in at least 5 other .php files under src/ and tests/ (rg -lw; medium projects: at least 5 files, docs/CURATION.md), sorted by fully qualified name: 44 candidates. Seeded shuffle awk 'BEGIN{srand(20261110)}' (macOS awk 20200816, printf %.12f rand(), sort -n), first item."

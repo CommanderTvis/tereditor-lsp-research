@@ -1,0 +1,8 @@
+type = "pr"
+origin = "mined pull request (modern, docs/MEMORIZATION.md)"
+pr = 12905
+issue = 12902
+base_commit = "17e858da8d2becab1ca47826f670a4660da70142"
+merge_commit = "c64a1f052fc39f6688b6b73b83d065d7147ba8bb"
+merged_at = "2026-10-04T20:06:50Z"
+test_files = ["packages/typeorm/test/functional/query-builder/composite-key-hydration/composite-floating-key-hydration.test.ts","packages/typeorm/test/functional/query-builder/composite-key-hydration/composite-key-hydration.test.ts","packages/typeorm/test/functional/query-builder/composite-key-hydration/entity/FloatingRecord.ts","packages/typeorm/test/functional/query-builder/composite-key-hydration/entity/Record.ts"]

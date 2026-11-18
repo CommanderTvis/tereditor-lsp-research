@@ -1,0 +1,9 @@
+type = "pr"
+origin = "mined pull request (modern, docs/MEMORIZATION.md)"
+pr = 18585
+issue = 18583
+base_commit = "8cefa95ad6bef30dc4347ae1e16f133cb596f88c"
+merge_commit = "629fbae165e4a3a066499d2a50371aebbf928a7d"
+merged_at = "2026-10-07T14:21:46Z"
+test_files = ["packages/ui/src/utilities/getClientSchemaMap.spec.ts"]
+grade_timeout_s = 1200

@@ -1,9 +1,0 @@
-type = "pr"
-pr = 11709
-issue = 11701
-base_commit = "d5b66a8411036d300e8477be6d1bd40bd28ada28"
-merged_at = "2021-12-14T11:33:40Z"
-merge_commit = "ef4341619d7bcd298ce83dd2f9e0e2d805871c72"
-fallback_for = "pr"
-source_candidate = "tasks/python-large/pr-candidates.jsonl record 1"
-gold_from = "diff base_commit..merge_commit excluding test-data"

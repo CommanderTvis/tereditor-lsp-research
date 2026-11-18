@@ -1,7 +1,0 @@
-type = "pr"
-pr = 9
-issue = 6
-base_commit = "13ea515e8f86d766bec416edfc7aa6de83d73ae6"
-merged_at = "2013-09-24T01:03:17Z"
-gold_from = "diff 13ea515e8f86d766bec416edfc7aa6de83d73ae6..a0d5b91f0020854d46c557e6c22c03978a2b9aa8 (merge^1=0f831e171d906ab1a9906a9e3c2bd4a03e0a6531)"
-toolchain = "CPython 3.12 + pytest (grade-python)"

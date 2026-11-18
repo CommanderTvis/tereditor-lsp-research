@@ -1,0 +1,107 @@
+diff --git a/src/Core/Checkout/Cart/Delivery/Struct/DeliveryPosition.php b/src/Core/Checkout/Cart/Delivery/Struct/DeliveryPosition.php
+index 302cab13..cea79dcf 100644
+--- a/src/Core/Checkout/Cart/Delivery/Struct/DeliveryPosition.php
++++ b/src/Core/Checkout/Cart/Delivery/Struct/DeliveryPosition.php
+@@ -2,7 +2,6 @@
+ 
+ namespace Shopware\Core\Checkout\Cart\Delivery\Struct;
+ 
+-use Shopware\Core\Checkout\Cart\LineItem\LineItem;
+ use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+ use Shopware\Core\Framework\Log\Package;
+ use Shopware\Core\Framework\Struct\Struct;
+@@ -12,14 +11,14 @@ class DeliveryPosition extends Struct
+ {
+     public function __construct(
+         protected string $identifier,
+-        protected LineItem $lineItem,
++        protected \Shopware\Core\Checkout\Cart\LineItem\LineItem $lineItem,
+         protected int $quantity,
+         protected CalculatedPrice $price,
+         protected DeliveryDate $deliveryDate
+     ) {
+     }
+ 
+-    public function getLineItem(): LineItem
++    public function getLineItem(): \Shopware\Core\Checkout\Cart\LineItem\LineItem
+     {
+         return $this->lineItem;
+     }
+diff --git a/src/Core/Checkout/Cart/Facade/Traits/ItemsIteratorTrait.php b/src/Core/Checkout/Cart/Facade/Traits/ItemsIteratorTrait.php
+index 77d22ca5..5d253f3e 100644
+--- a/src/Core/Checkout/Cart/Facade/Traits/ItemsIteratorTrait.php
++++ b/src/Core/Checkout/Cart/Facade/Traits/ItemsIteratorTrait.php
+@@ -2,7 +2,6 @@
+ 
+ namespace Shopware\Core\Checkout\Cart\Facade\Traits;
+ 
+-use Shopware\Core\Checkout\Cart\Facade\CartFacadeHelper;
+ use Shopware\Core\Checkout\Cart\Facade\ContainerFacade;
+ use Shopware\Core\Checkout\Cart\Facade\ItemFacade;
+ use Shopware\Core\Checkout\Cart\LineItem\LineItem;
+@@ -13,7 +12,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
+ #[Package('checkout')]
+ trait ItemsIteratorTrait
+ {
+-    private CartFacadeHelper $helper;
++    private \Shopware\Core\Checkout\Cart\Facade\CartFacadeHelper $helper;
+ 
+     private LineItemCollection $items;
+ 
+diff --git a/src/Core/Checkout/Cart/Rule/LineItemDimensionHeightRule.php b/src/Core/Checkout/Cart/Rule/LineItemDimensionHeightRule.php
+index a8db199a..75b89cdc 100644
+--- a/src/Core/Checkout/Cart/Rule/LineItemDimensionHeightRule.php
++++ b/src/Core/Checkout/Cart/Rule/LineItemDimensionHeightRule.php
+@@ -2,7 +2,6 @@
+ 
+ namespace Shopware\Core\Checkout\Cart\Rule;
+ 
+-use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryInformation;
+ use Shopware\Core\Checkout\Cart\LineItem\LineItem;
+ use Shopware\Core\Framework\Log\Package;
+ use Shopware\Core\Framework\Rule\Exception\UnsupportedOperatorException;
+diff --git a/src/Core/Checkout/Cart/Rule/LineItemDimensionVolumeRule.php b/src/Core/Checkout/Cart/Rule/LineItemDimensionVolumeRule.php
+index 6cd4efd7..612b98c5 100644
+--- a/src/Core/Checkout/Cart/Rule/LineItemDimensionVolumeRule.php
++++ b/src/Core/Checkout/Cart/Rule/LineItemDimensionVolumeRule.php
+@@ -2,7 +2,6 @@
+ 
+ namespace Shopware\Core\Checkout\Cart\Rule;
+ 
+-use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryInformation;
+ use Shopware\Core\Checkout\Cart\LineItem\LineItem;
+ use Shopware\Core\Framework\Log\Package;
+ use Shopware\Core\Framework\Rule\Exception\UnsupportedOperatorException;
+diff --git a/src/Core/Checkout/Cart/Rule/LineItemInCategoryRule.php b/src/Core/Checkout/Cart/Rule/LineItemInCategoryRule.php
+index 1e9b4fd4..36b5ef2e 100644
+--- a/src/Core/Checkout/Cart/Rule/LineItemInCategoryRule.php
++++ b/src/Core/Checkout/Cart/Rule/LineItemInCategoryRule.php
+@@ -2,7 +2,6 @@
+ 
+ namespace Shopware\Core\Checkout\Cart\Rule;
+ 
+-use Shopware\Core\Checkout\Cart\CartException;
+ use Shopware\Core\Checkout\Cart\LineItem\LineItem;
+ use Shopware\Core\Content\Category\CategoryDefinition;
+ use Shopware\Core\Framework\Log\Package;
+@@ -83,7 +82,7 @@ class LineItemInCategoryRule extends Rule
+ 
+     /**
+      * @throws UnsupportedOperatorException
+-     * @throws CartException
++     * @throws \Shopware\Core\Checkout\Cart\CartException
+      */
+     private function matchesOneOfCategory(LineItem $lineItem): bool
+     {
+diff --git a/src/Core/Checkout/Cart/Rule/LineItemRule.php b/src/Core/Checkout/Cart/Rule/LineItemRule.php
+index d8328584..7e6ea073 100644
+--- a/src/Core/Checkout/Cart/Rule/LineItemRule.php
++++ b/src/Core/Checkout/Cart/Rule/LineItemRule.php
+@@ -2,7 +2,6 @@
+ 
+ namespace Shopware\Core\Checkout\Cart\Rule;
+ 
+-use Shopware\Core\Checkout\Cart\LineItem\LineItem;
+ use Shopware\Core\Framework\Log\Package;
+ use Shopware\Core\Framework\Rule\Rule;
+ use Shopware\Core\Framework\Rule\RuleComparison;

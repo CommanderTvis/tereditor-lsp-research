@@ -1,6 +1,0 @@
-type = "move"
-origin = "synthetic, move a declaration into another module"
-symbol = "toFailures"
-from = "src/utils.ts"
-to = "src/internal/toFailures.ts"
-selection = "Exported top-level functions and classes of src/**/*.ts (index.ts excluded) imported by name from their declaring module (import path naming that file) in at least 2 other files of src/ or test/; 3 candidates (Struct, run, toFailures), sorted by name, seeded shuffle awk srand(20261110), first taken. Destination fixed by rule: a new module src/internal/<name>.ts."

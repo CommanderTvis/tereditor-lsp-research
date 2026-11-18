@@ -1,0 +1,4 @@
+{"task": "tasks/python-small/pr-446", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 18, "fresh_lines": 16, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.00157019}
+{"task": "tasks/python-small/pr-446", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 18, "fresh_lines": 16, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.022950900000000003}
+{"task": "tasks/python-small/pr-446", "model": "claude-opus-5-5", "answered": true, "gold_lines": 18, "fresh_lines": 16, "verbatim_share": 0.0, "names_all_files": true, "cost_usd": 0.0518818}
+SCORE tasks/python-small/pr-446 worst verbatim share 0.00 (gold lines 18)

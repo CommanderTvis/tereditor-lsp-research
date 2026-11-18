@@ -1,3 +1,6 @@
+> Note: written for the earlier mixed-model design with 14 contrasts. The current analysis (docs/ANALYSIS_PLAN.md) is a
+> descriptive paired comparison, so its model- and registration-specific recommendations no longer apply.
+
 # Weighting task types in pooled results
 
 How benchmark builders set the mix of task types in a mixed workload, what they do when they pool across types, and

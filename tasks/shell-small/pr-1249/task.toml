@@ -1,0 +1,8 @@
+type = "pr"
+base_commit = "db8320fcd0c2de1ab3732e6ab388b07bc91fdbce"
+merged_at = "2026-09-20T21:24:44Z"
+pr = 1249
+issue = 1235
+merge_commit = "19c9b04a8886a79c13710b54e2699dcc4a764bc8"
+rest_base_sha = "db8320fcd0c2de1ab3732e6ab388b07bc91fdbce"
+toolchain = "bash + bats (grade-shell)"

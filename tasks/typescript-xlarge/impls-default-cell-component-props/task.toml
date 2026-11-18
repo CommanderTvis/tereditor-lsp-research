@@ -1,0 +1,4 @@
+type = "impls"
+origin = "synthetic, all transitive subtypes of a type"
+symbol = "DefaultCellComponentProps"
+selection = "Classes, interfaces and generic type aliases declared once in packages/*/src, with 4 to 30 transitive subtypes among packages/ (declared with extends or implements, found by a text scan that also reads multi-line declarations); names declared more than once or only inside code-generating template strings were excluded in advance (SerializedLexicalElementBase); 3 candidates (APIError 28, DecoratorBlockNode 6, DefaultCellComponentProps 5), sorted by name, seeded shuffle awk srand(20261110), first taken. DefaultCellComponentProps is also named in docs/fields/overview.mdx and docs/ui-components/table-cells.mdx."

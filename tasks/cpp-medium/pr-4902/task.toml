@@ -1,0 +1,9 @@
+type = "pr"
+pr = 4902
+issue = 4901
+base_commit = "b039e624c02ae473280156235217f9e02792b055"
+merged_at = "2026-09-04T16:17:59Z"
+head_commit = "374abbd4a0d3ff107aafb69cb1b611f204f5ef73"
+origin = "mined pull request github.com/fmtlib/fmt/pull/4902"
+test_files = ["test/format-test.cc"]
+grade_timeout_s = 2400

@@ -1,0 +1,646 @@
+diff --git a/deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java b/deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java
+index a74012f..11ada80 100644
+--- a/deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java
++++ b/deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java
+@@ -14,6 +14,7 @@ import org.eclipse.microprofile.openapi.OASFilter;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
++import io.quarkiverse.httpproblem.DetailSanitizer;
+ import io.quarkiverse.httpproblem.ProblemRuntimeFixedConfig;
+ import io.quarkiverse.httpproblem.postprocessing.MdcPropertiesInjector;
+ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+@@ -89,6 +90,12 @@ public class ProblemProcessor {
+                 mapper(EXTENSION_MAIN_PACKAGE + "jackson.InvalidFormatExceptionMapper")
+                         .thatHandles("com.fasterxml.jackson.databind.exc.InvalidFormatException")
+                         .onlyIf(new JacksonDetector()),
++                mapper(EXTENSION_MAIN_PACKAGE + "jackson.MismatchedInputExceptionMapper")
++                        .thatHandles("com.fasterxml.jackson.databind.exc.MismatchedInputException")
++                        .onlyIf(new JacksonDetector()),
++                mapper(EXTENSION_MAIN_PACKAGE + "jackson.InvalidDefinitionExceptionMapper")
++                        .thatHandles("com.fasterxml.jackson.databind.exc.InvalidDefinitionException")
++                        .onlyIf(new JacksonDetector()),
+ 
+                 mapper(EXTENSION_MAIN_PACKAGE + "jsonb.RestEasyClassicJsonbExceptionMapper")
+                         .thatHandles("jakarta.ws.rs.ProcessingException")
+@@ -223,6 +230,7 @@ public class ProblemProcessor {
+         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(ProblemLogger.class));
+         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(ProblemDefaultsProvider.class));
+         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(MdcPropertiesInjector.class));
++        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(DetailSanitizer.class));
+     }
+ 
+     @BuildStep
+diff --git a/integration-test/core/pom.xml b/integration-test/core/pom.xml
+index 8353aa2..1bedbf1 100644
+--- a/integration-test/core/pom.xml
++++ b/integration-test/core/pom.xml
+@@ -22,20 +22,4 @@
+         </dependency>
+     </dependencies>
+ 
+-    <build>
+-        <plugins>
+-            <!-- Required so Quarkus Platform can re-run these ITs from the published *-tests.jar -->
+-            <plugin>
+-                <artifactId>maven-jar-plugin</artifactId>
+-                <executions>
+-                    <execution>
+-                        <goals>
+-                            <goal>test-jar</goal>
+-                        </goals>
+-                    </execution>
+-                </executions>
+-            </plugin>
+-        </plugins>
+-    </build>
+-
+ </project>
+diff --git a/integration-test/openapi/pom.xml b/integration-test/openapi/pom.xml
+index 86ed4d7..71f6801 100644
+--- a/integration-test/openapi/pom.xml
++++ b/integration-test/openapi/pom.xml
+@@ -22,19 +22,4 @@
+         </dependency>
+     </dependencies>
+ 
+-    <build>
+-        <plugins>
+-            <!-- Required so Quarkus Platform can re-run these ITs from the published *-tests.jar -->
+-            <plugin>
+-                <artifactId>maven-jar-plugin</artifactId>
+-                <executions>
+-                    <execution>
+-                        <goals>
+-                            <goal>test-jar</goal>
+-                        </goals>
+-                    </execution>
+-                </executions>
+-            </plugin>
+-        </plugins>
+-    </build>
+ </project>
+diff --git a/integration-test/pom.xml b/integration-test/pom.xml
+index b609d54..73ad8dd 100644
+--- a/integration-test/pom.xml
++++ b/integration-test/pom.xml
+@@ -12,20 +12,6 @@
+     <name>Quarkus - HTTP-Problem - Integration Tests</name>
+     <packaging>pom</packaging>
+ 
+-    <properties>
+-        <!-- we only run the tests when the it profile is enabled -->
+-        <skipSurefireTests>true</skipSurefireTests>
+-    </properties>
+-
+-    <!-- we always publish the modules for consumption by the Quarkus Platform -->
+-    <modules>
+-        <module>core</module>
+-        <module>openapi</module>
+-        <module>rest-client</module>
+-        <module>zalando</module>
+-        <module>tck</module>
+-    </modules>
+-
+     <dependencies>
+         <dependency>
+             <groupId>io.quarkiverse.httpproblem</groupId>
+@@ -66,10 +52,20 @@
+                 </executions>
+             </plugin>
+             <plugin>
+-                <artifactId>maven-surefire-plugin</artifactId>
++                <artifactId>maven-failsafe-plugin</artifactId>
+                 <configuration>
+-                    <skip>${skipSurefireTests}</skip>
++                    <excludes>
++                        <exclude>**/*NativeIT.java</exclude>
++                    </excludes>
+                 </configuration>
++                <executions>
++                    <execution>
++                        <goals>
++                            <goal>integration-test</goal>
++                            <goal>verify</goal>
++                        </goals>
++                    </execution>
++                </executions>
+             </plugin>
+             <plugin>
+                 <groupId>net.revelc.code.formatter</groupId>
+@@ -78,6 +74,7 @@
+                     <skip>true</skip>
+                 </configuration>
+             </plugin>
++
+             <plugin>
+                 <groupId>net.revelc.code</groupId>
+                 <artifactId>impsort-maven-plugin</artifactId>
+@@ -91,10 +88,13 @@
+     <profiles>
+         <profile>
+             <id>it</id>
+-            <properties>
+-                <!-- we only run the tests when the it profile is enabled -->
+-                <skipSurefireTests>false</skipSurefireTests>
+-            </properties>
++            <modules>
++                <module>core</module>
++                <module>openapi</module>
++                <module>zalando</module>
++                <module>rest-client</module>
++                <module>tck</module>
++            </modules>
+         </profile>
+         <profile>
+             <id>jackson</id>
+@@ -140,7 +140,6 @@
+             <id>native</id>
+             <properties>
+                 <quarkus.native.enabled>true</quarkus.native.enabled>
+-                <skipSurefireTests>true</skipSurefireTests>
+             </properties>
+ 
+             <build>
+diff --git a/integration-test/rest-client/pom.xml b/integration-test/rest-client/pom.xml
+index 375a652..e95ad8c 100644
+--- a/integration-test/rest-client/pom.xml
++++ b/integration-test/rest-client/pom.xml
+@@ -55,20 +55,4 @@
+             </dependencies>
+         </profile>
+     </profiles>
+-
+-    <build>
+-        <plugins>
+-            <!-- Required so Quarkus Platform can re-run these ITs from the published *-tests.jar -->
+-            <plugin>
+-                <artifactId>maven-jar-plugin</artifactId>
+-                <executions>
+-                    <execution>
+-                        <goals>
+-                            <goal>test-jar</goal>
+-                        </goals>
+-                    </execution>
+-                </executions>
+-            </plugin>
+-        </plugins>
+-    </build>
+ </project>
+diff --git a/integration-test/tck/pom.xml b/integration-test/tck/pom.xml
+index 78a83c2..65a2a2d 100644
+--- a/integration-test/tck/pom.xml
++++ b/integration-test/tck/pom.xml
+@@ -11,19 +11,4 @@
+     <artifactId>quarkus-http-problem-integration-test-tck</artifactId>
+     <name>Quarkus - HTTP-Problem - Integration Tests - RFC 9457 TCK</name>
+ 
+-    <build>
+-        <plugins>
+-            <!-- Required so Quarkus Platform can re-run these ITs from the published *-tests.jar -->
+-            <plugin>
+-                <artifactId>maven-jar-plugin</artifactId>
+-                <executions>
+-                    <execution>
+-                        <goals>
+-                            <goal>test-jar</goal>
+-                        </goals>
+-                    </execution>
+-                </executions>
+-            </plugin>
+-        </plugins>
+-    </build>
+ </project>
+diff --git a/integration-test/zalando/pom.xml b/integration-test/zalando/pom.xml
+index 9ee0ed3..e308ed5 100644
+--- a/integration-test/zalando/pom.xml
++++ b/integration-test/zalando/pom.xml
+@@ -17,20 +17,4 @@
+             <artifactId>problem</artifactId>
+         </dependency>
+     </dependencies>
+-
+-    <build>
+-        <plugins>
+-            <!-- Required so Quarkus Platform can re-run these ITs from the published *-tests.jar -->
+-            <plugin>
+-                <artifactId>maven-jar-plugin</artifactId>
+-                <executions>
+-                    <execution>
+-                        <goals>
+-                            <goal>test-jar</goal>
+-                        </goals>
+-                    </execution>
+-                </executions>
+-            </plugin>
+-        </plugins>
+-    </build>
+ </project>
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/DetailSanitizer.java b/runtime/src/main/java/io/quarkiverse/httpproblem/DetailSanitizer.java
+new file mode 100644
+index 0000000..f2a193d
+--- /dev/null
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/DetailSanitizer.java
+@@ -0,0 +1,29 @@
++package io.quarkiverse.httpproblem;
++
++import jakarta.inject.Inject;
++import jakarta.inject.Singleton;
++
++@Singleton
++public class DetailSanitizer {
++
++    public static final String SANITIZED_DETAIL = "Malformed request body";
++
++    private final boolean includeDetails;
++
++    public DetailSanitizer() {
++        this(false);
++    }
++
++    @Inject
++    public DetailSanitizer(ProblemRuntimeFixedConfig config) {
++        this(config.includeDetails());
++    }
++
++    public DetailSanitizer(boolean includeDetails) {
++        this.includeDetails = includeDetails;
++    }
++
++    public String sanitize(String rawDetail) {
++        return includeDetails ? rawDetail : SANITIZED_DETAIL;
++    }
++}
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/InvalidDefinitionExceptionMapper.java b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/InvalidDefinitionExceptionMapper.java
+new file mode 100644
+index 0000000..7d1c542
+--- /dev/null
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/InvalidDefinitionExceptionMapper.java
+@@ -0,0 +1,44 @@
++package io.quarkiverse.httpproblem.jackson;
++
++import jakarta.annotation.Priority;
++import jakarta.inject.Inject;
++import jakarta.ws.rs.Priorities;
++import jakarta.ws.rs.core.Response;
++
++import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
++
++import io.quarkiverse.httpproblem.DetailSanitizer;
++import io.quarkiverse.httpproblem.ExceptionMapperBase;
++import io.quarkiverse.httpproblem.HttpProblem;
++import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
++
++/**
++ * Mapper for Jackson InvalidDefinitionException, which is more specialized version of JsonProcessingException,
++ * This exception has a specific mapper in Quarkus REST.
++ */
++@Priority(Priorities.USER - 1)
++public final class InvalidDefinitionExceptionMapper extends ExceptionMapperBase<InvalidDefinitionException> {
++
++    private final DetailSanitizer detailSanitizer;
++
++    public InvalidDefinitionExceptionMapper() {
++        this.detailSanitizer = new DetailSanitizer();
++    }
++
++    @Inject
++    public InvalidDefinitionExceptionMapper(PostProcessorsRegistry postProcessorsRegistry,
++            DetailSanitizer detailSanitizer) {
++        super(postProcessorsRegistry);
++        this.detailSanitizer = detailSanitizer;
++    }
++
++    @Override
++    protected HttpProblem toProblem(InvalidDefinitionException exception) {
++        return HttpProblem.builder()
++                .withStatus(Response.Status.BAD_REQUEST)
++                .withTitle(Response.Status.BAD_REQUEST.getReasonPhrase())
++                .withDetail(detailSanitizer.sanitize(exception.getOriginalMessage()))
++                .with("field", JacksonFieldPathSerializer.serializePath(exception.getPath()))
++                .build();
++    }
++}
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/InvalidFormatExceptionMapper.java b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/InvalidFormatExceptionMapper.java
+index a549ee5..39ee04b 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/InvalidFormatExceptionMapper.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/InvalidFormatExceptionMapper.java
+@@ -1,76 +1,43 @@
+ package io.quarkiverse.httpproblem.jackson;
+ 
+-import java.util.List;
+-import java.util.stream.Collectors;
+-
+ import jakarta.annotation.Priority;
+ import jakarta.inject.Inject;
+ import jakarta.ws.rs.Priorities;
+ import jakarta.ws.rs.core.Response;
+ 
+-import com.fasterxml.jackson.databind.JsonMappingException;
+ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+ 
++import io.quarkiverse.httpproblem.DetailSanitizer;
+ import io.quarkiverse.httpproblem.ExceptionMapperBase;
+ import io.quarkiverse.httpproblem.HttpProblem;
+-import io.quarkiverse.httpproblem.ProblemRuntimeFixedConfig;
+ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+ 
+ /**
+  * Mapper for Jackson InvalidFormatException, which is more specialised version of JsonProcessingException
+  */
+-@Priority(Priorities.USER)
++@Priority(Priorities.USER - 1)
+ public final class InvalidFormatExceptionMapper extends ExceptionMapperBase<InvalidFormatException> {
+ 
+-    static final String SANITIZED_DETAIL = "Malformed request body";
+-
+-    private boolean includeDetails;
++    private final DetailSanitizer detailSanitizer;
+ 
+     public InvalidFormatExceptionMapper() {
+-        this.includeDetails = false;
++        this.detailSanitizer = new DetailSanitizer();
+     }
+ 
+     @Inject
+-    public InvalidFormatExceptionMapper(PostProcessorsRegistry postProcessorsRegistry, ProblemRuntimeFixedConfig config) {
++    public InvalidFormatExceptionMapper(PostProcessorsRegistry postProcessorsRegistry,
++            DetailSanitizer detailSanitizer) {
+         super(postProcessorsRegistry);
+-        this.includeDetails = config.includeDetails();
++        this.detailSanitizer = detailSanitizer;
+     }
+ 
+     @Override
+     protected HttpProblem toProblem(InvalidFormatException exception) {
+-        String detail = includeDetails
+-                ? exception.getOriginalMessage()
+-                : SANITIZED_DETAIL;
+         return HttpProblem.builder()
+                 .withStatus(Response.Status.BAD_REQUEST)
+                 .withTitle(Response.Status.BAD_REQUEST.getReasonPhrase())
+-                .withDetail(detail)
+-                .with("field", serializePath(exception.getPath()))
++                .withDetail(detailSanitizer.sanitize(exception.getOriginalMessage()))
++                .with("field", JacksonFieldPathSerializer.serializePath(exception.getPath()))
+                 .build();
+     }
+-
+-    private String serializePath(List<JsonMappingException.Reference> path) {
+-        String pathString = path.stream()
+-                .map(this::refToString)
+-                .collect(Collectors.joining());
+-        return removeFirstDot(pathString);
+-    }
+-
+-    private String refToString(JsonMappingException.Reference ref) {
+-        if (ref.getFieldName() != null) {
+-            return "." + ref.getFieldName();
+-        }
+-        if (ref.getIndex() >= 0) {
+-            return "[" + ref.getIndex() + "]";
+-        }
+-        return ".?";
+-    }
+-
+-    private String removeFirstDot(String field) {
+-        if (field.length() > 1) {
+-            return field.substring(1);
+-        } else {
+-            return "?";
+-        }
+-    }
+ }
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/JacksonFieldPathSerializer.java b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/JacksonFieldPathSerializer.java
+new file mode 100644
+index 0000000..dcd2676
+--- /dev/null
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/JacksonFieldPathSerializer.java
+@@ -0,0 +1,39 @@
++package io.quarkiverse.httpproblem.jackson;
++
++import java.util.List;
++import java.util.stream.Collectors;
++
++import com.fasterxml.jackson.databind.JsonMappingException;
++
++final class JacksonFieldPathSerializer {
++
++    private JacksonFieldPathSerializer() {
++    }
++
++    static String serializePath(List<JsonMappingException.Reference> path) {
++        String pathString = path.stream()
++                .map(JacksonFieldPathSerializer::refToString)
++                .collect(Collectors.joining());
++        return removeFirstDot(pathString);
++    }
++
++    private static String refToString(JsonMappingException.Reference ref) {
++        if (ref.getFieldName() != null) {
++            return "." + ref.getFieldName();
++        }
++        if (ref.getIndex() >= 0) {
++            return "[" + ref.getIndex() + "]";
++        }
++        return ".?";
++    }
++
++    private static String removeFirstDot(String field) {
++        if (field.isEmpty()) {
++            return "?";
++        }
++        if (field.charAt(0) == '.') {
++            return field.substring(1);
++        }
++        return field;
++    }
++}
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/JsonProcessingExceptionMapper.java b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/JsonProcessingExceptionMapper.java
+index f06c2f7..8b3eb43 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/JsonProcessingExceptionMapper.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/JsonProcessingExceptionMapper.java
+@@ -8,9 +8,9 @@ import jakarta.ws.rs.Priorities;
+ 
+ import com.fasterxml.jackson.core.JsonProcessingException;
+ 
++import io.quarkiverse.httpproblem.DetailSanitizer;
+ import io.quarkiverse.httpproblem.ExceptionMapperBase;
+ import io.quarkiverse.httpproblem.HttpProblem;
+-import io.quarkiverse.httpproblem.ProblemRuntimeFixedConfig;
+ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+ 
+ /**
+@@ -19,25 +19,21 @@ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+ @Priority(Priorities.USER)
+ public final class JsonProcessingExceptionMapper extends ExceptionMapperBase<JsonProcessingException> {
+ 
+-    static final String SANITIZED_DETAIL = "Malformed request body";
+-
+-    private boolean includeDetails;
++    private final DetailSanitizer detailSanitizer;
+ 
+     public JsonProcessingExceptionMapper() {
+-        this.includeDetails = false;
++        this.detailSanitizer = new DetailSanitizer();
+     }
+ 
+     @Inject
+-    public JsonProcessingExceptionMapper(PostProcessorsRegistry postProcessorsRegistry, ProblemRuntimeFixedConfig config) {
++    public JsonProcessingExceptionMapper(PostProcessorsRegistry postProcessorsRegistry,
++            DetailSanitizer detailSanitizer) {
+         super(postProcessorsRegistry);
+-        this.includeDetails = config.includeDetails();
++        this.detailSanitizer = detailSanitizer;
+     }
+ 
+     @Override
+     protected HttpProblem toProblem(JsonProcessingException exception) {
+-        String detail = includeDetails
+-                ? exception.getOriginalMessage()
+-                : SANITIZED_DETAIL;
+-        return HttpProblem.valueOf(BAD_REQUEST, detail);
++        return HttpProblem.valueOf(BAD_REQUEST, detailSanitizer.sanitize(exception.getOriginalMessage()));
+     }
+ }
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/MismatchedInputExceptionMapper.java b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/MismatchedInputExceptionMapper.java
+new file mode 100644
+index 0000000..2ff92d9
+--- /dev/null
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/jackson/MismatchedInputExceptionMapper.java
+@@ -0,0 +1,40 @@
++package io.quarkiverse.httpproblem.jackson;
++
++import jakarta.annotation.Priority;
++import jakarta.inject.Inject;
++import jakarta.ws.rs.Priorities;
++import jakarta.ws.rs.core.Response;
++
++import com.fasterxml.jackson.databind.exc.MismatchedInputException;
++
++import io.quarkiverse.httpproblem.DetailSanitizer;
++import io.quarkiverse.httpproblem.ExceptionMapperBase;
++import io.quarkiverse.httpproblem.HttpProblem;
++import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
++
++@Priority(Priorities.USER - 1)
++public final class MismatchedInputExceptionMapper extends ExceptionMapperBase<MismatchedInputException> {
++
++    private final DetailSanitizer detailSanitizer;
++
++    public MismatchedInputExceptionMapper() {
++        this.detailSanitizer = new DetailSanitizer();
++    }
++
++    @Inject
++    public MismatchedInputExceptionMapper(PostProcessorsRegistry postProcessorsRegistry,
++            DetailSanitizer detailSanitizer) {
++        super(postProcessorsRegistry);
++        this.detailSanitizer = detailSanitizer;
++    }
++
++    @Override
++    protected HttpProblem toProblem(MismatchedInputException exception) {
++        return HttpProblem.builder()
++                .withStatus(Response.Status.BAD_REQUEST)
++                .withTitle(Response.Status.BAD_REQUEST.getReasonPhrase())
++                .withDetail(detailSanitizer.sanitize(exception.getOriginalMessage()))
++                .with("field", JacksonFieldPathSerializer.serializePath(exception.getPath()))
++                .build();
++    }
++}
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/JsonbExceptionMapper.java b/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/JsonbExceptionMapper.java
+index 59ec5a9..4e8ce82 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/JsonbExceptionMapper.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/JsonbExceptionMapper.java
+@@ -7,33 +7,30 @@ import jakarta.inject.Inject;
+ import jakarta.json.bind.JsonbException;
+ import jakarta.ws.rs.Priorities;
+ 
++import io.quarkiverse.httpproblem.DetailSanitizer;
+ import io.quarkiverse.httpproblem.ExceptionMapperBase;
+ import io.quarkiverse.httpproblem.HttpProblem;
+-import io.quarkiverse.httpproblem.ProblemRuntimeFixedConfig;
+ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+ 
+ @Priority(Priorities.USER)
+ public final class JsonbExceptionMapper extends ExceptionMapperBase<JsonbException> {
+ 
+-    static final String SANITIZED_DETAIL = "Malformed request body";
+-
+-    private boolean includeDetails;
++    private final DetailSanitizer detailSanitizer;
+ 
+     public JsonbExceptionMapper() {
+-        this.includeDetails = false;
++        this.detailSanitizer = new DetailSanitizer();
+     }
+ 
+     @Inject
+-    public JsonbExceptionMapper(PostProcessorsRegistry postProcessorsRegistry, ProblemRuntimeFixedConfig config) {
++    public JsonbExceptionMapper(PostProcessorsRegistry postProcessorsRegistry,
++            DetailSanitizer detailSanitizer) {
+         super(postProcessorsRegistry);
+-        this.includeDetails = config.includeDetails();
++        this.detailSanitizer = detailSanitizer;
+     }
+ 
+     @Override
+     protected HttpProblem toProblem(JsonbException exception) {
+-        if (!includeDetails) {
+-            return HttpProblem.valueOf(BAD_REQUEST, SANITIZED_DETAIL);
+-        }
+-        return HttpProblem.valueOf(BAD_REQUEST, exception.getCause() == null ? null : exception.getCause().getMessage());
++        String rawDetail = exception.getCause() == null ? null : exception.getCause().getMessage();
++        return HttpProblem.valueOf(BAD_REQUEST, detailSanitizer.sanitize(rawDetail));
+     }
+ }
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/RestEasyClassicJsonbExceptionMapper.java b/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/RestEasyClassicJsonbExceptionMapper.java
+index 42bf519..40ca9a6 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/RestEasyClassicJsonbExceptionMapper.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/jsonb/RestEasyClassicJsonbExceptionMapper.java
+@@ -8,27 +8,25 @@ import jakarta.inject.Inject;
+ import jakarta.ws.rs.Priorities;
+ import jakarta.ws.rs.ProcessingException;
+ 
++import io.quarkiverse.httpproblem.DetailSanitizer;
+ import io.quarkiverse.httpproblem.ExceptionMapperBase;
+ import io.quarkiverse.httpproblem.HttpProblem;
+-import io.quarkiverse.httpproblem.ProblemRuntimeFixedConfig;
+ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+ 
+ @Priority(Priorities.USER)
+ public final class RestEasyClassicJsonbExceptionMapper extends ExceptionMapperBase<ProcessingException> {
+ 
+-    static final String SANITIZED_DETAIL = "Malformed request body";
+-
+-    private boolean includeDetails;
++    private final DetailSanitizer detailSanitizer;
+ 
+     public RestEasyClassicJsonbExceptionMapper() {
+-        this.includeDetails = false;
++        this.detailSanitizer = new DetailSanitizer();
+     }
+ 
+     @Inject
+     public RestEasyClassicJsonbExceptionMapper(PostProcessorsRegistry postProcessorsRegistry,
+-            ProblemRuntimeFixedConfig config) {
++            DetailSanitizer detailSanitizer) {
+         super(postProcessorsRegistry);
+-        this.includeDetails = config.includeDetails();
++        this.detailSanitizer = detailSanitizer;
+     }
+ 
+     /**
+@@ -41,10 +39,7 @@ public final class RestEasyClassicJsonbExceptionMapper extends ExceptionMapperBa
+     protected HttpProblem toProblem(ProcessingException exception) {
+         if (exception.getCause() != null
+                 && exception.getCause().getClass().getName().equals("jakarta.json.bind.JsonbException")) {
+-            String detail = includeDetails
+-                    ? exception.getCause().getMessage()
+-                    : SANITIZED_DETAIL;
+-            return HttpProblem.valueOf(BAD_REQUEST, detail);
++            return HttpProblem.valueOf(BAD_REQUEST, detailSanitizer.sanitize(exception.getCause().getMessage()));
+         } else {
+             return HttpProblem.valueOf(INTERNAL_SERVER_ERROR);
+         }

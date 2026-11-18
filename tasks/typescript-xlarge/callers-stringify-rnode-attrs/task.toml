@@ -1,4 +1,0 @@
-type = "callers"
-origin = "synthetic, exported functions that transitively reach a module-private helper; fills a pr place (tasks/typescript-xlarge/pr-log.md)"
-symbol = "stringifyRNodeAttrs (packages/core/src/hydration/error_handling.ts)"
-selection = "Module-private top-level functions of non-test files under packages/**/src that are reached, through calls among the file's top-level functions, by 4 to 15 of the file's exported functions, at least 2 of them only indirectly and through at least one private intermediate, where no function on those paths is used other than by a direct call (not passed as a value, shadowed or declared twice), so the call graph is closed within the file (syntactic scan with the TypeScript compiler API); 30 candidates, sorted, seeded shuffle awk srand(20261110), first taken."

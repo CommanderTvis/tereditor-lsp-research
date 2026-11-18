@@ -1,0 +1,9 @@
+type = "pr"
+base_commit = "25b378323cfe1ecee9b660d7e970c76127cfa7a6"
+merged_at = "2026-09-04T05:33:54Z"
+pr = 3891
+issue = 3885
+merge_commit = "80e700ec217e8b5835f9c88dc02adb77c17d2f63"
+rest_base_sha = "25b378323cfe1ecee9b660d7e970c76127cfa7a6"
+toolchain = "bash + urchin (grade-shell)"
+grade_timeout_s = 1200

@@ -1,0 +1,1 @@
+Rename the HTML renderer's public header `src/md4c-html.h` to `src/md4c-render.h`. Update every `#include` of it and every other reference to its file name: the build files, the sources, the README and the programs under `test/`. Do not leave a copy or a forwarding header under the old name. The library `md4c-html` and the source file `src/md4c-html.c` keep their names.

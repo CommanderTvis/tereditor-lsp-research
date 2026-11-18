@@ -1,0 +1,6 @@
+tests/test_phone_numbers.py::test_national_format_keeps_country_code_outside_default_region[+1 650 253 0000-+1 650-253-0000]
+tests/test_phone_numbers_validator.py::test_national_format_keeps_country_code_outside_default_region[+1 650 253 0000-+1 650-253-0000]
+tests/test_phone_numbers_validator.py::test_national_format_keeps_country_code_outside_default_region[+33 1 23 45 67 89-+33 1 23 45 67 89]
+tests/test_phone_numbers_validator.py::test_national_format_keeps_country_code_outside_default_region[+49 30 901820-+49 30 901820]
+tests/test_phone_numbers_validator.py::test_national_format_keeps_country_code_outside_default_region[+91 22 2778 8888-+91 22 2778 8888]
+tests/test_phone_numbers_validator.py::test_national_format_without_default_region

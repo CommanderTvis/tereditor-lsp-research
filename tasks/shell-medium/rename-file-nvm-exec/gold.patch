@@ -1,0 +1,203 @@
+diff --git a/.github/workflows/shellcheck.yml b/.github/workflows/shellcheck.yml
+index 7f58c2f..e9fb5aa 100644
+--- a/.github/workflows/shellcheck.yml
++++ b/.github/workflows/shellcheck.yml
+@@ -24,7 +24,7 @@ jobs:
+           - shell: bash
+             file: bash_completion # only needed in bash/zsh
+           - shell: bash
+-            file: nvm-exec # only runs in bash
++            file: nvm-runner # only runs in bash
+ 
+     steps:
+       - name: Harden Runner
+diff --git a/install.sh b/install.sh
+index 73b5b34..5902e2f 100755
+--- a/install.sh
++++ b/install.sh
+@@ -98,7 +98,7 @@ EOF
+   local NVM_SOURCE_URL
+   NVM_SOURCE_URL="$NVM_SOURCE"
+   if [ "_$NVM_METHOD" = "_script-nvm-exec" ]; then
+-    NVM_SOURCE_URL="https://raw.githubusercontent.com/${NVM_GITHUB_REPO}/${NVM_VERSION}/nvm-exec"
++    NVM_SOURCE_URL="https://raw.githubusercontent.com/${NVM_GITHUB_REPO}/${NVM_VERSION}/nvm-runner"
+   elif [ "_$NVM_METHOD" = "_script-nvm-bash-completion" ]; then
+     NVM_SOURCE_URL="https://raw.githubusercontent.com/${NVM_GITHUB_REPO}/${NVM_VERSION}/bash_completion"
+   elif [ -z "$NVM_SOURCE_URL" ]; then
+@@ -286,7 +286,7 @@ install_nvm_as_script() {
+   } &
+   local NVM_SH_PID
+   NVM_SH_PID=$!
+-  nvm_download -s "$NVM_EXEC_SOURCE" -o "$INSTALL_DIR/nvm-exec.download" || {
++  nvm_download -s "$NVM_EXEC_SOURCE" -o "$INSTALL_DIR/nvm-runner.download" || {
+     nvm_echo >&2 "Failed to download '$NVM_EXEC_SOURCE'"
+     return 2
+   } &
+@@ -307,15 +307,15 @@ install_nvm_as_script() {
+     wait "$job" || NVM_DOWNLOAD_STATUS=$?
+   done
+   if [ "$NVM_DOWNLOAD_STATUS" -ne 0 ]; then
+-    command rm -f "$INSTALL_DIR/nvm.sh.download" "$INSTALL_DIR/nvm-exec.download" "$INSTALL_DIR/bash_completion.download"
++    command rm -f "$INSTALL_DIR/nvm.sh.download" "$INSTALL_DIR/nvm-runner.download" "$INSTALL_DIR/bash_completion.download"
+     return "$NVM_DOWNLOAD_STATUS"
+   fi
+-  chmod a+x "$INSTALL_DIR/nvm-exec.download" || {
+-    nvm_echo >&2 "Failed to mark '$INSTALL_DIR/nvm-exec' as executable"
++  chmod a+x "$INSTALL_DIR/nvm-runner.download" || {
++    nvm_echo >&2 "Failed to mark '$INSTALL_DIR/nvm-runner' as executable"
+     return 3
+   }
+   local NVM_SCRIPT_FILE
+-  for NVM_SCRIPT_FILE in nvm-exec bash_completion nvm.sh
++  for NVM_SCRIPT_FILE in nvm-runner bash_completion nvm.sh
+   do
+     command mv -f "$INSTALL_DIR/$NVM_SCRIPT_FILE.download" "$INSTALL_DIR/$NVM_SCRIPT_FILE" || {
+       nvm_echo >&2 "Failed to move '$INSTALL_DIR/$NVM_SCRIPT_FILE.download' into place"
+diff --git a/nvm-exec b/nvm-runner
+similarity index 100%
+rename from nvm-exec
+rename to nvm-runner
+diff --git a/nvm.sh b/nvm.sh
+index ffc1941..ec79913 100755
+--- a/nvm.sh
++++ b/nvm.sh
+@@ -6163,7 +6163,7 @@ nvm() {
+           nvm_echo "Running node ${VERSION}$(nvm use --silent "${VERSION}" && nvm_print_npm_version)"
+         fi
+       fi
+-      NVM_ONLY_SELECTED="${NVM_ONLY_SELECTED}" NODE_VERSION="${VERSION}" "${NVM_DIR}/nvm-exec" "$@"
++      NVM_ONLY_SELECTED="${NVM_ONLY_SELECTED}" NODE_VERSION="${VERSION}" "${NVM_DIR}/nvm-runner" "$@"
+     ;;
+     "ls" | "list")
+       local PATTERN
+diff --git a/test/fast/Running 'nvm use -- x' does not parse x as an option b/test/fast/Running 'nvm use -- x' does not parse x as an option
+index 9ec201f..7fad56b 100755
+--- a/test/fast/Running 'nvm use -- x' does not parse x as an option	
++++ b/test/fast/Running 'nvm use -- x' does not parse x as an option	
+@@ -2,7 +2,7 @@
+ 
+ set -ex
+ 
+-# nvm-exec is a separate bash process: give it the same NVM_DIR as this shell,
++# nvm-runner is a separate bash process: give it the same NVM_DIR as this shell,
+ # and empty BASH_ENV so a profile there (like the one in this repo's Dockerfile) can't replace it
+ export NVM_DIR="$(cd ../.. && pwd)"
+ unset NODE_VERSION
+@@ -12,7 +12,7 @@ unset NODE_VERSION
+ \. ../common.sh
+ 
+ ORIG_PWD="$(pwd)"
+-NVM_EXEC="${NVM_DIR}/nvm-exec"
++NVM_EXEC="${NVM_DIR}/nvm-runner"
+ 
+ cleanup() {
+   cd "${ORIG_PWD}" 2>/dev/null || true
+@@ -38,11 +38,11 @@ try nvm use -- --save
+ [ "${CAPTURED_EXIT_CODE}" != 0 ] || die '`nvm use -- --save` should fail, since `--save` is not a version'
+ 
+ try env BASH_ENV= NODE_VERSION=0.0.1 "${NVM_EXEC}" node --version
+-[ "${CAPTURED_STDOUT}" = 'v0.0.1' ] || die "\`NODE_VERSION=0.0.1 nvm-exec node --version\` should run v0.0.1, got >${CAPTURED_STDOUT}<"
++[ "${CAPTURED_STDOUT}" = 'v0.0.1' ] || die "\`NODE_VERSION=0.0.1 nvm-runner node --version\` should run v0.0.1, got >${CAPTURED_STDOUT}<"
+ 
+ try env BASH_ENV= NODE_VERSION=-w "${NVM_EXEC}" node --version
+-[ "$(cat .nvmrc)" = "${HAND_WRITTEN}" ] || die "\`NODE_VERSION=-w nvm-exec\` rewrote .nvmrc to >$(cat .nvmrc)<"
+-[ "${CAPTURED_EXIT_CODE}" = 127 ] || die "\`NODE_VERSION=-w nvm-exec\` should exit 127, got >${CAPTURED_EXIT_CODE}<"
++[ "$(cat .nvmrc)" = "${HAND_WRITTEN}" ] || die "\`NODE_VERSION=-w nvm-runner\` rewrote .nvmrc to >$(cat .nvmrc)<"
++[ "${CAPTURED_EXIT_CODE}" = 127 ] || die "\`NODE_VERSION=-w nvm-runner\` should exit 127, got >${CAPTURED_EXIT_CODE}<"
+ 
+ try nvm use --
+ [ "${CAPTURED_EXIT_CODE}" = 0 ] || die "a lone \`nvm use --\` should fall back to .nvmrc, got exit >${CAPTURED_EXIT_CODE}<"
+diff --git a/test/fast/Running 'nvm-exec' should display required node version b/test/fast/Running 'nvm-exec' should display required node version
+index 28503bb..781f5fb 100755
+--- a/test/fast/Running 'nvm-exec' should display required node version	
++++ b/test/fast/Running 'nvm-exec' should display required node version	
+@@ -3,7 +3,7 @@
+ set -x
+ export NVM_DIR="$(cd ../.. && pwd)"
+ 
+-# an ambient value would send nvm-exec down its `NODE_VERSION` branch
++# an ambient value would send nvm-runner down its `NODE_VERSION` branch
+ unset NODE_VERSION
+ 
+ : nvm.sh
+@@ -26,7 +26,7 @@ HINT="nvm-exec: unable to select a node version
+ # Write it to nvmrc
+ echo "$NVM_TEST_VERSION" > .nvmrc
+ 
+-OUTPUT="$(../../nvm-exec 2>&1)";
++OUTPUT="$(../../nvm-runner 2>&1)";
+ EXPECTED="Found '$(pwd)/.nvmrc' with version <${NVM_TEST_VERSION}>
+ N/A: version \"${NVM_TEST_VERSION}\" is not yet installed.
+ 
+@@ -38,7 +38,7 @@ ${HINT}";
+ 
+ rm -f .nvmrc
+ 
+-NVM_EXEC="$(cd ../.. && pwd)/nvm-exec"
++NVM_EXEC="$(cd ../.. && pwd)/nvm-runner"
+ 
+ # Run from a fresh, empty directory so no ambient .nvmrc above the test dir
+ # can satisfy the lookup and mask the hint.
+diff --git a/test/install_script/install_nvm_as_script_download_failure b/test/install_script/install_nvm_as_script_download_failure
+index 6ecbb41..ab59471 100755
+--- a/test/install_script/install_nvm_as_script_download_failure
++++ b/test/install_script/install_nvm_as_script_download_failure
+@@ -38,9 +38,9 @@ EXIT_CODE=$?
+ [ "${EXIT_CODE}" != '0' ] || die "install_nvm_as_script should fail when a download fails, got ${EXIT_CODE}"
+ echo "${OUTPUT}" | grep -q "Failed to download" || die "install_nvm_as_script should print the download error, got: ${OUTPUT}"
+ [ "$(cat "${NVM_DIR}/nvm.sh")" = 'working nvm.sh' ] || die "a failed download replaced the working nvm.sh with: $(cat "${NVM_DIR}/nvm.sh")"
+-[ ! -e "${NVM_DIR}/nvm-exec" ] || die 'nvm-exec was installed although the nvm.sh download failed'
++[ ! -e "${NVM_DIR}/nvm-runner" ] || die 'nvm-runner was installed although the nvm.sh download failed'
+ [ ! -e "${NVM_DIR}/bash_completion" ] || die 'bash_completion was installed although the nvm.sh download failed'
+-for FILE in nvm.sh nvm-exec bash_completion; do
++for FILE in nvm.sh nvm-runner bash_completion; do
+   [ ! -e "${NVM_DIR}/${FILE}.download" ] || die "a failed download left '${FILE}.download' behind"
+ done
+ 
+@@ -52,10 +52,10 @@ OUTPUT="$(install_nvm_as_script 2>&1)"
+ EXIT_CODE=$?
+ [ "${EXIT_CODE}" = '0' ] || die "install_nvm_as_script should succeed when every download succeeds, got ${EXIT_CODE}: ${OUTPUT}"
+ [ "$(cat "${NVM_DIR}/nvm.sh")" = "$(nvm_source script)" ] || die "nvm.sh was not updated, got: $(cat "${NVM_DIR}/nvm.sh")"
+-[ "$(cat "${NVM_DIR}/nvm-exec")" = "$(nvm_source script-nvm-exec)" ] || die "nvm-exec was not installed, got: $(cat "${NVM_DIR}/nvm-exec")"
++[ "$(cat "${NVM_DIR}/nvm-runner")" = "$(nvm_source script-nvm-exec)" ] || die "nvm-runner was not installed, got: $(cat "${NVM_DIR}/nvm-runner")"
+ [ "$(cat "${NVM_DIR}/bash_completion")" = "$(nvm_source script-nvm-bash-completion)" ] || die "bash_completion was not installed, got: $(cat "${NVM_DIR}/bash_completion")"
+-[ -x "${NVM_DIR}/nvm-exec" ] || die 'nvm-exec was not marked executable'
+-for FILE in nvm.sh nvm-exec bash_completion; do
++[ -x "${NVM_DIR}/nvm-runner" ] || die 'nvm-runner was not marked executable'
++for FILE in nvm.sh nvm-runner bash_completion; do
+   [ ! -e "${NVM_DIR}/${FILE}.download" ] || die "a successful download left '${FILE}.download' behind"
+ done
+ 
+diff --git a/test/install_script/install_nvm_from_git_ignores_cwd_repo b/test/install_script/install_nvm_from_git_ignores_cwd_repo
+index faa3020..5a84fa6 100755
+--- a/test/install_script/install_nvm_from_git_ignores_cwd_repo
++++ b/test/install_script/install_nvm_from_git_ignores_cwd_repo
+@@ -26,9 +26,9 @@ git_commit() {
+ 
+ # a local stand-in for the nvm repo, so the install needs no network
+ mkdir -p "$UPSTREAM" || die 'Unable to create upstream directory'
+-cp ../../nvm.sh ../../nvm-exec ../../bash_completion "$UPSTREAM"/ || die 'Unable to copy nvm files'
++cp ../../nvm.sh ../../nvm-runner ../../bash_completion "$UPSTREAM"/ || die 'Unable to copy nvm files'
+ git init --quiet "$UPSTREAM" || die 'Unable to init upstream'
+-git --git-dir="$UPSTREAM/.git" --work-tree="$UPSTREAM" add nvm.sh nvm-exec bash_completion || die 'Unable to add upstream files'
++git --git-dir="$UPSTREAM/.git" --work-tree="$UPSTREAM" add nvm.sh nvm-runner bash_completion || die 'Unable to add upstream files'
+ git_commit --git-dir="$UPSTREAM/.git" --work-tree="$UPSTREAM" commit --quiet -m 'release' || die 'Unable to commit upstream'
+ git --git-dir="$UPSTREAM/.git" tag v9.9.9 || die 'Unable to tag upstream'
+ EXPECTED="$(git --git-dir="$UPSTREAM/.git" rev-parse --verify 'v9.9.9^{commit}')"
+diff --git a/test/install_script/nvm_source b/test/install_script/nvm_source
+index 82e25aa..f94b40a 100755
+--- a/test/install_script/nvm_source
++++ b/test/install_script/nvm_source
+@@ -20,9 +20,9 @@ NVM_INSTALL_GITHUB_REPO="other-user/other-nvm" nvm_source "git" | grep "https://
+ [ "$(nvm_source "script")" = "https://raw.githubusercontent.com/nvm-sh/nvm/$(nvm_latest_version)/nvm.sh" ] || die "nvm_source \"script\" should return the location of nvm.sh"
+ NVM_INSTALL_GITHUB_REPO="other-user/other-nvm" NVM_INSTALL_VERSION="v0.37.0" nvm_source "script" | grep "https://raw.githubusercontent.com/other-user/other-nvm/v0.37.0/nvm.sh$" > /dev/null || die "NVM_INSTALL_GITHUB_REPO=... NVM_INSTALL_VERSION=... nvm_source \"script\" should return the location of nvm.sh"
+ 
+-# nvm_source with script-nvm-exec parameter returns the location of nvm-exec
+-[ "$(nvm_source "script-nvm-exec")" = "https://raw.githubusercontent.com/nvm-sh/nvm/$(nvm_latest_version)/nvm-exec" ] || die "nvm_source \"script-nvm-exec\" should return the location of nvm.sh"
+-NVM_INSTALL_GITHUB_REPO="other-user/other-nvm" NVM_INSTALL_VERSION="v0.37.0" nvm_source "script-nvm-exec" | grep "https://raw.githubusercontent.com/other-user/other-nvm/v0.37.0/nvm-exec$" > /dev/null || die "NVM_INSTALL_GITHUB_REPO=... NVM_INSTALL_VERSION=... nvm_source \"script-nvm-exec\" should return the location of nvm.sh"
++# nvm_source with script-nvm-exec parameter returns the location of nvm-runner
++[ "$(nvm_source "script-nvm-exec")" = "https://raw.githubusercontent.com/nvm-sh/nvm/$(nvm_latest_version)/nvm-runner" ] || die "nvm_source \"script-nvm-exec\" should return the location of nvm.sh"
++NVM_INSTALL_GITHUB_REPO="other-user/other-nvm" NVM_INSTALL_VERSION="v0.37.0" nvm_source "script-nvm-exec" | grep "https://raw.githubusercontent.com/other-user/other-nvm/v0.37.0/nvm-runner$" > /dev/null || die "NVM_INSTALL_GITHUB_REPO=... NVM_INSTALL_VERSION=... nvm_source \"script-nvm-exec\" should return the location of nvm.sh"
+ 
+ # nvm_source with any other parameter errors out and exits
+ nvm_source "anything" 2> /dev/null && die "nvm_source with invalid parameter should exit"

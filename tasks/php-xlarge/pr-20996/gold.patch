@@ -1,0 +1,73 @@
+diff --git a/src/Core/Framework/DependencyInjection/message-queue.php b/src/Core/Framework/DependencyInjection/message-queue.php
+index 79b05546b63..fa7d218636f 100644
+--- a/src/Core/Framework/DependencyInjection/message-queue.php
++++ b/src/Core/Framework/DependencyInjection/message-queue.php
+@@ -43,6 +43,7 @@
+         ->args([
+             service('shopware.increment.gateway.registry'),
+             service(StatsService::class),
++            service('logger'),
+         ])
+         ->tag('kernel.event_subscriber');
+ 
+diff --git a/src/Core/Framework/MessageQueue/Subscriber/MessageQueueStatsSubscriber.php b/src/Core/Framework/MessageQueue/Subscriber/MessageQueueStatsSubscriber.php
+index f3f59f286df..6d3debba982 100644
+--- a/src/Core/Framework/MessageQueue/Subscriber/MessageQueueStatsSubscriber.php
++++ b/src/Core/Framework/MessageQueue/Subscriber/MessageQueueStatsSubscriber.php
+@@ -2,6 +2,7 @@
+ 
+ namespace Shopware\Core\Framework\MessageQueue\Subscriber;
+ 
++use Psr\Log\LoggerInterface;
+ use Shopware\Core\Framework\Feature;
+ use Shopware\Core\Framework\Increment\IncrementGatewayRegistry;
+ use Shopware\Core\Framework\Log\Package;
+@@ -26,7 +27,8 @@ public function __construct(
+          * @deprecated tag:v6.8.0 - Property will be removed. The increment-based message queue statistics are deprecated.
+          */
+         private readonly IncrementGatewayRegistry $gatewayRegistry,
+-        private readonly StatsService $statsService
++        private readonly StatsService $statsService,
++        private readonly LoggerInterface $logger,
+     ) {
+     }
+ 
+@@ -61,7 +63,12 @@ public function onMessageFailed(WorkerMessageFailedEvent $event): void
+     public function onMessageHandled(WorkerMessageHandledEvent $event): void
+     {
+         $this->handle($event->getEnvelope(), false);
+-        $this->statsService->registerMessage($event->getEnvelope());
++
++        try {
++            $this->statsService->registerMessage($event->getEnvelope());
++        } catch (\Throwable $e) {
++            $this->logger->warning('Failed to register the message queue statistics', ['exception' => $e]);
++        }
+     }
+ 
+     /**
+@@ -85,14 +92,18 @@ private function handle(Envelope $envelope, bool $increment): void
+ 
+         $name = $envelope->getMessage()::class;
+ 
+-        $gateway = $this->gatewayRegistry->get(IncrementGatewayRegistry::MESSAGE_QUEUE_POOL);
++        try {
++            $gateway = $this->gatewayRegistry->get(IncrementGatewayRegistry::MESSAGE_QUEUE_POOL);
+ 
+-        if ($increment) {
+-            $gateway->increment('message_queue_stats', $name);
++            if ($increment) {
++                $gateway->increment('message_queue_stats', $name);
+ 
+-            return;
+-        }
++                return;
++            }
+ 
+-        $gateway->decrement('message_queue_stats', $name);
++            $gateway->decrement('message_queue_stats', $name);
++        } catch (\Throwable $e) {
++            $this->logger->warning('Failed to update the message queue increment statistics', ['exception' => $e]);
++        }
+     }
+ }

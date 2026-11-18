@@ -33,6 +33,9 @@ if [ -z "${STUDY_RUNTIME:-}" ]; then
   else die "need Docker or Apple container"; fi
 fi
 RT=$STUDY_RUNTIME
+# An amd64 builder on an arm64 host (DOCKER_DEFAULT_PLATFORM=linux/amd64, needed for clangd) keeps its own volume pair:
+# a Nix store holds one architecture's paths, and the image's /bin/sh points into it.
+VSUF=; case "${DOCKER_DEFAULT_PLATFORM:-}" in *amd64*|*x86_64*) VSUF=-amd64 ;; esac
 CPUS=${STUDY_CPUS:-4}
 MEMORY=${STUDY_MEMORY:-8g}
 NIX_IMAGE=docker.io/nixos/nix:2.35.6@sha256:b49cb33f3a7e5cf3933ad8774529de0e3807ec5cf54987aa7ccdfb49f2fc55ed
@@ -70,15 +73,15 @@ priv() { if [ "$RT" = docker ]; then echo --privileged; else echo "--cap-add ALL
 ctr_volumes() {
   container_lock
   if [ "$RT" = docker ]; then
-    docker volume inspect study-nix >/dev/null 2>&1 || docker volume create study-nix >/dev/null
-    docker volume inspect study-state >/dev/null 2>&1 || docker volume create study-state >/dev/null
+    docker volume inspect study-nix$VSUF >/dev/null 2>&1 || docker volume create study-nix$VSUF >/dev/null
+    docker volume inspect study-state$VSUF >/dev/null 2>&1 || docker volume create study-state$VSUF >/dev/null
   else
-    container volume inspect study-nix >/dev/null 2>&1 || container volume create study-nix >/dev/null
-    container volume inspect study-state >/dev/null 2>&1 || container volume create study-state >/dev/null
+    container volume inspect study-nix$VSUF >/dev/null 2>&1 || container volume create study-nix$VSUF >/dev/null
+    container volume inspect study-state$VSUF >/dev/null 2>&1 || container volume create study-state$VSUF >/dev/null
   fi
-  if ! $RT run --rm -v study-nix:/nix --entrypoint /bin/sh "$NIX_IMAGE" -c 'test -x /nix/var/nix/profiles/default/bin/nix' >/dev/null 2>&1; then
+  if ! $RT run --rm -v study-nix$VSUF:/nix --entrypoint /bin/sh "$NIX_IMAGE" -c 'test -x /nix/var/nix/profiles/default/bin/nix' >/dev/null 2>&1; then
     log "initialising the Nix store volume"
-    $RT run --rm -v study-nix:/mnt --entrypoint /bin/sh "$NIX_IMAGE" -c 'cp -a /nix/. /mnt/'
+    $RT run --rm -v study-nix$VSUF:/mnt --entrypoint /bin/sh "$NIX_IMAGE" -c 'cp -a /nix/. /mnt/'
   fi
 }
 
@@ -126,7 +129,7 @@ env_run() {
   else
     container_lock
     $RT run --rm $(priv) --cpus "$CPUS" --memory "$MEMORY" \
-      -v study-nix:/nix -v study-state:/state -v "$ROOT:/study-root" \
+      -v study-nix$VSUF:/nix -v study-state$VSUF:/state -v "$ROOT:/study-root" \
       -e "STUDY_HOST_UID=$(id -u)" -e "STUDY_HOST_GID=$(id -g)" -e POLL_S \
       ${ANTHROPIC_API_KEY:+-e ANTHROPIC_API_KEY} ${CLAUDE_CODE_OAUTH_TOKEN:+-e CLAUDE_CODE_OAUTH_TOKEN} \
       ${STUDY_LICENSE_ZIP_B64:+-e STUDY_LICENSE_ZIP_B64 -e STUDY_LICENSE_NAME} \
@@ -171,15 +174,23 @@ by_group() { # <run|grade> <plan>
   done)
   [ -n "$ids" ] || { log "nothing to $what"; return 0; }
   for g in $(for r in $ids; do group_of "$(awk -F'\t' -v r="$r" '$1==r {print $2}' "results/$plan/plan.tsv")"; done | sort -u); do
-    sel=$(for r in $ids; do [ "$(group_of "$(awk -F'\t' -v r="$r" '$1==r {print $2}' "results/$plan/plan.tsv")")" = "$g" ] && echo "$r"; done)
+    sel=$(for r in $ids; do [ "$(group_of "$(awk -F'\t' -v r="$r" '$1==r {print $2}' "results/$plan/plan.tsv")")" = "$g" ] && echo "$r"; done; true)
     env_run "$g" run-many "$what" "$plan" "$j" $sel
   done
 }
 
+# A usage or rate limit (a Max plan's 5-hour window, an API quota) pauses the run, it does not end it: runs that stopped on
+# one are discarded and retried, after LIMIT_WAIT_S seconds (default 1800, tried again until the window has reset).
 cmd_run() {
   plan=$1; shift; parse_jp "$@"; load_credentials; load_license
   [ "$RT" = native ] || ctr_volumes
-  by_group run "$plan"
+  while :; do
+    rm -f "results/$plan/.limit"
+    by_group run "$plan"
+    [ -f "results/$plan/.limit" ] || break
+    wait=${LIMIT_WAIT_S:-1800}; log "usage limit reached; waiting $wait s, then retrying the unfinished runs"
+    sleep "$wait"
+  done
 }
 cmd_grade() { plan=$1; shift; parse_jp "$@"; by_group grade "$plan"; }
 

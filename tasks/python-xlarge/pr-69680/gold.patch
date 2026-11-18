@@ -1,0 +1,34 @@
+diff --git a/changelog/65490.fixed.md b/changelog/65490.fixed.md
+new file mode 100644
+index 000000000000..6d1084482dd0
+--- /dev/null
++++ b/changelog/65490.fixed.md
+@@ -0,0 +1 @@
++Fixed ``disk._parse_numbers`` (used internally by ``disk.iostat`` on AIX) returning values that were off by a factor of 10 for byte counts with a K/M/G/T/P/E/Z/Y postfix, e.g. ``1.0K`` was parsed as ``10000.0`` instead of ``1000.0``.
+diff --git a/salt/modules/disk.py b/salt/modules/disk.py
+index 74cd66066382..f7667690716c 100644
+--- a/salt/modules/disk.py
++++ b/salt/modules/disk.py
+@@ -40,14 +40,14 @@ def _parse_numbers(text):
+ 
+     try:
+         postPrefixes = {
+-            "K": "10E3",
+-            "M": "10E6",
+-            "G": "10E9",
+-            "T": "10E12",
+-            "P": "10E15",
+-            "E": "10E18",
+-            "Z": "10E21",
+-            "Y": "10E24",
++            "K": "1e3",
++            "M": "1e6",
++            "G": "1e9",
++            "T": "1e12",
++            "P": "1e15",
++            "E": "1e18",
++            "Z": "1e21",
++            "Y": "1e24",
+         }
+         if text[-1] in postPrefixes:
+             v = decimal.Decimal(text[:-1])

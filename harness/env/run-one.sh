@@ -5,6 +5,8 @@ plan=$1 rid=$2; P=$STUDY_ROOT/results/$plan; out=$P/runs/$rid
 line=$(awk -F'\t' -v r="$rid" '$1==r' "$P/plan.tsv"); [ -n "$line" ] || die "no run $rid in $P/plan.tsv"
 IFS=$'\t' read -r _ proj task arm model rep effort budget turns tmo <<<"$line"
 [ -f "$out/exit.json" ] && { log "skip $rid (done)"; exit 0; }
+# A usage or rate limit was hit a moment ago (by this or a parallel run): do not start, ./study run waits and retries.
+[ -f "$P/.limit" ] && { log "skip $rid (limit hit, waiting)"; exit 75; }
 td=$STUDY_ROOT/tasks/$proj/$task
 snap=$(state_dir "$proj" "$(task_commit "$proj" "$td")")/snapshot; [ -d "$snap" ] || die "project $proj is not set up at this task's commit: ./study project $proj"
 w=$STUDY_STATE/runs/$plan/$rid; rm -rf "$w" "$out"; mkdir -p "$w/in" "$w/home" "$w/sock" "$w/lsplog" "$w/lic" "$out"
@@ -72,6 +74,17 @@ end=$(date +%s.%N)
 [ -n "${bridge:-}" ] && { kill "$bridge" 2>/dev/null || true; wait "$bridge" 2>/dev/null || true; }
 kill "$egress" 2>/dev/null || true; wait "$egress" 2>/dev/null || true
 
+# A run that stopped on a usage, quota or rate limit is not a result: log the attempt's cost, discard it, flag the limit
+# so ./study run waits and starts this run again from the beginning with the same run id.
+limit_re='limit reached|usage limit|session limit|rate.?limit|quota|credit balance|overloaded|too many requests'
+if { jq -r 'select(.type=="result" and .is_error==true) | (.result // "")' "$out/stream.jsonl" 2>/dev/null; \
+     [ -s "$out/stream-review.jsonl" ] && jq -r 'select(.type=="result" and .is_error==true) | (.result // "")' "$out/stream-review.jsonl" 2>/dev/null; } \
+   | grep -q -i -E "$limit_re"; then
+  cost=$(jq -s '[.[] | select(.type=="result") | .total_cost_usd // 0] | add // 0' "$out/stream.jsonl" 2>/dev/null || echo 0)
+  printf '%s\t%s\tcost_usd=%s\n' "$(date -u +%FT%TZ)" "$rid" "${cost:-0}" >> "$P/limit-attempts.log"
+  touch "$P/.limit"; log "run $rid stopped on a usage limit; discarded, will be retried"
+  rm -rf "$w" "$out"; exit 75
+fi
 g -C "$w/ws" add -A >/dev/null 2>&1 || true
 g -C "$w/ws" diff --cached --binary "$base" > "$out/patch.diff" || true
 [ -f "$w/ws/ANSWER.txt" ] && cp "$w/ws/ANSWER.txt" "$out/"

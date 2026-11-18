@@ -1,7 +1,0 @@
-type = "pr"
-pr = 0
-issue = 0
-base_commit = "d9c9a18b8ffcc3c03881c88999a3675e4e1b6b1a"
-origin = "documented fallback PR: no qualifying offline testable candidate"
-fallback = true
-symbol = "grid-gutter"

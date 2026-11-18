@@ -1,0 +1,13 @@
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags add should add the given flag and set whether its enabled
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags add should throw if a duplicate flag name is given
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags enable should enable the given feature flag
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags enable should throw if the given flag does not exist
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags disable should disable the given feature flag
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags disable should throw if the given flag does not exist
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags enabled should return whether a flag is enabled or disabled
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags enabled should enable v12 flags when the v12 release flag is enabled
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags enabled should not enable the deprecated experimental flags via the v12 release flag
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags enabled should allow v12 flags to be enabled independently of the v12 release flag
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags enabled should throw if the given flag does not exist
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags merge should set each feature flag given
+packages/feature-flags/src/__tests__/feature-flags-test.js :: @carbon/feature-flags merge should override duplicate keys with the given flag

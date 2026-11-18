@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "synthetic, interface dispatch through a type hierarchy"
+symbol = "org.gradle.internal.collect.PersistentSet#groupBy for a PersistentSet1 receiver"
+selection = "seed 20261110. Candidates: abstract methods declared in a public interface of platforms/core-runtime/*/src/main/java (interface name declared once) that at least 4 classes list after implements and at least 3 of them override with @Override: 56 (interface, method) pairs, sorted by interface and name; index int(rand()*56) after srand(20261110) = int(0.737769*56) = 41, PersistentSet#groupBy (the candidate count included PersistentSetCollector, which implements Collector, so the real implementations are PersistentSet0, PersistentSet1 and PersistentSetTrie). The receiver is the implementation picked by the second value, 0.623187: the 3 real implementations sorted by name, index int(0.623187*3) = 1 (PersistentSet1)."

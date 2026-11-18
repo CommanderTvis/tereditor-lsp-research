@@ -1,0 +1,142 @@
+no arguments prints message and usage instructions
+invalid option prints message and usage instructions
+-- stops option parsing before test paths
+-- preserves option-like test filenames
+-- is a literal test filename after the option terminator
+-- preserves test paths before and after it
+-- supports option-like directories with bundled options
+-- supports test paths within option-like directories
+-- without a test path prints the missing test error
+-- as an option value does not stop option parsing
+-- can follow an option value containing --
+-v and --version print version number
+-h and --help print help
+invalid filename prints an error
+empty test file runs zero tests but returns non-zero exit code
+one passing test
+summary passing tests
+summary passing and skipping tests
+summary passing and failing tests
+summary passing, failing and skipping tests
+BATS_CWD is correctly set to PWD as validated by bats_trim_filename
+one failing test
+one failing and one passing test
+failing test with significant status
+failing helper function logs the test case's line number
+failing bash condition logs correct line number
+failing bash expression logs correct line number
+failing negated command logs correct line number
+test environments are isolated
+setup is run once before each test
+teardown is run once after each test, even if it fails
+setup failure
+passing test with teardown failure
+failing test with teardown failure
+teardown failure with significant status
+failing test file outside of BATS_CWD
+output is discarded for passing tests and printed for failing tests
+-c prints the number of tests
+dash-e is not mangled on beginning of line
+dos line endings are stripped before testing
+test file without trailing newline
+skipped tests
+extended syntax
+timing syntax
+extended timing syntax
+time is greater than 0ms for long test
+single-line tests
+testing IFS not modified by run
+expand variables in test name
+handle quoted and unquoted test names
+ensure compatibility with unofficial Bash strict mode
+parse @test lines with various whitespace combinations
+duplicate tests error and generate a warning on stderr
+sourcing a nonexistent file in setup produces error output
+referencing unset parameter in setup produces error output
+sourcing a nonexistent file in test produces error output
+referencing unset parameter in test produces error output
+sourcing a nonexistent file in teardown produces error output
+referencing unset parameter in teardown produces error output
+execute exported function without breaking failing test output
+output printed even when no final newline
+run tests which consume stdin (see #197)
+test names with non-ASCII characters run under a UTF-8 locale (see #1233) # skip en_US.UTF-8 locale is not available on this system
+report correct line on unset variables
+report correct line on external function calls
+test count validator catches mismatch and returns non zero
+running the same file twice runs its tests twice without errors
+Don't use unbound variables inside bats (issue #340)
+filenames with tab can be used
+each file is evaluated n+1 times
+Don't hang on CTRL-C (issue #353)
+test comment style
+test works even if PATH is reset
+Test nounset does not trip up bats' internals (see #385)
+run tmpdir is cleaned up by default
+run tmpdir is not cleanup up with --no-cleanup-tempdir
+run should exit if tmpdir exist
+run should exit if TMPDIR can't be created
+Fail if BATS_TMPDIR does not exist or is not writable
+Setting BATS_TMPDIR is ignored
+Parallel mode works on MacOS with over subscription (issue #433) # skip --jobs requires GNU parallel
+Failure in free code (see #399)
+CTRL-C aborts and fails the current test
+CTRL-C aborts and fails the current run
+CTRL-C aborts and fails after run
+CTRL-C aborts and fails the current teardown
+CTRL-C aborts and fails the current setup_file
+CTRL-C aborts and fails the current teardown_file
+single star in output is not treated as a glob
+multiple stars in output are not treated as a glob
+ensure all folders are shellchecked
+BATS_RUN_COMMAND: test content of variable
+--print-output-on-failure works as expected
+--print-output-on-failure also shows stderr (for run --separate-stderr)
+--show-output-of-passing-tests works as expected
+--verbose-run prints output
+BATS_VERBOSE_RUN=1 also prints output
+--gather-test-outputs-in gathers outputs of all tests (even succeeding!)
+--gather-test-outputs-in allows directory to exist (only if empty)
+--gather-test-output-in works with slashes in test names
+--gather-test-outputs-in works with tests that change directory
+Test with a name that is waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay too long # skip This test should only check if the long name chokes bats' internals during execution
+BATS_CODE_QUOTE_STYLE works with any two characters (even unicode) # skip Unicode chars are not counted as one char in this system
+BATS_CODE_QUOTE_STYLE=custom requires BATS_CODE_QUOTE_BEGIN/END
+Warn about invalid BATS_CODE_QUOTE_STYLE
+Debug trap must only override variables that are prefixed with BATS_ (issue #519)
+Don't wait for disowned background jobs to finish because of open FDs (#205)
+Allow for prefixing tests' names with BATS_TEST_NAME_PREFIX
+Setting status in teardown* does not override exit code (see issue #575)
+BATS_* variables don't contain double slashes
+BATS_TEST_RETRIES allows for retrying tests
+Exit code is zero after successful retry (see #660)
+Error on invalid --line-reference-format
+--line-reference-format switches format
+Focus tests filter out other tests and override exit code for -c flag
+Focus tests filter out other tests and override exit code
+Focus tests with BATS_NO_FAIL_FOCUS_RUN=1 does not override exit code
+Fail with focus, even if all tests are filtered out (#1044)
+Bats waits for report formatter to finish
+Failing report formatter fails test run
+Short opt unpacker rejects valued options
+Test timing does not break when overriding date on path
+dynamic test registration
+dynamic test registration still rejects identical identities
+dynamic test identities are scoped to each file
+dynamic prefix registration retains name filtering
+IFS is preserved in all contexts
+failure callback in test
+failure callback in setup_file
+failure callback in setup_suite
+run outputs dont crosstalk (#1105)
+--abort prevents further tests from running
+--abort prevents further tests from running in parallel mode # skip Requires GNU parallel
+--errexit flag is accepted and sets BATS_RUN_ERREXIT
+--errexit flag behavior differs from default run behavior
+Bats's DEBUG trap should not overwrite $_ (#1208)
+--allow-empty-suite fails when there are tests
+--allow-empty-suite exits successfully on empty suite
+BATS_ALLOW_EMPTY_SUITE exits successfully on empty suite
+empty BATS_ALLOW_EMPTY_SUITE does not allow an empty suite
+BATS_ALLOW_EMPTY_SUITE does not fail when there are tests
+empty testfile path is an error

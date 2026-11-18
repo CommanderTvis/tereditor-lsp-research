@@ -1,0 +1,217 @@
+diff --git a/astroid/bases.py b/astroid/bases.py
+index 374d29ac..e1c42ffe 100644
+--- a/astroid/bases.py
++++ b/astroid/bases.py
+@@ -324,6 +324,8 @@ class BaseInstance(Proxy):
+         self,
+         caller: SuccessfulInferenceResult | None,
+         context: InferenceContext | None = None,
++        *,
++        strict: bool = False,
+     ) -> Iterator[InferenceResult]:
+         """Infer what a class instance is returning when called."""
+         context = bind_context_to_node(context, self)
+@@ -344,7 +346,7 @@ class BaseInstance(Proxy):
+                 yield node
+                 # Prevent recursion.
+                 continue
+-            for res in node.infer_call_result(caller, context):
++            for res in node.infer_call_result(caller, context, strict=strict):
+                 inferred = True
+                 yield res
+         if not inferred:
+@@ -479,6 +481,8 @@ class UnboundMethod(Proxy):
+         self,
+         caller: SuccessfulInferenceResult | None,
+         context: InferenceContext | None = None,
++        *,
++        strict: bool = False,
+     ) -> Iterator[InferenceResult]:
+         """
+         The boundnode of the regular context with a function called
+@@ -498,7 +502,7 @@ class UnboundMethod(Proxy):
+             # Avoid checking builtins.type: _infer_type_new_call() does more validation
+             if qname.startswith("builtins.") and qname != "builtins.type":
+                 return self._infer_builtin_new(caller, context or InferenceContext())
+-        return self._proxied.infer_call_result(caller, context)
++        return self._proxied.infer_call_result(caller, context, strict=strict)
+ 
+     def _infer_builtin_new(
+         self,
+@@ -680,6 +684,8 @@ class BoundMethod(UnboundMethod):
+         self,
+         caller: SuccessfulInferenceResult | None,
+         context: InferenceContext | None = None,
++        *,
++        strict: bool = False,
+     ) -> Iterator[InferenceResult]:
+         # For super() calls, use original_caller to correctly infer Self return type
+         bound_node = self.original_caller if self.original_caller else self.bound
+@@ -700,7 +706,7 @@ class BoundMethod(UnboundMethod):
+             if new_cls:
+                 return iter((new_cls,))
+ 
+-        return super().infer_call_result(caller, context)
++        return super().infer_call_result(caller, context, strict=strict)
+ 
+     def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
+         return True
+diff --git a/astroid/brain/brain_functools.py b/astroid/brain/brain_functools.py
+index 90c2042b..14d0d64a 100644
+--- a/astroid/brain/brain_functools.py
++++ b/astroid/brain/brain_functools.py
+@@ -46,6 +46,8 @@ class LruWrappedModel(objectmodel.FunctionModel):
+                 self,
+                 caller: SuccessfulInferenceResult | None,
+                 context: InferenceContext | None = None,
++                *,
++                strict: bool = False,
+             ) -> Iterator[InferenceResult]:
+                 res = safe_infer(cache_info)
+                 assert res is not None
+diff --git a/astroid/interpreter/objectmodel.py b/astroid/interpreter/objectmodel.py
+index 19274747..343ad79f 100644
+--- a/astroid/interpreter/objectmodel.py
++++ b/astroid/interpreter/objectmodel.py
+@@ -429,6 +429,8 @@ class FunctionModel(ObjectModel):
+                 self,
+                 caller: SuccessfulInferenceResult | None,
+                 context: InferenceContext | None = None,
++                *,
++                strict: bool = False,
+             ) -> Iterator[bases.BoundMethod]:
+                 if len(caller.args) > 2 or len(caller.args) < 1:
+                     raise InferenceError(
+@@ -587,6 +589,8 @@ class ClassModel(ObjectModel):
+                 self,
+                 caller: SuccessfulInferenceResult | None,
+                 context: InferenceContext | None = None,
++                *,
++                strict: bool = False,
+             ) -> Iterator[node_classes.Tuple]:
+                 yield other_self.attr___mro__
+ 
+@@ -633,6 +637,8 @@ class ClassModel(ObjectModel):
+                 self,
+                 caller: SuccessfulInferenceResult | None,
+                 context: InferenceContext | None = None,
++                *,
++                strict: bool = False,
+             ) -> Iterator[node_classes.List]:
+                 yield obj
+ 
+@@ -913,6 +919,8 @@ class DictModel(ObjectModel):
+                 self,
+                 caller: SuccessfulInferenceResult | None,
+                 context: InferenceContext | None = None,
++                *,
++                strict: bool = False,
+             ) -> Iterator[InferenceResult]:
+                 yield obj
+ 
+@@ -994,6 +1002,8 @@ class PropertyModel(ObjectModel):
+                 self,
+                 caller: SuccessfulInferenceResult | None,
+                 context: InferenceContext | None = None,
++                *,
++                strict: bool = False,
+             ) -> Iterator[InferenceResult]:
+                 nonlocal func
+                 if caller and len(caller.args) != 1:
+@@ -1003,7 +1013,7 @@ class PropertyModel(ObjectModel):
+ 
+                 yield from func.function.infer_call_result(
+                     caller=caller, context=context
+-                )
++                , strict=strict)
+ 
+         property_accessor = PropertyFuncAccessor(
+             name="fget",
+@@ -1045,13 +1055,15 @@ class PropertyModel(ObjectModel):
+                 self,
+                 caller: SuccessfulInferenceResult | None,
+                 context: InferenceContext | None = None,
++                *,
++                strict: bool = False,
+             ) -> Iterator[InferenceResult]:
+                 nonlocal func_setter
+                 if caller and len(caller.args) != 2:
+                     raise InferenceError(
+                         "fset() needs two arguments", target=self, context=context
+                     )
+-                yield from func_setter.infer_call_result(caller=caller, context=context)
++                yield from func_setter.infer_call_result(caller=caller, context=context, strict=strict)
+ 
+         property_accessor = PropertyFuncAccessor(
+             name="fset",
+diff --git a/astroid/nodes/scoped_nodes/scoped_nodes.py b/astroid/nodes/scoped_nodes/scoped_nodes.py
+index 4c5a9ccd..d1928f01 100644
+--- a/astroid/nodes/scoped_nodes/scoped_nodes.py
++++ b/astroid/nodes/scoped_nodes/scoped_nodes.py
+@@ -982,6 +982,8 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
+         self,
+         caller: SuccessfulInferenceResult | None,
+         context: InferenceContext | None = None,
++        *,
++        strict: bool = False,
+     ) -> Iterator[InferenceResult]:
+         """Infer what the function returns when called."""
+         return self.body.infer(context)
+@@ -1563,6 +1565,8 @@ class FunctionDef(
+         self,
+         caller: SuccessfulInferenceResult | None,
+         context: InferenceContext | None = None,
++        *,
++        strict: bool = False,
+     ) -> Iterator[InferenceResult]:
+         """Infer what the function returns when called."""
+         if context is None:
+@@ -2105,6 +2109,8 @@ class ClassDef(
+         self,
+         caller: SuccessfulInferenceResult | None,
+         context: InferenceContext | None = None,
++        *,
++        strict: bool = False,
+     ) -> Iterator[InferenceResult]:
+         """infer what a class is returning when called"""
+         if self.is_subtype_of("builtins.type", context) and len(caller.args) == 3:
+@@ -2134,7 +2140,7 @@ class ClassDef(
+             # when there is a call context to annotate.
+             if context.callcontext:
+                 context.callcontext.callee = dunder_call
+-            yield from dunder_call.infer_call_result(caller, context)
++            yield from dunder_call.infer_call_result(caller, context, strict=strict)
+         else:
+             yield self.instantiate_class()
+ 
+diff --git a/astroid/objects.py b/astroid/objects.py
+index 9006a385..889682cb 100644
+--- a/astroid/objects.py
++++ b/astroid/objects.py
+@@ -326,6 +326,8 @@ class PartialFunction(scoped_nodes.FunctionDef):
+         self,
+         caller: SuccessfulInferenceResult | None,
+         context: InferenceContext | None = None,
++        *,
++        strict: bool = False,
+     ) -> Iterator[InferenceResult]:
+         if context:
+             assert (
+@@ -341,7 +343,7 @@ class PartialFunction(scoped_nodes.FunctionDef):
+             call_context_args = context.callcontext.args or []
+             context.callcontext.args = self.filled_args + call_context_args
+ 
+-        return super().infer_call_result(caller=caller, context=context)
++        return super().infer_call_result(caller=caller, context=context, strict=strict)
+ 
+     def qname(self) -> str:
+         return self.__class__.__name__
+@@ -376,6 +378,8 @@ class Property(scoped_nodes.FunctionDef):
+         self,
+         caller: SuccessfulInferenceResult | None,
+         context: InferenceContext | None = None,
++        *,
++        strict: bool = False,
+     ) -> NoReturn:
+         raise InferenceError("Properties are not callable")
+ 

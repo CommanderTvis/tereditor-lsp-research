@@ -1,6 +1,0 @@
-type = "move"
-origin = "synthetic: move a mixin into another partial (devrig move)"
-symbol = "focusOutlineOnEmphasis"
-from = "src/support/mixins/misc.scss"
-to = "src/support/mixins/focus-outline-on-emphasis.scss"
-selection = "Candidates: mixins defined in src/support/mixins/*.scss and included in at least 2 files other than the defining one; 6 candidates (breakpoint, clearfix, color-mode, focusBoxShadowInset, focusOutline, focusOutlineOnEmphasis), sorted, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk), first taken: focusOutlineOnEmphasis. Destination: a new partial in the same directory named after the mixin in kebab case."

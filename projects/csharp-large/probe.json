@@ -1,0 +1,7 @@
+[
+  {"name": "references GetSupportedImageOutputFormats (cross-project)", "args": {"operation": "references", "query": "GetSupportedImageOutputFormats", "path": "MediaBrowser.Controller/Drawing/IImageProcessor.cs"},
+   "expect": ["src/Jellyfin.Drawing/ImageProcessor.cs:114", "src/Jellyfin.Drawing/ImageProcessor.cs:225", "MediaBrowser.Controller/Drawing/IImageProcessor.cs:108"]},
+  {"name": "definition of ImageProcessor", "args": {"operation": "definition", "query": "ImageProcessor", "path": "src/Jellyfin.Drawing/ImageProcessor.cs", "line": 30, "column": 13},
+   "expect": ["src/Jellyfin.Drawing/ImageProcessor.cs:31"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["MediaBrowser.Controller/Drawing/IImageProcessor.cs"]}, "expect": []}
+]

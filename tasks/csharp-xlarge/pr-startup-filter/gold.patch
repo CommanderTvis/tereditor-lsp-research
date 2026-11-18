@@ -1,5 +1,0 @@
---- a/src/Hosting/Abstractions/src/IStartupFilter.cs
-+++ b/src/Hosting/Abstractions/src/IStartupFilter.cs
-@@
--// original declaration: IStartupFilter
-+// fallback declaration: IStartupFilter2

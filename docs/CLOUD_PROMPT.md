@@ -1,19 +1,11 @@
-# The cloud prompt
+# Starting the cloud run
 
-The message that starts the study in a Claude Code cloud session (network access Full, no repository, no environment
-variables, no setup script). Attach JetBrains' offline activation code to it: the zip from "Download a code for
-offline activation", or the `... - for 2018.2 or later.txt` file inside it. To resume a run whose VM was lost, also
-attach the latest `study-<date>.bundle` the previous session sent.
-
-```text
-Run the study per docs/CLOUD_RUN.md in https://github.com/CommanderTvis/tereditor-lsp-research.
-
-Clone it to /root/study, read AGENTS.md and docs/CLOUD_RUN.md, and follow the runbook from Phase 0 to Phase D without
-stopping: this message is the owner's go for the confirmatory run, within the runbook's budget. The attached JetBrains
-activation code is the licence (save it as license.zip, or license.txt for the bare code; never print or commit it).
-If a study-<date>.bundle is attached, resume from it as Phase 0 describes.
-
-Send the git bundle after every project and every phase, keep the session busy until the final downloads are sent,
-and stop and report instead of working around a refused permission or a harness failure you cannot fix within the
-harness.
+```sh
+git clone https://github.com/CommanderTvis/tereditor-lsp-research && cd tereditor-lsp-research
+claude --cloud "Run the study per docs/CLOUD_RUN.md: follow it from Phase 0 to Phase D without stopping. This message is the owner's go for the confirmatory run."
 ```
+
+The environment it runs in (network access Full, the licence as `STUDY_LICENSE_B64`) is set up once as described in
+[CLOUD_RUN.md](CLOUD_RUN.md#starting-it-the-owners-part). The runbook tells the session to keep working until the final
+downloads are sent, and to stop and report when a harness failure or a refused permission cannot be fixed within the
+harness.

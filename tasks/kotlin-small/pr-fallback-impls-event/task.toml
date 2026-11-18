@@ -1,7 +1,0 @@
-type = "pr"
-symbol = "com.github.michaelbull.result.example.model.domain.Event"
-selection = "Interfaces and sealed, abstract or open classes declared in main source sets, with at least 3 transitive subtypes counted from supertype lists (text): DomainMessage, Event (2 candidates); k = 1 + int(rand() * 2) after srand(20261110) = 2."
-origin = "documented synthetic fallback PR; no qualifying/current-toolchain mined candidate was available"
-fallback_for = "impls"
-pr = "fallback-kotlin-small-impls-event"
-issue = "fallback-kotlin-small-impls-event"

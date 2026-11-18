@@ -1,0 +1,113 @@
+diff --git a/release-notes/CREDITS b/release-notes/CREDITS
+index b47210f26..39e9e0dd3 100644
+--- a/release-notes/CREDITS
++++ b/release-notes/CREDITS
+@@ -833,6 +833,9 @@ Martin Mirchev (@Marti2203)
+  * Reported #6365: `JsonMapper.builder().filterProvider(...).build()` throws
+    `NullPointerException` when a `SimpleFilterProvider` has a `null` filter
+   [3.3.0]
++ * Reported #6366: `NullPointerException` deserializing raw `Map.Entry` with a `Shape.POJO`
++   config override (raw `Map.Entry` now handled as `Map.Entry<Object,Object>` in all shapes)
++  [3.3.0]
+ 
+ @essiembre
+  * Reported #6275: Regression in 3.2: per-type `@JsonInclude(NON_DEFAULT)` no longer
+@@ -878,6 +881,9 @@ Kayokoi (@wozhenbang2004)
+  * Fixed #6365: `JsonMapper.builder().filterProvider(...).build()` throws
+    `NullPointerException` when a `SimpleFilterProvider` has a `null` filter
+   [3.3.0]
++ * Fixed #6366: `NullPointerException` deserializing raw `Map.Entry` with a `Shape.POJO`
++   config override (raw `Map.Entry` now handled as `Map.Entry<Object,Object>` in all shapes)
++  [3.3.0]
+ 
+ Okan Tiktas (@OKAN-SOFTWARE)
+  * Fixed #6357: `BeanDeserializer` and `BuilderBasedDeserializer` silently stop on
+diff --git a/release-notes/VERSION b/release-notes/VERSION
+index 0c6ea902b..7eb870af9 100644
+--- a/release-notes/VERSION
++++ b/release-notes/VERSION
+@@ -181,6 +181,10 @@ Versions: 3.x (for earlier see VERSION-2.x)
+   now removes the binding)
+  (reported by @Marti2203)
+  (fix by @wozhenbang2004)
++#6366: `NullPointerException` deserializing raw `Map.Entry` with a `Shape.POJO`
++  config override (raw `Map.Entry` now handled as `Map.Entry<Object,Object>` in all shapes)
++ (reported by @Marti2203)
++ (fix by @wozhenbang2004)
+ 
+ 3.2.5 (not yet released)
+ 
+diff --git a/src/main/java/tools/jackson/databind/deser/jdk/MapEntryDeserializer.java b/src/main/java/tools/jackson/databind/deser/jdk/MapEntryDeserializer.java
+index bc31845cf..64755e56a 100644
+--- a/src/main/java/tools/jackson/databind/deser/jdk/MapEntryDeserializer.java
++++ b/src/main/java/tools/jackson/databind/deser/jdk/MapEntryDeserializer.java
+@@ -19,10 +19,8 @@ import tools.jackson.databind.util.ClassUtil;
+  * Basic serializer that can take JSON "Object" structure and
+  * construct a {@link java.util.Map.Entry} instance, with typed contents.
+  *<p>
+- * Note: for untyped content (one indicated by passing Object.class
+- * as the type), {@link UntypedObjectDeserializer} is used instead.
+- * It can also construct {@link java.util.Map.Entry}s, but not with specific
+- * POJO types, only other containers and primitives/wrappers.
++ * Note: key and value types are taken from type parameters; for raw
++ * {@link java.util.Map.Entry} both are handled as {@link java.lang.Object}.
+  */
+ @JacksonStdImpl
+ public class MapEntryDeserializer
+@@ -57,9 +55,6 @@ public class MapEntryDeserializer
+             TypeDeserializer valueTypeDeser)
+     {
+         super(type);
+-        if (type.containedTypeCount() != 2) { // sanity check
+-            throw new IllegalArgumentException("Missing generic type information for "+type);
+-        }
+         _keyDeserializer = keyDeser;
+         _valueDeserializer = valueDeser;
+         _valueTypeDeserializer = valueTypeDeser;
+@@ -178,7 +173,7 @@ public class MapEntryDeserializer
+     {
+         KeyDeserializer kd = _keyDeserializer;
+         if (kd == null) {
+-            kd = ctxt.findKeyDeserializer(_containerType.containedType(0), property);
++            kd = ctxt.findKeyDeserializer(_containerType.containedTypeOrUnknown(0), property);
+         } else {
+             if (kd instanceof ContextualKeyDeserializer ckd) {
+                 kd = ckd.createContextual(ctxt, property);
+@@ -186,7 +181,7 @@ public class MapEntryDeserializer
+         }
+         ValueDeserializer<?> vd = _valueDeserializer;
+         vd = findConvertingContentDeserializer(ctxt, property, vd);
+-        JavaType contentType = _containerType.containedType(1);
++        JavaType contentType = _containerType.containedTypeOrUnknown(1);
+         if (vd == null) {
+             vd = ctxt.findContextualValueDeserializer(contentType, property);
+         } else { // if directly assigned, probably not yet contextual, so:
+@@ -224,7 +219,7 @@ public class MapEntryDeserializer
+ 
+     @Override
+     public JavaType getContentType() {
+-        return _containerType.containedType(1);
++        return _containerType.containedTypeOrUnknown(1);
+     }
+ 
+     @Override
+@@ -355,8 +350,8 @@ public class MapEntryDeserializer
+         }
+     
+         protected POJOWrappedDeserializer(POJOWrappedDeserializer src,
+-                ValueDeserializer<Object> keyDeser, TypeDeserializer valueTypeDeser,
+-                ValueDeserializer<Object> valueDeser, TypeDeserializer keyTypeDeser)
++                ValueDeserializer<Object> keyDeser, TypeDeserializer keyTypeDeser,
++                ValueDeserializer<Object> valueDeser, TypeDeserializer valueTypeDeser)
+         {
+             super(src);
+             _keyDeserializer = keyDeser;
+@@ -432,7 +427,7 @@ public class MapEntryDeserializer
+ 
+             ValueDeserializer<?> vd = _valueDeserializer;
+             vd = findConvertingContentDeserializer(ctxt, property, vd);
+-            JavaType valueType = _valueType.containedType(1);
++            JavaType valueType = _valueType.containedTypeOrUnknown(1);
+             if (vd == null) {
+                 vd = ctxt.findContextualValueDeserializer(valueType, property);
+             } else { // if directly assigned, probably not yet contextual, so:

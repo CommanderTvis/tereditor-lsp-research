@@ -1,0 +1,4 @@
+type = "callers"
+origin = "synthetic: which component stylesheets reach a utility function, directly or through mixins and modules they use (devrig find callers)"
+symbol = "z (function, packages/styles/scss/utilities/_z-index.scss)"
+selection = "The second candidate of the shuffle that picked the rename task's subject (see rename-visually-hidden): 14 candidates sorted, shuffled with awk 'BEGIN{srand(20261110)}' (macOS awk): visually-hidden, z, ... Entry points: the 89 component directories of packages/styles/scss/components/ that have an _index.scss."

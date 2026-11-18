@@ -1,0 +1,132 @@
+diff --git a/src/main/java/tools/jackson/databind/deser/impl/ObjectIdReader.java b/src/main/java/tools/jackson/databind/deser/impl/ObjectIdReader.java
+index b50b52d..55edb15 100644
+--- a/src/main/java/tools/jackson/databind/deser/impl/ObjectIdReader.java
++++ b/src/main/java/tools/jackson/databind/deser/impl/ObjectIdReader.java
+@@ -58,7 +58,7 @@ public class ObjectIdReader
+     }
+ 
+     /**
+-     * Factory method called by {@link tools.jackson.databind.ser.bean.BeanSerializerBase}
++     * Factory method called by {@link tools.jackson.databind.ser.BeanSerializerBase}
+      * with the initial information based on standard settings for the type
+      * for which serializer is being built.
+      */
+diff --git a/src/main/java/tools/jackson/databind/ser/BeanPropertyWriter.java b/src/main/java/tools/jackson/databind/ser/BeanPropertyWriter.java
+index 684e379..fa9c953 100644
+--- a/src/main/java/tools/jackson/databind/ser/BeanPropertyWriter.java
++++ b/src/main/java/tools/jackson/databind/ser/BeanPropertyWriter.java
+@@ -21,7 +21,6 @@ import tools.jackson.databind.introspect.*;
+ import tools.jackson.databind.jsonFormatVisitors.JsonObjectFormatVisitor;
+ import tools.jackson.databind.jsontype.TypeSerializer;
+ import tools.jackson.databind.node.ObjectNode;
+-import tools.jackson.databind.ser.bean.BeanSerializerBase;
+ import tools.jackson.databind.ser.bean.UnwrappingBeanPropertyWriter;
+ import tools.jackson.databind.ser.impl.PropertySerializerMap;
+ import tools.jackson.databind.util.Annotations;
+diff --git a/src/main/java/tools/jackson/databind/ser/BeanSerializer.java b/src/main/java/tools/jackson/databind/ser/BeanSerializer.java
+index d9ba0d1..1e16202 100644
+--- a/src/main/java/tools/jackson/databind/ser/BeanSerializer.java
++++ b/src/main/java/tools/jackson/databind/ser/BeanSerializer.java
+@@ -7,7 +7,6 @@ import tools.jackson.core.JsonGenerator;
+ import tools.jackson.databind.*;
+ import tools.jackson.databind.annotation.JacksonStdImpl;
+ import tools.jackson.databind.ser.bean.BeanAsArraySerializer;
+-import tools.jackson.databind.ser.bean.BeanSerializerBase;
+ import tools.jackson.databind.ser.bean.UnwrappingBeanSerializer;
+ import tools.jackson.databind.ser.impl.ObjectIdWriter;
+ import tools.jackson.databind.util.NameTransformer;
+diff --git a/src/main/java/tools/jackson/databind/ser/bean/BeanSerializerBase.java b/src/main/java/tools/jackson/databind/ser/BeanSerializerBase.java
+similarity index 99%
+rename from src/main/java/tools/jackson/databind/ser/bean/BeanSerializerBase.java
+rename to src/main/java/tools/jackson/databind/ser/BeanSerializerBase.java
+index c9c52a7..d61c862 100644
+--- a/src/main/java/tools/jackson/databind/ser/bean/BeanSerializerBase.java
++++ b/src/main/java/tools/jackson/databind/ser/BeanSerializerBase.java
+@@ -1,4 +1,4 @@
+-package tools.jackson.databind.ser.bean;
++package tools.jackson.databind.ser;
+ 
+ import java.util.*;
+ 
+@@ -13,6 +13,7 @@ import tools.jackson.databind.jsonFormatVisitors.JsonFormatVisitorWrapper;
+ import tools.jackson.databind.jsonFormatVisitors.JsonObjectFormatVisitor;
+ import tools.jackson.databind.jsontype.TypeSerializer;
+ import tools.jackson.databind.ser.*;
++import tools.jackson.databind.ser.bean.UnwrappingBeanPropertyWriter;
+ import tools.jackson.databind.ser.impl.ObjectIdWriter;
+ import tools.jackson.databind.ser.impl.PropertyBasedObjectIdGenerator;
+ import tools.jackson.databind.ser.jdk.EnumSerializer;
+diff --git a/src/main/java/tools/jackson/databind/ser/UnrolledBeanSerializer.java b/src/main/java/tools/jackson/databind/ser/UnrolledBeanSerializer.java
+index ce6c628..e93c3f8 100644
+--- a/src/main/java/tools/jackson/databind/ser/UnrolledBeanSerializer.java
++++ b/src/main/java/tools/jackson/databind/ser/UnrolledBeanSerializer.java
+@@ -7,7 +7,6 @@ import tools.jackson.core.JsonGenerator;
+ import tools.jackson.databind.*;
+ import tools.jackson.databind.annotation.JacksonStdImpl;
+ import tools.jackson.databind.ser.bean.BeanAsArraySerializer;
+-import tools.jackson.databind.ser.bean.BeanSerializerBase;
+ import tools.jackson.databind.ser.bean.UnwrappingBeanSerializer;
+ import tools.jackson.databind.ser.impl.ObjectIdWriter;
+ import tools.jackson.databind.util.NameTransformer;
+diff --git a/src/main/java/tools/jackson/databind/ser/bean/BeanAsArraySerializer.java b/src/main/java/tools/jackson/databind/ser/bean/BeanAsArraySerializer.java
+index e5b0bc5..29ccee3 100644
+--- a/src/main/java/tools/jackson/databind/ser/bean/BeanAsArraySerializer.java
++++ b/src/main/java/tools/jackson/databind/ser/bean/BeanAsArraySerializer.java
+@@ -9,6 +9,7 @@ import tools.jackson.core.type.WritableTypeId;
+ import tools.jackson.databind.*;
+ import tools.jackson.databind.jsontype.TypeSerializer;
+ import tools.jackson.databind.ser.BeanPropertyWriter;
++import tools.jackson.databind.ser.BeanSerializerBase;
+ import tools.jackson.databind.ser.impl.ObjectIdWriter;
+ import tools.jackson.databind.util.NameTransformer;
+ 
+diff --git a/src/main/java/tools/jackson/databind/ser/bean/UnrolledBeanAsArraySerializer.java b/src/main/java/tools/jackson/databind/ser/bean/UnrolledBeanAsArraySerializer.java
+index 71f8c8d..9a60be6 100644
+--- a/src/main/java/tools/jackson/databind/ser/bean/UnrolledBeanAsArraySerializer.java
++++ b/src/main/java/tools/jackson/databind/ser/bean/UnrolledBeanAsArraySerializer.java
+@@ -9,6 +9,7 @@ import tools.jackson.core.type.WritableTypeId;
+ import tools.jackson.databind.*;
+ import tools.jackson.databind.jsontype.TypeSerializer;
+ import tools.jackson.databind.ser.BeanPropertyWriter;
++import tools.jackson.databind.ser.BeanSerializerBase;
+ import tools.jackson.databind.ser.impl.ObjectIdWriter;
+ import tools.jackson.databind.util.NameTransformer;
+ 
+diff --git a/src/main/java/tools/jackson/databind/ser/bean/UnwrappingBeanSerializer.java b/src/main/java/tools/jackson/databind/ser/bean/UnwrappingBeanSerializer.java
+index d2ec791..ee90e1e 100644
+--- a/src/main/java/tools/jackson/databind/ser/bean/UnwrappingBeanSerializer.java
++++ b/src/main/java/tools/jackson/databind/ser/bean/UnwrappingBeanSerializer.java
+@@ -7,6 +7,7 @@ import tools.jackson.core.JsonGenerator;
+ import tools.jackson.databind.*;
+ import tools.jackson.databind.jsontype.TypeSerializer;
+ import tools.jackson.databind.ser.BeanPropertyWriter;
++import tools.jackson.databind.ser.BeanSerializerBase;
+ import tools.jackson.databind.ser.impl.ObjectIdWriter;
+ import tools.jackson.databind.util.NameTransformer;
+ 
+diff --git a/src/main/java/tools/jackson/databind/ser/impl/ObjectIdWriter.java b/src/main/java/tools/jackson/databind/ser/impl/ObjectIdWriter.java
+index a81ad66..cd70f79 100644
+--- a/src/main/java/tools/jackson/databind/ser/impl/ObjectIdWriter.java
++++ b/src/main/java/tools/jackson/databind/ser/impl/ObjectIdWriter.java
+@@ -59,7 +59,7 @@ public final class ObjectIdWriter
+     }
+ 
+     /**
+-     * Factory method called by {@link tools.jackson.databind.ser.bean.BeanSerializerBase}
++     * Factory method called by {@link tools.jackson.databind.ser.BeanSerializerBase}
+      * with the initial information based on standard settings for the type
+      * for which serializer is being built.
+      *
+diff --git a/src/test/java/tools/jackson/databind/ser/filter/TestAnyGetterFiltering.java b/src/test/java/tools/jackson/databind/ser/filter/TestAnyGetterFiltering.java
+index 04b8441..55e9ef4 100644
+--- a/src/test/java/tools/jackson/databind/ser/filter/TestAnyGetterFiltering.java
++++ b/src/test/java/tools/jackson/databind/ser/filter/TestAnyGetterFiltering.java
+@@ -24,7 +24,7 @@ import tools.jackson.databind.ser.FilterProvider;
+ import tools.jackson.databind.ser.PropertyFilter;
+ import tools.jackson.databind.ser.PropertyWriter;
+ import tools.jackson.databind.ser.ValueSerializerModifier;
+-import tools.jackson.databind.ser.bean.BeanSerializerBase;
++import tools.jackson.databind.ser.BeanSerializerBase;
+ import tools.jackson.databind.ser.std.SimpleBeanPropertyFilter;
+ import tools.jackson.databind.ser.std.SimpleFilterProvider;
+ import tools.jackson.databind.testutil.DatabindTestUtil;

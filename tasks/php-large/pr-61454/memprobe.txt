@@ -1,0 +1,4 @@
+{"task": "tasks/php-large/pr-61454", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 2, "fresh_lines": 2, "verbatim_share": 0.5, "names_all_files": true, "cost_usd": 0.0014134899999999999}
+{"task": "tasks/php-large/pr-61454", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 2, "fresh_lines": 2, "verbatim_share": 0.5, "names_all_files": true, "cost_usd": 0.0183069}
+{"task": "tasks/php-large/pr-61454", "model": "claude-opus-5-5", "answered": true, "gold_lines": 2, "fresh_lines": 2, "verbatim_share": 1.0, "names_all_files": true, "cost_usd": 0.0379498}
+SCORE tasks/php-large/pr-61454 worst verbatim share 1.00 (gold lines 2)

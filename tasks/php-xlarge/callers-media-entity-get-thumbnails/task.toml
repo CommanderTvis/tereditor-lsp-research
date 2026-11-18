@@ -1,0 +1,4 @@
+type = "callers"
+origin = "synthetic: methods that call a given method directly (incoming calls, docs/TASKS.md)"
+symbol = "Shopware\\Core\\Content\\Media\\MediaEntity::getThumbnails"
+selection = "The seeded shuffle of the refs task (same candidate list of 4501 Type::method, awk 'BEGIN{srand(20261110)}'), continued after the refs subject: the first following candidate with 5 to 15 typed calls by the PHPStan mutation of oracle.md. The 16 candidates examined before it had fewer than 5 (or, for FeatureFlagRegistry::register, 1). Selected: MediaEntity::getThumbnails (12 calls in 6 methods; other types also declare getThumbnails)."

@@ -1,4 +1,0 @@
-type = "signature"
-origin = "synthetic: insert a parameter through an interface, its implementation and call sites (docs/TASKS.md)"
-symbol = "League\\Container\\DefinitionContainerInterface::add"
-selection = "Every method declared in an interface under src/ with at least 2 parameters, implemented by at least one class under src/, and called (text '->name(') at least 3 times under src/ and tests/, sorted Interface::method: 8 of 10 two-parameter interface methods. Seeded shuffle awk 'BEGIN{srand(20261110)}' (macOS awk 20200816, printf %.12f rand(), sort -n), first item that passes the call threshold. Judgement call, stated openly: the call threshold was added after the first draws, DefinitionInterface::addMethodCall and DefinitionContainerInterface::inflector, turned out to have a single call site each. Change rule, fixed before the draw: insert a new parameter immediately before the method's last parameter, with a meaning plausible for the method."

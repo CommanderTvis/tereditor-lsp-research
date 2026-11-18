@@ -1,0 +1,4 @@
+type = "refs"
+origin = "synthetic: find all usages of a method whose name other, unrelated types also declare (docs/TASKS.md)"
+symbol = "Shopware\\Core\\Framework\\Context::getTaxState"
+selection = "Every public method (not magic) declared in a class, interface or trait under src/ (excluding Resources/ directories) whose name is declared ('function name(') in at least 2 files under src/ and called ('->name(' or '::name(') between 10 and 60 times under src/: 379 names, 4501 Type::method candidates, sorted. Seeded shuffle awk 'BEGIN{srand(20261110)}' (macOS awk 20200816, printf %.12f rand(), sort -n), first item with at least 10 references of its own counted by the PHPStan mutation of oracle.md. The first 35 shuffled candidates had fewer than 10 typed references; the 36th, Context::getTaxState, has 14."

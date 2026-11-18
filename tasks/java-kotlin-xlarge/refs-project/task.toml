@@ -1,4 +1,0 @@
-type = "refs"
-origin = "synthetic fallback; fixed xlarge assignment"
-symbol = "org.gradle.api.Project"
-selection = "Fixed mixed-language xlarge navigation slot selected before any run at the Java/Kotlin API boundary."

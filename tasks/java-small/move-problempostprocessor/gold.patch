@@ -1,0 +1,129 @@
+diff --git a/deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java b/deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java
+index 2295bba..3f6f6e8 100644
+--- a/deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java
++++ b/deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java
+@@ -24,7 +24,7 @@ import io.quarkiverse.httpproblem.postprocessing.ProblemDefaultsProvider;
+ import io.quarkiverse.httpproblem.postprocessing.ProblemLogLevel;
+ import io.quarkiverse.httpproblem.postprocessing.ProblemLogger;
+ import io.quarkiverse.httpproblem.postprocessing.ProblemLoggingConfig;
+-import io.quarkiverse.httpproblem.postprocessing.ProblemPostProcessor;
++import io.quarkiverse.httpproblem.ProblemPostProcessor;
+ import io.quarkiverse.httpproblem.postprocessing.ProblemRecorder;
+ import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
+ import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
+diff --git a/integration-test/core/src/main/java/io/quarkiverse/httpproblem/CustomPostProcessor.java b/integration-test/core/src/main/java/io/quarkiverse/httpproblem/CustomPostProcessor.java
+index e982622..f60e33e 100644
+--- a/integration-test/core/src/main/java/io/quarkiverse/httpproblem/CustomPostProcessor.java
++++ b/integration-test/core/src/main/java/io/quarkiverse/httpproblem/CustomPostProcessor.java
+@@ -1,7 +1,6 @@
+ package io.quarkiverse.httpproblem;
+ 
+ import io.quarkiverse.httpproblem.postprocessing.ProblemContext;
+-import io.quarkiverse.httpproblem.postprocessing.ProblemPostProcessor;
+ import jakarta.enterprise.context.ApplicationScoped;
+ 
+ @ApplicationScoped
+diff --git a/runtime-dev/src/main/java/io/quarkiverse/httpproblem/devui/ProblemJsonRpcService.java b/runtime-dev/src/main/java/io/quarkiverse/httpproblem/devui/ProblemJsonRpcService.java
+index 802724b..28a03e2 100644
+--- a/runtime-dev/src/main/java/io/quarkiverse/httpproblem/devui/ProblemJsonRpcService.java
++++ b/runtime-dev/src/main/java/io/quarkiverse/httpproblem/devui/ProblemJsonRpcService.java
+@@ -12,7 +12,7 @@ import jakarta.ws.rs.core.Response;
+ import io.quarkiverse.httpproblem.HttpProblem;
+ import io.quarkiverse.httpproblem.postprocessing.PostProcessorsRegistry;
+ import io.quarkiverse.httpproblem.postprocessing.ProblemContext;
+-import io.quarkiverse.httpproblem.postprocessing.ProblemPostProcessor;
++import io.quarkiverse.httpproblem.ProblemPostProcessor;
+ import io.quarkus.runtime.annotations.JsonRpcDescription;
+ 
+ public class ProblemJsonRpcService {
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemPostProcessor.java b/runtime/src/main/java/io/quarkiverse/httpproblem/ProblemPostProcessor.java
+similarity index 92%
+rename from runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemPostProcessor.java
+rename to runtime/src/main/java/io/quarkiverse/httpproblem/ProblemPostProcessor.java
+index 204dca1..d807ebf 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemPostProcessor.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/ProblemPostProcessor.java
+@@ -1,8 +1,8 @@
+-package io.quarkiverse.httpproblem.postprocessing;
++package io.quarkiverse.httpproblem;
+ 
+ import java.util.Comparator;
+ 
+-import io.quarkiverse.httpproblem.HttpProblem;
++import io.quarkiverse.httpproblem.postprocessing.ProblemContext;
+ 
+ /**
+  * Post-processors use, change or enhance HttpProblem created by ExceptionMappers via 'apply' method, before they get
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/MdcPropertiesInjector.java b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/MdcPropertiesInjector.java
+index e7cbd69..01c29cb 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/MdcPropertiesInjector.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/MdcPropertiesInjector.java
+@@ -8,6 +8,7 @@ import jakarta.inject.Inject;
+ import org.slf4j.MDC;
+ 
+ import io.quarkiverse.httpproblem.HttpProblem;
++import io.quarkiverse.httpproblem.ProblemPostProcessor;
+ import io.quarkiverse.httpproblem.ProblemRuntimeFixedConfig;
+ 
+ /**
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/PostProcessorsRegistry.java b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/PostProcessorsRegistry.java
+index 269932f..839286a 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/PostProcessorsRegistry.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/PostProcessorsRegistry.java
+@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
+ import org.jboss.logging.Logger;
+ 
+ import io.quarkiverse.httpproblem.HttpProblem;
++import io.quarkiverse.httpproblem.ProblemPostProcessor;
+ 
+ /**
+  * Container for prioritised list of Problem post-processors.
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemContext.java b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemContext.java
+index 3d28e89..20815a7 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemContext.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemContext.java
+@@ -2,6 +2,8 @@ package io.quarkiverse.httpproblem.postprocessing;
+ 
+ import jakarta.ws.rs.core.UriInfo;
+ 
++import io.quarkiverse.httpproblem.ProblemPostProcessor;
++
+ /**
+  * Context wrapper for everything ProblemPostProcessor implementations may need to do their job.
+  * It can be easily extended without changing ProblemProcessor interface.
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemDefaultsProvider.java b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemDefaultsProvider.java
+index f0130c2..3515ddb 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemDefaultsProvider.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemDefaultsProvider.java
+@@ -4,6 +4,7 @@ import jakarta.inject.Singleton;
+ 
+ import io.quarkiverse.httpproblem.HttpProblem;
+ import io.quarkiverse.httpproblem.InstanceUtils;
++import io.quarkiverse.httpproblem.ProblemPostProcessor;
+ 
+ @Singleton
+ public class ProblemDefaultsProvider implements ProblemPostProcessor {
+diff --git a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogger.java b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogger.java
+index 8945964..ddb01c0 100644
+--- a/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogger.java
++++ b/runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogger.java
+@@ -9,6 +9,7 @@ import java.util.stream.Stream;
+ import org.jboss.logging.Logger;
+ 
+ import io.quarkiverse.httpproblem.HttpProblem;
++import io.quarkiverse.httpproblem.ProblemPostProcessor;
+ 
+ public class ProblemLogger implements ProblemPostProcessor {
+ 
+diff --git a/runtime/src/test/java/io/quarkiverse/httpproblem/postprocessing/PostProcessorsRegistryTest.java b/runtime/src/test/java/io/quarkiverse/httpproblem/postprocessing/PostProcessorsRegistryTest.java
+index 459f53a..19305d2 100644
+--- a/runtime/src/test/java/io/quarkiverse/httpproblem/postprocessing/PostProcessorsRegistryTest.java
++++ b/runtime/src/test/java/io/quarkiverse/httpproblem/postprocessing/PostProcessorsRegistryTest.java
+@@ -10,6 +10,7 @@ import java.util.List;
+ import org.junit.jupiter.api.Test;
+ 
+ import io.quarkiverse.httpproblem.HttpProblem;
++import io.quarkiverse.httpproblem.ProblemPostProcessor;
+ 
+ class PostProcessorsRegistryTest {
+ 

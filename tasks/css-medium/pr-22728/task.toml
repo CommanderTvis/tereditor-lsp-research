@@ -1,0 +1,9 @@
+type = "pr"
+base_commit = "a9933a63808f598e4b556783e47348d397987db6"
+merged_at = "2026-08-05T20:00:52Z"
+pr = 22728
+issue = 22429
+merge_commit = "79d912be2d8af31bacd73944075bab4944ef56e0"
+rest_base_sha = "a9933a63808f598e4b556783e47348d397987db6"
+toolchain = "Node 22 + Jest 30 + dart-sass (grade-css)"
+grade_timeout_s = 1200

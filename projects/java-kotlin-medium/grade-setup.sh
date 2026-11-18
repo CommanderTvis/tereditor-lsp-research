@@ -1,4 +1,4 @@
 #!/bin/sh
+# Dependencies for grading, resolved once with network: the wrapper, buildSrc's plugins and everything check.sh needs.
 set -e
-mvn -B -q -DskipTests dependency:go-offline
-mvn -B -q -Dmaven.test.failure.ignore=true test
+sh /project/check.sh online

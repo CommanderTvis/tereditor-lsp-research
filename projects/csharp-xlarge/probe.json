@@ -1,0 +1,7 @@
+[
+  {"name": "references NonRetryingExecutionStrategy (cross-project)", "args": {"operation": "references", "query": "NonRetryingExecutionStrategy", "path": "src/EFCore/Storage/NonRetryingExecutionStrategy.cs", "line": 20, "column": 20},
+   "expect": ["src/EFCore/Storage/Internal/ExecutionStrategyFactory.cs:23", "src/EFCore.Relational/Storage/RelationalExecutionStrategyFactory.cs:49"]},
+  {"name": "definition of LazyLoaderFactory", "args": {"operation": "definition", "query": "LazyLoaderFactory", "path": "src/EFCore/Infrastructure/Internal/LazyLoaderFactory.cs", "line": 11, "column": 13},
+   "expect": ["src/EFCore/Infrastructure/Internal/LazyLoaderFactory.cs:12"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["src/EFCore/Storage/NonRetryingExecutionStrategy.cs"]}, "expect": []}
+]

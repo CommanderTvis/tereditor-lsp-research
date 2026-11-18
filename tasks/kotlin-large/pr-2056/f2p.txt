@@ -1,0 +1,4 @@
+:core:org.jetbrains.kotlinx.dataframe.columns.DataColumns
+:dataframe-json:org.jetbrains.kotlinx.dataframe.io.JsonTests
+:samples:org.jetbrains.kotlinx.dataframe.samples.api.Read
+:samples:org.jetbrains.kotlinx.dataframe.samples.api.Write

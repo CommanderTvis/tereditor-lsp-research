@@ -1,0 +1,4 @@
+type = "dispatch"
+origin = "dispatch through a function-pointer table (callback struct)"
+symbol = "ctx->parser.enter_span(...) at src/md4c.c:477 (macro MD_ENTER_SPAN)"
+selection = "invocation sites of the MD_PARSER callback members (enter_block, leave_block, enter_span, leave_span, text, debug_log) in src/md4c.c, found with grep -nE 'parser(\\.|->)(enter_block|leave_block|enter_span|leave_span|text|debug_log)\\(' src/md4c.c: 9 candidates sorted by line (68, 410, 422, 459, 468, 477, 486, 496, 7347); index awk 'BEGIN{srand(20261110); print int(rand()*9)+1}' = 7 (line 477)"

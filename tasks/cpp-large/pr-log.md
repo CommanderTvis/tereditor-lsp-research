@@ -1,27 +1,14 @@
-# Mined pull requests: cpp-large (redis)
+# Mined pull requests: cpp-large (Redis)
 
-`sh harness/gen/mine-prs.sh cpp-large`: 92 pull requests qualify, 40 candidates in seeded order in
-`pr-candidates.jsonl`. No `pr` task is written: every candidate's tests are Redis's Tcl suites (`./runtest`,
-`tests/**/*.tcl`), and the one candidate without a `.tcl` file (9612, `tests/modules/datatype2.c`) changes a test
-module that only the Tcl suite `tests/unit/moduleapi/datatype2.tcl` loads. The grading toolchain `grade-cpp` (gcc,
-cmake, make, pkg-config) has no `tclsh`, so no fail-to-pass test can run. This is a missing tool, not exhausted
-candidates: the three `pr` places stay open (not back-filled with synthetic tasks) until `tcl` is added to
-`grade-cpp` in `nix/flake.nix`.
+`sh harness/gen/mine-prs.sh cpp-large` keeps 29 pull requests (opened on or after 2026-07-01, merged into unstable, closing an issue, changing tests and C sources); `pr-candidates.jsonl` holds them in seeded order. All are graded by Redis's Tcl suites; `grade-cpp` now has `tclsh`, and `grade.sh` runs only the Tcl units of the changed test files (`tclsh tests/test_helper.tcl --single unit/X`; `./runtest` needs `which`, absent in the grader), after building the server (libc malloc, no TLS).
 
-| Candidate | Issue | Base commit | Tests | Outcome |
-| --- | --- | --- | --- | --- |
-| 10160 | 9993 | 6ca97da0fcea4c260e656c3a05b12c34e5a4d63d | tests/integration/replication-4.tcl | skipped: Tcl test, no tclsh in grade-cpp |
-| 10837 | 10833 | 9e40b076dd570cd7ecf27e1e8a6ca8d7fabf2302 | tests/modules/keyspecs.c, tests/unit/introspection-2.tcl, tests/unit/moduleapi/keyspecs.tcl | skipped: Tcl test, no tclsh in grade-cpp |
-| 9748 | 8349 | 45144fc79fd72f4c54bf979f998dbf0896c92a94 | tests/unit/introspection.tcl | skipped: Tcl test, no tclsh in grade-cpp |
+| Candidate | Issue | Tests | Outcome |
+| --- | --- | --- | --- |
+| 15545 | 15550 | tests/unit/bitfield.tcl | skipped: does not validate (the held-out test already passes at the base commit: the undefined behaviour it concerns is not observable in a plain -O1 build) |
+| 15758 | 15745 | tests/unit/tls.tcl | skipped: does not validate (the TLS unit only runs with --tls and the build has no TLS, so it passes at the base commit) |
+| 15699 | 15597 | tests/modules/keyspace_events.c, bitfield, info-keysizes, moduleapi/keyspace_events | taken: `pr-15699` (VALID) |
+| 15587 | 15586 | tests/unit/type/list-4.tcl | taken: `pr-15587` (VALID) |
+| 15499 | 15498 | tests/integration/replication-buffer.tcl | skipped: does not validate (the held-out test file raises a Tcl error when sourced; gold fails too) |
+| 16026 | 16025 | tests/unit/hotkeys.tcl | taken: `pr-16026` (VALID) |
 
-The remaining 37 candidates were not tried; all of them are graded only by Tcl tests as well.
-
-Because the assigned three mined slots are therefore unavailable, the fixed synthetic fallback rotation is:
-`refs`, then `callers`, then `dispatch` (in that order). These are not fabricated here: generating their
-compiler-derived oracles requires the Redis snapshot and clang in the grading container. The snapshot could not be
-started on this host (`VZErrorDomain Code 2`, invalid storage device attachment), so the three fallback tasks remain
-explicitly blocked rather than being written with unverified gold patches or oracles.
-
-Balance update: the three unavailable mined slots are represented by `pr-fallback-refs`, `pr-fallback-callers`,
-and `pr-fallback-dispatch`. They are explicitly typed `pr`, carry gold/grade artifacts, and are documented fallbacks;
-the three assigned synthetic tasks remain separate.
+`memprobe.txt` in each task holds the memorization probe. `grade_timeout_s = 1200` (cold server build plus the Tcl unit).

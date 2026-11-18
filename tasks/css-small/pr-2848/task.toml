@@ -1,0 +1,9 @@
+type = "pr"
+base_commit = "dd4214b33a0598bf885f29536f964df4a8961365"
+merged_at = "2026-08-11T18:14:01Z"
+pr = 2848
+issue = 2822
+merge_commit = "2c55ff327b4bd7c22212d1d45192569d4759d873"
+rest_base_sha = "c02b2adcf255007fe3eb8bbda19580e01cdfa67c"
+toolchain = "Node 22 + pnpm + vitest (SCSS tests) + dart-sass (grade-css)"
+grade_timeout_s = 1200

@@ -1,5 +1,0 @@
-type = "dispatch"
-origin = "synthetic fallback; fixed seeded slot after mined-task exhaustion"
-selection = "Fallback slot selected in assignment order after no validated pre-2022 PR was available; first stable public symbol in the pinned snapshot."
-symbol = "ApplicationCall"
-path = "ktor-server/ktor-server-core/common/src/io/ktor/server/application/PipelineCall.kt"

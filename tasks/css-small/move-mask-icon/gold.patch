@@ -1,0 +1,60 @@
+diff --git a/core/scss/_mixins.scss b/core/scss/_mixins.scss
+index 0dc1b969..419a4577 100644
+--- a/core/scss/_mixins.scss
++++ b/core/scss/_mixins.scss
+@@ -1,4 +1,5 @@
+ @forward 'mixins/mixins';
++@forward 'mixins/mask-icon';
+ @forward 'mixins/functions';
+ @forward 'mixins/deprecated';
+ 
+diff --git a/core/scss/mixins/_mask-icon.scss b/core/scss/mixins/_mask-icon.scss
+new file mode 100644
+index 00000000..f72808af
+--- /dev/null
++++ b/core/scss/mixins/_mask-icon.scss
+@@ -0,0 +1,16 @@
++// Renders an svg icon through a CSS mask so the shape is painted with the
++// element's `background-color` and follows the theme without a colour baked
++// into the data uri. Set `background-color` on the element; pass `null` for
++// `$icon` when the mask image is applied per state.
++@mixin mask-icon($icon: null, $size: contain, $position: center) {
++  @if $icon != null {
++    mask-image: $icon;
++  }
++  mask-repeat: no-repeat;
++  @if $position != null {
++    mask-position: $position;
++  }
++  @if $size != null {
++    mask-size: $size;
++  }
++}
+diff --git a/core/scss/mixins/_mixins.scss b/core/scss/mixins/_mixins.scss
+index ff47a32c..de9c9088 100644
+--- a/core/scss/mixins/_mixins.scss
++++ b/core/scss/mixins/_mixins.scss
+@@ -95,23 +95,6 @@
+ //
+ // Print styles
+ //
+-// Renders an svg icon through a CSS mask so the shape is painted with the
+-// element's `background-color` and follows the theme without a colour baked
+-// into the data uri. Set `background-color` on the element; pass `null` for
+-// `$icon` when the mask image is applied per state.
+-@mixin mask-icon($icon: null, $size: contain, $position: center) {
+-  @if $icon != null {
+-    mask-image: $icon;
+-  }
+-  mask-repeat: no-repeat;
+-  @if $position != null {
+-    mask-position: $position;
+-  }
+-  @if $size != null {
+-    mask-size: $size;
+-  }
+-}
+-
+ @mixin media-print {
+   @media print {
+     @content;

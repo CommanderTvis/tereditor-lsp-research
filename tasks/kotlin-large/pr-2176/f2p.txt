@@ -1,0 +1,3 @@
+:core:org.jetbrains.kotlinx.dataframe.api.SortTests
+:core:org.jetbrains.kotlinx.dataframe.testSets.person.DataFrameTests
+:core:org.jetbrains.kotlinx.dataframe.testSets.weather.SeriesTests

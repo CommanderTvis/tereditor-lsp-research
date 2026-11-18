@@ -1,0 +1,215 @@
+diff --git a/consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/BaseProviderRule.java b/consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/BaseProviderRule.java
+index 3484a8fc9..b6d000fce 100644
+--- a/consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/BaseProviderRule.java
++++ b/consumer/junit/src/main/java/au/com/dius/pact/consumer/junit/BaseProviderRule.java
+@@ -132,7 +132,7 @@ public class BaseProviderRule extends ExternalResource {
+         if (pact[0] == null) {
+           pact[0] = pactFromMethod;
+         } else {
+-          pact[0].mergeInteractions(pactFromMethod.getInteractions());
++          pact[0] = (BasePact) pact[0].mergePact(pactFromMethod);
+         }
+       } catch (Exception e) {
+         throw new RuntimeException("Failed to invoke pact method", e);
+diff --git a/consumer/junit5/src/main/kotlin/au/com/dius/pact/consumer/junit5/PactConsumerTestExt.kt b/consumer/junit5/src/main/kotlin/au/com/dius/pact/consumer/junit5/PactConsumerTestExt.kt
+index 0eaf9fc2a..fe213e71d 100644
+--- a/consumer/junit5/src/main/kotlin/au/com/dius/pact/consumer/junit5/PactConsumerTestExt.kt
++++ b/consumer/junit5/src/main/kotlin/au/com/dius/pact/consumer/junit5/PactConsumerTestExt.kt
+@@ -289,7 +289,7 @@ class PactConsumerTestExt : Extension, BeforeTestExecutionCallback, BeforeAllCal
+               }
+             }
+ 
+-            acc.mergeInteractions(pact.interactions) as BasePact
++            acc.mergePact(pact) as BasePact
+           }
+         }
+         store.put(key, pact)
+@@ -663,7 +663,7 @@ class PactConsumerTestExt : Extension, BeforeTestExecutionCallback, BeforeAllCal
+       Pair(pact.consumer, pact.provider),
+       Pair(pact, version)
+     ) { (currentPact, currentVersion), _ ->
+-      val mergedPact = currentPact.mergeInteractions(pact.interactions) as BasePact
++      val mergedPact = currentPact.mergePact(pact) as BasePact
+       Pair(mergedPact, maxOf(version, currentVersion))
+     }
+   }
+diff --git a/consumer/spock/src/main/kotlin/au/com/dius/pact/consumer/spock/PactConsumerSpockExt.kt b/consumer/spock/src/main/kotlin/au/com/dius/pact/consumer/spock/PactConsumerSpockExt.kt
+index 354db8b82..1f239c85a 100644
+--- a/consumer/spock/src/main/kotlin/au/com/dius/pact/consumer/spock/PactConsumerSpockExt.kt
++++ b/consumer/spock/src/main/kotlin/au/com/dius/pact/consumer/spock/PactConsumerSpockExt.kt
+@@ -265,7 +265,7 @@ class PactConsumerSpockExt : IAnnotationDrivenExtension<PactConsumerSpockTest> {
+       Pair(updatedPact, version)
+     ) { (currentPact, currentVersion), _ ->
+       Pair(
+-        currentPact.mergeInteractions(updatedPact.interactions) as BasePact,
++        currentPact.mergePact(updatedPact) as BasePact,
+         maxOf(version, currentVersion)
+       )
+     }
+diff --git a/core/model/src/main/kotlin/au/com/dius/pact/core/model/BasePact.kt b/core/model/src/main/kotlin/au/com/dius/pact/core/model/BasePact.kt
+index 0ea74d065..9edacfca2 100644
+--- a/core/model/src/main/kotlin/au/com/dius/pact/core/model/BasePact.kt
++++ b/core/model/src/main/kotlin/au/com/dius/pact/core/model/BasePact.kt
+@@ -28,6 +28,13 @@ abstract class BasePact @JvmOverloads constructor(
+ 
+   open fun fileForPact(pactDir: String) = File(pactDir, "${consumer.name}-${provider.name}.json")
+ 
++  /**
++   * Merges the other pact into this one. The default just merges the interactions. [V4Pact]
++   * overrides this to also merge the plugin configuration stored under `metadata.plugins`, which
++   * [mergeInteractions] has no way to see, since it is only given the other pact's interactions.
++   */
++  open fun mergePact(other: Pact): Pact = mergeInteractions(other.interactions)
++
+   override fun compatibleTo(other: Pact): Result<Boolean, String> {
+     return if (provider != other.provider) {
+       Result.Err("Provider names are different: '$provider' and '${other.provider}'")
+diff --git a/core/model/src/main/kotlin/au/com/dius/pact/core/model/PactMerge.kt b/core/model/src/main/kotlin/au/com/dius/pact/core/model/PactMerge.kt
+index d37cd12b2..c17238feb 100644
+--- a/core/model/src/main/kotlin/au/com/dius/pact/core/model/PactMerge.kt
++++ b/core/model/src/main/kotlin/au/com/dius/pact/core/model/PactMerge.kt
+@@ -19,14 +19,17 @@ object PactMerge {
+       return MergeResult(false, "Cannot merge pacts as they are not compatible - ${compatibleTo.error}")
+     }
+ 
++    // V4 pacts are always merged, as the metadata (plugin configuration) needs to be merged even when
++    // one of the pacts has no interactions
++    val bothV4 = existing is V4Pact && newPact is V4Pact
+     return when {
+-      existing.interactions.isEmpty() -> MergeResult(true, "", newPact)
+-      newPact.interactions.isEmpty() -> MergeResult(true, "", existing)
++      existing.interactions.isEmpty() && !bothV4 -> MergeResult(true, "", newPact)
++      newPact.interactions.isEmpty() && !bothV4 -> MergeResult(true, "", existing)
+       else -> {
+         val conflicts = cartesianProduct(existing.interactions, newPact.interactions)
+           .filter { it.first.conflictsWith(it.second) }
+         if (conflicts.isEmpty()) {
+-          MergeResult(true, "", existing.mergeInteractions(newPact.interactions))
++          MergeResult(true, "", mergePacts(existing, newPact))
+         } else {
+           MergeResult(false, "Cannot merge pacts as there were ${conflicts.size} conflict(s) " +
+             "between the interactions - ${conflicts.joinToString("\n")}")
+@@ -35,6 +38,14 @@ object PactMerge {
+     }
+   }
+ 
++  private fun mergePacts(existing: Pact, newPact: Pact): Pact {
++    return if (existing is BasePact) {
++      existing.mergePact(newPact)
++    } else {
++      existing.mergeInteractions(newPact.interactions)
++    }
++  }
++
+   private fun cartesianProduct(
+     list1: List<Interaction>,
+     list2: List<Interaction>
+diff --git a/core/model/src/main/kotlin/au/com/dius/pact/core/model/V4Pact.kt b/core/model/src/main/kotlin/au/com/dius/pact/core/model/V4Pact.kt
+index 0847d33bb..f08998720 100644
+--- a/core/model/src/main/kotlin/au/com/dius/pact/core/model/V4Pact.kt
++++ b/core/model/src/main/kotlin/au/com/dius/pact/core/model/V4Pact.kt
+@@ -687,12 +687,91 @@ open class V4Pact @JvmOverloads constructor(
+     return V4Pact(consumer, provider, merge(interactions).toMutableList(), metadata, source)
+   }
+ 
++  override fun mergePact(other: Pact): Pact {
++    return V4Pact(consumer, provider, merge(other.interactions).toMutableList(),
++      mergeMetadata(metadata, other.metadata), source)
++  }
++
+   private fun merge(interactions: List<Interaction>): List<Interaction> {
+     val mergedResult = this.interactions.map { it.asV4Interaction().withGeneratedKey() }.associateBy { it.key } +
+       interactions.map { it.asV4Interaction().withGeneratedKey() }.associateBy { it.key }
+     return mergedResult.values.toList()
+   }
+ 
++  /**
++   * Merges the `plugins` entry of [second] into [first], so a plugin's `configuration` entry recorded
++   * only in [second] (for instance a schema keyed by a hash [first] never saw) is not lost.
++   * Every other metadata key keeps [first]'s value, since both pacts describe the same
++   * consumer/provider pair.
++   */
++  private fun mergeMetadata(first: Map<String, Any?>, second: Map<String, Any?>): Map<String, Any?> {
++    val secondPlugins = pluginEntries(second["plugins"])
++    return if (secondPlugins.isEmpty()) {
++      first
++    } else {
++      first + ("plugins" to mergePluginEntries(pluginEntries(first["plugins"]), secondPlugins))
++    }
++  }
++
++  private fun pluginEntries(value: Any?): List<Any?> = when (value) {
++    is JsonValue.Array -> value.values.map { Json.fromJson(it) }
++    is List<*> -> value
++    else -> emptyList()
++  }
++
++  /**
++   * Entries are matched by plugin name. Entries without a name (or that are not maps) are kept as is.
++   */
++  private fun mergePluginEntries(first: List<Any?>, second: List<Any?>): List<Any?> {
++    val result = first.toMutableList()
++    second.forEach { entry ->
++      val name = (entry as? Map<*, *>)?.get("name")
++      val index = if (name != null) result.indexOfFirst { it is Map<*, *> && it["name"] == name } else -1
++      if (index >= 0) {
++        result[index] = mergePluginEntry(result[index] as Map<*, *>, entry as Map<*, *>)
++      } else if (entry !in result) {
++        result.add(entry)
++      }
++    }
++    return result
++  }
++
++  /**
++   * Values from [second] (the newer pact) replace the ones in [first], apart from `configuration`,
++   * which is merged key by key. A pact built in-memory by [au.com.dius.pact.consumer.dsl.PactBuilder]
++   * carries `configuration` as `Map<String, JsonValue>`, but a pact file read from disk (the [PactMerge]
++   * path) has plain Kotlin maps and strings, so both are normalised to JSON values before merging.
++   */
++  private fun mergePluginEntry(first: Map<*, *>, second: Map<*, *>): Map<*, *> {
++    val firstConfig = Json.toJson(first["configuration"])
++    val secondConfig = Json.toJson(second["configuration"])
++    return if (firstConfig is JsonValue.Object && secondConfig is JsonValue.Object) {
++      first + second + ("configuration" to mergeConfiguration(firstConfig.entries, secondConfig.entries))
++    } else {
++      first + second
++    }
++  }
++
++  /**
++   * Objects are merged recursively. Any other value (including arrays) from [second] replaces the
++   * value in [first], so merging the same configuration more than once gives the same result.
++   */
++  private fun mergeConfiguration(
++    first: Map<String, JsonValue>,
++    second: Map<String, JsonValue>
++  ): Map<String, JsonValue> {
++    val result = first.toMutableMap()
++    second.forEach { (key, value) ->
++      val existing = result[key]
++      result[key] = if (existing is JsonValue.Object && value is JsonValue.Object) {
++        JsonValue.Object(mergeConfiguration(existing.entries, value.entries).toMutableMap())
++      } else {
++        value
++      }
++    }
++    return result
++  }
++
+   override fun asRequestResponsePact(): Result<RequestResponsePact, String> {
+     return Result.Ok(RequestResponsePact(provider, consumer,
+       interactions.filterIsInstance<V4Interaction.SynchronousHttp>()
+diff --git a/core/model/src/main/kotlin/au/com/dius/pact/core/model/messaging/MessagePact.kt b/core/model/src/main/kotlin/au/com/dius/pact/core/model/messaging/MessagePact.kt
+index 39571ff74..3b3c8fecf 100644
+--- a/core/model/src/main/kotlin/au/com/dius/pact/core/model/messaging/MessagePact.kt
++++ b/core/model/src/main/kotlin/au/com/dius/pact/core/model/messaging/MessagePact.kt
+@@ -94,7 +94,7 @@ class MessagePact @JvmOverloads constructor (
+     return this
+   }
+ 
+-  fun mergePact(other: Pact): MessagePact {
++  override fun mergePact(other: Pact): MessagePact {
+     if (other !is MessagePact) {
+       throw InvalidPactException("Unable to merge pact $other as it is not a MessagePact")
+     }

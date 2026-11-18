@@ -1,0 +1,2 @@
+lucene:core org.apache.lucene.util.StudyHiddenRenameQueryBuilderTest
+lucene:core org.apache.lucene.util.TestQueryBuilder

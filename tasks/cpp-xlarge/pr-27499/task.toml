@@ -1,0 +1,10 @@
+type = "pr"
+pr = 27499
+issue = 27458
+base_commit = "0b272c23b19eb7747313fffa0a1097f720905b29"
+merged_at = "2026-10-20T07:05:42Z"
+head_commit = "81303be722471104f31b3cf125999ef25a0e7ea9"
+origin = "mined pull request github.com/duckdb/duckdb/pull/27499"
+test_files = ["test/sql/export/export_csv_empty_strings.test"]
+grade_timeout_s = 1800
+# grade_timeout_s 1800: incremental rebuild of the unittest runner against the prebuilt build/ directory

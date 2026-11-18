@@ -1,5 +1,7 @@
 [
-  {"file":"mypy/types.py","line":323,"character":20,"method":"definition"},
-  {"file":"mypy/typeops.py","line":606,"character":5,"method":"references"},
-  {"file":"mypy/checker.py","line":1,"character":0,"method":"lsp_diagnostics"}
+  {"name": "references make_simplified_union (cross-file)", "args": {"operation": "references", "query": "make_simplified_union", "path": "mypy/typeops.py"},
+   "expect": ["mypy/checker.py:252", "mypy/checker.py:1008", "mypy/test/testtypes.py:34"]},
+  {"name": "definition of TypeJoinVisitor from another module", "args": {"operation": "definition", "query": "TypeJoinVisitor"},
+   "expect": ["mypy/join.py:257"]},
+  {"name": "diagnostics clean file", "tool": "lsp_diagnostics", "args": {"paths": ["mypy/maptype.py"]}, "expect": []}
 ]

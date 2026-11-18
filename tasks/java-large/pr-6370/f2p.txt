@@ -1,0 +1,2 @@
+tools.jackson.databind.deser.jdk.MapEntryDeserializationTest
+tools.jackson.databind.format.RawMapEntryPOJO6366Test

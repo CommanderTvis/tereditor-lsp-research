@@ -1,0 +1,5 @@
+# Oracle: uses of RegexMatchOperatorSemantics
+
+Derived with clang, not a language server: `derive-oracle.sh` renames the declaration (the enum definition and its forward declaration in `enum_util.hpp`), compiles the three translation units that mention the name (`src/common/enum_util.cpp`, `src/main/settings/custom_settings.cpp`, `src/parser/peg/transformer/transform_expression.cpp`; between them they include every header that mentions it) with the build's own flags (Apple clang 21, cmake `-DDISABLE_UNITY=1` compile_commands.json) and collects the lines of every error: 10 lines.
+
+Judgement calls: `src/common/enum_util.cpp:5352` (`static_cast<RegexMatchOperatorSemantics>(...)`) is a use that clang does not report, because it sits in the body of a function whose signature (line 5351) already failed; it is included after reading it. Excluded as not code uses: `enum_util.cpp:5347` (the name only inside a string literal), `src/common/settings.json:1430` (JSON), the two declarations (`regex_match_operator_semantics.hpp:15`, `enum_util.hpp:489`). A line counts once.

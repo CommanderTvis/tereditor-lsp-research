@@ -1,0 +1,38 @@
+diff --git a/packages/ui/src/utilities/buildClientFieldSchemaMap/index.ts b/packages/ui/src/utilities/buildClientFieldSchemaMap/index.ts
+index 1d80f38afd2..631b0a781f3 100644
+--- a/packages/ui/src/utilities/buildClientFieldSchemaMap/index.ts
++++ b/packages/ui/src/utilities/buildClientFieldSchemaMap/index.ts
+@@ -48,10 +48,16 @@ export const buildClientFieldSchemaMap = (args: {
+       let fieldsToSet = matchedCollection?.fields || []
+ 
+       if (matchedCollection.auth && !matchedCollection.auth.disableLocalStrategy) {
+-        ;(baseAuthFields[0] as TextFieldClient).label = i18n.t('general:password')
+-        ;(baseAuthFields[1] as TextFieldClient).label = i18n.t('authentication:confirmPassword')
++        // Copy the auth fields, maps built for other languages hold on to theirs
++        const authFields: ClientField[] = [
++          { ...(baseAuthFields[0] as TextFieldClient), label: i18n.t('general:password') },
++          {
++            ...(baseAuthFields[1] as TextFieldClient),
++            label: i18n.t('authentication:confirmPassword'),
++          },
++        ]
+         // Place these fields _last_ to ensure they do not disrupt field paths in the field schema map
+-        fieldsToSet = fieldsToSet.concat(baseAuthFields)
++        fieldsToSet = fieldsToSet.concat(authFields)
+       }
+ 
+       clientSchemaMap.set(collectionSlug, {
+diff --git a/packages/ui/src/utilities/getClientSchemaMap.ts b/packages/ui/src/utilities/getClientSchemaMap.ts
+index c32a5c9ce1e..652fd40f141 100644
+--- a/packages/ui/src/utilities/getClientSchemaMap.ts
++++ b/packages/ui/src/utilities/getClientSchemaMap.ts
+@@ -27,7 +27,8 @@ export const getClientSchemaMap = cache(
+       cachedClientSchemaMap = new Map()
+     }
+ 
+-    const cacheKey = collectionSlug || globalSlug || `widget:${widgetSlug}`
++    // Labels are translated while building the map, so it has to be cached per language
++    const cacheKey = `${i18n.language}:${collectionSlug || globalSlug || `widget:${widgetSlug}`}`
+     let cachedEntityClientFieldMap = cachedClientSchemaMap.get(cacheKey)
+ 
+     if (cachedEntityClientFieldMap) {

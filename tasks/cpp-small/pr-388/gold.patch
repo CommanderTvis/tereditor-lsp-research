@@ -1,0 +1,233 @@
+diff --git a/README.md b/README.md
+index 172f296..dd128b9 100644
+--- a/README.md
++++ b/README.md
+@@ -131,6 +131,10 @@ extensions:
+   (text enclosed in double equals marks, e.g. `==important==`). The HTML
+   renderer outputs `<mark>`.
+ 
++* With the flag `MD_FLAG_INSERT`, insert spans are enabled
++  (text enclosed in double plus marks, e.g. `++foo bar++`). The HTML
++  renderer outputs `<ins>`.
++
+ * With the flag `MD_FLAG_PERMISSIVEURLAUTOLINKS` permissive URL autolinks
+   (not enclosed in `<` and `>`) are supported.
+ 
+diff --git a/md2html/md2html.1 b/md2html/md2html.1
+index a649d79..323067a 100644
+--- a/md2html/md2html.1
++++ b/md2html/md2html.1
+@@ -72,6 +72,10 @@ Enable footnote references ([^label])
+ Force all soft breaks to act as hard breaks
+ .
+ .TP
++.B --finsert
++Enable insert spans (++text++)
++.
++.TP
+ .B --flatex-math
+ Enable LaTeX style mathematics spans
+ .
+diff --git a/md2html/md2html.c b/md2html/md2html.c
+index 10e089d..208b38b 100644
+--- a/md2html/md2html.c
++++ b/md2html/md2html.c
+@@ -256,6 +256,7 @@ static const CMDLINE_OPTION cmdline_options[] = {
+     {  0,  "ffootnotes",                    'N', 0 },
+     {  0,  "fhard-soft-breaks",             'B', 0 },
+     {  0,  "fhighlight",                    'M', 0 },
++    {  0,  "finsert",                       'C', 0 },
+     {  0,  "flatex-math",                   'L', 0 },
+     {  0,  "fpermissive-atx-headers",       'A', 0 },
+     {  0,  "fpermissive-autolinks",         'V', 0 },
+@@ -312,6 +313,7 @@ usage(void)
+         "      --ffootnotes     Enable footnote references ([^label])\n"
+         "      --fhard-soft-breaks\n"
+         "                       Force all soft breaks to act as hard breaks\n"
++        "      --finsert        Enable insert spans (++text++)\n"
+         "      --flatex-math    Enable LaTeX style mathematics spans\n"
+         "      --fpermissive-atx-headers\n"
+         "                       Allow ATX headers without delimiting space\n"
+@@ -395,6 +397,7 @@ cmdline_callback(int opt, char const* value, void* data)
+         case 'D':   parser_flags |= MD_FLAG_ADMONITIONS; break;
+         case 'E':   renderer_flags |= MD_HTML_FLAG_VERBATIM_ENTITIES; break;
+         case 'M':   parser_flags |= MD_FLAG_HIGHLIGHT; break;
++        case 'C':   parser_flags |= MD_FLAG_INSERT; break;
+         case 'A':   parser_flags |= MD_FLAG_PERMISSIVEATXHEADERS; break;
+         case 'I':   parser_flags |= MD_FLAG_NOINDENTEDCODEBLOCKS; break;
+         case 'F':   parser_flags |= MD_FLAG_NOHTMLBLOCKS; break;
+diff --git a/src/md4c-html.c b/src/md4c-html.c
+index 8453669..e7ce783 100644
+--- a/src/md4c-html.c
++++ b/src/md4c-html.c
+@@ -532,6 +532,7 @@ enter_span_callback(MD_SPANTYPE type, void* detail, void* userdata)
+         case MD_SPAN_A:                 render_open_a_span(r, (MD_SPAN_A_DETAIL*) detail); break;
+         case MD_SPAN_IMG:               render_open_img_span(r, (MD_SPAN_IMG_DETAIL*) detail); break;
+         case MD_SPAN_CODE:              RENDER_VERBATIM(r, "<code>"); break;
++        case MD_SPAN_INS:               RENDER_VERBATIM(r, "<ins>"); break;
+         case MD_SPAN_DEL:               RENDER_VERBATIM(r, "<del>"); break;
+         case MD_SPAN_SPOILER:           RENDER_VERBATIM(r, "<x-spoiler>"); break;
+         case MD_SPAN_SUPERSCRIPT:       RENDER_VERBATIM(r, "<sup>"); break;
+@@ -563,6 +564,7 @@ leave_span_callback(MD_SPANTYPE type, void* detail, void* userdata)
+         case MD_SPAN_A:                 RENDER_VERBATIM(r, "</a>"); break;
+         case MD_SPAN_IMG:               render_close_img_span(r, (MD_SPAN_IMG_DETAIL*) detail); break;
+         case MD_SPAN_CODE:              RENDER_VERBATIM(r, "</code>"); break;
++        case MD_SPAN_INS:               RENDER_VERBATIM(r, "</ins>"); break;
+         case MD_SPAN_DEL:               RENDER_VERBATIM(r, "</del>"); break;
+         case MD_SPAN_SPOILER:           RENDER_VERBATIM(r, "</x-spoiler>"); break;
+         case MD_SPAN_SUPERSCRIPT:       RENDER_VERBATIM(r, "</sup>"); break;
+diff --git a/src/md4c.c b/src/md4c.c
+index 915103c..7aa845c 100644
+--- a/src/md4c.c
++++ b/src/md4c.c
+@@ -222,7 +222,7 @@ struct MD_CTX_tag {
+ #endif
+ 
+     /* For resolving of inline spans. */
+-    MD_MARKSTACK opener_stacks[19];
++    MD_MARKSTACK opener_stacks[20];
+ #define ASTERISK_OPENERS_oo_mod3_0      (ctx->opener_stacks[0])     /* Opener-only */
+ #define ASTERISK_OPENERS_oo_mod3_1      (ctx->opener_stacks[1])
+ #define ASTERISK_OPENERS_oo_mod3_2      (ctx->opener_stacks[2])
+@@ -242,6 +242,7 @@ struct MD_CTX_tag {
+ #define PIPE_OPENERS                    (ctx->opener_stacks[16])
+ #define CARET_OPENERS                   (ctx->opener_stacks[17])
+ #define EQUAL_OPENERS                   (ctx->opener_stacks[18])
++#define PLUS_OPENERS                    (ctx->opener_stacks[19])
+ 
+     /* Stack of dummies which need to call free() for pointers stored in them.
+      * These are constructed during inline parsing and freed after all the block
+@@ -2733,6 +2734,7 @@ md_free_ref_defs(MD_CTX* ctx)
+  *  '*': Maybe (strong) emphasis start/end.
+  *  '_': Maybe (strong) emphasis start/end.
+  *  '~': Maybe strikethrough start/end (needs MD_FLAG_STRIKETHROUGH).
++ *  '+': Maybe insert start/end (needs MD_FLAG_INSERT)
+  *  '`': Maybe code span start/end.
+  *  '&': Maybe start of entity.
+  *  ';': Maybe end of entity.
+@@ -2984,6 +2986,9 @@ md_build_mark_char_map(MD_CTX* ctx)
+     if(ctx->parser.flags & MD_FLAG_HIGHLIGHT)
+         ctx->mark_char_map['='] = 1;
+ 
++    if(ctx->parser.flags & MD_FLAG_INSERT)
++        ctx->mark_char_map['+'] = 1;
++
+     if(ctx->parser.flags & MD_FLAG_PERMISSIVEEMAILAUTOLINKS)
+         ctx->mark_char_map['@'] = 1;
+ 
+@@ -3593,6 +3598,30 @@ md_collect_marks(MD_CTX* ctx, const MD_LINE* lines, MD_SIZE n_lines, int table_m
+                 continue;
+             }
+ 
++            /* A potential insert start/end: ++text++ */
++            if(ch == _T('+') && (ctx->parser.flags & MD_FLAG_INSERT)) {
++                OFF tmp = off + 1;
++
++                while(tmp < line->end && CH(tmp) == _T('+'))
++                    tmp++;
++
++                /* Only exactly two plus signs form a insert delimiter. */
++                if(tmp - off == 2) {
++                    unsigned flags = MD_MARK_POTENTIAL_OPENER | MD_MARK_POTENTIAL_CLOSER;
++
++                    /* Cannot open before whitespace; cannot close after whitespace. */
++                    if(tmp >= line->end  ||  ISUNICODEWHITESPACE(tmp))
++                        flags &= ~MD_MARK_POTENTIAL_OPENER;
++                    if(off == line->beg  ||  ISUNICODEWHITESPACEBEFORE(off))
++                        flags &= ~MD_MARK_POTENTIAL_CLOSER;
++                    if(flags != 0)
++                        ADD_MARK(ch, off, tmp, flags);
++                }
++
++                off = tmp;
++                continue;
++            }
++
+             /* A potential strikethrough/subscript start/end. */
+             if(ch == _T('~')) {
+                 OFF tmp = off + 1;
+@@ -4337,6 +4366,27 @@ md_analyze_highlight(MD_CTX* ctx, int mark_index)
+         md_mark_stack_push(ctx, &EQUAL_OPENERS, mark_index);
+ }
+ 
++static void
++md_analyze_insert(MD_CTX* ctx, int mark_index)
++{
++    MD_MARK* mark = &ctx->marks[mark_index];
++
++    /* Only "++" is recognized as a insert mark. */
++    if(mark->end - mark->beg != 2)
++        return;
++
++    if((mark->flags & MD_MARK_POTENTIAL_CLOSER)  &&  PLUS_OPENERS.top >= 0) {
++        int opener_index = PLUS_OPENERS.top;
++
++        md_pop_openers(ctx, opener_index);
++        md_resolve_range(ctx, opener_index, mark_index);
++        return;
++    }
++
++    if(mark->flags & MD_MARK_POTENTIAL_OPENER)
++        md_mark_stack_push(ctx, &PLUS_OPENERS, mark_index);
++}
++
+ static MD_MARK*
+ md_scan_left_for_resolved_mark(MD_CTX* ctx, MD_MARK* mark_from, OFF off, MD_MARK** p_cursor)
+ {
+@@ -4604,6 +4654,7 @@ md_analyze_marks(MD_CTX* ctx, const MD_LINE* lines, MD_SIZE n_lines,
+             case '@':   md_analyze_permissive_autolink(ctx, i); break;
+             case '|':   md_analyze_spoiler(ctx, i); break;
+             case '=':   md_analyze_highlight(ctx, i); break;
++            case '+':   md_analyze_insert(ctx, i); break;
+         }
+ 
+         if(mark->flags & MD_MARK_RESOLVED) {
+@@ -4672,6 +4723,8 @@ md_analyze_link_contents(MD_CTX* ctx, const MD_LINE* lines, MD_SIZE n_lines,
+         emph_mark_types[n_emph_mark_types++] = _T('$');
+     if(ctx->parser.flags & MD_FLAG_HIGHLIGHT)
+         emph_mark_types[n_emph_mark_types++] = _T('=');
++    if(ctx->parser.flags & MD_FLAG_INSERT)
++        emph_mark_types[n_emph_mark_types++] = _T('+');
+     if(ctx->parser.flags & MD_FLAG_SPOILERS)
+         emph_mark_types[n_emph_mark_types++] = _T('|');
+     if(ctx->parser.flags & MD_FLAG_SUPERSCRIPTS)
+@@ -4908,6 +4961,15 @@ md_process_inlines(MD_CTX* ctx, const MD_LINE* lines, MD_SIZE n_lines)
+                     }
+                     break;
+ 
++                case '+':
++                    if(mark->end - mark->beg == 2) {
++                        if(mark->flags & MD_MARK_OPENER)
++                            MD_ENTER_SPAN(MD_SPAN_INS, NULL);
++                        else
++                            MD_LEAVE_SPAN(MD_SPAN_INS, NULL);
++                    }
++                    break;
++
+                 case '$':
+                     if(mark->flags & MD_MARK_OPENER) {
+                         MD_ENTER_SPAN((mark->end - off) % 2 ? MD_SPAN_LATEXMATH : MD_SPAN_LATEXMATH_DISPLAY, NULL);
+diff --git a/src/md4c.h b/src/md4c.h
+index 6a061c0..5b61022 100644
+--- a/src/md4c.h
++++ b/src/md4c.h
+@@ -151,6 +151,11 @@ typedef enum MD_SPANTYPE {
+     /* <code>...</code> */
+     MD_SPAN_CODE,
+ 
++    /* <ins>...</ins>
++     * Syntax: ++insert++
++     * Note: Recognized only when MD_FLAG_INSERT is enabled. */
++    MD_SPAN_INS,
++
+     /* <del>...</del>
+      * Note: Recognized only when MD_FLAG_STRIKETHROUGH is enabled.
+      */
+@@ -400,6 +405,7 @@ typedef struct MD_BLOCK_BLANK_DETAIL {
+ #define MD_FLAG_FOOTNOTES                   0x100000 /* Enable [^label] footnote references. */
+ #define MD_FLAG_HIGHLIGHT                   0x200000 /* Enable ==highlight== spans. */
+ #define MD_FLAG_PRESERVEBLANKLINES          0x400000 /* Report blank line runs as MD_BLOCK_BLANK. */
++#define MD_FLAG_INSERT                      0x800000 /* Enable insert extension. */
+ 
+ #define MD_FLAG_PERMISSIVEAUTOLINKS         (MD_FLAG_PERMISSIVEEMAILAUTOLINKS | MD_FLAG_PERMISSIVEURLAUTOLINKS | MD_FLAG_PERMISSIVEWWWAUTOLINKS)
+ #define MD_FLAG_NOHTML                      (MD_FLAG_NOHTMLBLOCKS | MD_FLAG_NOHTMLSPANS)

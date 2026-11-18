@@ -14,3 +14,11 @@ task_types = ["rename", "refs", "dispatch", "pr", "pr", "pr"]
 pr_shortfall = 0
 pr_replaced_by = []
 # Salt's service-dependent integration suite is not run; tasks are source-answer/refactoring checks.
+
+[probe]
+# ./study probe python-xlarge (enforced), 2026-11-16.
+ok = false
+seconds_to_first_answer = 0.45
+references = "complete in 0.5 s: SaltException from salt/exceptions.py (probe expectation: its definition line only)"
+definition = "wrong: SaltException (salt/exceptions.py:33) not found after 199 s: workspace symbol lookup answered notFound, the python server reported 'A task was canceled'"
+diagnostics = "complete: salt/exceptions.py is checked and reports one error (line 21, an unresolved import: dependencies are not installed for the server)"

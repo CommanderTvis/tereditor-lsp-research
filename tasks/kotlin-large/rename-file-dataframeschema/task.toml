@@ -1,0 +1,5 @@
+type = "rename-file"
+origin = "synthetic task; fixed seeded selection (docs/TASKS.md)"
+subject = "core/src/main/kotlin/org/jetbrains/kotlinx/dataframe/schema/DataFrameSchema.kt -> TypedFrameSchema.kt (interface DataFrameSchema -> TypedFrameSchema)"
+selection = "seed 20261110. Same candidate list as rename-parseroptions (16 candidates), restricted to types declared in a file named after them (AggregateDsl, CodeGenerator, ColumnAccessor, ColumnName, ColumnSchema, ColumnsResolver, DataFrameSchema, FastDoubleParser, KotlinNotebookPluginUtils, NameValueProperty, ValueColumn: 11 after removing ParserOptions, the subject of the rename task of this project); index int(rand()*11)+1 with the second value of srand(20261110) = int(0.6232*11)+1 = 7 (DataFrameSchema). New name chosen by hand."
+gold = "scripted: git mv of the file and every whole-word occurrence of DataFrameSchema in .kt and .md files outside core/generated-sources replaced by TypedFrameSchema (54 files)"

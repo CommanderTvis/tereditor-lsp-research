@@ -1,0 +1,10 @@
+type = "pr"
+pr = 15699
+issue = 15597
+base_commit = "6331fbeaf01a4eaf96f71d86cc28a1717d90c218"
+merged_at = "2026-09-09T07:26:36Z"
+head_commit = "e413020341bfe2b0914b3d13382082316f2a71bf"
+origin = "mined pull request github.com/redis/redis/pull/15699"
+test_files = ["tests/modules/keyspace_events.c", "tests/unit/bitfield.tcl", "tests/unit/info-keysizes.tcl", "tests/unit/moduleapi/keyspace_events.tcl"]
+grade_timeout_s = 1200
+# grade_timeout_s raised to 1200: cold build of the server plus the Tcl unit

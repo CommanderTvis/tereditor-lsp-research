@@ -1,0 +1,5 @@
+type = "move"
+origin = "devrig safe move (class to another package)"
+subject = "tools.jackson.databind.ser.bean.BeanSerializerBase -> tools.jackson.databind.ser.BeanSerializerBase"
+selection = "seed 20261110. Candidates: public top-level types declared in src/main/java under tools.jackson.databind.* whose package and parent package are both exported by module-info and which are mentioned (whole word) in 4 to 25 other .java files under src, in at least 3 different packages, and at least once in a comment line; sorted by path: 129 candidates; index int(rand()*129)+1 after srand(20261110) = 96 (BeanSerializerBase). The destination is fixed by rule: the parent package. Fixed after seeing the type list: the thresholds and the parent-package destination."
+gold = "scripted (harness-free python, one pass): git mv of the file, its package line, every import of the old name rewritten (dropped in the new package), an import added to every file of the old package that uses the type, compiled and tested by ./study validate"

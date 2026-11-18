@@ -1,0 +1,3 @@
+In DuckDB's physical execution layer, `PhysicalOperator` declares the virtual method `GetSources()`. The planner calls it through a `const PhysicalOperator &` that refers to an object whose dynamic type is `PhysicalNestedLoopJoin` (declared in `src/include/duckdb/execution/operator/join/physical_nested_loop_join.hpp`).
+
+Which definition of `GetSources()` runs for that call? Write the answer to `ANSWER.txt` in the repository root as one line, `path:line`: the path of the source file that holds the function body, relative to the repository root, and the line on which the function's name appears in that definition (the definition, not a declaration).

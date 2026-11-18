@@ -1,1 +1,0 @@
-Find the requested usages or dispatch information for `JsonAdapter` in `Moshi` and write the exact result to `ANSWER.txt`, one item per line. Exclude declarations, comments, generated files, and unrelated overloads.

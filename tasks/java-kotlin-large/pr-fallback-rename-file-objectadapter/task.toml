@@ -1,8 +1,0 @@
-type = "pr"
-selection = "Fallback slot selected in assignment order after no validated pre-2022 PR was available; subject is the first stable public symbol in the pinned snapshot matching the project probe surface."
-symbol = "Component"
-path = "core/src/main/java/dagger/Component.java"
-origin = "documented synthetic fallback PR; no qualifying/current-toolchain mined candidate was available"
-fallback_for = "rename-file"
-pr = "fallback-java-kotlin-large-rename-file-objectadapter"
-issue = "fallback-java-kotlin-large-rename-file-objectadapter"

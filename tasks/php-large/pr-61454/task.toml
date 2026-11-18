@@ -1,0 +1,11 @@
+type = "pr"
+origin = "mined: laravel/framework#61454 (issue #61453), docs/TASKS.md \"Mined pull requests\""
+pr = 61454
+issue = 61453
+base_commit = "cdbd17f7e3257e8ae4207d3c3bef6058452d5f72"
+merge_commit = "30a5d20a43b5ecf62e8ed0c02b89308623d10817"
+merged_at = "2026-09-06T20:54:44Z"
+fail_to_pass = ["Illuminate\\Tests\\Integration\\Container\\BuildableIntegrationTest::test_build_method_can_resolve_itself_via_container"]
+pass_to_pass = "the other tests of tests/Integration/Container/BuildableIntegrationTest.php"
+loc_base = 351090
+loc_base_method = "scc 3.5.0 PHP code lines at base_commit (vendor/ excluded, tests included)"

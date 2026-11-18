@@ -1,0 +1,4 @@
+:core:pactbroker au.com.dius.pact.core.pactbroker.PactBrokerClientSpec
+:core:support au.com.dius.pact.core.support.HttpClientSpec
+:core:support au.com.dius.pact.core.support.UtilsSpec
+:provider au.com.dius.pact.provider.junitsupport.loader.PactBrokerLoaderSpec

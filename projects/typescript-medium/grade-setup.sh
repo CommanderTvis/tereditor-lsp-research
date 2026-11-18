@@ -14,6 +14,8 @@ if [ -f pnpm-lock.yaml ]; then
 elif [ -f yarn.lock ]; then
   pnpm import
   pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted
+elif [ -f bun.lock ] && command -v bun >/dev/null 2>&1; then
+  bun install --frozen-lockfile --ignore-scripts --no-progress
 else
-  npm install --ignore-scripts --no-audit --no-fund
+  npm install --ignore-scripts --no-audit --no-fund --legacy-peer-deps
 fi

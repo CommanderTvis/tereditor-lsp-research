@@ -1,13 +1,23 @@
-# csharp, xlarge: ASP.NET Core. Mined work is replaced by documented synthetic fallbacks because no PR was
-# build-validated in the bounded curation run.
+# C#, xlarge: Entity Framework Core, an object-relational mapper (LINQ query translation, model building, change tracking,
+# many providers). Replaces the ASP.NET Core placeholder: too few usable modern pull requests there (see docs/PROJECTS.md).
 lang = "csharp"
 size = "xlarge"
 status = "curated"
-repo = "https://github.com/dotnet/aspnetcore"
-tag = "v10.0.15"
-commit = "547fc16b976e18911f9df7630f1f75758ab248f2"
-loc = 1138640
-loc_by_language = { "C#" = 1138640 }
-loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
-task_types = ["rename", "dispatch", "refs", "pr", "pr", "pr"]
-substitutions = ["two unavailable mined slots use explicit fallback PR directories; three synthetic tasks are retained"]
+repo = "https://github.com/dotnet/efcore"
+tag = "v11.0.0"
+commit = "9e685c7a52d1a344d133a3d370e458db97417b3f"
+loc = 1312023
+stripped = []
+loc_by_language = { "C#" = 1312023 }
+loc_method = "scc 3.5.0 code lines, harness/size/measure.sh (docs/PROJECTS.md)"
+task_types = ["refs", "rename", "dispatch", "pr", "pr", "pr"]
+substitutions = []
+pr_shortfall = 2
+pr_shortfall_reason = "12-alpha bases cannot run on the .NET 11 runtime; release-11 bases hit offline-package and compiler problems; remaining candidates not tried (machine load): tasks/csharp-xlarge/pr-log.md"
+# Needs the .NET 11 SDK (global.json asks for 11.0.100-rc.1 with rollForward latestMajor, allowPrerelease): the study's
+# grade environment carries sdk_11_0. Graded test projects: test/EFCore.Tests, test/EFCore.InMemory.FunctionalTests and
+# test/EFCore.Sqlite.FunctionalTests only (no SQL Server, Cosmos or Azure projects).
+
+[probe]
+ok = false
+note = "references and definition returned no answer in 180 s each: tereditor reports 'Needs .NET SDK. The project asks for .NET SDK 11.0.100-rc.1 (rollForward latestMajor), which is not pinned (pinned: 10.0.403, 10.0.401)'. prepare.sh could not install SDK 11 (no curl or wget in the server sandbox). Diagnostics call returned clean but checked 0 of 1 files. A finding about the product, not a dropped project (results/probe/csharp-xlarge-enforced)"

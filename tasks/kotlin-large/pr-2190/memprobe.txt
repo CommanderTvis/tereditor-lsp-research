@@ -1,0 +1,4 @@
+{"task": "tasks/kotlin-large/pr-2190", "model": "claude-haiku-5-5", "answered": true, "gold_lines": 307, "fresh_lines": 307, "verbatim_share": 0.003, "names_all_files": false, "cost_usd": 0.0014980899999999999}
+{"task": "tasks/kotlin-large/pr-2190", "model": "claude-sonnet-5-5", "answered": true, "gold_lines": 307, "fresh_lines": 307, "verbatim_share": 0.007, "names_all_files": false, "cost_usd": 0.022042899999999997}
+{"task": "tasks/kotlin-large/pr-2190", "model": "claude-opus-5-5", "answered": true, "gold_lines": 307, "fresh_lines": 307, "verbatim_share": 0.0, "names_all_files": false, "cost_usd": 0.051477800000000004}
+SCORE tasks/kotlin-large/pr-2190 worst verbatim share 0.01 (gold lines 307)

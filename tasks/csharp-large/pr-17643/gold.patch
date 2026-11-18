@@ -1,0 +1,31 @@
+diff --git a/CONTRIBUTORS.md b/CONTRIBUTORS.md
+index f6a725853d9..b3bd5732151 100644
+--- a/CONTRIBUTORS.md
++++ b/CONTRIBUTORS.md
+@@ -238,6 +238,7 @@
+  - [elio42](https://github.com/elio42)
+  - [rwebster85](https://github.com/rwebster85)
+  - [Florin-Popescu](https://github.com/Florin-Popescu)
++ - [m0g3r](https://github.com/m0g3r)
+  - [martin-77](https://github.com/martin-77)
+ 
+ # Emby Contributors
+diff --git a/Jellyfin.Server.Implementations/Users/UserManager.cs b/Jellyfin.Server.Implementations/Users/UserManager.cs
+index 81408d9aa84..932ced547a8 100644
+--- a/Jellyfin.Server.Implementations/Users/UserManager.cs
++++ b/Jellyfin.Server.Implementations/Users/UserManager.cs
+@@ -225,12 +225,14 @@ public async Task UpdateUserAsync(User user)
+                         ?? throw new ResourceNotFoundException(nameof(user.Id));
+ 
+                     dbContext.Entry(dbUser).CurrentValues.SetValues(user);
++                    dbContext.Permissions.RemoveRange(dbUser.Permissions);
+                     dbUser.Permissions.Clear();
+                     foreach (var permission in user.Permissions)
+                     {
+                         dbUser.Permissions.Add(new Permission(permission.Kind, permission.Value));
+                     }
+ 
++                    dbContext.Preferences.RemoveRange(dbUser.Preferences);
+                     dbUser.Preferences.Clear();
+                     foreach (var preference in user.Preferences)
+                     {

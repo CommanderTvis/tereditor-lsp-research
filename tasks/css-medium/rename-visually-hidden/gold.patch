@@ -1,0 +1,165 @@
+diff --git a/packages/styles/scss/components/checkbox/_checkbox.scss b/packages/styles/scss/components/checkbox/_checkbox.scss
+index 0e9ae1658..67638a124 100644
+--- a/packages/styles/scss/components/checkbox/_checkbox.scss
++++ b/packages/styles/scss/components/checkbox/_checkbox.scss
+@@ -57,7 +57,7 @@
+   // Visually, we'll hide the checkbox input and create our own styled version
+   // to match the specs.
+   .#{$prefix}--checkbox {
+-    @include visually-hidden;
++    @include screen-reader-only;
+     //even though its hidden, positioning is for native validation to be aligned to checkbox
+     inset-block-start: 1.25rem;
+     inset-inline-start: 0.7rem;
+diff --git a/packages/styles/scss/components/file-uploader/_file-uploader.scss b/packages/styles/scss/components/file-uploader/_file-uploader.scss
+index d3fe6ebee..7fbcaefaf 100644
+--- a/packages/styles/scss/components/file-uploader/_file-uploader.scss
++++ b/packages/styles/scss/components/file-uploader/_file-uploader.scss
+@@ -49,7 +49,7 @@
+   }
+ 
+   .#{$prefix}--file-input {
+-    @include visually-hidden;
++    @include screen-reader-only;
+   }
+ 
+   // This class is of old markup with "select file" button
+diff --git a/packages/styles/scss/components/notifications-panel/_notifications-panel.scss b/packages/styles/scss/components/notifications-panel/_notifications-panel.scss
+index 1e2ca1502..dcfee784a 100644
+--- a/packages/styles/scss/components/notifications-panel/_notifications-panel.scss
++++ b/packages/styles/scss/components/notifications-panel/_notifications-panel.scss
+@@ -129,7 +129,7 @@
+     padding-block-end: $spacing-03;
+ 
+     .#{$prefix}--toggle__label-text {
+-      @include utilities.visually-hidden;
++      @include utilities.screen-reader-only;
+     }
+   }
+ 
+diff --git a/packages/styles/scss/components/options-tile/_options-tile.scss b/packages/styles/scss/components/options-tile/_options-tile.scss
+index a8ec2f050..6ccb262ce 100644
+--- a/packages/styles/scss/components/options-tile/_options-tile.scss
++++ b/packages/styles/scss/components/options-tile/_options-tile.scss
+@@ -53,7 +53,7 @@
+   }
+ 
+   .#{$prefix}--options-tile__toggle .#{$prefix}--toggle__label-text {
+-    @include visually-hidden.visually-hidden;
++    @include visually-hidden.screen-reader-only;
+   }
+ 
+   .#{$prefix}--options-tile__details {
+diff --git a/packages/styles/scss/components/pagination-nav/_pagination-nav.scss b/packages/styles/scss/components/pagination-nav/_pagination-nav.scss
+index 9e6be383e..5eacbff77 100644
+--- a/packages/styles/scss/components/pagination-nav/_pagination-nav.scss
++++ b/packages/styles/scss/components/pagination-nav/_pagination-nav.scss
+@@ -186,7 +186,7 @@
+   }
+ 
+   .#{$prefix}--pagination-nav__accessibility-label {
+-    @include visually-hidden;
++    @include screen-reader-only;
+   }
+ 
+   // RTL overrides
+diff --git a/packages/styles/scss/components/progress-bar/_progress-bar.scss b/packages/styles/scss/components/progress-bar/_progress-bar.scss
+index e77064a8b..5216f6234 100644
+--- a/packages/styles/scss/components/progress-bar/_progress-bar.scss
++++ b/packages/styles/scss/components/progress-bar/_progress-bar.scss
+@@ -160,7 +160,7 @@
+     .#{$prefix}--progress-bar__track,
+   .#{$prefix}--progress-bar--error.#{$prefix}--progress-bar--inline
+     .#{$prefix}--progress-bar__track {
+-    @include visually-hidden;
++    @include screen-reader-only;
+   }
+ 
+   .#{$prefix}--progress-bar--finished.#{$prefix}--progress-bar--inline
+@@ -235,7 +235,7 @@
+   }
+ 
+   .#{$prefix}--progress-bar--inline .#{$prefix}--progress-bar__helper-text {
+-    @include visually-hidden;
++    @include screen-reader-only;
+   }
+ 
+   .#{$prefix}--progress-bar--indented .#{$prefix}--progress-bar__label,
+diff --git a/packages/styles/scss/components/radio-button/_radio-button.scss b/packages/styles/scss/components/radio-button/_radio-button.scss
+index 06accc4ff..71f9d3588 100644
+--- a/packages/styles/scss/components/radio-button/_radio-button.scss
++++ b/packages/styles/scss/components/radio-button/_radio-button.scss
+@@ -63,7 +63,7 @@ $radio-border-width: 1px !default;
+   }
+ 
+   .#{$prefix}--radio-button {
+-    @include visually-hidden;
++    @include screen-reader-only;
+ 
+     margin-block-start: 0.9rem;
+     margin-inline-start: 0.63rem;
+diff --git a/packages/styles/scss/components/search/_search.scss b/packages/styles/scss/components/search/_search.scss
+index 25a639fb2..e17fffb57 100644
+--- a/packages/styles/scss/components/search/_search.scss
++++ b/packages/styles/scss/components/search/_search.scss
+@@ -52,7 +52,7 @@
+   }
+ 
+   .#{$prefix}--search .#{$prefix}--label {
+-    @include visually-hidden;
++    @include screen-reader-only;
+   }
+ 
+   .#{$prefix}--search-input {
+diff --git a/packages/styles/scss/components/tabs/_tabs.scss b/packages/styles/scss/components/tabs/_tabs.scss
+index 68d011009..a7fbc2f93 100644
+--- a/packages/styles/scss/components/tabs/_tabs.scss
++++ b/packages/styles/scss/components/tabs/_tabs.scss
+@@ -399,7 +399,7 @@
+ 
+     &:not(.#{$prefix}--tabs--contained)
+       .#{$prefix}--tabs__nav-item--close--hidden {
+-      @include visually-hidden;
++      @include screen-reader-only;
+ 
+       position: static;
+       inline-size: convert.to-rem(3px);
+diff --git a/packages/styles/scss/components/tile/_tile.scss b/packages/styles/scss/components/tile/_tile.scss
+index 7c31b3451..a834eeaa8 100644
+--- a/packages/styles/scss/components/tile/_tile.scss
++++ b/packages/styles/scss/components/tile/_tile.scss
+@@ -353,7 +353,7 @@ $-icon-container-size: calc(#{layout.density('padding-inline')} * 2 + 1rem);
+   }
+ 
+   .#{$prefix}--tile-input {
+-    @include visually-hidden;
++    @include screen-reader-only;
+   }
+ 
+   .#{$prefix}--tile-input:focus + .#{$prefix}--tile {
+diff --git a/packages/styles/scss/components/toggle/_toggle.scss b/packages/styles/scss/components/toggle/_toggle.scss
+index 72cb09ef7..21cf58bdf 100644
+--- a/packages/styles/scss/components/toggle/_toggle.scss
++++ b/packages/styles/scss/components/toggle/_toggle.scss
+@@ -41,7 +41,7 @@
+   }
+ 
+   .#{$prefix}--toggle__button {
+-    @include visually-hidden;
++    @include screen-reader-only;
+ 
+     &:focus {
+       outline: none;
+diff --git a/packages/styles/scss/utilities/_visually-hidden.scss b/packages/styles/scss/utilities/_visually-hidden.scss
+index ff5884ddd..8b56291af 100644
+--- a/packages/styles/scss/utilities/_visually-hidden.scss
++++ b/packages/styles/scss/utilities/_visually-hidden.scss
+@@ -10,7 +10,7 @@
+ /// Include styles for screen reader/assistive text
+ /// @access public
+ /// @group utilities
+-@mixin visually-hidden {
++@mixin screen-reader-only {
+   position: absolute;
+   overflow: hidden;
+   padding: 0;

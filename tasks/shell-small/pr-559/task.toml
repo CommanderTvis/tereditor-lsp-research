@@ -1,8 +1,0 @@
-type = "pr"
-pr = 559
-issue = 555
-base_commit = "fbbbb787af567fc88168f08c9709d37db92ea2d8"
-head_commit = "38ba7a7dfbb58ba512c7938b7568a3c44e2a120c"
-merged_at = "2022-03-16T23:38:39Z"
-origin = "mined pull request github.com/bats-core/bats-core/pull/559"
-fail_to_pass_files = "test/tap13-formatter.bats"

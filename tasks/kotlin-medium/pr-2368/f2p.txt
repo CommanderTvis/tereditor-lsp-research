@@ -1,0 +1,2 @@
+:interop:ksp:test-processor:test com.squareup.kotlinpoet.ksp.test.processor.KsTypesTest
+:interop:ksp:test-processor:test com.squareup.kotlinpoet.ksp.test.processor.TestProcessorTest
