@@ -71,13 +71,7 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
 - Toolz (Python small) and gson (Java medium) tasks: every arm succeeds with Haiku; tasks of this size are at
   ceiling, so success cannot separate arms. Harder tasks on larger projects are needed.
 - Offered but not pushed, Haiku used the LSP tools in 0 of 6 runs; enforced, always, at 1.2 to 4.4x the cost.
-- BLOCKER for the Kotlin tereditor arms (found 2026-11-17, pins nightly-2026-11-16 and -17): the bundled JetBrains
-  kotlin-lsp pre-release answers every call with "This build of kotlin-server has expired ... download a new build from
-  github.com/kotlin/kotlin-lsp". optional and enforced then have no working tool on Kotlin and mixed projects (the
-  IntelliJ arms and the Java projects are unaffected). Needs a tereditor build that bundles a newer kotlin-lsp; check
-  it before any confirmatory run (docs/CLOUD_RUN.md preflight).
-- For tereditor upstream (report, do not fix from here): headless IntelliJ cannot import Maven projects without
-  `mvn` on PATH and may write `mavenPluginInstall-pom*.xml` into the workspace; with IntelliJ, lookup by name
+- For tereditor upstream (report, do not fix from here): with IntelliJ, lookup by name
   (`Gson/getAdapter`) returns nothing while lookup at a position works; Gradle import of a Kotlin Multiplatform
   project (kotlin-result) stalled at "2%; Gradle" for minutes; at pin 95f7048 Pyright returned no cross-file
   references on toolz (fixed by later pins).
@@ -133,4 +127,3 @@ Rule: a project of any size that cannot be developed inside the 30 GB cloud VM i
 3. Calibration pilot (Haiku on small projects, a few Opus runs on large ones) to fix repetitions per model under
    the budget; record the allocation in `docs/ANALYSIS_PLAN.md`.
 4. With the owner's go: the confirmatory run, then `./study analyze`.
-5. Before the confirmatory run: bump `harness/tereditor.env` to the first nightly that contains the fix of tereditor issue #66 (Maven import without `mvn`, no `mavenPluginInstall-pom*.xml` in the workspace; closed 2026-11-17, check that the nightly postdates the fix), re-probe the JVM projects with the IntelliJ arms, and check that no stray files land in the agent's workspace.

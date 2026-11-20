@@ -75,11 +75,6 @@ export STUDY_RUNTIME=native STUDY_CPUS=3 STUDY_MEMORY=10g
 ./study setup python
 ```
 
-Preflight for the Kotlin server: `./study project kotlin-small && ./study probe kotlin-small enforced`. If its first answer
-is "This build of kotlin-server has expired" (an upstream build problem, AGENTS.md), plan the confirmatory run with
-`--skip-arms "optional:kotlin enforced:kotlin optional:java-kotlin enforced:java-kotlin"`, so the arms that would measure a
-dead tool do not run; the IntelliJ arms and the baselines of those projects run as usual.
-
 Then the toolz smoke (`./study plan smoke-cloud --projects python-small --tasks refs-get --models claude-haiku-5-5`,
 `run`, `grade`, `analyze`): 3 runs, all graded, 0 contamination failures. If anything fails here, stop and report;
 do not work around harness failures. Send a first bundle to confirm that downloads reach the owner.

@@ -117,8 +117,7 @@ over 29 projects. The allocation:
 
 At the final task set the planner (`./study plan --keep 3`) produces 1,860 runs over 87 tasks (29 projects, see "Postponed projects" in docs/TASKS.md): Haiku 1,116 (3 repetitions), Sonnet 372,
 Opus 372. Summed with the pilot's per-run means that is about USD 233 of agent cost, about USD 293
-with the reviews and the xlarge uplift. While the tereditor Kotlin server is expired, `--skip-arms` leaves the
-`optional` and `enforced` arms of the 12 Kotlin and mixed tasks out.
+with the reviews and the xlarge uplift.
 
 The projected cost is recomputed from these means and the final task counts before launching (every run's
 `total_cost_usd` is logged, and no new run starts past 125% of the estimate). Dropped tasks lower the average claim made per
