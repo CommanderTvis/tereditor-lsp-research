@@ -1,0 +1,169 @@
+diff --git a/gson/src/main/java/com/google/gson/GsonBuilder.java b/gson/src/main/java/com/google/gson/GsonBuilder.java
+index 447ca3a..4a206d7 100644
+--- a/gson/src/main/java/com/google/gson/GsonBuilder.java
++++ b/gson/src/main/java/com/google/gson/GsonBuilder.java
+@@ -860,7 +860,7 @@ public final class GsonBuilder {
+    * @since 1.3
+    */
+   @CanIgnoreReturnValue
+-  public GsonBuilder serializeSpecialFloatingPointValues() {
++  public GsonBuilder serializeSpecialFloatingPointValuesV2() {
+     this.serializeSpecialFloatingPointValues = true;
+     return this;
+   }
+diff --git a/gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java b/gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java
+index 5c7cc5d..7d07c25 100644
+--- a/gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java
++++ b/gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java
+@@ -522,7 +522,7 @@ public final class TypeAdapters {
+       throw new IllegalArgumentException(
+           value
+               + " is not a valid double value as per JSON specification. To override this"
+-              + " behavior, use GsonBuilder.serializeSpecialFloatingPointValues() method.");
++              + " behavior, use GsonBuilder.serializeSpecialFloatingPointValuesV2() method.");
+     }
+   }
+ 
+diff --git a/gson/src/test/java/com/google/gson/MixedStreamTest.java b/gson/src/test/java/com/google/gson/MixedStreamTest.java
+index 81a7e9c..8bfff53 100644
+--- a/gson/src/test/java/com/google/gson/MixedStreamTest.java
++++ b/gson/src/test/java/com/google/gson/MixedStreamTest.java
+@@ -212,7 +212,7 @@ public final class MixedStreamTest {
+     StringWriter writer = new StringWriter();
+     JsonWriter jsonWriter = new JsonWriter(writer);
+     new GsonBuilder()
+-        .serializeSpecialFloatingPointValues()
++        .serializeSpecialFloatingPointValuesV2()
+         .create()
+         .toJson(doubles, type, jsonWriter);
+     assertThat(writer.toString()).isEqualTo("[NaN,-Infinity,Infinity,-0.0,0.5,0.0]");
+@@ -225,7 +225,7 @@ public final class MixedStreamTest {
+         .hasMessageThat()
+         .isEqualTo(
+             "NaN is not a valid double value as per JSON specification. To override this behavior,"
+-                + " use GsonBuilder.serializeSpecialFloatingPointValues() method.");
++                + " use GsonBuilder.serializeSpecialFloatingPointValuesV2() method.");
+   }
+ 
+   static final class Car {
+diff --git a/gson/src/test/java/com/google/gson/functional/PrimitiveTest.java b/gson/src/test/java/com/google/gson/functional/PrimitiveTest.java
+index 5668e74..72a7792 100644
+--- a/gson/src/test/java/com/google/gson/functional/PrimitiveTest.java
++++ b/gson/src/test/java/com/google/gson/functional/PrimitiveTest.java
+@@ -187,7 +187,7 @@ public class PrimitiveTest {
+     assertThat(gson.toJson(Long.MAX_VALUE - 10L, Float.class))
+         .isEqualTo(Float.toString((float) (Long.MAX_VALUE - 10L)));
+     // Should perform narrowing conversion
+-    gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
++    gson = new GsonBuilder().serializeSpecialFloatingPointValuesV2().create();
+     assertThat(gson.toJson(Double.MAX_VALUE, Float.class)).isEqualTo("Infinity");
+   }
+ 
+@@ -530,7 +530,7 @@ public class PrimitiveTest {
+   public void testDoubleNaNSerializationNotSupportedByDefault() {
+     String expectedMessage =
+         "NaN is not a valid double value as per JSON specification. To override this behavior,"
+-            + " use GsonBuilder.serializeSpecialFloatingPointValues() method.";
++            + " use GsonBuilder.serializeSpecialFloatingPointValuesV2() method.";
+ 
+     var e =
+         assertThrows(IllegalArgumentException.class, () -> gson.toJson(Double.NaN, double.class));
+@@ -542,7 +542,7 @@ public class PrimitiveTest {
+ 
+   @Test
+   public void testDoubleNaNSerialization() {
+-    Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
++    Gson gson = new GsonBuilder().serializeSpecialFloatingPointValuesV2().create();
+     assertThat(gson.toJson(Double.NaN, double.class)).isEqualTo("NaN");
+     assertThat(gson.toJson(Double.NaN, Double.class)).isEqualTo("NaN");
+   }
+@@ -557,7 +557,7 @@ public class PrimitiveTest {
+   public void testFloatNaNSerializationNotSupportedByDefault() {
+     String expectedMessage =
+         "NaN is not a valid double value as per JSON specification. To override this behavior,"
+-            + " use GsonBuilder.serializeSpecialFloatingPointValues() method.";
++            + " use GsonBuilder.serializeSpecialFloatingPointValuesV2() method.";
+ 
+     var e = assertThrows(IllegalArgumentException.class, () -> gson.toJson(Float.NaN, float.class));
+     assertThat(e).hasMessageThat().isEqualTo(expectedMessage);
+@@ -568,7 +568,7 @@ public class PrimitiveTest {
+ 
+   @Test
+   public void testFloatNaNSerialization() {
+-    Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
++    Gson gson = new GsonBuilder().serializeSpecialFloatingPointValuesV2().create();
+     assertThat(gson.toJson(Float.NaN, float.class)).isEqualTo("NaN");
+     assertThat(gson.toJson(Float.NaN, Float.class)).isEqualTo("NaN");
+   }
+@@ -589,7 +589,7 @@ public class PrimitiveTest {
+   public void testDoubleInfinitySerializationNotSupportedByDefault() {
+     String expectedMessage =
+         "Infinity is not a valid double value as per JSON specification. To override this"
+-            + " behavior, use GsonBuilder.serializeSpecialFloatingPointValues() method.";
++            + " behavior, use GsonBuilder.serializeSpecialFloatingPointValuesV2() method.";
+ 
+     var e =
+         assertThrows(
+@@ -606,7 +606,7 @@ public class PrimitiveTest {
+ 
+   @Test
+   public void testDoubleInfinitySerialization() {
+-    Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
++    Gson gson = new GsonBuilder().serializeSpecialFloatingPointValuesV2().create();
+     assertThat(gson.toJson(Double.POSITIVE_INFINITY, double.class)).isEqualTo("Infinity");
+     assertThat(gson.toJson(Double.POSITIVE_INFINITY, Double.class)).isEqualTo("Infinity");
+   }
+@@ -621,7 +621,7 @@ public class PrimitiveTest {
+   public void testFloatInfinitySerializationNotSupportedByDefault() {
+     String expectedMessage =
+         "Infinity is not a valid double value as per JSON specification. To override this"
+-            + " behavior, use GsonBuilder.serializeSpecialFloatingPointValues() method.";
++            + " behavior, use GsonBuilder.serializeSpecialFloatingPointValuesV2() method.";
+ 
+     var e =
+         assertThrows(
+@@ -638,7 +638,7 @@ public class PrimitiveTest {
+ 
+   @Test
+   public void testFloatInfinitySerialization() {
+-    Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
++    Gson gson = new GsonBuilder().serializeSpecialFloatingPointValuesV2().create();
+     assertThat(gson.toJson(Float.POSITIVE_INFINITY, float.class)).isEqualTo("Infinity");
+     assertThat(gson.toJson(Float.POSITIVE_INFINITY, Float.class)).isEqualTo("Infinity");
+   }
+@@ -659,7 +659,7 @@ public class PrimitiveTest {
+   public void testNegativeInfinitySerializationNotSupportedByDefault() {
+     String expectedMessage =
+         "-Infinity is not a valid double value as per JSON specification. To override this"
+-            + " behavior, use GsonBuilder.serializeSpecialFloatingPointValues() method.";
++            + " behavior, use GsonBuilder.serializeSpecialFloatingPointValuesV2() method.";
+ 
+     var e =
+         assertThrows(
+@@ -676,7 +676,7 @@ public class PrimitiveTest {
+ 
+   @Test
+   public void testNegativeInfinitySerialization() {
+-    Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
++    Gson gson = new GsonBuilder().serializeSpecialFloatingPointValuesV2().create();
+     assertThat(gson.toJson(Double.NEGATIVE_INFINITY, double.class)).isEqualTo("-Infinity");
+     assertThat(gson.toJson(Double.NEGATIVE_INFINITY, Double.class)).isEqualTo("-Infinity");
+   }
+@@ -691,7 +691,7 @@ public class PrimitiveTest {
+   public void testNegativeInfinityFloatSerializationNotSupportedByDefault() {
+     String expectedMessage =
+         "-Infinity is not a valid double value as per JSON specification. To override this"
+-            + " behavior, use GsonBuilder.serializeSpecialFloatingPointValues() method.";
++            + " behavior, use GsonBuilder.serializeSpecialFloatingPointValuesV2() method.";
+ 
+     var e =
+         assertThrows(
+@@ -708,7 +708,7 @@ public class PrimitiveTest {
+ 
+   @Test
+   public void testNegativeInfinityFloatSerialization() {
+-    Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
++    Gson gson = new GsonBuilder().serializeSpecialFloatingPointValuesV2().create();
+     assertThat(gson.toJson(Float.NEGATIVE_INFINITY, float.class)).isEqualTo("-Infinity");
+     assertThat(gson.toJson(Float.NEGATIVE_INFINITY, Float.class)).isEqualTo("-Infinity");
+   }

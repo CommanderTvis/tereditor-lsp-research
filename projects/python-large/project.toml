@@ -11,6 +11,7 @@ loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 task_types = ["rename", "rename-file", "dispatch", "pr", "pr", "pr"]
 pr_shortfall = 0
 pr_replaced_by = []
+validation_note = "Validated on linux/amd64 (native backend, cloud session): all 6 tasks VALID."
 
 [probe]
 # ./study probe python-large (enforced), 2026-11-16.

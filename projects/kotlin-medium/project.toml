@@ -14,6 +14,7 @@ loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 # Assigned (docs/TASKS.md): move, signature, impls + 3 pr (modern pull requests, tasks/kotlin-medium/pr-log.md).
 task_types = ["move", "signature", "impls", "pr", "pr", "pr"]
 substitutions = []
+validation_note = "Validated on linux/amd64 in the cloud VM with Gradle resolving from the Maven Central mirror (harness/gradle/maven-mirror.init.gradle): all 6 tasks VALID."
 
 [probe]
 ok = false

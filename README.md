@@ -33,4 +33,4 @@ and two prompting regimes.
    ```
 
 `STUDY_RUNTIME=docker|container` picks the runtime when both exist. Docker (OrbStack on macOS) and Apple `container` are tested.
-The author's run uses one Claude Code cloud session: [docs/CLOUD_RUN.md](docs/CLOUD_RUN.md).
+The author's run uses one Claude Code cloud session: [docs/CLOUD_PROMPT.md](docs/CLOUD_PROMPT.md) (the runbook it follows is [docs/CLOUD_RUN.md](docs/CLOUD_RUN.md)).

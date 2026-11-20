@@ -4,7 +4,7 @@
 # deeply generic types; many packages declare same-named helpers.
 lang = "typescript"
 size = "xlarge"
-status = "curated"
+status = "postponed"
 repo = "https://github.com/payloadcms/payload"
 commit = "ec351643011603cf75dc91db5d03f80ff120f1e9"
 commit_date = "2026-10-30"
@@ -16,6 +16,7 @@ task_types = ["impls", "dispatch", "callers", "pr", "pr", "pr"]
 # Tests run with Node 24 (study-node24 of the grading toolchain) through vitest on sqlite (libsql) only: no database
 # server, no browsers (e2e and visual tests are excluded).
 pr_shortfall = 0
+postponed_reason = "Postponed (owner rule: an xlarge project that cannot be developed inside the 30 GB cloud VM is postponed). Measured: pnpm install of payload plus the snapshots, overlay and grade home of its commits ran the session out of disk twice (about 40 GB total allowance, 14 GB of it the base image). Projects, tasks and the earlier validation on the owner machine (tasks/typescript-xlarge/pr-log.md) are kept; to turn it on again set status = \"curated\" and re-validate on a larger disk."
 
 [probe]
 ok = true

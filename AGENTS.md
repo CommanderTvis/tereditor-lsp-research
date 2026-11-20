@@ -23,7 +23,7 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
 - Externally reproducible on macOS and Linux (Docker, Docker on macOS, Apple `container`) with nothing installed but
   Claude Code and a container runtime (plus an Anthropic credential and a JetBrains licence, both required; there is
   no reproduction flow without IntelliJ). Hard requirement:
-  Nix (used to define the environments, docs/NIX.md) must never be a requirement for a reproducer; it runs inside a
+  Nix (used to define the environments, docs/ENVIRONMENT.md) must never be a requirement for a reproducer; it runs inside a
   builder container, or self-bootstrapped in the native backend.
 - The owner's `~/.claude/CLAUDE.md` (and any other user configuration) must not contaminate the study.
 - Budget about USD 400 (API-equivalent, as Claude Code reports it; the Max 5x plan allows about USD 100 per 5-hour window) for the confirmatory run. It is an indicative price level, not a hard spending cap: the owner's subscription covers roughly USD 1,000 to 2,000 a month, so a moderate overshoot to buy power is acceptable, but ask before going far past it. The run is ON HOLD: the owner asked to wait for the IntelliJ
@@ -37,7 +37,7 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
   `system/init` event is checked against its arm (`analysis/extract.py`); mismatches are excluded and counted.
 - No arm has a compiler, interpreter, package manager, curl or wget. The language servers and their runtimes (.NET
   SDK, Bun, clangd, JDK, Maven, IntelliJ) exist only in the language server's sandbox; the agent's sandbox contains
-  only its own closure and reaches the server through a socket (docs/NIX.md).
+  only its own closure and reaches the server through a socket (docs/ENVIRONMENT.md).
   Otherwise the LSP arms would get a compiler the baseline lacks.
 - `optional` removes tereditor's own "use lsp_navigate instead of grep" advice (sentences only) with
   `harness/server/neutral.jq`; `enforced` keeps the shipped text and adds `harness/arms/enforced/overlay`
@@ -56,7 +56,7 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
   PATH, and without it answers never left the current file.
 - Tasks: half synthetic (refactorings: rename, rename file, move to another package or module, change signature;
   plus navigation questions), half mined pull requests selected as SWE-bench selects them, opened after 2026-07-01 (after
-  every model's training cutoff; pre-2022 PRs are memorized, measured in docs/MEMORIZATION.md, and never compared with a
+  every model's training cutoff; old PRs may be memorized, not only the pre-2022 ones (measured in docs/MEMORIZATION.md), and never compared with a
   gold patch), runnable with the current toolchains. Curated count: 6 per project (3 + 3); the confirmatory run uses 3 per project (`./study plan --keep 3`, seeded,
   docs/ANALYSIS_PLAN.md); the calibration pilot fixed the repetitions to fit USD 400 (docs/TASKS.md, docs/ANALYSIS_PLAN.md).
 - Effort: every model at Claude Code's default, `medium` for Haiku, Sonnet and Opus 5.5; nothing in the harness sets
@@ -85,7 +85,7 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
 ## Where things are
 
 - `study`: the driver (POSIX sh; images, project, probe, validate, plan, run, grade, analyze).
-- `nix/flake.nix`: every environment (docs/NIX.md). `harness/env/`: the scripts every command runs in it.
+- `nix/flake.nix`: every environment (docs/ENVIRONMENT.md). `harness/env/`: the scripts every command runs in it.
   `harness/server/`: what runs inside the language server's sandbox. tereditor comes from a dated release
   archive, pinned by sha256 in `harness/tereditor.env`.
 - `harness/arms/<arm>/`: `mcp.json` and the workspace overlay. `harness/grade/grade.sh`, `harness/bin/probe-inside.sh`.
@@ -120,6 +120,10 @@ development.
   a session ends, so check what is on disk before relaunching.
 - Locally: commit and push only when the owner asks; commits are SSH-signed. The cloud session commits on its own
   `run/<date>` branch and sends it as a git bundle; the owner applies it and opens the pull request.
+
+## Postponed projects
+
+Rule: a project of any size that cannot be developed inside the 30 GB cloud VM is postponed (`status = "postponed"` in its `project.toml`, skipped by `analysis/plan.sh`, everything else kept); see docs/TASKS.md. Postponed so far (measured, ran out of the VM's disk): `typescript-xlarge`, `csharp-xlarge`, `java-kotlin-xlarge`, `kotlin-large`, `csharp-large`.
 
 ## Next steps
 

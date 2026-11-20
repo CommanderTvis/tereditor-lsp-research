@@ -67,7 +67,7 @@ to keep the tool on the menu without advice.
 
 ## Baseline: the same agent with core utilities
 
-The agent's sandbox contains exactly the `agent` closure (docs/NIX.md): Claude Code, bash, coreutils, findutils, grep,
+The agent's sandbox contains exactly the `agent` closure (docs/ENVIRONMENT.md): Claude Code, bash, coreutils, findutils, grep,
 sed, awk, diff, patch, less, file, tree, procps, git (without perl), ripgrep, jq. No compiler, interpreter, test
 runner, package manager, `curl` or `wget` exists in it, in any arm. Claude Code gets the built-in tools Bash, Read,
 Edit, Write, Task (subagents) and ToolSearch (`--tools`; MCP tools are deferred behind ToolSearch); web tools are off.

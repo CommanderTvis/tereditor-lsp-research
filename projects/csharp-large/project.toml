@@ -1,7 +1,7 @@
 # csharp, large: Jellyfin. Mined tasks are modern pull requests (tasks/csharp-large/pr-log.md).
 lang = "csharp"
 size = "large"
-status = "curated"
+status = "postponed"
 repo = "https://github.com/jellyfin/jellyfin"
 tag = "v12.4"
 commit = "83d0d0e7f76e23e2e085c8ff67d28b772d35967d"
@@ -10,6 +10,7 @@ loc_by_language = { "C#" = 254851 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 task_types = ["rename", "rename-file", "callers", "pr", "pr", "pr"]
 substitutions = []
+postponed_reason = "Postponed (rule: a project that cannot be developed inside the 30 GB cloud VM is postponed, docs/TASKS.md). Measured in that VM: The grading dependencies (restore and build of the solution into the overlay, about 7 GB) exhausted the disk at 38 GB used in total. Project, tasks and the earlier validation on the owner machine are kept; set status = \"curated\" to turn it on and validate it on a larger disk."
 
 [probe]
 ok = true

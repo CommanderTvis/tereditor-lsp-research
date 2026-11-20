@@ -14,6 +14,7 @@ size_note = "Feasibility measured on 3 CPUs, 8 GB, JDK 25: per base commit, serv
 # Assigned (docs/TASKS.md): rename, impls, rename + 3 pr (modern pull requests 16547, 16706, 16684; tasks/java-xlarge/pr-log.md).
 task_types = ["rename", "impls", "rename", "pr", "pr", "pr"]
 substitutions = []
+vm_note = "cloud VM: fits. Peak disk 27 GB used in total (about 14 GB of it the base image); Gradle resolved from the Maven Central mirror (harness/gradle/maven-mirror.init.gradle), since Sonatype answered 429; all 6 tasks VALID."
 
 [probe_intellij]
 ok = true

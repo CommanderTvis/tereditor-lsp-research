@@ -2,7 +2,7 @@
 
 The runbook for the session that carries out the whole study unattended, one project at a time, and ends by handing
 the owner the dated report and every result as downloads. Read `AGENTS.md` first; it is the contract. Everything here
-uses `./study` with the native backend (docs/NIX.md): no Docker daemon is needed in the cloud VM.
+uses `./study` with the native backend (docs/ENVIRONMENT.md): no Docker daemon is needed in the cloud VM.
 
 ## Why one cloud session, and what it implies
 
@@ -154,3 +154,17 @@ git add results/main/archive/<p>.tar.gz && git commit -m "Runs: <p>"     # and s
    bundle, `REPORT.md` itself, and `study-results-<date>.tar.gz` (REPORT.md plus `results/main/`). Print the report's
    summary in the chat. The owner applies the bundle (`git pull study-<date>.bundle run/<date>`) and opens the pull
    request.
+
+## Measured limits of the cloud VM (cloud session, linux/amd64, 4 vCPUs, 15 GB, about 40 GB of disk with 14 GB base image)
+
+- No IPv6 in the kernel: tests that bind `::1` fail. `projects/typescript-small/check.sh` leaves out node-server's "should serve on ipv6" test
+  where `/proc/net/if_inet6` is absent. `projects/shell-medium/check-known-failures.txt` lists `nvm_wget_with_auth_header`.
+- GitHub zip downloads (composer `dist`) are refused for repositories not attached to the session: the PHP `grade-setup.sh` scripts fall back to git clones.
+- Maven Central (Sonatype) answers Gradle with `429 Too Many Requests` through the session proxy. In the native backend `harness/env/project.sh`
+  installs `harness/gradle/maven-mirror.init.gradle` into both Gradle user homes, so Gradle resolves from Google's Maven Central mirror
+  (`STUDY_MAVEN_MIRROR`, empty turns it off); with it every Gradle project except kotlin-large validated in this VM.
+- Disk: `csharp-large` (jellyfin) exhausted the disk at 38 GB used and `kotlin-large` at 39 GB and `csharp-xlarge` and `typescript-xlarge`
+  too: all four are postponed (docs/TASKS.md). Peaks of the others: php-medium 35, cpp-large 32,
+  cpp-xlarge 27, csharp-medium 28 GB.
+- Run each project alone and `./study prune` it afterwards; the Gradle, NuGet and language-server caches under
+  `/var/lib/study/cache-x86_64` are also worth deleting between projects.

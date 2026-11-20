@@ -13,6 +13,8 @@ loc_method = "scc 3.5.0 code lines at the pinned commit, docs/PROJECTS.md (vendo
 stripped = ["AGENTS.md", "CLAUDE.md", ".claude", ".agents"]
 grading_note = "tests/unit only: check.sh runs PHPUnit with /project/unit-bootstrap.php instead of src/Core/TestBootstrap.php (which installs into MySQL), registering the feature flags of feature.yaml as a booted kernel would; mined pull requests keep only their tests/unit files as runnable tests."
 task_types = ["inspect", "refs", "callers", "pr", "pr", "pr"]
+validation_note = "Validated on linux/amd64 (native backend, cloud session): all 6 tasks VALID (composer git-clone fallback in grade-setup.sh)."
+vm_note = "cloud VM: fits after the composer fallback (peak about 36 GB used with the first, heavier fallback; validated, 6 tasks VALID)."
 
 [probe]
 # ./study probe php-xlarge (enforced), tereditor pinned in harness/tereditor.env, Intelephense, 2026-11-17.

@@ -1,0 +1,5 @@
+The command bus contract has a method for running a command in the current process, `dispatchNow($command, $handler = null)`. Callers have no way to hand the dispatcher extra information about where the command is being run from. Change the signature, in the `Illuminate\Contracts\Bus\Dispatcher` interface and in every class that implements it, to
+
+    dispatchNow($command, array $context, $handler = null)
+
+where `$context` is a required array. The implementations only have to accept it and pass it on to any other dispatcher they delegate to; they do not need to use it yet. Update every place in the framework that calls `dispatchNow()` on a bus dispatcher (callers that have no context pass an empty array), the facade's documented signature, and the tests that call or mock it (including ones that reach it through a data provider). Other methods called `dispatchNow` that are not part of this contract (for example on the task scheduler) are unrelated and keep their signatures. Updating documentation files is optional.

@@ -22,9 +22,12 @@ work=${STUDY_WORK:-/work}
 rm -rf "$work" && cp -a /study/snapshot "$work" && cd "$work" || exit 1
 [ -d /grade-overlay ] && cp -a /grade-overlay/. "$work/"
 git() { command git -c user.name=grader -c user.email=grader@localhost "$@"; }
-if [ -s /task/setup.patch ]; then git apply --whitespace=nowarn /task/setup.patch || result false ',"error":"setup.patch does not apply"'; fi
+# Some upstream trees are committed with CRLF line endings and the study's reference patches carry LF context: when the
+# strict apply fails, the patch is applied again ignoring whitespace in the context lines.
+apply() { git apply --whitespace=nowarn "$1" 2>"${2:-/dev/null}" || git apply --whitespace=nowarn --ignore-whitespace "$1" 2>"${2:-/dev/null}"; }
+if [ -s /task/setup.patch ]; then apply /task/setup.patch || result false ',"error":"setup.patch does not apply"'; fi
 applied=true
-if [ -s "$patch" ]; then git apply --whitespace=nowarn "$patch" 2>"$out/apply.log" || applied=false; fi
+if [ -s "$patch" ]; then apply "$patch" "$out/apply.log" || applied=false; fi
 [ "$applied" = true ] || result false ',"patch_applied":false'
 
 case "$type" in

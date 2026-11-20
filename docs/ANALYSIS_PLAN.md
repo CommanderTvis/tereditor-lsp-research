@@ -103,11 +103,11 @@ Enforced costs about 1.3 times the baseline and the self-review arm about 2.3 ti
 project, about 190 tasks) cost about USD 460 for one repetition of every cell, three quarters of it Opus, which does not
 fit USD 400. The lever is the number of tasks, not the models or the arms: every project keeps 3 tasks, chosen by the
 planner's seeded rule (`./study plan --keep 3`: one refactoring, one navigation question and one mined pull request, a
-second refactoring where a project has no mined one; each group ordered by a hash of seed, project and task), 102 tasks
-over 34 projects. The allocation:
+second refactoring where a project has no mined one; each group ordered by a hash of seed, project and task), 87 tasks
+over 29 projects. The allocation:
 
-- Every model on every kept task and every arm: 444 arm-runs per model and repetition (72 non-JVM tasks with 4 arms, 12
-  Java tasks with 4, 18 Kotlin and mixed tasks with 6).
+- Every model on every kept task and every arm: 372 arm-runs per model and repetition (63 non-JVM tasks with 4 arms, 12
+  Java tasks with 4, 12 Kotlin and mixed tasks with 6).
 - Haiku 5.5: 3 repetitions (about USD 17). Sonnet 5.5: 1 repetition (about USD 49). Opus 5.5: 1 repetition (about
   USD 169). Reviews (Haiku, one per edit diff, about 1,700 of them): about USD 35. Xlarge uplift over the pilot's mix:
   about USD 30. Total about USD 300.
@@ -115,10 +115,10 @@ over 34 projects. The allocation:
   400 (the figure is an indicative level, a moderate overshoot is acceptable).
 - Per-run cap USD 3, 200 turns, 3600 s.
 
-At the final task set the planner (`./study plan --keep 3`) produces 2,220 runs over 102 tasks: Haiku 1,332 (3 repetitions), Sonnet 444,
-Opus 444. Summed with the pilot's per-run means that is about USD 233 of agent cost, about USD 293
+At the final task set the planner (`./study plan --keep 3`) produces 1,860 runs over 87 tasks (29 projects, see "Postponed projects" in docs/TASKS.md): Haiku 1,116 (3 repetitions), Sonnet 372,
+Opus 372. Summed with the pilot's per-run means that is about USD 233 of agent cost, about USD 293
 with the reviews and the xlarge uplift. While the tereditor Kotlin server is expired, `--skip-arms` leaves the
-`optional` and `enforced` arms of the 18 Kotlin and mixed tasks out.
+`optional` and `enforced` arms of the 12 Kotlin and mixed tasks out.
 
 The projected cost is recomputed from these means and the final task counts before launching (every run's
 `total_cost_usd` is logged, and no new run starts past 125% of the estimate). Dropped tasks lower the average claim made per

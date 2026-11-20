@@ -14,6 +14,8 @@ task_types = ["rename", "refs", "dispatch", "pr", "pr", "pr"]
 pr_shortfall = 0
 pr_replaced_by = []
 # Salt's service-dependent integration suite is not run; tasks are source-answer/refactoring checks.
+validation_note = "Validated on linux/amd64 (native backend, cloud session): all 6 tasks VALID."
+vm_note = "cloud VM: peak not sampled; fits (validated, 6 tasks VALID)."
 
 [probe]
 # ./study probe python-xlarge (enforced), 2026-11-16.

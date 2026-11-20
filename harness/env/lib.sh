@@ -49,7 +49,7 @@ proxy_args() {
   local jto=${JAVA_TOOL_OPTIONS:-} ts
   ts=$(printf '%s' "$jto" | sed -n 's/.*-Djavax.net.ssl.trustStore=\([^ ]*\).*/\1/p')
   if [ -n "$ts" ] && [ -f "$ts" ]; then A+=(--ro-bind "$ts" /study/proxy-truststore); jto=${jto//$ts//study/proxy-truststore}; fi
-  A+=(--setenv JAVA_TOOL_OPTIONS "$jto -Daether.remoteRepositoryFilter.prefixes=false")
+  A+=(--setenv JAVA_TOOL_OPTIONS "$jto -Daether.remoteRepositoryFilter.prefixes=false -Dorg.gradle.workers.max=1 -Dorg.gradle.internal.repository.max.tentatives=8 -Dorg.gradle.internal.repository.initial.backoff=1500")  # one Gradle worker: parallel downloads draw 429 from the cloud session's egress proxy
 }
 
 # Root without capabilities, in its own PID, IPC and UTS namespaces: what a sandbox can reach is decided by what is

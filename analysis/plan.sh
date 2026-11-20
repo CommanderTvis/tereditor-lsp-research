@@ -38,6 +38,8 @@ read -ra project_globs <<<"$projects"; read -ra task_globs <<<"$tasks"   # no ex
 for pglob in "${project_globs[@]}"; do
   for pd in tasks/$pglob/; do
     [ -d "$pd" ] || continue; proj=$(basename "$pd")
+    # A project whose project.toml says status = "postponed" (it does not fit the 30 GB cloud VM), "skipped" or "dropped" is not planned.
+    case "$(sed -n 's/^status[[:space:]]*=[[:space:]]*"\([a-z]*\)".*/\1/p' "projects/$proj/project.toml" 2>/dev/null | head -n1)" in postponed|skipped|dropped) continue ;; esac
     keptlist=""; [ "$keep" != 0 ] && keptlist=" $(kept_tasks "$pd" | tr '\n' ' ') "
     for tglob in "${task_globs[@]}"; do for td in "$pd"$tglob/; do
       [ -f "$td/task.toml" ] || continue; task=$(basename "$td")

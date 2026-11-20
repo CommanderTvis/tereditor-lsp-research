@@ -13,6 +13,7 @@ task_types = ["rename", "rename-file", "callers", "pr", "pr", "pr"]
 size_note = "largest credible CSS/SCSS project selected for this study"
 
 grade_note = "grade-setup.sh: yarn install --immutable --mode=skip-build (about 2 min, 450 MiB fetched), lerna build of the 11 packages the tests need (about 1.5 min), reference compilation of 208 Sass entry points; the overlay (node_modules and generated files) is about 2.5 GB per base commit. Cold validation of the six tasks took about 9 minutes on 3 CPUs."
+validation_note = "Validated on linux/amd64 (native backend, cloud session): all 6 tasks VALID."
 
 [probe]
 ok = false

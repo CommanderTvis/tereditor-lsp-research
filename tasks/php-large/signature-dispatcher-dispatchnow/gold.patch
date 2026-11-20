@@ -1,0 +1,135 @@
+diff --git a/src/Illuminate/Broadcasting/BroadcastManager.php b/src/Illuminate/Broadcasting/BroadcastManager.php
+index 13f8af3..77f1eaa 100644
+--- a/src/Illuminate/Broadcasting/BroadcastManager.php
++++ b/src/Illuminate/Broadcasting/BroadcastManager.php
+@@ -197,7 +197,7 @@ public function queue($event)
+              $event->shouldBroadcastNow()) ||
+             $this->broadcastsToSynchronousMercureConnections($event)) {
+             $dispatch = fn () => $this->app->make(BusDispatcherContract::class)
+-                ->dispatchNow(new BroadcastEvent(clone $event));
++                ->dispatchNow(new BroadcastEvent(clone $event), []);
+ 
+             return $event instanceof ShouldRescue
+                 ? $this->rescue($dispatch)
+diff --git a/src/Illuminate/Bus/Dispatcher.php b/src/Illuminate/Bus/Dispatcher.php
+index c624784..8db840c 100644
+--- a/src/Illuminate/Bus/Dispatcher.php
++++ b/src/Illuminate/Bus/Dispatcher.php
+@@ -85,7 +85,7 @@ public function dispatch($command)
+     {
+         return $this->queueResolver && $this->commandShouldBeQueued($command)
+             ? $this->dispatchToQueue($command)
+-            : $this->dispatchNow($command);
++            : $this->dispatchNow($command, []);
+     }
+ 
+     /**
+@@ -105,17 +105,18 @@ public function dispatchSync($command, $handler = null)
+             return $this->dispatchToQueue($command->onConnection('sync'));
+         }
+ 
+-        return $this->dispatchNow($command, $handler);
++        return $this->dispatchNow($command, [], $handler);
+     }
+ 
+     /**
+      * Dispatch a command to its appropriate handler in the current process without using the synchronous queue.
+      *
+      * @param  mixed  $command
++     * @param  array  $context
+      * @param  mixed  $handler
+      * @return mixed
+      */
+-    public function dispatchNow($command, $handler = null)
++    public function dispatchNow($command, array $context, $handler = null)
+     {
+         $uses = class_uses_recursive($command);
+ 
+@@ -152,7 +153,7 @@ public function bulk($jobs)
+ 
+         foreach ($jobs as $job) {
+             if (! $this->queueResolver || ! $this->commandShouldBeQueued($job)) {
+-                $this->dispatchNow($job);
++                $this->dispatchNow($job, []);
+ 
+                 continue;
+             }
+diff --git a/src/Illuminate/Console/Scheduling/Schedule.php b/src/Illuminate/Console/Scheduling/Schedule.php
+index 28416e4..1b416d4 100644
+--- a/src/Illuminate/Console/Scheduling/Schedule.php
++++ b/src/Illuminate/Console/Scheduling/Schedule.php
+@@ -317,7 +317,7 @@ protected function dispatchUniqueJobToQueue($job, $queue, $connection)
+      */
+     protected function dispatchNow($job)
+     {
+-        $this->getDispatcher()->dispatchNow($job);
++        $this->getDispatcher()->dispatchNow($job, []);
+     }
+ 
+     /**
+diff --git a/src/Illuminate/Contracts/Bus/Dispatcher.php b/src/Illuminate/Contracts/Bus/Dispatcher.php
+index f127399..a83f5ed 100644
+--- a/src/Illuminate/Contracts/Bus/Dispatcher.php
++++ b/src/Illuminate/Contracts/Bus/Dispatcher.php
+@@ -27,10 +27,11 @@ public function dispatchSync($command, $handler = null);
+      * Dispatch a command to its appropriate handler in the current process.
+      *
+      * @param  mixed  $command
++     * @param  array  $context
+      * @param  mixed  $handler
+      * @return mixed
+      */
+-    public function dispatchNow($command, $handler = null);
++    public function dispatchNow($command, array $context, $handler = null);
+ 
+     /**
+      * Dispatch a command to its appropriate handler after the current process.
+diff --git a/src/Illuminate/Queue/CallQueuedHandler.php b/src/Illuminate/Queue/CallQueuedHandler.php
+index 468c357..7bc9b6c 100644
+--- a/src/Illuminate/Queue/CallQueuedHandler.php
++++ b/src/Illuminate/Queue/CallQueuedHandler.php
+@@ -157,7 +157,7 @@ protected function dispatchThroughMiddleware(Job $job, $command)
+                 }
+ 
+                 return $this->dispatcher->dispatchNow(
+-                    $command, $this->resolveHandler($job, $command)
++                    $command, [], $this->resolveHandler($job, $command)
+                 );
+             });
+     }
+diff --git a/src/Illuminate/Support/Facades/Bus.php b/src/Illuminate/Support/Facades/Bus.php
+index 552bb30..d8516fc 100644
+--- a/src/Illuminate/Support/Facades/Bus.php
++++ b/src/Illuminate/Support/Facades/Bus.php
+@@ -10,7 +10,7 @@
+ /**
+  * @method static mixed dispatch(mixed $command)
+  * @method static mixed dispatchSync(mixed $command, mixed $handler = null)
+- * @method static mixed dispatchNow(mixed $command, mixed $handler = null)
++ * @method static mixed dispatchNow(mixed $command, array $context, mixed $handler = null)
+  * @method static void bulk(iterable $jobs)
+  * @method static \Illuminate\Bus\Batch|null findBatch(string $batchId)
+  * @method static \Illuminate\Bus\PendingBatch batch(\Illuminate\Support\Collection|mixed $jobs)
+diff --git a/src/Illuminate/Support/Testing/Fakes/BusFake.php b/src/Illuminate/Support/Testing/Fakes/BusFake.php
+index 01b387d..d1027a7 100644
+--- a/src/Illuminate/Support/Testing/Fakes/BusFake.php
++++ b/src/Illuminate/Support/Testing/Fakes/BusFake.php
+@@ -693,15 +693,16 @@ public function dispatchSync($command, $handler = null)
+      * Dispatch a command to its appropriate handler in the current process.
+      *
+      * @param  mixed  $command
++     * @param  array  $context
+      * @param  mixed  $handler
+      * @return mixed
+      */
+-    public function dispatchNow($command, $handler = null)
++    public function dispatchNow($command, array $context, $handler = null)
+     {
+         if ($this->shouldFakeJob($command)) {
+             $this->commands[get_class($command)][] = $this->getCommandRepresentation($command);
+         } else {
+-            return $this->dispatcher->dispatchNow($command, $handler);
++            return $this->dispatcher->dispatchNow($command, $context, $handler);
+         }
+     }
+ 

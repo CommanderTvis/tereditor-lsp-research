@@ -9,10 +9,16 @@ repo=$(toml_val "$pd/project.toml" repo); pinned=$(project_commit "$proj")
 if [ $# -eq 0 ]; then
   set -- $( { echo "$pinned"; for t in "$STUDY_ROOT/tasks/$proj"/*/; do [ -f "$t/task.toml" ] && task_commit "$proj" "${t%/}"; done; } | sort -u)
 fi
+# Behind the cloud session's egress proxy Maven Central (Sonatype) answers Gradle with 429: resolve from a mirror there
+# (harness/gradle/maven-mirror.init.gradle, installed into both Gradle user homes). STUDY_MAVEN_MIRROR= (empty) turns it off.
+if [ "${STUDY_RUNTIME:-}" = native ]; then : "${STUDY_MAVEN_MIRROR=https://maven-central.storage-download.googleapis.com/maven2}"; fi
+export STUDY_MAVEN_MIRROR="${STUDY_MAVEN_MIRROR:-}"
+install_mirror() { [ -n "$STUDY_MAVEN_MIRROR" ] || return 0; mkdir -p "$1/.gradle/init.d"; sed "s|@MIRROR@|$STUDY_MAVEN_MIRROR|" "$STUDY_ROOT/harness/gradle/maven-mirror.init.gradle" > "$1/.gradle/init.d/study-maven-mirror.gradle"; }
+install_mirror "$CACHE/home"
 for commit in "$@"; do
 st=$(state_dir "$proj" "$commit")
 mkdir -p "$st"
-g() { git -c user.name=study -c user.email=study@localhost "$@"; }
+g() { git -c user.name=study -c user.email=study@localhost -c gc.auto=0 -c maintenance.auto=false "$@"; }
 if [ ! -f "$st/.snapshot" ]; then
   log "snapshot $repo@$commit"
   rm -rf "$st/snapshot" && mkdir -p "$st/snapshot" && cd "$st/snapshot"
@@ -30,12 +36,17 @@ if [ ! -f "$st/.prepared" ]; then
   tmp=$(mktemp -d); mkdir -p "$tmp/log" "$tmp/lic"
   if [ -s "$pd/prepare.sh" ]; then
     log "prepare $proj (server side)"; cp "$pd/prepare.sh" "$tmp/log/prepare.sh"
-    ( server_exec enforced "$st/snapshot" "$tmp/log" "$tmp/lic" /bin/sh /study/harness/prepare.sh )
+    # Package registries behind shared egress IPs answer 429 now and then: the preparation is retried (what was downloaded stays in the cache).
+    for try in 1 2 3 4; do
+      if ( server_exec enforced "$st/snapshot" "$tmp/log" "$tmp/lic" /bin/sh /study/harness/prepare.sh ); then break; fi
+      [ "$try" -lt 4 ] || die "prepare.sh of $proj failed $try times"
+      log "prepare.sh of $proj failed (attempt $try); retrying in 120 s"; sleep 120
+    done
   fi
   rm -rf "$tmp"; touch "$st/.prepared"
 fi
 if [ ! -f "$st/.grade-ready" ]; then
-  mkdir -p "$st/grade-home"
+  mkdir -p "$st/grade-home"; install_mirror "$st/grade-home"
   if [ -s "$pd/grade-setup.sh" ]; then
     log "grading dependencies of $proj"
     scratch=$STUDY_STATE/scratch/$proj-setup; rm -rf "$scratch"; mkdir -p "$scratch"; cp -a "$st/snapshot" "$scratch/work"

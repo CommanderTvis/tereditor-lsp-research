@@ -1,0 +1,25 @@
+// Resolves what Gradle would fetch from Maven Central (repo.maven.apache.org, repo1.maven.org) from a mirror instead, for
+// builds behind a shared egress proxy that answers Sonatype's 429. Installed into the Gradle user home of the language
+// server's and the grader's sandboxes by harness/env/project.sh when STUDY_MAVEN_MIRROR is set (the native backend sets it).
+// The artifacts are the same files; only the host differs.
+// @MIRROR@ is replaced by project.sh with the mirror's URL when it installs this file, so that the offline grading
+// phase (no JAVA_TOOL_OPTIONS of the net-enabled sandboxes) resolves the same repository URL, which keys Gradle's cache.
+def mirror = '@MIRROR@'
+if (mirror) {
+  def fix = { repos ->
+    repos.all { r ->
+      if (r instanceof MavenArtifactRepository) {
+        def u = r.url.toString()
+        if (u.contains('repo.maven.apache.org') || u.contains('repo1.maven.org')) { r.url = mirror }
+      }
+    }
+  }
+  beforeSettings { s -> fix(s.pluginManagement.repositories) }
+  settingsEvaluated { s ->
+    try { fix(s.dependencyResolutionManagement.repositories) } catch (Throwable ignored) { }
+  }
+  allprojects { p ->
+    fix(p.buildscript.repositories)
+    fix(p.repositories)
+  }
+}

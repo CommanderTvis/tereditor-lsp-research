@@ -1,7 +1,7 @@
 # kotlin, large: Kotlin/dataframe, a pure-JVM Gradle build (replaces ktor, which has too few modern pull requests that close an issue).
 lang = "kotlin"
 size = "large"
-status = "curated"
+status = "postponed"
 repo = "https://github.com/Kotlin/dataframe"
 tag = "master-2026-11-17"
 commit = "2b425634957a0e974ee1d45896a42e420c261328"
@@ -12,6 +12,7 @@ size_note = "155k Kotlin code lines, inside the large band (140k to 450k) at its
 stripped = ["CLAUDE.md", "AGENTS.md", ".idea"]
 task_types = ["rename", "rename-file", "dispatch"]
 grade_note = "Gradle 9.9, JDK 21 (the sandbox's; the project's daemon JVM criteria ask for 21). Library modules only: core, dataframe-json, -csv, -arrow, -excel, samples, common-test-utils; the JDBC module (Testcontainers), the compiler plugin and the Jupyter/geo/openapi modules are not tested. The kotlinlang bootstrap Maven repository is reached at prepare and grade-setup time (network on). The project's gradle.properties asks for a 5 GB heap; check.sh and prepare.sh pass 2.5 GB on the command line (nothing is written to the shared Gradle home). Cold prepare plus grade-setup of one commit takes about 10 minutes on 3 CPUs (later commits reuse the downloads, about 5 minutes); a grade run of a task takes 20 to 60 seconds with the grade home's build cache warm. Tests that read from the network (samples Schemas.useInferredSchema and the QuickStartGuide class) fail in the sandbox for every patch; they are listed in each mined task's p2p-exclude.txt, taken from a run of the reference solution. The repository commits KoDEx-processed copies of the sources under core/generated-sources (not compiled; the build regenerates them): the synthetic tasks leave them alone and say so."
+postponed_reason = "Postponed (rule: a project that cannot be developed inside the 30 GB cloud VM is postponed, docs/TASKS.md). Measured in that VM: The setup of its four commits exhausted the disk at 39 GB used in total (about 3 GB of snapshot and build output per commit, 7 GB of Gradle cache, 14 GB base image). Project, tasks and the earlier validation on the owner machine are kept; set status = \"curated\" to turn it on and validate it on a larger disk."
 
 [probe]
 ok = false

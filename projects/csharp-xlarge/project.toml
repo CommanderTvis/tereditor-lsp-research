@@ -2,7 +2,7 @@
 # source generators, an EF Core integration). Replaces the Entity Framework Core stand-in (owner-approved replacement).
 lang = "csharp"
 size = "xlarge"
-status = "curated"
+status = "postponed"
 repo = "https://github.com/linq2db/linq2db"
 tag = "v6.5.1"
 commit = "a987817007fb97817206de66ca24df20e851911f"
@@ -15,3 +15,4 @@ task_types = ["refs", "rename", "dispatch", "pr", "pr", "pr"]
 substitutions = []
 # Graded: the Tests/Linq test project (linq2db.Tests) for net10.0 on the SQLite providers only (--provider SQLite.MS); no
 # database server, container or vendor client library is needed. Everything else in the solution is not built.
+postponed_reason = "Postponed (owner rule: an xlarge project that cannot be developed inside the 30 GB cloud VM is postponed). Measured in that VM: the grading dependencies of efcore (restore and build of the solution into the overlay) exhausted the disk at 39 GB used (about 14 GB of it the base image) within 6 minutes of the first commit's grade-setup. Project, tasks and the earlier validation on the owner machine are kept; set status = \"curated\" to turn it on and validate it on a larger disk."

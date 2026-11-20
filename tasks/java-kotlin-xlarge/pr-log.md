@@ -8,3 +8,9 @@ pass-to-pass set is every test of :gradle-cli, :launcher and :logging; #39587 wa
 from a copy of `harness/gen/mine-prs.sh` with smaller GraphQL pages and retries (GitHub answered 502/504 on 100-item pages
 for this repository); filters and seed are unchanged. The obsolete pre-2022 `pr-*` and fallback tasks and the placeholder
 synthetic tasks were removed (git history keeps them).
+
+## Update
+
+All three taken candidates validate now: #39526 and #39587 with a pass-to-pass set narrowed to the packages of their
+fail-to-pass classes, and #39260 after its gold.patch was regenerated from the merge commit (the stored patch was
+truncated; the earlier "offline :native" diagnosis was wrong for the stored patch). Candidates #39771 and #39482 are not needed.

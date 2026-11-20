@@ -16,6 +16,7 @@ size_note = "Kotlin 74 percent and Java 26 percent of the 63.4k lines; the Groov
 # Assigned (docs/TASKS.md): rename, rename-file, impls + 3 pr (modern pull requests, tasks/java-kotlin-medium/pr-log.md).
 task_types = ["rename", "rename-file", "impls", "pr", "pr", "pr"]
 substitutions = []
+validation_note = "Validated on linux/amd64 in the cloud VM with Gradle resolving from the Maven Central mirror (harness/gradle/maven-mirror.init.gradle): all 6 tasks VALID."
 
 [probe]
 ok = false

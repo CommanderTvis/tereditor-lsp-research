@@ -16,6 +16,7 @@ size_note = "13.4k Kotlin code lines, above the 3k to 12k small band; the owner 
 # Assigned (docs/TASKS.md): rename, rename-file, refs + 3 pr (modern pull requests, tasks/kotlin-small/pr-log.md).
 task_types = ["rename", "rename-file", "refs", "pr", "pr", "pr"]
 substitutions = []
+validation_note = "Validated on linux/amd64 in the cloud VM with Gradle resolving from the Maven Central mirror (harness/gradle/maven-mirror.init.gradle): all 6 tasks VALID."
 
 [probe]
 ok = false

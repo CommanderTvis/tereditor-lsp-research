@@ -1,3 +1,0 @@
-type = "rename"
-origin = "synthetic fallback: rename fallback"
-selection = "Selected from the pinned snapshot using the fixed seed 20261110; this synthetic task replaces an unavailable mined task slot."

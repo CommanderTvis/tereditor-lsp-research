@@ -6,7 +6,7 @@
 export JAVA_HOME=$(study-jdk25)
 JDK17=$(study-jdk17); JDK11=$(study-jdk11); JDK8=$(study-jdk8)
 export JDK_1_8=$JDK8 JDK_8_0=$JDK8 JDK_11_0=$JDK11 JDK_17_0=$JDK17 JDK_25_0=$JAVA_HOME
-export GF="--no-configuration-cache -Dorg.gradle.isolated-projects=false -Dorg.gradle.java.installations.paths=$JAVA_HOME,$JDK17,$JDK11,$JDK8 -Dorg.gradle.java.installations.auto-download=false"
+export GF="--no-configuration-cache -Dorg.gradle.isolated-projects=false -Dorg.gradle.java.installations.paths=$JAVA_HOME,$JDK17,$JDK11,$JDK8 -Dorg.gradle.java.installations.auto-download=false -Dorg.gradle.workers.max=1"
 t=$(date +%s)
 ./gradlew $GF --no-daemon --console=plain :logging:compileTestGroovy > /tmp/gradle-setup.log 2>&1
 rc=$?
@@ -18,4 +18,8 @@ t=$(date +%s)
 rc=$?
 tail -20 /tmp/gradle-setup2.log
 echo "grade-setup first :logging test: rc=$rc $(( $(date +%s) - t )) s" >&2
+# The modules of the mined tasks (:native, :gradle-cli, :launcher): resolve and compile their test code once, with network, so
+# that grading can run them offline. A module that does not build at this commit is not fatal here (other commits' tasks).
+./gradlew $GF --no-daemon --console=plain --continue :native:testClasses :gradle-cli:testClasses :launcher:testClasses > /tmp/gradle-setup3.log 2>&1 || true
+tail -5 /tmp/gradle-setup3.log
 exit 0

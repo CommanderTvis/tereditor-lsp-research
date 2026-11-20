@@ -1,0 +1,6 @@
+type = "rename"
+origin = "synthetic: rename a public method whose name is also a field name and appears in error messages (docs/TASKS.md); replaces rename-delegate-adapter, which had no recorded selection rule"
+symbol = "com.google.gson.GsonBuilder#serializeSpecialFloatingPointValues"
+new_name = "serializeSpecialFloatingPointValuesV2"
+selection = "Methods declared public or protected in exactly one type of gson/src/main/java, whose name is declared as a method exactly once in gson/src (main and test), and which occurs as a whole word in at least 5 .java files under gson/src (the whole-word search counts fields, calls and strings): 42 candidates, sorted Type#name. Rule fixed before the draw, and the same for the new name (the method name with the suffix V2). Seeded shuffle awk 'BEGIN{srand(20261110)}' (mawk 1.3.4 20240123, printf %.12f rand(), sort -n), first item: GsonBuilder#serializeSpecialFloatingPointValues (5 files). The same identifier names a field of Gson and GsonBuilder (renaming it would break the build of the grader) and occurs in error-message strings as `GsonBuilder.serializeSpecialFloatingPointValues()`."
+gold = "scripted: every `serializeSpecialFloatingPointValues()` in gson/src java files (calls, declaration, Javadoc, message strings), compiled and tested"

@@ -12,6 +12,7 @@ loc_by_language = { "Sass" = 20351 }
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md, harness/size/measure.sh (Sass/SCSS only; the repository also has 30k lines of TypeScript, 30k of Astro and 19k of MDX that are not counted)"
 size_note = "20.4k Sass code lines, 70% above the small band (3k to 12k); owner-accepted deviation"
 task_types = ["move", "signature", "dispatch"]
+validation_note = "Validated on linux/amd64 (native backend, cloud session): all 6 tasks VALID."
 
 [probe]
 ok = false

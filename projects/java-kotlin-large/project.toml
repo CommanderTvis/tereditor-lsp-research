@@ -12,6 +12,7 @@ size_note = "Java is 12% of the code lines (29k of 244k), well below an even mix
 stripped = ["CLAUDE.md"]
 task_types = ["move", "signature", "dispatch"]
 grade_note = "Maven, JDK 21. check.sh builds and tests MODULES (default embabel-agent-api) with -am, from clean target directories (a moved class must not survive as a stale class file), with SKIP_TESTCONTAINER_TESTS=true and a 2 GB heap. The parent pom embabel-build-parent 2.0.4 is on repo.embabel.com/artifactory, reached at prepare and grade-setup time (network on); grade-setup compiles the whole reactor and runs one test class so that the surefire providers are cached. Cold prepare plus grade-setup of one commit takes 7 to 8 minutes on 3 CPUs; a grade run takes 2 to 4 minutes (a clean compile of the api module and its dependencies, then the tests). A mined task whose merge adds dependencies that the base commit has never resolved cannot be built offline and is skipped (pr-log.md)."
+vm_note = "cloud VM: fits. Peak disk 24 GB used in total; all 6 tasks VALID (Gradle from the Maven Central mirror)."
 
 [probe]
 ok = false

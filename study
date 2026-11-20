@@ -4,7 +4,7 @@
 # scripts in harness/env in the study's Nix environment (nix/flake.nix).
 #
 #   ./study setup [group ...]          tereditor from its pinned image; the language servers of the groups (default: all)
-#   ./study project <project> ...      snapshot, server preparation and grading dependencies of projects
+#   ./study project <project> [commit...]  snapshot, server preparation and grading dependencies of projects
 #   ./study probe <project> [arm]      the language server on this project, no model (results/probe/)
 #   ./study redteam                    attacks the agent's sandbox from inside: network, gold files, history (no model)
 #   ./study validate <project> ...     every task: starting state fails, reference solution passes, twice
@@ -144,7 +144,12 @@ cmd_setup() {
   for g in ${*:-$GROUPS_ALL}; do env_run "$g" setup; done
 }
 
-cmd_project() { for p in "$@"; do [ -f "projects/$p/project.toml" ] || die "no projects/$p"; env_run "$(group_of "$p")" project "$p"; done; }
+cmd_project() {
+  # ./study project <project> <40-hex commit>...: only those commits (default: the pinned one and every task's base commit)
+  case "${2:-}" in [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*)
+    [ -f "projects/$1/project.toml" ] || die "no projects/$1"; p=$1; shift; env_run "$(group_of "$p")" project "$p" "$@"; return ;; esac
+  for p in "$@"; do [ -f "projects/$p/project.toml" ] || die "no projects/$p"; env_run "$(group_of "$p")" project "$p"; done
+}
 
 cmd_probe() {
   p=$1 mode=${2:-enforced}; load_license

@@ -17,6 +17,7 @@ loc_by_language = { "C++" = 620500, "C++ Header" = 206510, "C Header" = 18100, "
 loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 task_types = ["dispatch", "inspect", "refs", "pr", "pr", "pr"]
 size_note = "0.85M code lines, inside the xlarge band (0.7M to 3M), below the 0.92M estimated before measuring"
+vm_note = "cloud VM (4 CPUs, 15 GB, 30 GB class disk): fits. Peak disk 27 GB used in total (about 14 GB of it the base image), setup and validation took about 1 h 40 min; all 6 tasks VALID."
 
 [probe]
 ok = false

@@ -82,7 +82,7 @@ Counts per project (provisional; the calibration pilot fixes repetitions under t
   the same way.
 
 The assignment, fixed before any task is written (the rotations above, applied in the order of docs/PROJECTS.md;
-210 task slots: 105 synthetic and 105 mined or documented fallback slots):
+204 task slots over 34 projects: 102 synthetic and 102 mined or documented fallback slots. `kotlin-xlarge` has no slot: no buildable project qualified, `projects/kotlin-xlarge/project.toml` says why, and docs/PROJECTS.md shows none. `java-kotlin-xlarge` has its 3 synthetic tasks, and its mined slots are open, see its `project.toml`):
 
 | Project | Synthetic | Mined (`pr`) |
 | --- | --- | --- |
@@ -113,7 +113,6 @@ The assignment, fixed before any task is written (the rotations above, applied i
 | `kotlin-small` | `rename`, `rename-file`, `refs` | 3 |
 | `kotlin-medium` | `move`, `signature`, `impls` | 3 |
 | `kotlin-large` | `rename`, `rename-file`, `dispatch` | 3 |
-| `kotlin-xlarge` | `refs`, `rename`, `rename` | 3 |
 | `java-small` | `move`, `signature`, `callers` | 3 |
 | `java-medium` | `rename`, `rename-file`, `inspect` | 3 |
 | `java-large` | `move`, `signature`, `refs` | 3 |
@@ -186,3 +185,16 @@ separately (see ANALYSIS_PLAN.md).
 - The same file is given in every arm. The fixed preamble that every prompt gets (environment description) is in
   `harness/prompt-preamble.md`.
 - Never mention LSP, grep, or any tool name; never say how many results to expect.
+
+## Postponed projects
+
+Rule: a project of any size that cannot be developed normally inside the 30 GB cloud VM of docs/CLOUD_RUN.md (about 40 GB of disk in
+total, 14 GB of it the base image; 15 GB of memory) is postponed. Its project and tasks stay in the repository with everything already
+done; its `project.toml` says `status = "postponed"` with the measured reason, and `analysis/plan.sh` does not plan it. To turn it on,
+set `status = "curated"` and validate it on a larger machine.
+
+Measured in the cloud VM (peak disk used in total, base image included, of about 40 GB):
+`python-xlarge` fits, `php-xlarge` fits (36 GB, after the composer fallback), `cpp-xlarge` fits (27 GB), `java-xlarge` fits (27 GB, Gradle
+from the Maven Central mirror), `java-kotlin-large` fits (24 GB).
+`typescript-xlarge`, `csharp-xlarge`, `java-kotlin-xlarge` (only when handled one commit at a time), `kotlin-large` and `csharp-large` ran out of disk, so these five are postponed. Each project's
+`vm_note` or `postponed_reason` is in its `project.toml`.

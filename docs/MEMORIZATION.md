@@ -145,3 +145,5 @@ This direction is recorded, not adopted. The design above stands.
 The pre-2022 probe table above, the same table for the accepted tasks (with the cutoff check on the large gold patches),
 and the model-by-arm contrasts split by each task's probe score as a covariate. If large modern patches still score
 high, that is reported as a limitation, not hidden.
+
+Not only pre-2022 pull requests can be memorized: any old pull request may be, so a task's age is no guarantee. The accepted tasks are mined after every model's cutoff, and the probe above is kept as a measurement, not a filter.

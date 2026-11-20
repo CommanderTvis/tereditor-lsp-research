@@ -15,6 +15,7 @@ stripped = []
 pr_shortfall = 0
 
 task_types = ["move", "signature", "refs", "pr", "pr", "pr"]
+validation_note = "Validated on linux/amd64 (native backend, cloud session): all 6 tasks VALID."
 
 [probe]
 ok = true

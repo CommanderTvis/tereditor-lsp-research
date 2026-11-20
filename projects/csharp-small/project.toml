@@ -13,6 +13,7 @@ loc_method = "scc 3.5.0 code lines, docs/PROJECTS.md"
 # Assigned (docs/TASKS.md): rename, rename-file, impls + 3 pr (modern pull requests, tasks/csharp-small/pr-log.md; 5 qualified).
 task_types = ["rename", "rename-file", "impls", "pr", "pr", "pr"]
 substitutions = []
+validation_note = "Revalidated on linux/amd64 (native backend): all 6 tasks VALID. harness/grade/grade.sh now retries git apply with --ignore-whitespace, because this repository is committed with CRLF line endings and the reference patches carry LF context."
 
 [probe]
 ok = true
