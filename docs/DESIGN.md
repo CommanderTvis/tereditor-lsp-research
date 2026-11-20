@@ -123,7 +123,7 @@ No arm sets an effort level: no `--effort`, no `CLAUDE_CODE_EFFORT_LEVEL` (the s
 effort setting in any settings file. Claude Code therefore uses each model's default, which its documentation gives
 as `medium` for Haiku 5.5, Sonnet 5.5 and Opus 5.5 (code.claude.com/docs/en/model-config, "Adjust effort level").
 The run's own output does not report the level, so it is recorded from these inputs; the documentation describes
-the current Claude Code, the study pins 2.1.322.
+the current Claude Code, the study pins 2.1.323.
 
 ## Measures
 

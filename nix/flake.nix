@@ -8,12 +8,12 @@
       systems = [ "x86_64-linux" "aarch64-linux" ];
       forAll = f: nixpkgs.lib.genAttrs systems (system: f system nixpkgs.legacyPackages.${system});
 
-      # Claude Code 2.1.322, the static musl release binaries, with the checksums of its release manifest
-      # (https://downloads.claude.ai/claude-code-releases/2.1.322/manifest.json).
-      claudeVersion = "2.1.322";
+      # Claude Code 2.1.323, the static musl release binaries, with the checksums of its release manifest
+      # (https://downloads.claude.ai/claude-code-releases/2.1.323/manifest.json).
+      claudeVersion = "2.1.323";
       claudeRelease = {
-        x86_64-linux = { platform = "linux-x64-musl"; sha256 = "9bed6cfc5d2420b673a0b9fe41c71533a02904935cbc3b4cd110302d475fee6f"; };
-        aarch64-linux = { platform = "linux-arm64-musl"; sha256 = "b8a07ebb71cd612bd1ed80eabd2084ded98cadbae298d068a4a1307f0448c40c"; };
+        x86_64-linux = { platform = "linux-x64-musl"; sha256 = "8ba3c07a4531a04843048d1ecd4abad2c41fd9a5a52476789a23280ed227d399"; };
+        aarch64-linux = { platform = "linux-arm64-musl"; sha256 = "62ab6e3383909ca8bd50c5b4422f1730d653052cc527ea62c000de867d0ceb24"; };
       };
 
       # Language groups: one grading toolchain each; the JVM group also gets the JDK and Maven for its language servers.
