@@ -15,6 +15,8 @@
 #   ./study status <plan>              per project: runs planned, finished, graded
 #   ./study archive <plan> <project>   pack a project's runs into results/<plan>/archive/; restore <plan> unpacks all
 #   ./study prune <project> ...        drop a finished project's snapshot and caches
+#   ./study cloud launch|status|collect <plan> ...  one helper cloud session per project, results through an S3
+#                                      bucket of the operator's (docs/CLOUD_PARALLEL.md); cloud scan <archive>...
 #
 # Environment: STUDY_RUNTIME=docker|container|native, STUDY_CPUS (default 4), STUDY_MEMORY (default 8g) per container
 # (a container holds all parallel runs of a language group: size it for -j runs),
@@ -30,9 +32,9 @@ if [ -z "${STUDY_RUNTIME:-}" ]; then
   if command -v docker >/dev/null 2>&1; then STUDY_RUNTIME=docker
   elif command -v container >/dev/null 2>&1; then STUDY_RUNTIME=container
   elif [ "$(uname -s)" = Linux ]; then STUDY_RUNTIME=native
-  else die "need Docker or Apple container"; fi
+  else case "${1:-}" in cloud) ;; *) die "need Docker or Apple container" ;; esac; fi   # ./study cloud needs none
 fi
-RT=$STUDY_RUNTIME
+RT=${STUDY_RUNTIME:-}
 # An amd64 builder on an arm64 host (DOCKER_DEFAULT_PLATFORM=linux/amd64, needed for clangd) keeps its own volume pair:
 # a Nix store holds one architecture's paths, and the image's /bin/sh points into it.
 VSUF=; case "${DOCKER_DEFAULT_PLATFORM:-}" in *amd64*|*x86_64*) VSUF=-amd64 ;; esac
@@ -229,7 +231,222 @@ cmd_prune() {
   for p in "$@"; do env_run "$(group_of "$p")" prune "$p"; done
 }
 
-c=${1:-}; [ -n "$c" ] || { sed -n '2,20p' "$0"; exit 2; }; shift
+# --- cloud: one helper cloud session per project (docs/CLOUD_PARALLEL.md) ---------------------------------------------
+
+# The operator's bucket, from cloud.env (git-ignored): S3_ENDPOINT, S3_REGION, S3_ACCESS, S3_SECRET.
+cloud_env() {
+  f=${STUDY_CLOUD_ENV:-$ROOT/cloud.env}
+  [ -f "$f" ] || die "no $f: put S3_ENDPOINT, S3_REGION, S3_ACCESS and S3_SECRET of your bucket in it (docs/CLOUD_PARALLEL.md)"
+  for v in S3_ENDPOINT S3_REGION S3_ACCESS S3_SECRET; do
+    val=$(sed -n "s/^$v=//p" "$f" | tail -n1 | tr -d '"'"'"' \r')
+    [ -n "$val" ] || die "$f has no $v (docs/CLOUD_PARALLEL.md)"
+    eval "$v=\$val"
+  done
+  S3_ENDPOINT=${S3_ENDPOINT%/}; export S3_ENDPOINT S3_REGION S3_ACCESS S3_SECRET
+  . "$ROOT/harness/cloud/s3.sh"
+  s3_check || die "cloud: the S3 helper needs curl 7.75 or later"
+}
+cloud_dry() { [ -n "${STUDY_CLOUD_DRY_RUN:-}" ]; }
+# The projects of a plan in the order of their first run, without postponed, skipped or dropped ones.
+cloud_projects() {
+  awk -F'\t' 'NR>1 && !s[$2]++ {print $2}' "results/$1/plan.tsv" | while read -r p; do
+    case "$(sed -n 's/^status[[:space:]]*=[[:space:]]*"\([a-z]*\)".*/\1/p' "projects/$p/project.toml" 2>/dev/null | head -n1)" in
+      postponed|skipped|dropped) ;; *) echo "$p" ;; esac
+  done
+}
+# cloud_status <plan> <project>: the project's status.json in the bucket (empty if none; nothing in a dry run).
+cloud_status() { if cloud_dry; then return 0; fi; s3_try "$1/$2/status.json" || true; }
+# The last session id launched for a project, from results/<plan>/cloud/sessions.tsv.
+cloud_session() { awk -F'\t' -v p="$2" '$1==p && $2!="NONE" {s=$2} END {if (s) print s}' "results/$1/cloud/sessions.tsv" 2>/dev/null || true; }
+cloud_url() { echo "https://claude.ai/code/$1"; }
+iso_epoch() { date -u -d "$1" +%s 2>/dev/null || date -ju -f %Y-%m-%dT%H:%M:%SZ "$1" +%s 2>/dev/null || true; }
+shquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
+
+# cloud_prompt <plan> <project> [mask]: harness/cloud/prompt.tmpl filled in (literal replacement: a key may hold / or &).
+cloud_prompt() {
+  a=$S3_ACCESS s=$S3_SECRET; [ "${3:-}" = mask ] && { a='<S3_ACCESS>'; s='<S3_SECRET>'; }
+  CP_PLAN=$1 CP_PROJECT=$2 CP_ENDPOINT=$S3_ENDPOINT CP_REGION=$S3_REGION CP_ACCESS=$a CP_SECRET=$s awk '
+    function rep(t, k, v,   i, o) { o = ""; while ((i = index(t, k)) > 0) { o = o substr(t, 1, i - 1) v; t = substr(t, i + length(k)) } return o t }
+    { l = $0
+      l = rep(l, "__PROJECT__", ENVIRON["CP_PROJECT"]); l = rep(l, "__PLAN__", ENVIRON["CP_PLAN"])
+      l = rep(l, "__ENDPOINT__", ENVIRON["CP_ENDPOINT"]); l = rep(l, "__REGION__", ENVIRON["CP_REGION"])
+      l = rep(l, "__ACCESS__", ENVIRON["CP_ACCESS"]); l = rep(l, "__SECRET__", ENVIRON["CP_SECRET"])
+      print l }' "$ROOT/harness/cloud/prompt.tmpl"
+}
+
+# cloud_launch_one <plan> <project>: one helper session. `claude --cloud` refuses without a terminal, so `script` gives it
+# a pty; with stdin at EOF the client detaches once it has printed "Created cloud session: ... session_...". It runs from
+# this repository's root (an untrusted directory stops at the folder-trust dialog), and the prompt directly follows
+# --cloud. The cloud environment is the one selected with /remote-env. The filled prompt and the pty log (which may echo
+# the prompt) stay in a private temporary directory and are deleted; only the session id is kept.
+cloud_launch_one() {
+  plan=$1 p=$2
+  t=$(mktemp -d "${TMPDIR:-/tmp}/study-cloud.XXXXXX"); chmod 700 "$t"
+  pf=$t/prompt.txt tty=$t/tty.log name="lsp-study $plan $p"
+  (umask 077; if cloud_dry; then cloud_prompt "$plan" "$p" mask; else cloud_prompt "$plan" "$p"; fi > "$pf")
+  inner="claude --model $(shquote "$CL_MODEL") --permission-mode $(shquote "$CL_PERM") -n $(shquote "$name") --cloud \"\$(cat $(shquote "$pf"))\""
+  if [ "$(uname -s)" = Linux ]; then set -- script -qec "$inner" "$tty"; shown="script -qec $(shquote "$inner") $tty"   # util-linux
+  else set -- script -q "$tty" claude --model "$CL_MODEL" --permission-mode "$CL_PERM" -n "$name" --cloud "$(cat "$pf")"
+       shown="script -q $tty $inner"; fi                                                                        # BSD, macOS
+  if cloud_dry; then
+    echo "dry run: launch $p (from $ROOT):"; echo "  $shown </dev/null >/dev/null 2>&1"
+    echo "  prompt ($pf, keys masked):"; sed 's/^/  | /' "$pf"
+    rm -rf "$t"; return 0
+  fi
+  "$@" </dev/null >/dev/null 2>&1 || true
+  sid=$(LC_ALL=C grep -ao 'session_[A-Za-z0-9]*' "$tty" | head -n1 || true)
+  printf '%s\t%s\t%s\n' "$p" "${sid:-NONE}" "$(date -u +%FT%TZ)" >> "results/$plan/cloud/sessions.tsv"
+  if [ -n "$sid" ]; then rm -rf "$t"; log "launched $p: $(cloud_url "$sid")"
+  else log "launch of $p printed no session id; its pty log is $tty (it may hold the S3 key: delete it after reading)"; fi
+}
+
+# A project's step is model-heavy (its helper session takes turns, its runs call the model) until it reaches grading.
+# A launched project without a status yet is heavy too: its session needs minutes to start the worker.
+cloud_heavy() { # <status json>
+  case "$(printf '%s' "$1" | json_field state)" in done|incomplete|failed|skipped) return 1 ;; esac
+  case "$(printf '%s' "$1" | json_field step)" in grade|review|archive|upload|finished) return 1 ;; esac
+  return 0
+}
+
+cmd_cloud_launch() {
+  plan=${1:-}; [ -n "$plan" ] || die "usage: ./study cloud launch <plan> [--projects \"p ...\"] [--max-running N] [--model M] [--permission-mode M]"
+  shift; sel=""; n=4; CL_MODEL=sonnet; CL_PERM=auto
+  while [ $# -gt 0 ]; do case "$1" in
+    --projects) sel=$2; shift 2 ;; --max-running) n=$2; shift 2 ;; --model) CL_MODEL=$2; shift 2 ;;
+    --permission-mode) CL_PERM=$2; shift 2 ;; *) die "unknown option $1" ;; esac; done
+  case "$n" in ''|*[!0-9]*|0) die "--max-running needs a positive number" ;; esac
+  # Every refusal comes before any network call.
+  cloud_env
+  pl=results/$plan/plan.tsv
+  [ -f "$pl" ] || die "no $pl: ./study plan $plan ..., then commit it"
+  git ls-files --error-unmatch "$pl" >/dev/null 2>&1 || die "$pl is not committed: the helpers take the plan from a git bundle of this branch"
+  git diff --quiet HEAD -- "$pl" || die "$pl differs from the committed one: commit or restore it"
+  [ -f "$ROOT/license.zip" ] || die "no license.zip (the JetBrains offline activation code) in $ROOT, see README.md"
+  branch=$(git symbolic-ref --short -q HEAD) || die "detached HEAD: check out the branch the helpers should clone"
+  [ -z "$(git status --porcelain -- study harness analysis projects tasks nix)" ] \
+    || log "warning: uncommitted changes in the harness, projects or tasks are not in the bundle the helpers clone"
+  cloud_dry || command -v claude >/dev/null 2>&1 || die "claude (Claude Code) is not on PATH"
+  all=$(cloud_projects "$plan")
+  if [ -n "$sel" ]; then
+    for p in $sel; do case " $(echo $all) " in *" $p "*) ;; *) die "$p is not a (non-postponed) project of $pl" ;; esac; done
+  fi
+  cloud_dry || { mkdir -p "results/$plan/cloud"; touch "results/$plan/cloud/sessions.tsv"; }
+
+  # The control files every helper reads.
+  t=$(mktemp -d "${TMPDIR:-/tmp}/study-cloud.XXXXXX")
+  git bundle create -q "$t/study.bundle" "$branch" 2>/dev/null || git bundle create "$t/study.bundle" "$branch"
+  echo "$branch" > "$t/branch.txt"; sha256_of "$pl" > "$t/plan.sha256"
+  for kv in "$ROOT/license.zip=control/license.zip" "$t/study.bundle=control/study.bundle" "$t/branch.txt=control/branch.txt" \
+            "$t/plan.sha256=control/plan.sha256" "$ROOT/harness/cloud/child.sh=control/child.sh" "$ROOT/harness/cloud/s3.sh=control/s3.sh"; do
+    if cloud_dry; then echo "dry run: upload ${kv%%=*} to ${kv#*=}"
+    else s3_put "${kv%%=*}" "${kv#*=}" || die "upload of ${kv#*=} failed"; fi
+  done
+  log "control files uploaded: branch $branch, plan sha256 $(cat "$t/plan.sha256")"; rm -rf "$t"
+
+  # The queue: the given projects, else those with no status in the bucket and no session launched yet.
+  queue=""
+  if [ -n "$sel" ]; then queue=$sel
+  else for p in $all; do
+    if [ -z "$(cloud_status "$plan" "$p")" ] && [ -z "$(cloud_session "$plan" "$p")" ]; then queue="$queue $p"; fi
+  done; fi
+  [ -n "$(echo $queue)" ] || { log "nothing to launch: every project has a status or a session (./study cloud status $plan)"; return 0; }
+  log "to launch, at most $n model-heavy at a time:$queue"
+
+  # The scheduler. All helpers share the operator's Claude plan: when its 5-hour window runs out, the helpers' own turns
+  # die, their VMs pause and the workers stop until someone types into each session. So at most N projects are in a
+  # model-heavy step at once; the next is launched when one reaches grading or ends. State comes from the bucket and
+  # sessions.tsv on every pass, so a restarted launch picks up where it was.
+  first=1
+  while :; do
+    heavy=0
+    if cloud_dry; then heavy=$((first == 1 ? 0 : n)); else
+      for p in $(cut -f1 "results/$plan/cloud/sessions.tsv" | sort -u); do
+        [ -n "$(cloud_session "$plan" "$p")" ] || continue
+        if cloud_heavy "$(cloud_status "$plan" "$p")"; then heavy=$((heavy+1)); fi
+      done
+    fi
+    first=0
+    while [ "$heavy" -lt "$n" ] && [ -n "$(echo $queue)" ]; do
+      set -- $queue; p=$1; shift; queue="$*"
+      cloud_launch_one "$plan" "$p"; heavy=$((heavy+1))
+      [ -z "$queue" ] || cloud_dry || sleep "${STUDY_CLOUD_LAUNCH_GAP_S:-10}"
+    done
+    [ -n "$queue" ] || break
+    if cloud_dry; then echo "dry run: would wait for a free slot before launching: $queue"; return 0; fi
+    log "$heavy of $n model-heavy; waiting to launch: $queue"
+    sleep "${STUDY_CLOUD_POLL_S:-300}"
+  done
+  log "all launched; follow them with ./study cloud status $plan, then ./study cloud collect $plan"
+}
+
+cmd_cloud_status() {
+  plan=${1:-}; [ -n "$plan" ] || die "usage: ./study cloud status <plan>"; [ -f "results/$plan/plan.tsv" ] || die "no results/$plan/plan.tsv"
+  cloud_env; cloud_dry && die "status reads the bucket; unset STUDY_CLOUD_DRY_RUN"
+  nowe=$(date -u +%s)
+  printf '%-20s %-10s %-9s %-26s %-20s %s\n' project state step host time heartbeat
+  for p in $(cloud_projects "$plan"); do
+    js=$(cloud_status "$plan" "$p"); sid=$(cloud_session "$plan" "$p")
+    if [ -z "$js" ]; then
+      if [ -n "$sid" ]; then printf '%-20s %-10s (no status yet) %s\n' "$p" launched "$(cloud_url "$sid")"; else printf '%-20s %s\n' "$p" -; fi
+      continue
+    fi
+    state=$(printf '%s' "$js" | json_field state); tm=$(printf '%s' "$js" | json_field time)
+    hb=$(s3_try "$plan/$p/heartbeat.txt" | head -n1 || true)
+    last=$(printf '%s' "$hb" | cut -d' ' -f1); [ -n "$last" ] || last=$tm
+    flag=""
+    case "$state" in running|waiting)
+      e=$(iso_epoch "$last")
+      if [ -n "$e" ] && [ $((nowe - e)) -gt 1500 ]; then flag="  stalled: open ${sid:+$(cloud_url "$sid")}"; [ -n "$sid" ] || flag="$flag(no session recorded)"; fi ;;
+    esac
+    printf '%-20s %-10s %-9s %-26s %-20s %s%s\n' "$p" "$state" "$(printf '%s' "$js" | json_field step)" \
+      "$(printf '%s' "$js" | json_field host)" "$tm" "${hb:--}" "$flag"
+    case "$state" in done|incomplete|failed) printf '%-20s   %s\n' "" "$(printf '%s' "$js" | json_field detail)" ;; esac
+  done
+}
+
+# cloud_scan <archive>: the archive's limit-stopped runs and reviews (harness/cloud/scan.sh); fails if there are any.
+cloud_scan() {
+  d=$(mktemp -d "${TMPDIR:-/tmp}/study-scan.XXXXXX")
+  tar -xzf "$1" -C "$d" || { rm -rf "$d"; echo "unreadable archive"; return 2; }
+  rc=0; bash "$ROOT/harness/cloud/scan.sh" "$d" || rc=$?
+  rm -rf "$d"; return $rc
+}
+cmd_cloud_scan() { r=0; for a in "$@"; do printf '%s: ' "$a"; cloud_scan "$a" || r=1; done; return $r; }
+
+# Download the archives of projects that ended done or incomplete and check them; commits nothing.
+cmd_cloud_collect() {
+  plan=${1:-}; [ -n "$plan" ] || die "usage: ./study cloud collect <plan>"; [ -f "results/$plan/plan.tsv" ] || die "no results/$plan/plan.tsv"
+  cloud_env; cloud_dry && die "collect reads the bucket; unset STUDY_CLOUD_DRY_RUN"
+  A=results/$plan/archive; mkdir -p "$A"; bad=0; got=0
+  for p in $(cloud_projects "$plan"); do
+    state=$(cloud_status "$plan" "$p" | json_field state)
+    case "$state" in done|incomplete) ;; *) continue ;; esac
+    t=$(mktemp -d "${TMPDIR:-/tmp}/study-collect.XXXXXX")
+    if ! s3_get "$plan/$p/$p.tar.gz" "$t/$p.tar.gz" || ! tar -tzf "$t/$p.tar.gz" >/dev/null 2>&1; then
+      echo "$p: $state, archive missing or unreadable"; bad=$((bad+1)); rm -rf "$t"; continue
+    fi
+    if s3_try "$plan/$p/limit-attempts.log" > "$t/limit.log" && [ -s "$t/limit.log" ]; then mv "$t/limit.log" "$A/$p.limit-attempts.log"; fi
+    mv "$t/$p.tar.gz" "$A/$p.tar.gz"; rm -rf "$t"; got=$((got+1))
+    sc=$(cloud_scan "$A/$p.tar.gz") && ok=1 || ok=0
+    if [ "$state" = "done" ] && [ "$ok" = 1 ]; then echo "$p: done, $sc: collected clean"
+    else echo "$p: $state, $sc: NOT clean (re-run the limit-stopped or missing runs before using it)"; bad=$((bad+1)); fi
+  done
+  log "collected $got archives into $A; $bad not clean. Nothing is committed: review, then git add $A and commit."
+  [ "$bad" = 0 ] || exit 1
+}
+
+cmd_cloud() {
+  sub=${1:-}; [ $# -gt 0 ] && shift
+  case "$sub" in
+    launch) cmd_cloud_launch "$@" ;;
+    status) cmd_cloud_status "$@" ;;
+    collect) cmd_cloud_collect "$@" ;;
+    scan) cmd_cloud_scan "$@" ;;
+    *) die "usage: ./study cloud launch|status|collect <plan> ..., or cloud scan <archive.tar.gz>... (docs/CLOUD_PARALLEL.md)" ;;
+  esac
+}
+
+c=${1:-}; [ -n "$c" ] || { sed -n '2,22p' "$0"; exit 2; }; shift
 case "$c" in
   setup) cmd_setup "$@" ;;
   project) cmd_project "$@" ;;
@@ -244,5 +461,6 @@ case "$c" in
   archive) cmd_archive "$@" ;;
   restore) cmd_restore "$@" ;;
   prune) cmd_prune "$@" ;;
+  cloud) cmd_cloud "$@" ;;
   *) die "unknown command $c" ;;
 esac
