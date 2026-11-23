@@ -190,9 +190,6 @@ def server_section(runs, is_project, arms, title, merge=None):
             colour = BLUE if arm.startswith("intellij") else ORANGE
             items.append((label, est, lo, hi, colour,
                           f"{label} vs baseline: {est:+.1f} pp (95% interval {lo:+.1f} to {hi:+.1f}), {len(tasks)} tasks"))
-            row.append(f"{est:+.1f} ({lo:+.1f} to {hi:+.1f})")
-        else:
-            row.append("")
         body.append(row)
     rank(body, 2, True)
     rank(body, 6, False)
@@ -201,7 +198,7 @@ def server_section(runs, is_project, arms, title, merge=None):
     chart = forest(items, -lim, lim, 0, lambda t: "0 pp" if t == 0 else f"{t:+g} pp",
                    title)
     tbl = table(["Arm", "Runs", "Success", "Median cost (USD)", "Median wall time (s)", "Runs using LSP tools",
-                 "Mean flaws", "Success vs baseline, pp (95% interval)"], body)
+                 "Mean flaws"], body)
     zero = "every one includes zero" if all(i[2] <= 0 <= i[3] for i in items) else "not all include zero"
     return len(tasks), len(sub), chart, tbl, zero
 
@@ -300,6 +297,18 @@ def main():
          ("intellij-enforced", "IntelliJ, enforced")],
         "Success difference against baseline on Java tasks")
 
+    flaws = rows("flaws.csv")
+    kinds = [("leftover", "an old name, path or signature the change should have updated but did not (comments, docstrings, strings, docs, configuration)"),
+             ("naming", "a new name that is inconsistent with the task or the surrounding code"),
+             ("churn", "formatting or whitespace changes to lines the task did not need to touch"),
+             ("dead", "code, imports or files the change left dead or unused"),
+             ("unrelated", "edits to places that have nothing to do with the task")]
+    flaw_table = table(["Kind", "What it is", "Reported"],
+                       [[k, d, sum(1 for f in flaws if f["kind"] == k)] for k, d in kinds])
+    fx = find(flaws, run_id="r00110", kind="leftover")
+    fx_run = find(runs, run_id="r00110")
+    fx_passed = "passed" if fx_run["success"] == "True" else "failed"
+
     # Raw tables.
     desc_body = [[MODEL_NAME[r["model"]], r["arm"], r["runs"], num(r["success"], 3), f"{float(r['mean_cost_usd']):.4f}",
           f"{float(r['median_cost_usd']):.4f}", num(r["median_wall_s"], 1), usage(float(r["lsp_used"]), r["arm"]), num(r["mean_flaws"], 2)]
@@ -362,7 +371,7 @@ def main():
             table {{ border-collapse: collapse; width: 100%; font-size: 0.8125rem; margin: 10px 0; }}
             th, td {{ border-bottom: 1px solid {GRID}; padding: 5px 7px; text-align: left; vertical-align: top; }}
             th {{ border-bottom: 2px solid #999; }}
-            pre {{ background: #f6f6f4; padding: 10px 12px; border-radius: 4px; overflow-x: auto; font-size: 0.75rem; line-height: 1.45; }}
+            pre {{ background: #f6f6f4; padding: 10px 12px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-size: 0.75rem; line-height: 1.45; }}
             code {{ font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.875em; }}
             dt {{ font-weight: 700; margin-top: 10px; }}
             dd {{ margin: 2px 0 0 0; }}
@@ -449,6 +458,18 @@ def main():
         <p>Share of runs that called at least one language-server tool.</p>
         {chart_adoption}
 
+        <h2>What counts as a flaw</h2>
+        <p>Tests decide whether a change works. A flaw is damage the tests cannot see. After each edit run, a reviewer
+        (Haiku 5.5, which never sees the arm) reads the diff and searches the edited tree for five kinds of it;
+        {len(flaws)} were reported in all.</p>
+        {flaw_table}
+        <p>An example. The task: rename Lucene's class <code>QueryBuilder</code> to <code>TextQueryBuilder</code>. The run
+        ({esc(MODEL_NAME[fx_run["model"]])}, {esc(fx_run["arm"])} arm) {fx_passed} the tests, and the reviewer reported:</p>
+        <pre><code>{esc(fx["kind"])}  {esc(fx["file"])}:{esc(fx["line"])}
+{esc(fx["reason"])}</code></pre>
+        <p class="note">The reviewer's reports have not been checked by a human yet. All of them are in
+        <a href="data/flaws.csv">flaws.csv</a>.</p>
+
         <h2>All language servers together</h2>
         <p>Every language server pooled: the IntelliJ runs are counted with optional and enforced.
         {a_tasks} tasks, {a_runs:,} runs.</p>
@@ -481,6 +502,7 @@ def main():
         <ul>
             <li><a href="data/runs.csv">runs.csv</a>: one row per run</li>
             <li><a href="data/plan.tsv">plan.tsv</a>: the seeded run plan</li>
+            <li><a href="data/flaws.csv">flaws.csv</a>: every flaw the reviewer reported</li>
             <li><a href="data/descriptive.csv">descriptive.csv</a>, <a href="data/contrasts.csv">contrasts.csv</a>,
                 <a href="data/by_model.csv">by_model.csv</a>, <a href="data/by_lang.csv">by_lang.csv</a>,
                 <a href="data/by_size.csv">by_size.csv</a>, <a href="data/by_task_type.csv">by_task_type.csv</a>,
@@ -508,6 +530,7 @@ Arms: baseline (Claude Code core tools only: Read, Edit, Write, Bash, Task, Tool
 
 - [runs.csv]({SITE}data/runs.csv): one row per run (task, arm, model, tool calls, cost, turns, success)
 - [plan.tsv]({SITE}data/plan.tsv): the seeded run plan
+- [flaws.csv]({SITE}data/flaws.csv): every quality flaw the reviewer reported (run, kind, file, line, reason)
 - [descriptive.csv]({SITE}data/descriptive.csv): success, cost, time and LSP use per model and arm
 - [contrasts.csv]({SITE}data/contrasts.csv): paired contrasts against the baseline, all tasks
 - [by_model.csv]({SITE}data/by_model.csv), [by_lang.csv]({SITE}data/by_lang.csv), [by_size.csv]({SITE}data/by_size.csv), [by_task_type.csv]({SITE}data/by_task_type.csv), [by_probe_half.csv]({SITE}data/by_probe_half.csv): the same contrasts by stratum

@@ -10,6 +10,7 @@ Arms: baseline (Claude Code core tools only: Read, Edit, Write, Bash, Task, Tool
 
 - [runs.csv](https://commandertvis.github.io/tereditor-lsp-research/data/runs.csv): one row per run (task, arm, model, tool calls, cost, turns, success)
 - [plan.tsv](https://commandertvis.github.io/tereditor-lsp-research/data/plan.tsv): the seeded run plan
+- [flaws.csv](https://commandertvis.github.io/tereditor-lsp-research/data/flaws.csv): every quality flaw the reviewer reported (run, kind, file, line, reason)
 - [descriptive.csv](https://commandertvis.github.io/tereditor-lsp-research/data/descriptive.csv): success, cost, time and LSP use per model and arm
 - [contrasts.csv](https://commandertvis.github.io/tereditor-lsp-research/data/contrasts.csv): paired contrasts against the baseline, all tasks
 - [by_model.csv](https://commandertvis.github.io/tereditor-lsp-research/data/by_model.csv), [by_lang.csv](https://commandertvis.github.io/tereditor-lsp-research/data/by_lang.csv), [by_size.csv](https://commandertvis.github.io/tereditor-lsp-research/data/by_size.csv), [by_task_type.csv](https://commandertvis.github.io/tereditor-lsp-research/data/by_task_type.csv), [by_probe_half.csv](https://commandertvis.github.io/tereditor-lsp-research/data/by_probe_half.csv): the same contrasts by stratum
