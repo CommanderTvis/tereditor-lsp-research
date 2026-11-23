@@ -396,31 +396,23 @@ def main():
         <p class="subtitle">Confirmatory run: {n_runs:,} runs, {n_tasks} tasks, {n_projects} projects, three Claude models, five arms.</p>
 
         <h2>What is being tested</h2>
-        <p><a href="https://github.com/CommanderTvis/tereditor">tereditor</a> is an IDE-like workbench for terminal
-        coding agents. Its headless build runs without a window and serves language tools to an agent over
-        <a href="https://modelcontextprotocol.io">MCP</a> for one project: behind each tool sits the project
-        language's language server (for example Pyright for Python, clangd for C and C++, <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a> for Kotlin). The study asks whether giving a Claude Code agent these tools changes how often it solves a task,
-        what it costs and how long it takes.</p>
-        <p>The agent sees six MCP tools:</p>
+        <p><a href="https://github.com/CommanderTvis/tereditor">tereditor</a> gives a coding agent a project's
+        language server over <a href="https://modelcontextprotocol.io">MCP</a> (Pyright for Python, clangd for C and
+        C++, <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a> for Kotlin, and so on). Does that make
+        Claude Code solve more tasks, cheaper or faster?</p>
+        <p>The agent gets six MCP tools:</p>
         <dl>
             <dt><code>lsp_navigate</code></dt>
-            <dd>finds definitions, references, implementations, symbols and call hierarchies (callers and callees),
-            and can send one read-only LSP query.</dd>
+            <dd>Definitions, references, implementations, symbols, callers and callees.</dd>
             <dt><code>lsp_diagnostics</code></dt>
-            <dd>reports errors for the files an agent edited, by path or glob, or for the whole workspace, and can
-            hide everything below a severity.</dd>
+            <dd>Errors in edited files or the whole workspace.</dd>
             <dt><code>lsp_rename</code>, <code>lsp_code_actions</code>, <code>lsp_format</code></dt>
-            <dd>rename a symbol everywhere (or move a file and fix its imports), list and apply quick fixes and
-            refactorings, and format a file. All three preview before they write and only change files inside the
-            workspace.</dd>
+            <dd>Rename a symbol or move a file, apply quick fixes and refactorings, format. Preview first.</dd>
             <dt><code>lsp_status</code></dt>
-            <dd>shows the servers and starts them, and dumps the capabilities a server declared.</dd>
+            <dd>The servers and what they support.</dd>
         </dl>
-        <p>The language server and its runtime live in a separate sandbox; the agent reaches it only through a socket,
-        so the tool arms get no compiler the baseline lacks.</p>
-        <p>An example from the run, with Haiku on a Python project: the agent asks for every reference to a class by
-        name, and the server answers with the locations (lines and columns are zero-based; the previews number
-        lines from one).</p>
+        <p>The server runs in its own sandbox, so these arms get no compiler the baseline lacks.</p>
+        <p>A call from the run (Haiku, Python): every reference to a class. Lines are zero-based.</p>
         <pre><code>// call: mcp__tereditor__lsp_navigate
 {{"operation": "references", "query": "PaymentCardNumber",
  "path": "pydantic_extra_types/payment.py", "workspace": "/workspace", "limit": 200}}
