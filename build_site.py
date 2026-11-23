@@ -161,15 +161,12 @@ def legend(series):
 
 # ---------- page ----------
 
-def kotlin_section(runs):
-    """IntelliJ against kotlin-lsp against the baseline, on the Kotlin and mixed Java+Kotlin tasks all three ran."""
+def server_section(runs, is_project, arms, title):
+    """Language-server arms against the baseline on one group of projects. arms: [(arm, label)], baseline first."""
     import random
     import statistics
-    sub = [r for r in runs if r["project"].startswith(("kotlin-", "java-kotlin-"))]
+    sub = [r for r in runs if is_project(r["project"]) and r["arm"] in {a for a, _ in arms}]
     tasks = sorted({(r["project"], r["task"]) for r in sub})
-    arms = [("baseline", "baseline (no language server)"), ("optional", "kotlin-lsp, optional"),
-            ("enforced", "kotlin-lsp, enforced"), ("intellij-optional", "IntelliJ, optional"),
-            ("intellij-enforced", "IntelliJ, enforced")]
 
     def ok(r):
         return 1.0 if r["success"] in ("True", "true", "1", "1.0") else 0.0
@@ -208,7 +205,7 @@ def kotlin_section(runs):
         body.append(row)
     lim = max(10, 5 * math.ceil(max(max(abs(i[2]), abs(i[3])) for i in items) / 5))
     chart = forest(items, -lim, lim, 0, lambda t: "0 pp" if t == 0 else f"{t:+g} pp",
-                   "Success difference against baseline on Kotlin tasks")
+                   title)
     tbl = table(["Arm", "Runs", "Success", "Median cost (USD)", "Median wall time (s)", "Runs using LSP tools",
                  "Mean flaws", "Success vs baseline, pp (95% interval)"], body)
     zero = "every one includes zero" if all(i[2] <= 0 <= i[3] for i in items) else "not all include zero"
@@ -288,7 +285,17 @@ def main():
     chart_adoption = grouped_bars(groups, [("optional (offered)", BLUE), ("enforced (pushed)", ORANGE)],
                                   "Share of runs that called a language-server tool")
 
-    k_tasks, k_runs, chart_kotlin, kotlin_table, k_zero = kotlin_section(runs)
+    k_tasks, k_runs, chart_kotlin, kotlin_table, k_zero = server_section(
+        runs, lambda p: p.startswith(("kotlin-", "java-kotlin-")),
+        [("baseline", "baseline (no language server)"), ("optional", "kotlin-lsp, optional"),
+         ("enforced", "kotlin-lsp, enforced"), ("intellij-optional", "IntelliJ, optional"),
+         ("intellij-enforced", "IntelliJ, enforced")],
+        "Success difference against baseline on Kotlin tasks")
+    j_tasks, j_runs, chart_java, java_table, j_zero = server_section(
+        runs, lambda p: p.startswith("java-") and not p.startswith("java-kotlin-"),
+        [("baseline", "baseline (no language server)"), ("intellij-optional", "IntelliJ, optional"),
+         ("intellij-enforced", "IntelliJ, enforced")],
+        "Success difference against baseline on Java tasks")
 
     # Raw tables.
     desc_table = table(
@@ -438,6 +445,14 @@ def main():
         {chart_kotlin}
         {kotlin_table}
         <p class="note">{k_tasks} tasks is a small sample: the intervals are wide, and {k_zero}. Cost and time are medians over all three models.</p>
+
+        <h2>Java: IntelliJ vs no language server</h2>
+        <p>On the {j_tasks} pure Java tasks IntelliJ is the only language server (tereditor has no other headless
+        Java server), so the comparison is IntelliJ against the baseline, {j_runs} runs in all.</p>
+        {chart_java}
+        {java_table}
+        <p class="note">{j_tasks} tasks is a small sample: the intervals are wide, and {j_zero}. Cost and time are
+        medians over all three models.</p>
 
         <h2>Raw data</h2>
         {spoiler("Arms by model", desc_table)}
