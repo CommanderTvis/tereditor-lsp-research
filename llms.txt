@@ -2,7 +2,9 @@
 
 > A controlled comparison of Claude Code agents with and without language-server (LSP) tools: 2,232 runs on 87 tasks in 29 projects, three Claude models (Haiku 5.5, Sonnet 5.5, Opus 5.5), five arms. Across 87 tasks, offering the language server (optional arm) changed success by +0.3 points (interval -2.1 to +3.0) at 1.02× the baseline cost. Pushing the agent to use it (enforced arm) changed success by -2.0 points (interval -5.2 to +1.0) at 1.57× the cost. A second review turn without any language server (baseline-review) cost 2.34×.
 
-Arms: baseline (core tools only); baseline-review (baseline plus a second review turn); optional (LSP tools offered, not required); enforced (LSP use pushed by prompt and hooks); intellij-optional and intellij-enforced (IntelliJ as the language server, JVM projects only). Success is a deterministic grader's pass rate; cost is Claude Code's total_cost_usd. Contrasts are paired on tasks; intervals are 95% task-resampling intervals.
+What is tested: tereditor (https://github.com/CommanderTvis/tereditor), an IDE-like workbench for terminal coding agents whose headless build serves a project's language server to an agent over MCP. Its six tools: lsp_navigate (definitions, references, implementations, symbols, call hierarchies, one read-only LSP query), lsp_diagnostics (errors for edited files or the workspace), lsp_rename, lsp_code_actions and lsp_format (preview before writing, workspace only), lsp_status (servers and capabilities). Example call: lsp_navigate {"operation": "references", "query": "PaymentCardNumber", "workspace": "/workspace"} returns the reference locations with zero-based lines and previews.
+
+Arms: baseline (Claude Code core tools only: Read, Edit, Write, Bash, Task, ToolSearch); baseline-review (baseline plus a second review turn); optional (LSP tools offered, not required); enforced (LSP use pushed by prompt and hooks); intellij-optional and intellij-enforced (IntelliJ as the language server, JVM projects only). Success is a deterministic grader's pass rate; cost is Claude Code's total_cost_usd. Contrasts are paired on tasks; intervals are 95% task-resampling intervals.
 
 ## Data
 

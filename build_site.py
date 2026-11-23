@@ -282,6 +282,8 @@ def main():
             table {{ border-collapse: collapse; width: 100%; font-size: 0.8125rem; margin: 10px 0; }}
             th, td {{ border-bottom: 1px solid {GRID}; padding: 5px 7px; text-align: left; vertical-align: top; }}
             th {{ border-bottom: 2px solid #999; }}
+            pre {{ background: #f6f6f4; padding: 10px 12px; border-radius: 4px; overflow-x: auto; font-size: 0.75rem; line-height: 1.45; }}
+            code {{ font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.875em; }}
             dt {{ font-weight: 700; margin-top: 10px; }}
             dd {{ margin: 2px 0 0 0; }}
             footer p {{ font-size: 0.8125rem; color: {MUTED}; }}
@@ -292,13 +294,56 @@ def main():
         <h1>Does a language server make a Claude Code agent better, faster or cheaper?</h1>
         <p class="subtitle">Confirmatory run: {n_runs:,} runs, {n_tasks} tasks, {n_projects} projects, three Claude models, five arms.</p>
 
+        <h2>What is being tested</h2>
+        <p><a href="https://github.com/CommanderTvis/tereditor">tereditor</a> is an IDE-like workbench for terminal
+        coding agents. Its headless build runs without a window and serves language tools to an agent over
+        <a href="https://modelcontextprotocol.io">MCP</a> for one project: behind each tool sits the project
+        language's language server (for example Pyright for Python, clangd for C and C++, or IntelliJ for Java and
+        Kotlin). The study asks whether giving a Claude Code agent these tools changes how often it solves a task,
+        what it costs and how long it takes.</p>
+        <p>The agent sees six MCP tools, in tereditor's own words:</p>
+        <dl>
+            <dt><code>lsp_navigate</code></dt>
+            <dd>finds definitions, references, implementations, symbols and call hierarchies (callers and callees),
+            and can send one read-only LSP query.</dd>
+            <dt><code>lsp_diagnostics</code></dt>
+            <dd>reports errors for the files an agent edited, by path or glob, or for the whole workspace, and can
+            hide everything below a severity.</dd>
+            <dt><code>lsp_rename</code>, <code>lsp_code_actions</code>, <code>lsp_format</code></dt>
+            <dd>rename a symbol everywhere (or move a file and fix its imports), list and apply quick fixes and
+            refactorings, and format a file. All three preview before they write and only change files inside the
+            workspace.</dd>
+            <dt><code>lsp_status</code></dt>
+            <dd>shows the servers and starts them, and dumps the capabilities a server declared.</dd>
+        </dl>
+        <p>The language server and its runtime live in a separate sandbox; the agent reaches it only through a socket,
+        so the tool arms get no compiler the baseline lacks.</p>
+        <p>An example from the run, with Haiku on a Python project: the agent asks for every reference to a class by
+        name, and the server answers with the locations (lines and columns are zero-based; the previews number
+        lines from one).</p>
+        <pre><code>// call: mcp__tereditor__lsp_navigate
+{{"operation": "references", "query": "PaymentCardNumber",
+ "path": "pydantic_extra_types/payment.py", "workspace": "/workspace", "limit": 200}}
+
+// answer (shortened)
+{{"state": "ready", "server": "python", "total": 3,
+ "locations": [
+  {{"path": "pydantic_extra_types/payment.py", "line": 34, "column": 6,
+   "preview": "35: class PaymentCardNumber(str):"}},
+  {{"path": "pydantic_extra_types/payment.py", "line": 69, "column": 76,
+   "preview": "70:     def validate(cls, __input_value: str, ...) -&gt; PaymentCardNumber:"}},
+  {{"path": "pydantic_extra_types/payment.py", "line": 215, "column": 33,
+   "preview": "216:         brand, required_length = PaymentCardNumber._identify_brand(card_number)"}}]}}</code></pre>
+        <p class="note">Run r00023 (task refs-payment-card-number, python-small, enforced arm).</p>
+
         <h2>The arms</h2>
         <p>Every arm is the same Claude Code agent on the same task, in a container with an empty home directory, no
         compiler, interpreter or package manager, and no web access. Only what it is given about the language server changes.</p>
         <dl>
             <dt>baseline</dt>
-            <dd>Core tools only (read, search, edit, shell utilities). No language-server tools. This is the reference
-            every other arm is compared with.</dd>
+            <dd>Claude Code's core tools only: Read, Edit, Write, Bash (with core utilities, git and ripgrep for
+            search), Task and ToolSearch. No language-server tools. This is the reference every other arm is compared
+            with.</dd>
             <dt>optional</dt>
             <dd>The baseline plus tereditor's language-server tools (find references, go to definition, rename,
             diagnostics and so on) through MCP. The tools are offered, not pushed: tereditor's own advice to prefer them
@@ -367,7 +412,9 @@ def main():
 
 > A controlled comparison of Claude Code agents with and without language-server (LSP) tools: {n_runs:,} runs on {n_tasks} tasks in {n_projects} projects, three Claude models (Haiku 5.5, Sonnet 5.5, Opus 5.5), five arms. {headline}
 
-Arms: baseline (core tools only); baseline-review (baseline plus a second review turn); optional (LSP tools offered, not required); enforced (LSP use pushed by prompt and hooks); intellij-optional and intellij-enforced (IntelliJ as the language server, JVM projects only). Success is a deterministic grader's pass rate; cost is Claude Code's total_cost_usd. Contrasts are paired on tasks; intervals are 95% task-resampling intervals.
+What is tested: tereditor (https://github.com/CommanderTvis/tereditor), an IDE-like workbench for terminal coding agents whose headless build serves a project's language server to an agent over MCP. Its six tools: lsp_navigate (definitions, references, implementations, symbols, call hierarchies, one read-only LSP query), lsp_diagnostics (errors for edited files or the workspace), lsp_rename, lsp_code_actions and lsp_format (preview before writing, workspace only), lsp_status (servers and capabilities). Example call: lsp_navigate {{"operation": "references", "query": "PaymentCardNumber", "workspace": "/workspace"}} returns the reference locations with zero-based lines and previews.
+
+Arms: baseline (Claude Code core tools only: Read, Edit, Write, Bash, Task, ToolSearch); baseline-review (baseline plus a second review turn); optional (LSP tools offered, not required); enforced (LSP use pushed by prompt and hooks); intellij-optional and intellij-enforced (IntelliJ as the language server, JVM projects only). Success is a deterministic grader's pass rate; cost is Claude Code's total_cost_usd. Contrasts are paired on tasks; intervals are 95% task-resampling intervals.
 
 ## Data
 
