@@ -400,7 +400,7 @@ def main():
         language server over <a href="https://modelcontextprotocol.io">MCP</a> (Pyright for Python, clangd for C and
         C++, <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a> for Kotlin, and so on). Does that make
         Claude Code solve more tasks, cheaper or faster?</p>
-        <p>The agent gets six MCP tools:</p>
+        <p>MCP tools:</p>
         <dl>
             <dt><code>lsp_navigate</code></dt>
             <dd>Definitions, references, implementations, symbols, callers and callees.</dd>
