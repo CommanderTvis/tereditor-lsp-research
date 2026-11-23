@@ -1,0 +1,693 @@
+{
+ "cost_usd": 9.07,
+ "random": {
+  "original Haiku vs re-run Haiku (environment + test-retest)": {
+   "total": {
+    "n": 60,
+    "kappa": 0.641,
+    "exact": 0.867,
+    "presence": 0.9,
+    "mean_abs_diff": 1.133,
+    "pearson": 0.849,
+    "mean_x": 1.333,
+    "mean_y": 0.333
+   },
+   "leftover": {
+    "n": 60,
+    "kappa": 0.196,
+    "exact": 0.883,
+    "presence": 0.9,
+    "mean_abs_diff": 0.117,
+    "pearson": 0.336,
+    "mean_x": 0.083,
+    "mean_y": 0.067
+   },
+   "unrelated": {
+    "n": 60,
+    "kappa": 0.0,
+    "exact": 0.983,
+    "presence": 0.983,
+    "mean_abs_diff": 0.017,
+    "pearson": null,
+    "mean_x": 0.017,
+    "mean_y": 0.0
+   },
+   "churn": {
+    "n": 60,
+    "kappa": 0.792,
+    "exact": 0.983,
+    "presence": 0.983,
+    "mean_abs_diff": 0.133,
+    "pearson": 0.149,
+    "mean_x": 0.033,
+    "mean_y": 0.167
+   },
+   "naming": {
+    "n": 60,
+    "kappa": 0.196,
+    "exact": 0.9,
+    "presence": 0.9,
+    "mean_abs_diff": 1.217,
+    "pearson": -0.035,
+    "mean_x": 1.183,
+    "mean_y": 0.067
+   },
+   "dead": {
+    "n": 60,
+    "kappa": 0.659,
+    "exact": 0.983,
+    "presence": 0.983,
+    "mean_abs_diff": 0.017,
+    "pearson": 0.701,
+    "mean_x": 0.017,
+    "mean_y": 0.033
+   }
+  },
+  "re-run Haiku vs Opus (reviewer)": {
+   "total": {
+    "n": 60,
+    "kappa": 0.739,
+    "exact": 0.883,
+    "presence": 0.933,
+    "mean_abs_diff": 0.233,
+    "pearson": 0.375,
+    "mean_x": 0.333,
+    "mean_y": 0.2
+   },
+   "leftover": {
+    "n": 60,
+    "kappa": 0.64,
+    "exact": 0.95,
+    "presence": 0.95,
+    "mean_abs_diff": 0.05,
+    "pearson": 0.645,
+    "mean_x": 0.067,
+    "mean_y": 0.083
+   },
+   "unrelated": {
+    "n": 60,
+    "kappa": 0.0,
+    "exact": 0.983,
+    "presence": 0.983,
+    "mean_abs_diff": 0.017,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.017
+   },
+   "churn": {
+    "n": 60,
+    "kappa": 0.792,
+    "exact": 0.967,
+    "presence": 0.983,
+    "mean_abs_diff": 0.15,
+    "pearson": 0.142,
+    "mean_x": 0.167,
+    "mean_y": 0.05
+   },
+   "naming": {
+    "n": 60,
+    "kappa": 0.0,
+    "exact": 0.933,
+    "presence": 0.933,
+    "mean_abs_diff": 0.067,
+    "pearson": null,
+    "mean_x": 0.067,
+    "mean_y": 0.0
+   },
+   "dead": {
+    "n": 60,
+    "kappa": 1.0,
+    "exact": 0.983,
+    "presence": 1.0,
+    "mean_abs_diff": 0.017,
+    "pearson": 0.947,
+    "mean_x": 0.033,
+    "mean_y": 0.05
+   }
+  },
+  "original Haiku vs Opus": {
+   "total": {
+    "n": 60,
+    "kappa": 0.76,
+    "exact": 0.917,
+    "presence": 0.933,
+    "mean_abs_diff": 1.2,
+    "pearson": 0.004,
+    "mean_x": 1.333,
+    "mean_y": 0.2
+   },
+   "leftover": {
+    "n": 60,
+    "kappa": 0.64,
+    "exact": 0.933,
+    "presence": 0.95,
+    "mean_abs_diff": 0.067,
+    "pearson": 0.652,
+    "mean_x": 0.083,
+    "mean_y": 0.083
+   },
+   "unrelated": {
+    "n": 60,
+    "kappa": 1.0,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": 1.0,
+    "mean_x": 0.017,
+    "mean_y": 0.017
+   },
+   "churn": {
+    "n": 60,
+    "kappa": 1.0,
+    "exact": 0.983,
+    "presence": 1.0,
+    "mean_abs_diff": 0.017,
+    "pearson": 0.947,
+    "mean_x": 0.033,
+    "mean_y": 0.05
+   },
+   "naming": {
+    "n": 60,
+    "kappa": 0.0,
+    "exact": 0.933,
+    "presence": 0.933,
+    "mean_abs_diff": 1.183,
+    "pearson": null,
+    "mean_x": 1.183,
+    "mean_y": 0.0
+   },
+   "dead": {
+    "n": 60,
+    "kappa": 0.659,
+    "exact": 0.983,
+    "presence": 0.983,
+    "mean_abs_diff": 0.033,
+    "pearson": 0.435,
+    "mean_x": 0.017,
+    "mean_y": 0.05
+   }
+  }
+ },
+ "driver task": {
+  "original Haiku vs re-run Haiku (environment + test-retest)": {
+   "total": {
+    "n": 10,
+    "kappa": 0.375,
+    "exact": 0.4,
+    "presence": 0.8,
+    "mean_abs_diff": 5.0,
+    "pearson": -0.015,
+    "mean_x": 5.5,
+    "mean_y": 4.5
+   },
+   "leftover": {
+    "n": 10,
+    "kappa": 0.375,
+    "exact": 0.4,
+    "presence": 0.8,
+    "mean_abs_diff": 5.0,
+    "pearson": -0.015,
+    "mean_x": 5.5,
+    "mean_y": 4.5
+   },
+   "unrelated": {
+    "n": 10,
+    "kappa": null,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.0
+   },
+   "churn": {
+    "n": 10,
+    "kappa": null,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.0
+   },
+   "naming": {
+    "n": 10,
+    "kappa": null,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.0
+   },
+   "dead": {
+    "n": 10,
+    "kappa": null,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.0
+   }
+  },
+  "re-run Haiku vs Opus (reviewer)": {
+   "total": {
+    "n": 10,
+    "kappa": 0.0,
+    "exact": 0.1,
+    "presence": 0.8,
+    "mean_abs_diff": 6.3,
+    "pearson": -0.13,
+    "mean_x": 4.5,
+    "mean_y": 10.6
+   },
+   "leftover": {
+    "n": 10,
+    "kappa": 0.0,
+    "exact": 0.1,
+    "presence": 0.8,
+    "mean_abs_diff": 6.3,
+    "pearson": -0.13,
+    "mean_x": 4.5,
+    "mean_y": 10.6
+   },
+   "unrelated": {
+    "n": 10,
+    "kappa": null,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.0
+   },
+   "churn": {
+    "n": 10,
+    "kappa": null,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.0
+   },
+   "naming": {
+    "n": 10,
+    "kappa": null,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.0
+   },
+   "dead": {
+    "n": 10,
+    "kappa": null,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.0
+   }
+  },
+  "original Haiku vs Opus": {
+   "total": {
+    "n": 10,
+    "kappa": 0.0,
+    "exact": 0.4,
+    "presence": 0.8,
+    "mean_abs_diff": 5.1,
+    "pearson": 0.041,
+    "mean_x": 5.5,
+    "mean_y": 10.6
+   },
+   "leftover": {
+    "n": 10,
+    "kappa": 0.0,
+    "exact": 0.4,
+    "presence": 0.8,
+    "mean_abs_diff": 5.1,
+    "pearson": 0.041,
+    "mean_x": 5.5,
+    "mean_y": 10.6
+   },
+   "unrelated": {
+    "n": 10,
+    "kappa": null,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.0
+   },
+   "churn": {
+    "n": 10,
+    "kappa": null,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.0
+   },
+   "naming": {
+    "n": 10,
+    "kappa": null,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.0
+   },
+   "dead": {
+    "n": 10,
+    "kappa": null,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.0
+   }
+  }
+ },
+ "all": {
+  "original Haiku vs re-run Haiku (environment + test-retest)": {
+   "total": {
+    "n": 70,
+    "kappa": 0.701,
+    "exact": 0.8,
+    "presence": 0.886,
+    "mean_abs_diff": 1.686,
+    "pearson": 0.453,
+    "mean_x": 1.929,
+    "mean_y": 0.929
+   },
+   "leftover": {
+    "n": 70,
+    "kappa": 0.598,
+    "exact": 0.814,
+    "presence": 0.886,
+    "mean_abs_diff": 0.814,
+    "pearson": 0.459,
+    "mean_x": 0.857,
+    "mean_y": 0.7
+   },
+   "unrelated": {
+    "n": 70,
+    "kappa": 0.0,
+    "exact": 0.986,
+    "presence": 0.986,
+    "mean_abs_diff": 0.014,
+    "pearson": null,
+    "mean_x": 0.014,
+    "mean_y": 0.0
+   },
+   "churn": {
+    "n": 70,
+    "kappa": 0.793,
+    "exact": 0.986,
+    "presence": 0.986,
+    "mean_abs_diff": 0.114,
+    "pearson": 0.153,
+    "mean_x": 0.029,
+    "mean_y": 0.143
+   },
+   "naming": {
+    "n": 70,
+    "kappa": 0.205,
+    "exact": 0.914,
+    "presence": 0.914,
+    "mean_abs_diff": 1.043,
+    "pearson": -0.029,
+    "mean_x": 1.014,
+    "mean_y": 0.057
+   },
+   "dead": {
+    "n": 70,
+    "kappa": 0.66,
+    "exact": 0.986,
+    "presence": 0.986,
+    "mean_abs_diff": 0.014,
+    "pearson": 0.702,
+    "mean_x": 0.014,
+    "mean_y": 0.029
+   }
+  },
+  "re-run Haiku vs Opus (reviewer)": {
+   "total": {
+    "n": 70,
+    "kappa": 0.776,
+    "exact": 0.771,
+    "presence": 0.914,
+    "mean_abs_diff": 1.1,
+    "pearson": 0.585,
+    "mean_x": 0.929,
+    "mean_y": 1.686
+   },
+   "leftover": {
+    "n": 70,
+    "kappa": 0.771,
+    "exact": 0.829,
+    "presence": 0.929,
+    "mean_abs_diff": 0.943,
+    "pearson": 0.65,
+    "mean_x": 0.7,
+    "mean_y": 1.586
+   },
+   "unrelated": {
+    "n": 70,
+    "kappa": 0.0,
+    "exact": 0.986,
+    "presence": 0.986,
+    "mean_abs_diff": 0.014,
+    "pearson": null,
+    "mean_x": 0.0,
+    "mean_y": 0.014
+   },
+   "churn": {
+    "n": 70,
+    "kappa": 0.793,
+    "exact": 0.971,
+    "presence": 0.986,
+    "mean_abs_diff": 0.129,
+    "pearson": 0.145,
+    "mean_x": 0.143,
+    "mean_y": 0.043
+   },
+   "naming": {
+    "n": 70,
+    "kappa": 0.0,
+    "exact": 0.943,
+    "presence": 0.943,
+    "mean_abs_diff": 0.057,
+    "pearson": null,
+    "mean_x": 0.057,
+    "mean_y": 0.0
+   },
+   "dead": {
+    "n": 70,
+    "kappa": 1.0,
+    "exact": 0.986,
+    "presence": 1.0,
+    "mean_abs_diff": 0.014,
+    "pearson": 0.947,
+    "mean_x": 0.029,
+    "mean_y": 0.043
+   }
+  },
+  "original Haiku vs Opus": {
+   "total": {
+    "n": 70,
+    "kappa": 0.783,
+    "exact": 0.843,
+    "presence": 0.914,
+    "mean_abs_diff": 1.757,
+    "pearson": 0.209,
+    "mean_x": 1.929,
+    "mean_y": 1.686
+   },
+   "leftover": {
+    "n": 70,
+    "kappa": 0.771,
+    "exact": 0.857,
+    "presence": 0.929,
+    "mean_abs_diff": 0.786,
+    "pearson": 0.713,
+    "mean_x": 0.857,
+    "mean_y": 1.586
+   },
+   "unrelated": {
+    "n": 70,
+    "kappa": 1.0,
+    "exact": 1.0,
+    "presence": 1.0,
+    "mean_abs_diff": 0.0,
+    "pearson": 1.0,
+    "mean_x": 0.014,
+    "mean_y": 0.014
+   },
+   "churn": {
+    "n": 70,
+    "kappa": 1.0,
+    "exact": 0.986,
+    "presence": 1.0,
+    "mean_abs_diff": 0.014,
+    "pearson": 0.947,
+    "mean_x": 0.029,
+    "mean_y": 0.043
+   },
+   "naming": {
+    "n": 70,
+    "kappa": 0.0,
+    "exact": 0.943,
+    "presence": 0.943,
+    "mean_abs_diff": 1.014,
+    "pearson": null,
+    "mean_x": 1.014,
+    "mean_y": 0.0
+   },
+   "dead": {
+    "n": 70,
+    "kappa": 0.66,
+    "exact": 0.986,
+    "presence": 0.986,
+    "mean_abs_diff": 0.029,
+    "pearson": 0.437,
+    "mean_x": 0.014,
+    "mean_y": 0.043
+   }
+  }
+ },
+ "paired_differences_random_stratum": {
+  "original Haiku": {
+   "optional - baseline": [
+    -2.0,
+    -5.75,
+    -0.05,
+    20
+   ],
+   "enforced - baseline": [
+    -2.55,
+    -7.9,
+    0.25,
+    20
+   ]
+  },
+  "re-run Haiku": {
+   "optional - baseline": [
+    -0.4,
+    -1.35,
+    0.2,
+    20
+   ],
+   "enforced - baseline": [
+    -0.25,
+    -1.25,
+    0.4,
+    20
+   ]
+  },
+  "Opus": {
+   "optional - baseline": [
+    -0.2,
+    -0.45,
+    0.0,
+    20
+   ],
+   "enforced - baseline": [
+    0.05,
+    -0.15,
+    0.25,
+    20
+   ]
+  }
+ },
+ "driver_task": [
+  {
+   "run_id": "r01800",
+   "arm": "baseline",
+   "model": "claude-haiku-5-5",
+   "original_haiku": 10.0,
+   "rerun_haiku": 0.0,
+   "opus": 10.0
+  },
+  {
+   "run_id": "r00593",
+   "arm": "baseline",
+   "model": "claude-haiku-5-5",
+   "original_haiku": 10.0,
+   "rerun_haiku": 10.0,
+   "opus": 10.0
+  },
+  {
+   "run_id": "r01869",
+   "arm": "baseline",
+   "model": "claude-haiku-5-5",
+   "original_haiku": 0.0,
+   "rerun_haiku": 0.0,
+   "opus": 10.0
+  },
+  {
+   "run_id": "r01177",
+   "arm": "optional",
+   "model": "claude-haiku-5-5",
+   "original_haiku": 1.0,
+   "rerun_haiku": 11.0,
+   "opus": 10.0
+  },
+  {
+   "run_id": "r01009",
+   "arm": "optional",
+   "model": "claude-haiku-5-5",
+   "original_haiku": 1.0,
+   "rerun_haiku": 1.0,
+   "opus": 11.0
+  },
+  {
+   "run_id": "r00128",
+   "arm": "optional",
+   "model": "claude-haiku-5-5",
+   "original_haiku": 11.0,
+   "rerun_haiku": 10.0,
+   "opus": 11.0
+  },
+  {
+   "run_id": "r02148",
+   "arm": "baseline",
+   "model": "claude-sonnet-5-5",
+   "original_haiku": 10.0,
+   "rerun_haiku": 1.0,
+   "opus": 11.0
+  },
+  {
+   "run_id": "r00967",
+   "arm": "baseline",
+   "model": "claude-sonnet-5-5",
+   "original_haiku": 11.0,
+   "rerun_haiku": 1.0,
+   "opus": 11.0
+  },
+  {
+   "run_id": "r00414",
+   "arm": "optional",
+   "model": "claude-sonnet-5-5",
+   "original_haiku": 1.0,
+   "rerun_haiku": 1.0,
+   "opus": 11.0
+  },
+  {
+   "run_id": "r01041",
+   "arm": "optional",
+   "model": "claude-sonnet-5-5",
+   "original_haiku": 0.0,
+   "rerun_haiku": 10.0,
+   "opus": 11.0
+  }
+ ]
+}
