@@ -354,7 +354,7 @@ def main():
     enf_c_txt = f"{float(enf_c['estimate']):.2f}"
     opus_adopt = f"{float(find(descriptive, model='claude-opus-5-5', arm='optional')['lsp_used']) * 100:.0f}%"
     outline = [("top", "Does LSP help Claude Code?"), ("what-is-being-tested", "What is being tested"), ("setups", "Setups"),
-               ("kinds-of-tasks", "Kinds of tasks"), ("flaws", "Flaws: no change offered, more enforced"), ("success-barely-moves", "Success barely moves"),
+               ("kinds-of-tasks", "Kinds of tasks"), ("flaws", "LS tools don't clearly reduce refactoring flaws"), ("success-barely-moves", "Success barely moves"),
                ("no-model-solves-more", "No model solves more tasks with LS tools"),
                ("only-opus-uses-optional-tools", "Only Opus uses tools when they're optional"),
                ("cost-goes-up-when-lsp-use-is-enforced", "Cost goes up when LSP use is enforced"),
@@ -639,7 +639,7 @@ def main():
         <p>The results below compare three outcomes between arms on the same tasks: the flaws a run leaves, whether it
         succeeds, and what it costs.</p>
 
-        <h2 id="flaws">Flaws: no clear change when LS tools are offered, more when they are enforced{tag_all}</h2>
+        <h2 id="flaws">LS tools don't clearly reduce refactoring flaws{tag_all}</h2>
         {flaw_summary}
         {arm_note}
         <p>Tests decide whether a change works. A flaw is damage the tests cannot see. After each edit run, a reviewer
