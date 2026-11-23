@@ -373,6 +373,7 @@ def main():
             .shelf .who {{ font-size: 0.8125rem; color: {MUTED}; }}
             .shelf .nums b {{ font-size: 1.375rem; }}
             .shelf .nums span {{ font-size: 0.8125rem; color: {MUTED}; }}
+            .faint {{ color: #aaa; font-size: 0.6875rem; margin-top: -6px; }}
             .win {{ background: #d9f0e3; padding: 1px 5px; border-radius: 3px; }}
             .mid {{ background: #fbefc4; padding: 1px 5px; border-radius: 3px; }}
             .lose {{ background: #fbdcd3; padding: 1px 5px; border-radius: 3px; }}
@@ -426,7 +427,7 @@ def main():
    "preview": "70:     def validate(cls, __input_value: str, ...) -&gt; PaymentCardNumber:"}},
   {{"path": "pydantic_extra_types/payment.py", "line": 215, "column": 33,
    "preview": "216:         brand, required_length = PaymentCardNumber._identify_brand(card_number)"}}]}}</code></pre>
-        <p class="note">Run r00023 (task refs-payment-card-number, python-small, enforced arm).</p>
+        <p class="faint">Run r00023 (task refs-payment-card-number, python-small, enforced arm).</p>
 
         <h2>The arms</h2>
         <p>Same agent, same task, no compiler. Only the language-server tools change.</p>
