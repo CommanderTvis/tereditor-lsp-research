@@ -47,24 +47,13 @@ class Raw(str):
 
 
 def usage(share, arm):
-    """Share of runs that called an LSP tool, with an icon: filled = uses it a lot, half = sometimes, empty = ignores it."""
+    """Share of runs that called an LSP tool, with dots: three = uses the tools a lot, two = sometimes, one = ignores."""
     pct = f"{100 * share:.0f}%"
     if arm.startswith("baseline"):
         return pct
-    if share >= 0.75:
-        word, inner = "uses the tools a lot", f'<circle cx="7" cy="7" r="5.5" fill="{INK}"/>'
-    elif share <= 0.10:
-        word, inner = "ignores the tools", f'<circle cx="7" cy="7" r="5" fill="none" stroke="{INK}" stroke-width="1.5"/>'
-    else:
-        word, inner = "uses the tools sometimes", (f'<circle cx="7" cy="7" r="5" fill="none" stroke="{INK}" stroke-width="1.5"/>'
-                                                   f'<path d="M7,2 A5,5 0 0,0 7,12 Z" fill="{INK}"/>')
-    return Raw(f'<svg class="use" width="14" height="14" role="img" aria-label="{word}"><title>{word}</title>{inner}</svg> {pct}')
-
-
-USAGE_KEY = Raw('<p class="legend">'
-                + usage(1, "x").split(" 100%")[0] + ' uses the tools a lot (75% of runs or more) &nbsp; '
-                + usage(0.5, "x").split(" 50%")[0] + ' sometimes &nbsp; '
-                + usage(0, "x").split(" 0%")[0] + ' ignores them (10% or less)</p>')
+    n, word = (3, "uses the tools a lot") if share >= 0.75 else (1, "ignores the tools") if share <= 0.10 else (2, "uses the tools sometimes")
+    dots = "".join(f'<circle cx="{4 + 8 * i}" cy="7" r="3" fill="{INK if i < n else GRID}"/>' for i in range(3))
+    return Raw(f'<svg class="use" width="24" height="14" role="img" aria-label="{word}"><title>{word}</title>{dots}</svg> {pct}')
 
 
 def table(headers, body):
@@ -470,7 +459,6 @@ def main():
         {legend([("IntelliJ", BLUE), ("kotlin-lsp", ORANGE)])}
         {chart_kotlin}
         {kotlin_table}
-        {USAGE_KEY}
         <p class="note">{k_tasks} tasks is a small sample: the intervals are wide, and {k_zero}. Cost and time are medians over all three models.</p>
 
         <h2>Java: IntelliJ vs no language server</h2>
@@ -478,12 +466,11 @@ def main():
         Java server), so the comparison is IntelliJ against the baseline, {j_runs} runs in all.</p>
         {chart_java}
         {java_table}
-        {USAGE_KEY}
         <p class="note">{j_tasks} tasks is a small sample: the intervals are wide, and {j_zero}. Cost and time are
         medians over all three models.</p>
 
         <h2>Raw data</h2>
-        {spoiler("Arms by model", desc_table + USAGE_KEY)}
+        {spoiler("Arms by model", desc_table)}
         {spoiler("Contrasts by model", strat_table(by_model))}
         {spoiler("Contrasts by language", strat_table(by_lang))}
         {spoiler("Contrasts by project size", strat_table(by_size))}
