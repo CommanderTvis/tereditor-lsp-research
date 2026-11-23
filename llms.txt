@@ -1,0 +1,17 @@
+# LSP study: does a language server make a Claude Code agent better, faster or cheaper?
+
+> A controlled comparison of Claude Code agents with and without language-server (LSP) tools: 2,232 runs on 87 tasks in 29 projects, three Claude models (Haiku 5.5, Sonnet 5.5, Opus 5.5), five arms. Across 87 tasks, offering the language server (optional arm) changed success by +0.3 points (interval -2.1 to +3.0) at 1.02× the baseline cost. Pushing the agent to use it (enforced arm) changed success by -2.0 points (interval -5.2 to +1.0) at 1.57× the cost. A second review turn without any language server (baseline-review) cost 2.34×.
+
+Arms: baseline (core tools only); baseline-review (baseline plus a second review turn); optional (LSP tools offered, not required); enforced (LSP use pushed by prompt and hooks); intellij-optional and intellij-enforced (IntelliJ as the language server, JVM projects only). Success is a deterministic grader's pass rate; cost is Claude Code's total_cost_usd. Contrasts are paired on tasks; intervals are 95% task-resampling intervals.
+
+## Data
+
+- [runs.csv](https://commandertvis.github.io/tereditor-lsp-research/data/runs.csv): one row per run (task, arm, model, tool calls, cost, turns, success)
+- [plan.tsv](https://commandertvis.github.io/tereditor-lsp-research/data/plan.tsv): the seeded run plan
+- [descriptive.csv](https://commandertvis.github.io/tereditor-lsp-research/data/descriptive.csv): success, cost, time and LSP use per model and arm
+- [contrasts.csv](https://commandertvis.github.io/tereditor-lsp-research/data/contrasts.csv): paired contrasts against the baseline, all tasks
+- [by_model.csv](https://commandertvis.github.io/tereditor-lsp-research/data/by_model.csv), [by_lang.csv](https://commandertvis.github.io/tereditor-lsp-research/data/by_lang.csv), [by_size.csv](https://commandertvis.github.io/tereditor-lsp-research/data/by_size.csv), [by_task_type.csv](https://commandertvis.github.io/tereditor-lsp-research/data/by_task_type.csv), [by_probe_half.csv](https://commandertvis.github.io/tereditor-lsp-research/data/by_probe_half.csv): the same contrasts by stratum
+
+## Page
+
+- [Results page](https://commandertvis.github.io/tereditor-lsp-research/): charts and tables built from the data above
