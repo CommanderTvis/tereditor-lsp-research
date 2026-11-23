@@ -278,8 +278,8 @@ def main():
         groups.append((MODEL_NAME[m], [float(o["lsp_used"]), float(e["lsp_used"])]))
     chart_adoption = '<div class="shelf">' + "".join(
         f'<div><div class="who">{esc(label)}</div>'
-        f'<div class="nums"><b>{o * 100:.0f}%</b> <span>optional</span></div>'
-        f'<div class="nums"><b>{e * 100:.0f}%</b> <span>enforced</span></div></div>'
+        f'<div class="nums">{usage(o, "optional").rsplit(" ", 1)[0]} <b>{o * 100:.0f}%</b> <span>optional</span></div>'
+        f'<div class="nums">{usage(e, "enforced").rsplit(" ", 1)[0]} <b>{e * 100:.0f}%</b> <span>enforced</span></div></div>'
         for label, (o, e) in groups) + "</div>"
 
     k_tasks, k_runs, chart_kotlin, kotlin_table, k_zero = server_section(
