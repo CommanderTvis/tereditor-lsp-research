@@ -84,26 +84,17 @@
         <p class="note">Run r00023 (task refs-payment-card-number, python-small, enforced arm).</p>
 
         <h2>The arms</h2>
-        <p>Every arm is the same Claude Code agent on the same task, in a container with an empty home directory, no
-        compiler, interpreter or package manager, and no web access. Only what it is given about the language server changes.</p>
+        <p>Same agent, same task, no compiler. Only the language-server tools change.</p>
         <dl>
             <dt>baseline</dt>
-            <dd>Claude Code's core tools only: Read, Edit, Write, Bash (with core utilities, git and ripgrep for
-            search), Task and ToolSearch. No language-server tools. This is the reference every other arm is compared
-            with.</dd>
+            <dd>No language server. Plain Claude Code: read, edit, shell (grep).</dd>
             <dt>optional</dt>
-            <dd>The baseline plus tereditor's language-server tools (find references, go to definition, rename,
-            diagnostics and so on) through MCP. The tools are offered, not pushed: tereditor's own advice to prefer them
-            over text search is removed, so the agent decides by itself whether to use them.</dd>
+            <dd>Language-server tools available. The agent may use them or not.</dd>
             <dt>enforced</dt>
-            <dd>The same tools, with their advice kept, plus a project instruction file and hooks that steer the agent
-            to them: advisory hooks when it reaches for text search, and a stop hook that blocks once if edited files
-            were not checked with diagnostics. This measures what the tools do when the agent is made to use them.</dd>
+            <dd>Language-server tools available, and the agent is told and nudged by hooks to use them.</dd>
         </dl>
-        <p class="note">Two more arms appear in the charts. baseline-review is the baseline with a second review turn
-        and no language server: it shows what a second look costs without any tools. intellij-optional and
-        intellij-enforced are the optional and enforced arms with IntelliJ as the language server, run on Java and
-        Kotlin projects only.</p>
+        <p class="note">Also in the charts: baseline-review (baseline plus a second "review your work" turn) and the
+        IntelliJ versions of optional and enforced (Java and Kotlin projects only).</p>
 
         <h2>Headline</h2>
         <p>Across 87 tasks, offering the language server (optional arm) changed success by +0.3 points (interval -2.1 to +3.0) at 1.02× the baseline cost. Pushing the agent to use it (enforced arm) changed success by -2.0 points (interval -5.2 to +1.0) at 1.57× the cost. A second review turn without any language server (baseline-review) cost 2.34×.</p>
