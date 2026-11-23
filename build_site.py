@@ -161,6 +161,60 @@ def legend(series):
 
 # ---------- page ----------
 
+def kotlin_section(runs):
+    """IntelliJ against kotlin-lsp against the baseline, on the Kotlin and mixed Java+Kotlin tasks all three ran."""
+    import random
+    import statistics
+    sub = [r for r in runs if r["project"].startswith(("kotlin-", "java-kotlin-"))]
+    tasks = sorted({(r["project"], r["task"]) for r in sub})
+    arms = [("baseline", "baseline (no language server)"), ("optional", "kotlin-lsp, optional"),
+            ("enforced", "kotlin-lsp, enforced"), ("intellij-optional", "IntelliJ, optional"),
+            ("intellij-enforced", "IntelliJ, enforced")]
+
+    def ok(r):
+        return 1.0 if r["success"] in ("True", "true", "1", "1.0") else 0.0
+
+    cell = {}  # (task, model, arm) -> mean success over repetitions
+    for r in sub:
+        cell.setdefault(((r["project"], r["task"]), r["model"], r["arm"]), []).append(ok(r))
+    cell = {k: sum(v) / len(v) for k, v in cell.items()}
+    models = sorted({r["model"] for r in sub})
+
+    def diff(arm, ts):
+        d = [cell[(t, m, arm)] - cell[(t, m, "baseline")] for t in ts for m in models
+             if (t, m, arm) in cell and (t, m, "baseline") in cell]
+        return 100 * sum(d) / len(d)
+
+    rng = random.Random(0)
+    items, body = [], []
+    for arm, label in arms:
+        rs = [r for r in sub if r["arm"] == arm]
+        flaws = [float(r["flaws"]) for r in rs if r["flaws"] not in ("", None)]
+        row = [label, len(rs), f"{100 * sum(ok(r) for r in rs) / len(rs):.0f}%",
+               f"{statistics.median(float(r['cost_usd'] or 0) for r in rs):.3f}",
+               f"{statistics.median(float(r['wall_s'] or 0) for r in rs):.0f}",
+               f"{100 * sum(r['lsp_used'] in ('True', 'true', '1') for r in rs) / len(rs):.0f}%",
+               f"{sum(flaws) / len(flaws):.2f}" if flaws else ""]
+        if arm != "baseline":
+            est = diff(arm, tasks)
+            boots = sorted(diff(arm, [rng.choice(tasks) for _ in tasks]) for _ in range(2000))
+            lo, hi = boots[49], boots[1949]
+            colour = BLUE if arm.startswith("intellij") else ORANGE
+            items.append((label, est, lo, hi, colour,
+                          f"{label} vs baseline: {est:+.1f} pp (95% interval {lo:+.1f} to {hi:+.1f}), {len(tasks)} tasks"))
+            row.append(f"{est:+.1f} ({lo:+.1f} to {hi:+.1f})")
+        else:
+            row.append("")
+        body.append(row)
+    lim = max(10, 5 * math.ceil(max(max(abs(i[2]), abs(i[3])) for i in items) / 5))
+    chart = forest(items, -lim, lim, 0, lambda t: "0 pp" if t == 0 else f"{t:+g} pp",
+                   "Success difference against baseline on Kotlin tasks")
+    tbl = table(["Arm", "Runs", "Success", "Median cost (USD)", "Median wall time (s)", "Runs using LSP tools",
+                 "Mean flaws", "Success vs baseline, pp (95% interval)"], body)
+    zero = "every one includes zero" if all(i[2] <= 0 <= i[3] for i in items) else "not all include zero"
+    return len(tasks), len(sub), chart, tbl, zero
+
+
 def main():
     runs = rows("runs.csv")
     contrasts = rows("contrasts.csv")
@@ -233,6 +287,8 @@ def main():
         groups.append((MODEL_NAME[m], [float(o["lsp_used"]), float(e["lsp_used"])]))
     chart_adoption = grouped_bars(groups, [("optional (offered)", BLUE), ("enforced (pushed)", ORANGE)],
                                   "Share of runs that called a language-server tool")
+
+    k_tasks, k_runs, chart_kotlin, kotlin_table, k_zero = kotlin_section(runs)
 
     # Raw tables.
     desc_table = table(
@@ -373,6 +429,15 @@ def main():
         <h2>Offered, the tools go unused</h2>
         <p>Share of runs that called at least one language-server tool.</p>
         {chart_adoption}
+
+        <h2>IntelliJ vs kotlin-lsp vs no language server</h2>
+        <p>The {k_tasks} Kotlin and mixed Java+Kotlin tasks ran with both language servers:
+        <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a> (the optional and enforced arms) and IntelliJ
+        (the intellij arms), {k_runs} runs in all. Success change against the baseline on these tasks:</p>
+        {legend([("IntelliJ", BLUE), ("kotlin-lsp", ORANGE)])}
+        {chart_kotlin}
+        {kotlin_table}
+        <p class="note">{k_tasks} tasks is a small sample: the intervals are wide, and {k_zero}. Cost and time are medians over all three models.</p>
 
         <h2>Raw data</h2>
         {spoiler("Arms by model", desc_table)}
