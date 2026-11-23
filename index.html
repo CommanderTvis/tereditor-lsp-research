@@ -45,8 +45,7 @@
         <p><a href="https://github.com/CommanderTvis/tereditor">tereditor</a> is an IDE-like workbench for terminal
         coding agents. Its headless build runs without a window and serves language tools to an agent over
         <a href="https://modelcontextprotocol.io">MCP</a> for one project: behind each tool sits the project
-        language's language server (for example Pyright for Python, clangd for C and C++, or IntelliJ for Java and
-        Kotlin). The study asks whether giving a Claude Code agent these tools changes how often it solves a task,
+        language's language server (for example Pyright for Python, clangd for C and C++, <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a> for Kotlin). The study asks whether giving a Claude Code agent these tools changes how often it solves a task,
         what it costs and how long it takes.</p>
         <p>The agent sees six MCP tools:</p>
         <dl>
@@ -94,7 +93,8 @@
             <dd>Language-server tools available, and the agent is told and nudged by hooks to use them.</dd>
         </dl>
         <p class="note">Also in the charts: baseline-review (baseline plus a second "review your work" turn) and the
-        IntelliJ versions of optional and enforced (Java and Kotlin projects only).</p>
+        IntelliJ versions of optional and enforced, where IntelliJ is the language server (Java and Kotlin projects
+        only). On Kotlin this compares IntelliJ with <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a>, which the plain optional and enforced arms use.</p>
 
         <h2>Headline</h2>
         <p>Across 87 tasks, offering the language server (optional arm) changed success by +0.3 points (interval -2.1 to +3.0) at 1.02× the baseline cost. Pushing the agent to use it (enforced arm) changed success by -2.0 points (interval -5.2 to +1.0) at 1.57× the cost. A second review turn without any language server (baseline-review) cost 2.34×.</p>

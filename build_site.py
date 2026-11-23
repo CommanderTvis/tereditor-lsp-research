@@ -298,8 +298,7 @@ def main():
         <p><a href="https://github.com/CommanderTvis/tereditor">tereditor</a> is an IDE-like workbench for terminal
         coding agents. Its headless build runs without a window and serves language tools to an agent over
         <a href="https://modelcontextprotocol.io">MCP</a> for one project: behind each tool sits the project
-        language's language server (for example Pyright for Python, clangd for C and C++, or IntelliJ for Java and
-        Kotlin). The study asks whether giving a Claude Code agent these tools changes how often it solves a task,
+        language's language server (for example Pyright for Python, clangd for C and C++, <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a> for Kotlin). The study asks whether giving a Claude Code agent these tools changes how often it solves a task,
         what it costs and how long it takes.</p>
         <p>The agent sees six MCP tools:</p>
         <dl>
@@ -347,7 +346,8 @@ def main():
             <dd>Language-server tools available, and the agent is told and nudged by hooks to use them.</dd>
         </dl>
         <p class="note">Also in the charts: baseline-review (baseline plus a second "review your work" turn) and the
-        IntelliJ versions of optional and enforced (Java and Kotlin projects only).</p>
+        IntelliJ versions of optional and enforced, where IntelliJ is the language server (Java and Kotlin projects
+        only). On Kotlin this compares IntelliJ with <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a>, which the plain optional and enforced arms use.</p>
 
         <h2>Headline</h2>
         <p>{esc(headline)}</p>
@@ -405,7 +405,7 @@ def main():
 
 What is tested: tereditor (https://github.com/CommanderTvis/tereditor), an IDE-like workbench for terminal coding agents whose headless build serves a project's language server to an agent over MCP. Its six tools: lsp_navigate (definitions, references, implementations, symbols, call hierarchies, one read-only LSP query), lsp_diagnostics (errors for edited files or the workspace), lsp_rename, lsp_code_actions and lsp_format (preview before writing, workspace only), lsp_status (servers and capabilities). Example call: lsp_navigate {{"operation": "references", "query": "PaymentCardNumber", "workspace": "/workspace"}} returns the reference locations with zero-based lines and previews.
 
-Arms: baseline (Claude Code core tools only: Read, Edit, Write, Bash, Task, ToolSearch); baseline-review (baseline plus a second review turn); optional (LSP tools offered, not required); enforced (LSP use pushed by prompt and hooks); intellij-optional and intellij-enforced (IntelliJ as the language server, JVM projects only). Success is a deterministic grader's pass rate; cost is Claude Code's total_cost_usd. Contrasts are paired on tasks; intervals are 95% task-resampling intervals.
+Arms: baseline (Claude Code core tools only: Read, Edit, Write, Bash, Task, ToolSearch); baseline-review (baseline plus a second review turn); optional (LSP tools offered, not required); enforced (LSP use pushed by prompt and hooks); intellij-optional and intellij-enforced (IntelliJ as the language server, JVM projects only; on Kotlin the plain optional and enforced arms use https://github.com/Kotlin/kotlin-lsp). Success is a deterministic grader's pass rate; cost is Claude Code's total_cost_usd. Contrasts are paired on tasks; intervals are 95% task-resampling intervals.
 
 ## Data
 
