@@ -5,6 +5,7 @@ Every number on the page is read from data/, never typed in. Charts are inline S
 <details> blocks below them.
 """
 
+import statistics
 import csv
 import html
 import math
@@ -73,9 +74,11 @@ def rank(body, col, higher_is_better, groups=None):
                 body[i][col] = Raw(f'<span class="mid" title="in between">{esc(body[i][col])}</span>')
 
 
-def table(headers, body):
+def table(headers, body, continued=()):
+    """continued: indexes of rows that continue the row above (their first cells are joined to it)."""
     head = "".join(f"<th>{esc(h)}</th>" for h in headers)
-    lines = ["<tr>" + "".join(f"<td>{c if isinstance(c, Raw) else esc(c)}</td>" for c in r) + "</tr>" for r in body]
+    lines = [("<tr class='join'>" if i + 1 in continued else "<tr>") + "".join(f"<td>{c if isinstance(c, Raw) else esc(c)}</td>" for c in r) + "</tr>"
+             for i, r in enumerate(body)]
     return f"<table><thead><tr>{head}</tr></thead><tbody>{''.join(lines)}</tbody></table>"
 
 
@@ -155,7 +158,6 @@ def server_section(runs, is_project, arms, title, merge=None):
     if merge:
         runs = [dict(r, arm=merge.get(r["arm"], r["arm"])) for r in runs]
     import random
-    import statistics
     sub = [r for r in runs if is_project(r["project"]) and r["arm"] in {a for a, _ in arms}]
     tasks = sorted({(r["project"], r["task"]) for r in sub})
 
@@ -203,6 +205,39 @@ def server_section(runs, is_project, arms, title, merge=None):
     return len(tasks), len(sub), chart, tbl, zero
 
 
+def kind_table(runs):
+    """All arms (IntelliJ pooled into optional and enforced) on synthetic tasks and on real PR tasks."""
+    merge = {"intellij-optional": "optional", "intellij-enforced": "enforced"}
+    runs = [dict(r, arm=merge.get(r["arm"], r["arm"])) for r in runs]
+    kinds = [("Synthetic", lambda r: r["task_type"] != "pr"), ("Real PRs", lambda r: r["task_type"] == "pr")]
+    arms = [("baseline", "baseline (no LS)"), ("optional", "optional, any LS"),
+            ("enforced", "enforced, any LS")]
+    body = []
+    for kind, pick in kinds:
+        sub = [r for r in runs if pick(r)]
+        ntasks = len({(r["project"], r["task"]) for r in sub})
+        for arm, label in arms:
+            rs = [r for r in sub if r["arm"] == arm]
+            flaws = [float(r["flaws"]) for r in rs if r["flaws"] not in ("", None)]
+            ok = sum(r["success"] in ("True", "true", "1", "1.0") for r in rs) / len(rs)
+            body.append([kind if arm == "baseline" else "", ntasks if arm == "baseline" else "", label, len(rs),
+                         f"{100 * ok:.0f}%",
+                         f"{statistics.median(float(r['cost_usd'] or 0) for r in rs):.3f}",
+                         f"{statistics.median(float(r['wall_s'] or 0) for r in rs):.0f}",
+                         usage(sum(r["lsp_used"] in ("True", "true", "1") for r in rs) / len(rs), arm),
+                         f"{sum(flaws) / len(flaws):.2f}" if flaws else ""])
+    groups = [range(0, 3), range(3, 6)]  # rank within each kind
+    rank(body, 4, True, groups)
+    rank(body, 5, False, groups)
+    rank(body, 8, False, groups)
+    return table(["Kind", "Tasks", "Arm", "Runs", "Success", "Median cost (USD)", "Median wall time (s)",
+                  "Runs using LSP tools", "Mean flaws"], body, continued=[i for i, r in enumerate(body) if r[0] == ""])
+
+
+EX_SYN = "Rename `salt/payload.py` to `salt/wire_payload.py`. Update every import and module reference, preserving behavior and removing the old path."
+EX_PR = "Header object passed to c.body() is mutated, so reusing it returns 500 from the second request on"
+
+
 def main():
     runs = rows("runs.csv")
     contrasts = rows("contrasts.csv")
@@ -216,6 +251,12 @@ def main():
     n_runs = len(runs)
     n_projects = len({r["project"] for r in runs})
     n_tasks = len({(r["project"], r["task"]) for r in runs})
+    # Distinct languages, not counting css (a stylesheet language, not a programming language).
+    n_syn_tasks = len({(r["project"], r["task"]) for r in runs if r["task_type"] != "pr"})
+    n_pr_tasks = len({(r["project"], r["task"]) for r in runs if r["task_type"] == "pr"})
+    n_syn_types = len({r["task_type"] for r in runs} - {"pr"})
+    kind_tbl = kind_table(runs)
+    n_langs = len({r["lang"] for r in runs} - {"css"})
     total_cost = sum(float(r["cost_usd"] or 0) for r in runs)
     excluded = sum(1 for r in runs if r["contaminated"] not in ("", "False", "false", "0"))
 
@@ -226,12 +267,29 @@ def main():
     opt_c, enf_c = c_all("optional", "cost ratio"), c_all("enforced", "cost ratio")
     rev_c = c_all("baseline-review", "cost ratio")
 
+    def flaw_txt(arm):
+        f = c_all(arm, "flaws (mean diff)")
+        return f"{float(f['estimate']):+.2f} flaws per run (95% interval {float(f['ci_lo']):+.2f} to {float(f['ci_hi']):+.2f})"
+    flaw_enf_txt, flaw_opt_txt = flaw_txt("enforced"), flaw_txt("optional")
+    enf_c_txt = f"{float(enf_c['estimate']):.2f}"
+    opus_adopt = f"{float(find(descriptive, model='claude-opus-5-5', arm='optional')['lsp_used']) * 100:.0f}%"
+    outline = [("what-is-being-tested", "What is being tested"), ("setups", "Setups"),
+               ("kinds-of-tasks", "Kinds of tasks"),  ("success-barely-moves", "Success barely moves"),
+               ("cost-goes-up-when-lsp-use-is-enforced", "Cost goes up when LSP use is enforced"),
+               ("no-model-gains-from-it", "No model gains from it"),
+               ("when-offered-only-opus-reaches-for-the-tools-and-only-now-and-then", "When offered, only Opus reaches for the tools"),
+               ("what-counts-as-a-flaw", "What counts as a flaw"), 
+               ("all-ls-together", "All LS together"), ("intellij-vs-kotlin-lsp-vs-no-ls", "IntelliJ vs kotlin-lsp vs no LS"),
+               ("java-intellij-vs-no-ls", "Java: IntelliJ vs no LS"), ("raw-data", "Raw data")]
+    outline_html = ("<nav class='outline'><b>Contents</b><ol>"
+                    + "".join(f'<li><a href="#{i}">{esc(t)}</a></li>' for i, t in outline) + "</ol></nav>")
+
     headline = (
-        f"Across {n_tasks} tasks, offering the language server (optional arm) changed success by "
+        f"Across {n_tasks} tasks, offering the LS (optional arm) changed success by "
         f"{signed(opt_s['estimate'])} points (interval {signed(opt_s['ci_lo'])} to {signed(opt_s['ci_hi'])}) at "
         f"{num(opt_c['estimate'])}× the baseline cost. Pushing the agent to use it (enforced arm) changed success by "
         f"{signed(enf_s['estimate'])} points (interval {signed(enf_s['ci_lo'])} to {signed(enf_s['ci_hi'])}) at "
-        f"{num(enf_c['estimate'])}× the cost. A second review turn without any language server (baseline-review) cost "
+        f"{num(enf_c['estimate'])}× the cost. A second review turn without any LS (baseline-review) cost "
         f"{num(rev_c['estimate'])}×."
     )
 
@@ -281,19 +339,19 @@ def main():
 
     k_tasks, k_runs, chart_kotlin, kotlin_table, k_zero = server_section(
         runs, lambda p: p.startswith(("kotlin-", "java-kotlin-")),
-        [("baseline", "baseline (no language server)"), ("optional", "kotlin-lsp, optional"),
+        [("baseline", "baseline (no LS)"), ("optional", "kotlin-lsp, optional"),
          ("enforced", "kotlin-lsp, enforced"), ("intellij-optional", "IntelliJ, optional"),
          ("intellij-enforced", "IntelliJ, enforced")],
         "Success difference against baseline on Kotlin tasks")
     a_tasks, a_runs, _, all_ls_table, _ = server_section(
         runs, lambda p: True,
-        [("baseline", "baseline (no language server)"), ("optional", "optional, any language server"),
-         ("enforced", "enforced, any language server")],
-        "Success difference against baseline, all language servers",
+        [("baseline", "baseline (no LS)"), ("optional", "optional, any LS"),
+         ("enforced", "enforced, any LS")],
+        "Success difference against baseline, all LS",
         merge={"intellij-optional": "optional", "intellij-enforced": "enforced"})
     j_tasks, j_runs, chart_java, java_table, j_zero = server_section(
         runs, lambda p: p.startswith("java-") and not p.startswith("java-kotlin-"),
-        [("baseline", "baseline (no language server)"), ("intellij-optional", "IntelliJ, optional"),
+        [("baseline", "baseline (no LS)"), ("intellij-optional", "IntelliJ, optional"),
          ("intellij-enforced", "IntelliJ, enforced")],
         "Success difference against baseline on Java tasks")
 
@@ -382,6 +440,23 @@ def main():
             .shelf .nums b {{ font-size: 1.375rem; }}
             .shelf .nums span {{ font-size: 0.8125rem; color: {MUTED}; }}
             .faint {{ color: var(--faint); font-size: 0.6875rem; margin-top: -6px; }}
+            tr.join > td:nth-child(1), tr.join > td:nth-child(2) {{ border-bottom: none; }}
+            nav.outline {{ position: sticky; top: 0; z-index: 10; background: var(--bg); font-size: 0.8125rem;
+                          margin: 0 -20px 16px; padding: 8px 20px; border-bottom: 1px solid var(--grid); }}
+            nav.outline b {{ display: none; }}
+            nav.outline ol {{ display: flex; flex-wrap: wrap; gap: 2px 14px; list-style: none; margin: 0; padding: 0; }}
+            nav.outline li {{ margin: 0; }}
+            nav.outline a {{ color: {MUTED}; text-decoration: none; }}
+            nav.outline a[href="#raw-data"] {{ color: var(--faint); }}
+            nav.outline a.here {{ color: {INK}; font-weight: 600; }}
+            @media (min-width: 1100px) {{
+                body {{ max-width: 960px; }}
+                .page > main {{ margin-left: 240px; }}
+                .page > nav {{ position: fixed; top: 40px; left: max(16px, calc(50% - 480px)); width: 200px;
+                              margin: 0; padding: 0; border: none; background: none; }}
+                nav.outline b {{ display: block; margin-bottom: 4px; }}
+                nav.outline ol {{ flex-direction: column; gap: 4px; }}
+            }}
             .win {{ background: var(--win); padding: 1px 5px; border-radius: 3px; }}
             .mid {{ background: var(--mid); padding: 1px 5px; border-radius: 3px; }}
             .lose {{ background: var(--lose); padding: 1px 5px; border-radius: 3px; }}
@@ -401,14 +476,19 @@ def main():
         </style>
     </head>
     <body>
+    <div class="page">
+        {outline_html}
+        <main>
         <h1>Does a language server make a Claude Code agent better, faster or cheaper?</h1>
-        <p class="subtitle">Confirmatory run: {n_runs:,} runs, {n_tasks} tasks, {n_projects} projects, three Claude models, five arms.</p>
+        <p class="subtitle">Confirmatory run: {n_runs:,} runs, {n_tasks} tasks, {n_projects} projects, three Claude models, {n_langs} programming languages.</p>
 
-        <h2>What is being tested</h2>
+        <h2 id="what-is-being-tested">What is being tested</h2>
         <p><a href="https://github.com/CommanderTvis/tereditor">tereditor</a> gives a coding agent a project's
-        language server over <a href="https://modelcontextprotocol.io">MCP</a> (Pyright for Python, clangd for C and
+        language server (LS) over <a href="https://modelcontextprotocol.io">MCP</a> (Pyright for Python, clangd for C and
         C++, <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a> for Kotlin, and so on). Does that make
         Claude Code solve more tasks, cheaper or faster?</p>
+        <details>
+        <summary>MCP tools and an example call</summary>
         <p>MCP tools:</p>
         <dl>
             <dt><code>lsp_navigate</code></dt>
@@ -436,42 +516,51 @@ def main():
   {{"path": "pydantic_extra_types/payment.py", "line": 215, "column": 33,
    "preview": "216:         brand, required_length = PaymentCardNumber._identify_brand(card_number)"}}]}}</code></pre>
         <p class="faint">Run r00023 (task refs-payment-card-number, python-small, enforced arm).</p>
+        </details>
 
-        <h2>The arms</h2>
-        <p>Same agent, same task, no compiler. Only the language-server tools change.</p>
+        <h2 id="setups">Setups</h2>
+        <p>Same agent, same task, no compiler. Only the LS tools change.</p>
         <dl>
             <dt>baseline</dt>
-            <dd>No language server. Plain Claude Code: read, edit, shell (grep).</dd>
+            <dd>No LS. Plain Claude Code: read, edit, shell (grep).</dd>
             <dt>optional</dt>
-            <dd>Language-server tools available. The agent may use them or not.</dd>
+            <dd>LS tools available. The agent may use them or not.</dd>
             <dt>enforced</dt>
-            <dd>Language-server tools available, and the agent is told and nudged by hooks to use them.</dd>
+            <dd>LS tools available, and the agent is told and nudged by hooks to use them.</dd>
         </dl>
         <p class="note">Also in the charts: baseline-review (baseline plus a second "review your work" turn) and the
-        IntelliJ versions of optional and enforced, where IntelliJ is the language server (Java and Kotlin projects
+        IntelliJ versions of optional and enforced, where IntelliJ is the LS (Java and Kotlin projects
         only). On Kotlin this compares IntelliJ with <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a>, which the plain optional and enforced arms use.</p>
 
-        <h2>Success barely moves</h2>
+        <h2 id="kinds-of-tasks">Kinds of tasks</h2>
+        <p><b>Synthetic</b> ({n_syn_tasks} tasks, {n_syn_types} types: rename, rename-file, move, signature, refs,
+        callers, impls, dispatch, inspect). A short, precise change or question about a real open-source project.
+        Example: <i>{esc(EX_SYN)}</i></p>
+        <p><b>Real PRs</b> ({n_pr_tasks} tasks). Mined from real pull requests: the prompt is the issue text, and the
+        tests come from the PR. Example: <i>{esc(EX_PR)}</i></p>
+        {kind_tbl}
+
+        <h2 id="success-barely-moves">Success barely moves</h2>
         <p>Change in success rate against the baseline arm, all models pooled. The dashed line is no change.</p>
         {chart_success}
         {spoiler("Show the numbers", table(hdr, s_rows))}
 
-        <h2>Cost goes up when LSP use is enforced</h2>
+        <h2 id="cost-goes-up-when-lsp-use-is-enforced">Cost goes up when LSP use is enforced</h2>
         <p>Cost of each arm as a multiple of the baseline (log scale). The dashed line is equal cost.</p>
         {chart_cost}
         {spoiler("Show the numbers", table(hdr, c_rows))}
 
-        <h2>No model gains from it</h2>
+        <h2 id="no-model-gains-from-it">No model gains from it</h2>
         <p>Success change against the baseline, per model.</p>
         {legend([("optional", BLUE), ("enforced", ORANGE)])}
         {chart_models}
         {spoiler("Show the numbers", table(["Model", "Arm", "Estimate (pp)", "Interval (95%)", "Tasks"], m_rows))}
 
-        <h2>Offered, the tools go unused</h2>
-        <p>Share of runs that called at least one language-server tool.</p>
+        <h2 id="when-offered-only-opus-reaches-for-the-tools-and-only-now-and-then">When offered, only Opus reaches for the tools, and only now and then</h2>
+        <p>Share of runs that called at least one LS tool.</p>
         {chart_adoption}
 
-        <h2>What counts as a flaw</h2>
+        <h2 id="what-counts-as-a-flaw">What counts as a flaw</h2>
         <p>Tests decide whether a change works. A flaw is damage the tests cannot see. After each edit run, a reviewer
         (Haiku 5.5, which never sees the arm) reads the diff and searches the edited tree for five kinds of it;
         {len(flaws)} were reported in all.</p>
@@ -481,13 +570,13 @@ def main():
         <p class="note">The reviewer's reports have not been checked by a human yet. All of them are in
         <a href="data/flaws.csv">flaws.csv</a>.</p>
 
-        <h2>All language servers together</h2>
-        <p>Every language server pooled: the IntelliJ runs are counted with optional and enforced.
+        <h2 id="all-ls-together">All LS together</h2>
+        <p>Every LS pooled: the IntelliJ runs are counted with optional and enforced.
         {a_tasks} tasks, {a_runs:,} runs.</p>
         {all_ls_table}
 
-        <h2>IntelliJ vs kotlin-lsp vs no language server</h2>
-        <p>The {k_tasks} Kotlin and mixed Java+Kotlin tasks ran with both language servers:
+        <h2 id="intellij-vs-kotlin-lsp-vs-no-ls">IntelliJ vs kotlin-lsp vs no LS</h2>
+        <p>The {k_tasks} Kotlin and mixed Java+Kotlin tasks ran with both LS:
         <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a> (the optional and enforced arms) and IntelliJ
         (the intellij arms), {k_runs} runs in all. Success change against the baseline on these tasks:</p>
         {legend([("IntelliJ", BLUE), ("kotlin-lsp", ORANGE)])}
@@ -495,15 +584,15 @@ def main():
         {kotlin_table}
         <p class="note">{k_tasks} tasks is a small sample: the intervals are wide, and {k_zero}. Cost and time are medians over all three models.</p>
 
-        <h2>Java: IntelliJ vs no language server</h2>
-        <p>On the {j_tasks} pure Java tasks IntelliJ is the only language server (tereditor has no other headless
+        <h2 id="java-intellij-vs-no-ls">Java: IntelliJ vs no LS</h2>
+        <p>On the {j_tasks} pure Java tasks IntelliJ is the only LS (tereditor has no other headless
         Java server), so the comparison is IntelliJ against the baseline, {j_runs} runs in all.</p>
         {chart_java}
         {java_table}
         <p class="note">{j_tasks} tasks is a small sample: the intervals are wide, and {j_zero}. Cost and time are
         medians over all three models.</p>
 
-        <h2>Raw data</h2>
+        <h2 id="raw-data">Raw data</h2>
         {spoiler("Arms by model", desc_table)}
         {spoiler("Contrasts by model", strat_table(by_model))}
         {spoiler("Contrasts by language", strat_table(by_lang))}
@@ -518,12 +607,26 @@ def main():
                 <a href="data/by_model.csv">by_model.csv</a>, <a href="data/by_lang.csv">by_lang.csv</a>,
                 <a href="data/by_size.csv">by_size.csv</a>, <a href="data/by_task_type.csv">by_task_type.csv</a>,
                 <a href="data/by_probe_half.csv">by_probe_half.csv</a></li>
-            <li><a href="llms.txt">llms.txt</a>: this page's findings for language models</li>
+            
         </ul>
 
         <footer>
             <p>Generated by build_site.py from the files in data/.</p>
         </footer>
+        <script>
+            const links = {{}};
+            document.querySelectorAll("nav.outline a").forEach(a => links[a.hash.slice(1)] = a);
+            const seen = new Set();
+            const observer = new IntersectionObserver(entries => {{
+                entries.forEach(e => e.isIntersecting ? seen.add(e.target.id) : seen.delete(e.target.id));
+                const current = [...document.querySelectorAll("h2[id]")].filter(h => seen.has(h.id)).pop();
+                Object.values(links).forEach(a => a.classList.remove("here"));
+                if (current && links[current.id]) links[current.id].classList.add("here");
+            }}, {{ rootMargin: "0px 0px -70% 0px" }});
+            document.querySelectorAll("h2[id]").forEach(h => observer.observe(h));
+        </script>
+        </main>
+    </div>
     </body>
 </html>
 """
@@ -531,11 +634,20 @@ def main():
 
     llms = f"""# LSP study: does a language server make a Claude Code agent better, faster or cheaper?
 
-> A controlled comparison of Claude Code agents with and without language-server (LSP) tools: {n_runs:,} runs on {n_tasks} tasks in {n_projects} projects, three Claude models (Haiku 5.5, Sonnet 5.5, Opus 5.5), five arms. {headline}
+> A controlled comparison of Claude Code agents with and without language-server (LSP) tools: {n_runs:,} runs on {n_tasks} tasks in {n_projects} projects, three Claude models (Haiku 5.5, Sonnet 5.5, Opus 5.5), {n_langs} programming languages. {headline}
 
 What is tested: tereditor (https://github.com/CommanderTvis/tereditor), an IDE-like workbench for terminal coding agents whose headless build serves a project's language server to an agent over MCP. Its six tools: lsp_navigate (definitions, references, implementations, symbols, call hierarchies, one read-only LSP query), lsp_diagnostics (errors for edited files or the workspace), lsp_rename, lsp_code_actions and lsp_format (preview before writing, workspace only), lsp_status (servers and capabilities). Example call: lsp_navigate {{"operation": "references", "query": "PaymentCardNumber", "workspace": "/workspace"}} returns the reference locations with zero-based lines and previews.
 
 Arms: baseline (Claude Code core tools only: Read, Edit, Write, Bash, Task, ToolSearch); baseline-review (baseline plus a second review turn); optional (LSP tools offered, not required); enforced (LSP use pushed by prompt and hooks); intellij-optional and intellij-enforced (IntelliJ as the language server, JVM projects only; on Kotlin the plain optional and enforced arms use https://github.com/Kotlin/kotlin-lsp). Success is a deterministic grader's pass rate; cost is Claude Code's total_cost_usd. Contrasts are paired on tasks; intervals are 95% task-resampling intervals.
+
+## Findings
+
+- Success: offering LS tools (optional) and enforcing them (enforced) do not change the pass rate by a clear amount. Both intervals include zero.
+- Flaws: enforced LS use leaves more flaws the reviewer reports, {flaw_enf_txt}. Optional: {flaw_opt_txt}.
+- Cost: optional costs about the same as baseline; enforced costs about {enf_c_txt} times as much.
+- Adoption: when offered, the agent uses LS tools in {opus_adopt} of optional runs on Opus and in none on Haiku or Sonnet.
+- Task kinds: {n_syn_tasks} synthetic tasks ({n_syn_types} types) and {n_pr_tasks} real pull-request tasks. Both are reported separately on the page.
+- Java and Kotlin: the sample is small (12 pure Java tasks, {k_tasks} Kotlin and mixed tasks); every interval includes zero.
 
 ## Data
 

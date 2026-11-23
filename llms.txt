@@ -1,10 +1,19 @@
 # LSP study: does a language server make a Claude Code agent better, faster or cheaper?
 
-> A controlled comparison of Claude Code agents with and without language-server (LSP) tools: 2,232 runs on 87 tasks in 29 projects, three Claude models (Haiku 5.5, Sonnet 5.5, Opus 5.5), five arms. Across 87 tasks, offering the language server (optional arm) changed success by +0.3 points (interval -2.1 to +3.0) at 1.02× the baseline cost. Pushing the agent to use it (enforced arm) changed success by -2.0 points (interval -5.2 to +1.0) at 1.57× the cost. A second review turn without any language server (baseline-review) cost 2.34×.
+> A controlled comparison of Claude Code agents with and without language-server (LSP) tools: 2,232 runs on 87 tasks in 29 projects, three Claude models (Haiku 5.5, Sonnet 5.5, Opus 5.5), 9 programming languages. Across 87 tasks, offering the LS (optional arm) changed success by +0.3 points (interval -2.1 to +3.0) at 1.02× the baseline cost. Pushing the agent to use it (enforced arm) changed success by -2.0 points (interval -5.2 to +1.0) at 1.57× the cost. A second review turn without any LS (baseline-review) cost 2.34×.
 
 What is tested: tereditor (https://github.com/CommanderTvis/tereditor), an IDE-like workbench for terminal coding agents whose headless build serves a project's language server to an agent over MCP. Its six tools: lsp_navigate (definitions, references, implementations, symbols, call hierarchies, one read-only LSP query), lsp_diagnostics (errors for edited files or the workspace), lsp_rename, lsp_code_actions and lsp_format (preview before writing, workspace only), lsp_status (servers and capabilities). Example call: lsp_navigate {"operation": "references", "query": "PaymentCardNumber", "workspace": "/workspace"} returns the reference locations with zero-based lines and previews.
 
 Arms: baseline (Claude Code core tools only: Read, Edit, Write, Bash, Task, ToolSearch); baseline-review (baseline plus a second review turn); optional (LSP tools offered, not required); enforced (LSP use pushed by prompt and hooks); intellij-optional and intellij-enforced (IntelliJ as the language server, JVM projects only; on Kotlin the plain optional and enforced arms use https://github.com/Kotlin/kotlin-lsp). Success is a deterministic grader's pass rate; cost is Claude Code's total_cost_usd. Contrasts are paired on tasks; intervals are 95% task-resampling intervals.
+
+## Findings
+
+- Success: offering LS tools (optional) and enforcing them (enforced) do not change the pass rate by a clear amount. Both intervals include zero.
+- Flaws: enforced LS use leaves more flaws the reviewer reports, +0.26 flaws per run (95% interval +0.07 to +0.47). Optional: -0.14 flaws per run (95% interval -0.40 to +0.04).
+- Cost: optional costs about the same as baseline; enforced costs about 1.57 times as much.
+- Adoption: when offered, the agent uses LS tools in 16% of optional runs on Opus and in none on Haiku or Sonnet.
+- Task kinds: 58 synthetic tasks (9 types) and 29 real pull-request tasks. Both are reported separately on the page.
+- Java and Kotlin: the sample is small (12 pure Java tasks, 12 Kotlin and mixed tasks); every interval includes zero.
 
 ## Data
 
