@@ -141,49 +141,6 @@ def _ticks(lo, hi, log):
     return out
 
 
-def grouped_bars(groups, series, title, width=680):
-    """groups: [(label, [v1, v2])] shares 0..1; series: [(name, colour)]."""
-    left, right, top, bottom = 50, 20, 34, 40
-    height = 260
-    plot_w, plot_h = width - left - right, height - top - bottom
-    gw = plot_w / len(groups)
-    bw = min(44, (gw - 30) / len(series))
-    parts = [f'<svg viewBox="0 0 {width} {height}" role="img" aria-label="{esc(title)}" class="chart">']
-    for t in (0, 0.25, 0.5, 0.75, 1):
-        y = top + plot_h * (1 - t)
-        parts.append(f'<line x1="{left}" x2="{width - right}" y1="{y:.1f}" y2="{y:.1f}" stroke="{GRID}"/>')
-        parts.append(f'<text x="{left - 8}" y="{y + 4:.1f}" text-anchor="end" class="tick">{int(t * 100)}%</text>')
-    lx = left
-    for name, colour in series:  # legend, top-left
-        parts.append(f'<rect x="{lx}" y="8" width="12" height="12" rx="2" fill="{colour}"/>'
-                     f'<text x="{lx + 18}" y="18" class="label">{esc(name)}</text>')
-        lx += 18 + 9 * len(name) + 24
-    for gi, (label, vals) in enumerate(groups):
-        gx = left + gw * gi + (gw - bw * len(series) - 2 * (len(series) - 1)) / 2
-        for si, v in enumerate(vals):
-            h = plot_h * v
-            x = gx + si * (bw + 2)
-            y = top + plot_h - h
-            name, colour = series[si]
-            parts.append(f'<g class="mark"><title>{esc(label)}, {esc(name)}: {v * 100:.0f}% of runs</title>'
-                         f'<rect x="{x:.1f}" y="{top}" width="{bw:.1f}" height="{plot_h}" fill="transparent"/>'
-                         f'<path d="{_bar_path(x, y, bw, h)}" fill="{colour}"/></g>')
-            parts.append(f'<text x="{x + bw / 2:.1f}" y="{y - 6:.1f}" text-anchor="middle" class="value">{v * 100:.0f}%</text>')
-        parts.append(f'<text x="{left + gw * gi + gw / 2:.1f}" y="{height - 14}" text-anchor="middle" class="label">{esc(label)}</text>')
-    parts.append("</svg>")
-    return "".join(parts)
-
-
-def _bar_path(x, y, w, h):
-    """A bar with 4px rounded data end, square at the baseline."""
-    if h <= 0:
-        return ""
-    r = min(4, h, w / 2)
-    b = y + h
-    return (f"M{x:.1f},{b:.1f} V{y + r:.1f} Q{x:.1f},{y:.1f} {x + r:.1f},{y:.1f} "
-            f"H{x + w - r:.1f} Q{x + w:.1f},{y:.1f} {x + w:.1f},{y + r:.1f} V{b:.1f} Z")
-
-
 def legend(series):
     return "<p class='legend'>" + " ".join(
         f"<span><svg width='12' height='12' aria-hidden='true'><circle cx='6' cy='6' r='5' fill='{c}'/></svg> {esc(n)}</span>"
@@ -316,8 +273,11 @@ def main():
         o = find(descriptive, model=m, arm="optional")
         e = find(descriptive, model=m, arm="enforced")
         groups.append((MODEL_NAME[m], [float(o["lsp_used"]), float(e["lsp_used"])]))
-    chart_adoption = grouped_bars(groups, [("optional (offered)", BLUE), ("enforced (pushed)", ORANGE)],
-                                  "Share of runs that called a language-server tool")
+    chart_adoption = '<div class="shelf">' + "".join(
+        f'<div><div class="who">{esc(label)}</div>'
+        f'<div class="nums"><b>{o * 100:.0f}%</b> <span>optional</span></div>'
+        f'<div class="nums"><b>{e * 100:.0f}%</b> <span>enforced</span></div></div>'
+        for label, (o, e) in groups) + "</div>"
 
     k_tasks, k_runs, chart_kotlin, kotlin_table, k_zero = server_section(
         runs, lambda p: p.startswith(("kotlin-", "java-kotlin-")),
@@ -378,6 +338,11 @@ def main():
             .chart .value {{ font-size: 11px; fill: {INK}; }}
             .chart .mark:hover circle, .chart .mark:hover path {{ opacity: 0.75; }}
             .legend {{ font-size: 0.8125rem; color: {MUTED}; }}
+            .shelf {{ display: flex; gap: 12px; flex-wrap: wrap; margin: 10px 0 20px; }}
+            .shelf > div {{ flex: 1 1 150px; border: 1px solid {GRID}; border-radius: 6px; padding: 10px 14px; }}
+            .shelf .who {{ font-size: 0.8125rem; color: {MUTED}; }}
+            .shelf .nums b {{ font-size: 1.375rem; }}
+            .shelf .nums span {{ font-size: 0.8125rem; color: {MUTED}; }}
             .win {{ background: #d9f0e3; padding: 1px 5px; border-radius: 3px; }}
             .mid {{ background: #fbefc4; padding: 1px 5px; border-radius: 3px; }}
             .lose {{ background: #fbdcd3; padding: 1px 5px; border-radius: 3px; }}
