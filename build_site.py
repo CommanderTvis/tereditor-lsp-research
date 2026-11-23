@@ -412,7 +412,7 @@ def main():
             <dd>The servers and what they support.</dd>
         </dl>
         <p>The server runs in its own sandbox, so these arms get no compiler the baseline lacks.</p>
-        <p>A call from the run (Haiku, Python): every reference to a class. Lines are zero-based.</p>
+        <p>A call from the run (Haiku, Python): every reference to a class.</p>
         <pre><code>// call: mcp__tereditor__lsp_navigate
 {{"operation": "references", "query": "PaymentCardNumber",
  "path": "pydantic_extra_types/payment.py", "workspace": "/workspace", "limit": 200}}
