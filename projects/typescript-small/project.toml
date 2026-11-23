@@ -16,6 +16,8 @@ task_types = ["move", "signature", "callers", "pr", "pr", "pr"]
 # runs vitest (the Node-hosted tests; no build step is needed because the tests import src/).
 
 [probe]
+# ./study probe typescript-small enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 1.0
-note = "cross-file references of buildOutgoingHttpHeaders complete in 8.5 s (all expected locations found); the next call (definition by name, tried with newRequest and getRequestListener) never got a reply from the bridge in 15+ minutes in two runs, so the diagnostics call was not reached; the probe was killed. Cause not identified (the same probe shape worked on typescript-medium)."
+seconds_to_first_answer = 1.17
+note = "references buildOutgoingHttpHeaders (cross-file): complete in 6.3 s; definition of getRequestListener from another module: INCOMPLETE in 182.1 s, missing 1; diagnostics clean file: complete in 0.4 s (results/probe/typescript-small-enforced)"
+

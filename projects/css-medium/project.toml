@@ -16,8 +16,8 @@ grade_note = "grade-setup.sh: yarn install --immutable --mode=skip-build (about 
 validation_note = "Validated on linux/amd64 (native backend, cloud session): all 6 tasks VALID."
 
 [probe]
+# ./study probe css-medium enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 0.43
-references = "incomplete after 180 s (tereditor pin of harness/tereditor.env): references at the definition of the z function return only the definition; the call sites in components (modal, loading, popover) are not found (the packages use @use with namespaces and 'as *')"
-definition = "incomplete: the definition of the focus-outline mixin by name returns nothing"
-diagnostics = "clean for packages/styles/scss/utilities/_z-index.scss"
+seconds_to_first_answer = 1.02
+note = "references of the z function (position, used across components): INCOMPLETE in 182.3 s, missing 3; definition of the focus-outline mixin by name: INCOMPLETE in 181.7 s, missing 1; diagnostics on a partial: complete in 0 s (results/probe/css-medium-enforced)"
+

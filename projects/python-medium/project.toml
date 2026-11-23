@@ -13,9 +13,8 @@ stripped = []
 task_types = ["move", "signature", "impls", "pr", "pr", "pr"]
 
 [probe]
-# ./study probe python-medium (enforced), 2026-11-17.
+# ./study probe python-medium enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 0.39
-references = "incomplete after 185 s: UseInferenceDefault from astroid/exceptions.py finds uses in astroid/__init__.py and the brain plugins but misses astroid/inference_tip.py:48, astroid/nodes/node_ng.py:147 and tests/brain/test_brain.py:443"
-definition = "complete in 19.7 s: InferenceContext resolves to astroid/context.py:29 (after 205 s of server start-up)"
-diagnostics = "complete in 1.2 s: astroid/constraint.py checked, 6 diagnostics (lines 91, 132, 158, 159, 187, 290)"
+seconds_to_first_answer = 9.65
+note = "references UseInferenceDefault (cross-file): INCOMPLETE in 182.7 s, missing 3; definition of InferenceContext from another module: complete in 25.4 s; diagnostics on a file: complete in 0.9 s (results/probe/python-medium-enforced)"
+

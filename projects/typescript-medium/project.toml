@@ -14,6 +14,8 @@ task_types = ["rename", "rename-file", "inspect", "pr", "pr", "pr"]
 # task.toml): their starting trees are in the small band, not the medium one.
 
 [probe]
+# ./study probe typescript-medium enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = true
-seconds_to_first_answer = 1.3
-note = "all four probe calls complete; cross-file references in 7.4 s"
+seconds_to_first_answer = 2.15
+note = "references encodeBase64Url (cross-file): complete in 9.2 s; definition of HonoRequest from another module: complete in 6.4 s; definition of TrieRouter: complete in 0.1 s; diagnostics clean file: complete in 0 s (results/probe/typescript-medium-enforced)"
+

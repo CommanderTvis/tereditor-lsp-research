@@ -12,7 +12,8 @@ task_types = ["move", "signature", "impls", "pr", "pr", "pr"]
 setup_note = "grade-setup.sh falls back to git clones (composer --prefer-source) where the session cannot download GitHub zip archives; it then leaves phpstan and rector (dev tools, not used by any grader) out of the working copy and drops the clone cache. Validated on linux/amd64: all 6 tasks VALID."
 
 [probe]
-# ./study probe php-large (enforced), tereditor pinned in harness/tereditor.env, Intelephense.
+# ./study probe php-large enforced, 2026-11-22, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 0
-note = "Cross-file references and diagnostics work; definition by name of HtmlString did not return the expected location (src/Illuminate/Support/HtmlString.php:8)."
+seconds_to_first_answer = 3.8
+note = "definition of HtmlString by name: INCOMPLETE in 184.8 s, missing 1; references EncodedParameter (cross-file): complete in 0.2 s; diagnostics clean file: complete in 0.1 s (results/probe/php-large-enforced)"
+

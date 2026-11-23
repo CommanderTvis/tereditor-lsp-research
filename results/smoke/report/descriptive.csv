@@ -1,4 +1,0 @@
-model,arm,runs,success,mean_cost_usd,median_cost_usd,median_wall_s,median_turns,lsp_used,mean_lsp_calls,mean_grep,mean_read,capped
-claude-haiku-5-5,baseline,4,1.0,0.0035,0.003,12.2,4.5,0.0,0.0,2.0,2.0,0.0
-claude-haiku-5-5,enforced,4,1.0,0.0112,0.0087,29.7,13.5,1.0,12.5,2.0,2.5,0.0
-claude-haiku-5-5,optional,4,1.0,0.0044,0.004,17.0,5.0,0.0,0.0,2.75,2.75,0.0

@@ -31,7 +31,7 @@ recv 2 > $out/tools.json
 id=10
 : > $out/probe.jsonl
 # Locations in a result, as 1-based path:line (lsp_navigate reports 0-based lines; diagnostics too).
-locs() { jq -r 'try ([.locations[]?, .diagnostics[]?] | .[] | select(.path and .line != null) | "\(.path):\(.line + 1)") catch empty' <<<"$1" | sort -u; }
+locs() { jq -rRs 'try (fromjson | [.locations[]?, .diagnostics[]?] | .[] | select(.path and .line != null) | "\(.path):\(.line + 1)") catch empty' <<<"$1" | sort -u; }  # a non-JSON answer (an error text) has no locations
 while IFS= read -r spec; do
   name=$(jq -r .name <<<"$spec"); args=$(jq -c .args <<<"$spec"); tool=$(jq -r '.tool // "lsp_navigate"' <<<"$spec")
   start=$(now); attempts=0; first_answer=""

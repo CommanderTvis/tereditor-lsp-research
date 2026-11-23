@@ -15,9 +15,14 @@ grade_note = "Maven, JDK 21. check.sh builds and tests MODULES (default embabel-
 vm_note = "cloud VM: fits. Peak disk 24 GB used in total; all 6 tasks VALID (Gradle from the Maven Central mirror)."
 
 [probe]
+# ./study probe java-kotlin-large enforced, 2026-11-22, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-note = "Kotlin server (arm enforced), tereditor nightly-2026-11-17: every navigation call fails with 'Language server disconnected ... This build of kotlin-server has expired.' (first call 304 s of retries; the probe was then stopped). The new pin does not fix the expiry (results/probe/java-kotlin-large-enforced)."
+seconds_to_first_answer = 14.47
+note = "references of Planner.planToGoal at its declaration (cross-file): INCOMPLETE in 209.9 s, missing 2; definition of planToGoal from a call site: INCOMPLETE in 182.2 s, missing 1; implementations of LlmReferenceProvider.reference: INCOMPLETE in 181.3 s, missing 1; diagnostics clean file: complete in 0 s; servers: complete in 0.4 s (results/probe/java-kotlin-large-enforced)"
 
 [probe_intellij]
+# ./study probe java-kotlin-large intellij-enforced, 2026-11-22, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-note = "IntelliJ server: licence accepted and the first call answered after 2 s, but the language server exited (state 'The language server exited', in a 4 GB container with the Maven import of 244k code lines) and stayed unavailable for the 900 s of retries; the other four calls were not run. A first attempt of the probe aborted with a jq parse error in the harness (probe.sh read loop) before any call; the repeat ran (results/probe/java-kotlin-large-intellij-enforced)."
+seconds_to_first_answer = 4.06
+note = "references of Planner.planToGoal at its declaration (cross-file): INCOMPLETE in 900 s, missing 2; definition of planToGoal from a call site: INCOMPLETE in 909.2 s, missing 1; implementations of LlmReferenceProvider.reference: INCOMPLETE in 953.4 s, missing 1; diagnostics clean file: complete in 72.2 s; servers: complete in 0.2 s (results/probe/java-kotlin-large-intellij-enforced)"
+

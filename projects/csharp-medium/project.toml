@@ -17,6 +17,8 @@ substitutions = []
 # puts the study's SDK 11 (study-dotnet11) first on PATH only for those bases; SDK 10 stays the default.
 
 [probe]
+# ./study probe csharp-medium enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = true
-seconds_to_first_answer = 37
-note = "references, implementations and diagnostics answered (results/probe/csharp-medium-enforced); the diagnostics call reported one finding in a file expected clean"
+seconds_to_first_answer = 41.7
+note = "references IAnsiConsoleBackend (cross-file): complete in 41.7 s; implementations of IAnsiConsoleBackend: complete in 1.8 s; diagnostics clean file: complete in 1.5 s (results/probe/csharp-medium-enforced)"
+

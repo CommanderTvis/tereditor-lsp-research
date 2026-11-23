@@ -1,7 +1,0 @@
-stratum,outcome,contrast,estimate,ci_lo,ci_hi,p,tasks,cells,p_adj
-lang=python,success (pp),optional - baseline,0.0,0.0,0.0,1.0,1,1,1.0
-lang=python,cost ratio,optional / baseline,0.9593430508182108,0.9593430508182108,0.9593430508182108,1.0,1,1,1.0
-lang=python,success (pp),enforced - baseline,0.0,0.0,0.0,1.0,1,1,1.0
-lang=python,cost ratio,enforced / baseline,1.831979936304311,1.831979936304311,1.831979936304311,1.0,1,1,1.0
-lang=python,success (pp),enforced - optional,0.0,0.0,0.0,1.0,1,1,1.0
-lang=python,cost ratio,enforced / optional,1.90961922822273,1.90961922822273,1.90961922822273,1.0,1,1,1.0

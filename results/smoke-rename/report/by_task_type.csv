@@ -1,7 +1,0 @@
-stratum,outcome,contrast,estimate,ci_lo,ci_hi,p,tasks,cells,p_adj
-task_type=refs,success (pp),optional - baseline,0.0,0.0,0.0,1.0,1,1,1.0
-task_type=refs,cost ratio,optional / baseline,1.0268824729569732,1.0268824729569732,1.0268824729569732,1.0,1,1,1.0
-task_type=refs,success (pp),enforced - baseline,0.0,0.0,0.0,1.0,1,1,1.0
-task_type=refs,cost ratio,enforced / baseline,1.279050772881389,1.279050772881389,1.279050772881389,1.0,1,1,1.0
-task_type=refs,success (pp),enforced - optional,0.0,0.0,0.0,1.0,1,1,1.0
-task_type=refs,cost ratio,enforced / optional,1.2455668555704151,1.2455668555704151,1.2455668555704151,1.0,1,1,1.0

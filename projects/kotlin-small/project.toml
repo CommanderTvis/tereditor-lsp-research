@@ -19,13 +19,14 @@ substitutions = []
 validation_note = "Validated on linux/amd64 in the cloud VM with Gradle resolving from the Maven Central mirror (harness/gradle/maven-mirror.init.gradle): all 6 tasks VALID."
 
 [probe]
-ok = false
-seconds_to_first_answer = 3
-note = "the Kotlin server (arm enforced) answered every navigation call with 'This build of kotlin-server has expired' (language server disconnected); diagnostics and lsp_status returned. A finding about the pinned tereditor build, not the project (results/probe/kotlin-small-enforced)."
+# ./study probe kotlin-small enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
+ok = true
+seconds_to_first_answer = 11.5
+note = "references of ModifierReusedDetector by name (cross-file): complete in 113.3 s; references of the UMethod overload of returnsUnitOrVoid at its declaration: complete in 2 s; definition of returnsUnitOrVoid from a call site: complete in 0.3 s; diagnostics clean file: complete in 2.1 s; servers: complete in 0.1 s (results/probe/kotlin-small-enforced)"
 
 [probe_intellij]
+# ./study probe kotlin-small intellij-enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = true
-seconds_to_first_answer = 3
-seconds_to_complete = 116
-licence = "intellij server started and answered all calls"
-note = "references by name complete after 116 s (project graph loading), references at a position, definition, diagnostics and lsp_status complete in 3 s or less (results/probe/kotlin-small-intellij-enforced)."
+seconds_to_first_answer = 7.25
+note = "references of ModifierReusedDetector by name (cross-file): complete in 131.5 s; references of the UMethod overload of returnsUnitOrVoid at its declaration: complete in 2.2 s; definition of returnsUnitOrVoid from a call site: complete in 0.6 s; diagnostics clean file: complete in 5.1 s; servers: complete in 0 s (results/probe/kotlin-small-intellij-enforced)"
+

@@ -17,8 +17,8 @@ substitutions = []
 vm_note = "cloud VM: fits. Peak disk 27 GB used in total (about 14 GB of it the base image); Gradle resolved from the Maven Central mirror (harness/gradle/maven-mirror.init.gradle), since Sonatype answered 429; all 6 tasks VALID."
 
 [probe_intellij]
+# ./study probe java-xlarge intellij-enforced, 2026-11-22, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = true
-seconds_to_first_answer = 2
-seconds_to_complete = 76
-licence = "intellij server state ready (version 263.7084.0), 5 of 5 calls succeeded"
-note = "references at the declaration of org.apache.lucene.util.QueryBuilder (lucene/core) across modules (67 locations, the first 50 returned; the first page of results is what the expectation names; it needed 76 s until the project graph was loaded), definition from lucene/queryparser, diagnostics, lsp_status servers and logs all complete (results/probe/java-xlarge-intellij-enforced). An earlier probe whose expectation named a location on the second page of results looked like a failure after POLL_S=900 s; it was the expectation, not the server. Java has no tereditor server outside IntelliJ, so there is no [probe]."
+seconds_to_first_answer = 1.2
+note = "references at position (class declaration, other modules): complete in 165.2 s; definition of QueryBuilder from SimpleQueryParser (cross-module): complete in 0.3 s; diagnostics clean file: complete in 4.5 s; servers: complete in 0.4 s; logs: complete in 0 s (results/probe/java-xlarge-intellij-enforced)"
+

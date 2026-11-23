@@ -89,7 +89,7 @@ language, keeping every language and the synthetic/mined split.
 
 ## Allocation (filled in after the pilot, before the confirmatory run)
 
-Pilot (2026-11-17, 72 runs, USD 12.82): four validated projects (python-small, typescript-medium, python-large,
+Pilot (2026-11-17, 72 runs, USD 12.82; results/pilot-2026-11-17): four validated projects (python-small, typescript-medium, python-large,
 typescript-large), one synthetic and one pull-request task each, all three models, arms baseline, baseline-review and
 enforced, one repetition, per-run cap USD 2. Mean cost per run in USD:
 
@@ -123,3 +123,75 @@ The projected cost is recomputed from these means and the final task counts befo
 `total_cost_usd` is logged, and no new run starts past 125% of the estimate). Dropped tasks lower the average claim made per
 project: with 3 tasks a project contributes at most one task per kind, so by-task-type and by-language breakdowns are
 small and are shown with their counts, not read as findings.
+
+## Notes from the cloud run (2026-11-21)
+
+- The quality-flaw reviewer of outcome 3 did not exist in the repository when the cloud run started (`harness/judge/`
+  was referenced but absent). The cloud session wrote it before the pilot and before the first confirmatory run, as
+  this plan describes it: `harness/judge/prompt.md` (fixed from here on), `harness/env/review-one.sh` and
+  `./study review <plan>`. Haiku 5.5 through `claude -p` in the agent sandbox, one review per edit run, given the task
+  prompt, the agent's diff and the edited tree; the arm's overlay files and `ANSWER.txt` are excluded from both, so the
+  reviewer cannot see the arm. Answer tasks, empty diffs and diffs that do not apply get no review (`flaws` blank).
+  The flaw count goes into `runs.csv` (`flaws`, `review_cost_usd`); review cost counts toward the budget.
+- The human labelling of 30 reported flaws cannot be done by the cloud session; it delivers the random sample for the
+  owner to label.
+
+### Recomputed before the confirmatory run (cloud session, 2026-11-22)
+
+Second pilot on the current pins in the cloud VM, every arm: `pilot` (python-small, typescript-medium, csharp-small,
+java-medium; Haiku and Sonnet; `--keep 3`; 96 runs, USD 4.56 agent cost) and `pilot-opus` (java-large, Opus, the four
+Java arms; 12 runs, USD 6.51). Mean USD per run:
+
+| Model | baseline | baseline-review | optional | enforced | intellij-optional | intellij-enforced |
+| --- | --- | --- | --- | --- | --- | --- |
+| Haiku 5.5 (small, medium) | 0.0071 | 0.0160 | 0.0069 | 0.0115 | 0.0054 | 0.0131 |
+| Sonnet 5.5 (small, medium) | 0.053 | 0.128 | 0.063 | 0.089 | 0.050 | 0.125 |
+| Opus 5.5 (java-large) | 0.351 | 0.938 | (0.416) | (0.585) | 0.377 | 0.504 |
+
+Opus optional and enforced in brackets: Opus baseline times Sonnet's ratio to its baseline. Size factors from the first
+pilot: Haiku and Sonnet large x2, xlarge x2.5; Opus small and medium x0.5, xlarge x1.25. Projection for the planned
+allocation (3/1/1, 1,860 runs): Haiku USD 16, Sonnet USD 44, Opus USD 146, reviews about USD 4, total about USD 210.
+The reserve's first item, a second Sonnet repetition (about USD 44), fits, so it is part of the plan: `./study plan main
+--keep 3 --reps-per-model "claude-haiku-5-5=3,claude-sonnet-5-5=2,claude-opus-5-5=1" --budget 3 --turns 200 --timeout
+3600`, 2,232 runs (Haiku 1,116, Sonnet 744, Opus 372), projected about USD 255. Further Haiku repetitions (the reserve's
+second item, about USD 5 each) are not added: the binding limit in one cloud session is run time, not money. No new
+run starts past 125% of USD 400 (USD 500).
+
+Harness fixes made in the cloud session before this plan (all before any confirmatory run; none changes what an agent
+sees): `harness/env/probe.sh` tolerates a non-JSON tool answer; the server sandbox gives Maven started by IntelliJ's
+import the proxy's trust store (`~/.mavenrc`) and fetches a project's Maven wrapper distribution during preparation
+(without both, IntelliJ had no project model on Maven projects behind the cloud proxy: java-small, java-medium).
+
+### Found during the confirmatory run (2026-11-22, cloud session)
+
+- tereditor's own language-server limit: on the 15 GB cloud VM it budgets 4,826 MiB for all language servers of one
+  agent run together and kills them all when they exceed it (`stopped by the language server limits: all language
+  servers together exceeded the 4826 MiB memory budget`). It hit IntelliJ arms on java-kotlin-large, where IntelliJ
+  ran beside the other servers the agent's calls had started. The sandboxes have separate PID namespaces, so a run's
+  budget counts only its own servers; the parallel run (`-j 2`) does not enter it. A tereditor finding, not a harness
+  defect: nothing was changed, the runs stand as they are (no exclusion rule applies), and the report gives the count
+  of runs whose agent saw such a kill.
+- `analysis/extract.py` read a task's type with `[a-z]+`, which cut `rename-file` to nothing; fixed to `[a-z-]+`
+  before the analysis (it only labels the by-task-type breakdown).
+
+### Usage-limit stops kept as results (found 2026-11-23, repaired from the owner's Mac)
+
+- The 22 remaining projects ran in parallel cloud sessions, one per project, all on the owner's one plan. The 5-hour
+  usage window ran out at about 23:30 UTC on 2026-11-22 (reset 01:30). The harness's limit check matched only the
+  result text against older wording; Claude Code 2.1.323 writes "You've hit your 5-hour limit · resets 1:30am (UTC)"
+  with `api_error` `usage_limit_reached` (status 429), which none of the patterns matched. So 619 agent runs in 12
+  projects (median 1 s each, almost all cost USD 0) were kept as finished, failed runs, and 43 quality reviews
+  (shell-medium 35, css-small 8) as unparsed reviews, against this plan's rule that such a run is not a result.
+- Fix (with the owner's approval, during the run; nothing an agent sees changed): `limit_stop` in
+  `harness/env/lib.sh`, used by `run-one.sh` and `review-one.sh`, checks the structured fields first (`api_error`,
+  status 429, a rejected `rate_limit_info`) and the text second; `./study run` and the review wait until the
+  `resetsAt` the stream reports instead of a fixed 30 minutes, and a review now waits as long as it takes. Checked
+  against all 26 archives collected so far: it flags exactly the 619 runs that carry `usage_limit_reached`, nothing else.
+- Repair: per affected project, the limit-stopped run directories (and limit-stopped reviews) are deleted, their cost
+  is appended to `limit-attempts.log`, and the same run ids are run, graded and reviewed again (`control/repair.sh`).
+  The repaired runs therefore ran later than their neighbours in the plan's order, on the same pins.
+- Found by the first repair (2026-11-23): `./study grade`, `./study review` and `./study archive` listed a project's
+  pending runs in a `while` loop whose last test (`[ … ] && echo`) failed when the project's last planned run was
+  already graded (or reviewed, or unfinished for archive); under `set -e` the driver then exited 1 without a message.
+  A first full pass never meets this; a repair, with a few pending runs, does. The tests are now `if … fi`. No result
+  was affected: the repair of cpp-medium ended `incomplete` (one run ungraded) and is simply repeated.

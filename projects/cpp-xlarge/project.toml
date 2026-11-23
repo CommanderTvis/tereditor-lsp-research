@@ -20,5 +20,8 @@ size_note = "0.85M code lines, inside the xlarge band (0.7M to 3M), below the 0.
 vm_note = "cloud VM (4 CPUs, 15 GB, 30 GB class disk): fits. Peak disk 27 GB used in total (about 14 GB of it the base image), setup and validation took about 1 h 40 min; all 6 tasks VALID."
 
 [probe]
+# ./study probe cpp-xlarge enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-note = "clangd unavailable on arm64; probe deferred to the x64 cloud VM"
+seconds_to_first_answer = 0.22
+note = "references RegexMatchOperatorSemantics (cross-file): INCOMPLETE in 181.6 s, missing 3; definition of PhysicalJoin::GetSources from its header: INCOMPLETE in 181.4 s, missing 1; diagnostics physical_join.cpp: complete in 0.1 s (results/probe/cpp-xlarge-enforced)"
+

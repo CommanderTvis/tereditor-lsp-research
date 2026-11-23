@@ -14,8 +14,8 @@ rotation = "move (a function into another sourced library file) and signature (t
 pr_tasks = "modern pull requests #1212, #1240 and #1249 (tasks/shell-small/pr-log.md)"
 
 [probe]
+# ./study probe shell-small enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 0.16
-references = "incomplete after 180 s per call (tereditor pin of harness/tereditor.env): bats_print_stack_trace resolves its callers in lib/bats-core but not in the extensionless libexec scripts (libexec/bats-core/bats-exec-test:166, bats-exec-file:169 missing); bats_version_lt misses its caller in test/common.bats:3 (the .bats test files)"
-definition = "bats_binary_search resolves to lib/bats-core/common.bash:84"
-diagnostics = "clean for lib/bats-core/common.bash"
+seconds_to_first_answer = 2.24
+note = "references at position (bats_print_stack_trace, called from extensionless libexec scripts): INCOMPLETE in 184.4 s, missing 2; references by name bats_version_lt: INCOMPLETE in 181.4 s, missing 1; definition of bats_binary_search by name: complete in 0.1 s; diagnostics on a library file: complete in 0 s (results/probe/shell-small-enforced)"
+

@@ -17,12 +17,14 @@ substitutions = []
 validation_note = "Validated on linux/amd64 in the cloud VM with Gradle resolving from the Maven Central mirror (harness/gradle/maven-mirror.init.gradle): all 6 tasks VALID."
 
 [probe]
+# ./study probe kotlin-medium enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 3
-note = "the Kotlin server (arm enforced) answered every call with 'This build of kotlin-server has expired' (language server disconnected), so references and definitions were empty for the whole 600 s of the first call (the run was stopped after it); a finding about the pinned tereditor build, not about the project (results/probe/kotlin-medium-enforced)."
+seconds_to_first_answer = 45.74
+note = "references of CodeBlock.Builder.addNamed at its declaration (cross-file): INCOMPLETE in 181.6 s, missing 2; definition of addNamed from a call site: INCOMPLETE in 181.2 s, missing 1; references of Taggable by name (declaring file given): INCOMPLETE in 181.2 s, missing 2; diagnostics clean file: complete in 0 s; servers: complete in 0.1 s (results/probe/kotlin-medium-enforced)"
 
 [probe_intellij]
+# ./study probe kotlin-medium intellij-enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 3
-licence = "intellij server state ready"
-note = "IntelliJ reported ready but did not give the cross-file answers of this Kotlin Multiplatform Gradle project: references of CodeBlock.Builder.addNamed at its declaration returned only the declaration within 900 s (and within 600 s in a second run), and definition from the call site at FunSpec.kt:524 found nothing within 3000 s (first run under heavy host load); the run stopped answering at the third call (references by name) and was stopped by hand, so diagnostics and lsp_status were not reached (results/probe/kotlin-medium-intellij-enforced). The pinned snapshot's Gradle build itself imports and runs offline in the grading sandbox. A finding about IntelliJ's Gradle import of KMP projects, consistent with the upstream note on kotlin-result."
+seconds_to_first_answer = 33.9
+note = "references of CodeBlock.Builder.addNamed at its declaration (cross-file): INCOMPLETE in 900.1 s, missing 2; definition of addNamed from a call site: INCOMPLETE in 902.7 s, missing 1; references of Taggable by name (declaring file given): INCOMPLETE in 901.5 s, missing 2; diagnostics clean file: complete in 0.1 s; servers: complete in 0.1 s (results/probe/kotlin-medium-intellij-enforced)"
+

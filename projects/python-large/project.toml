@@ -14,9 +14,8 @@ pr_replaced_by = []
 validation_note = "Validated on linux/amd64 (native backend, cloud session): all 6 tasks VALID."
 
 [probe]
-# ./study probe python-large (enforced), 2026-11-16.
+# ./study probe python-large enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 0.37
-references = "incomplete after 182 s: make_simplified_union from mypy/typeops.py finds its uses in checker.py, binder.py and others but misses the import at mypy/test/testtypes.py:34"
-definition = "wrong: TypeJoinVisitor (mypy/join.py:257) not found after 196 s (workspace symbol lookup answered notFound, the python server reported 'A task was canceled')"
-diagnostics = "pending: mypy/maptype.py was not checked within 12 s (freshness partial, 0 of 1 files)"
+seconds_to_first_answer = 16.97
+note = "references make_simplified_union (cross-file): INCOMPLETE in 185.2 s, missing 1; definition of TypeJoinVisitor from another module: INCOMPLETE in 198.9 s, missing 1; diagnostics clean file: complete in 12 s (results/probe/python-large-enforced)"
+

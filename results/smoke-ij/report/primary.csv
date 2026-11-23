@@ -1,5 +1,0 @@
-stratum,outcome,contrast,estimate,ci_lo,ci_hi,p,tasks,cells,p_adj
-all,success (pp),intellij-optional - baseline,0.0,0.0,0.0,1.0,2,2,1.0
-all,cost ratio,intellij-optional / baseline,1.0937703803770489,1.0696449108254833,1.1184399915172791,0.49995000499950004,2,2,1.0
-all,success (pp),intellij-enforced - baseline,0.0,0.0,0.0,1.0,2,2,1.0
-all,cost ratio,intellij-enforced / baseline,2.0270378235927033,1.1844735634649652,3.46895233883958,0.49575042495750427,2,2,1.0

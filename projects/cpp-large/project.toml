@@ -14,5 +14,8 @@ task_types = ["rename", "rename-file", "inspect", "pr", "pr", "pr"]
 # Mined: 29 qualifying pull requests, tasks/cpp-large/pr-log.md. check.sh skips the util unit suite (page cache).
 
 [probe]
+# ./study probe cpp-large enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-note = "clangd unavailable on arm64; probe deferred to the x64 cloud VM"
+seconds_to_first_answer = 0.07
+note = "references createStringObject (cross-file): INCOMPLETE in 180.4 s, missing 2; definition of createStringObject from its declaration: complete in 0 s; diagnostics src/object.c: complete in 0.2 s (results/probe/cpp-large-enforced)"
+

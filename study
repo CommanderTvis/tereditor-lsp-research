@@ -11,6 +11,7 @@
 #   ./study plan <plan> [options]      results/<plan>/plan.tsv in a seeded random order (analysis/plan.sh)
 #   ./study run <plan> [-j N] [--project P]     run the pending lines of a plan, N at a time (default 2)
 #   ./study grade <plan> [-j N] [--project P]   grade the finished, ungraded runs
+#   ./study review <plan> [-j N] [--project P]  the Haiku quality review of finished edit runs (harness/judge/)
 #   ./study analyze <plan>             results/<plan>/report/
 #   ./study status <plan>              per project: runs planned, finished, graded
 #   ./study archive <plan> <project>   pack a project's runs into results/<plan>/archive/; restore <plan> unpacks all
@@ -175,7 +176,8 @@ by_group() { # <run|grade> <plan>
   ids=$(plan_ids "$plan" "$only" | while read -r r; do
     f=results/$plan/runs/$r
     if [ "$what" = run ]; then [ -f "$f/exit.json" ] || echo "$r"
-    else [ -f "$f/exit.json" ] && [ ! -f "$f/grade/result.json" ] && echo "$r"; fi
+    elif [ "$what" = review ]; then if [ -f "$f/exit.json" ] && [ ! -f "$f/review/result.json" ]; then echo "$r"; fi
+    else if [ -f "$f/exit.json" ] && [ ! -f "$f/grade/result.json" ]; then echo "$r"; fi; fi
   done)
   [ -n "$ids" ] || { log "nothing to $what"; return 0; }
   for g in $(for r in $ids; do group_of "$(awk -F'\t' -v r="$r" '$1==r {print $2}' "results/$plan/plan.tsv")"; done | sort -u); do
@@ -185,7 +187,8 @@ by_group() { # <run|grade> <plan>
 }
 
 # A usage or rate limit (a Max plan's 5-hour window, an API quota) pauses the run, it does not end it: runs that stopped on
-# one are discarded and retried, after LIMIT_WAIT_S seconds (default 1800, tried again until the window has reset).
+# one are discarded and retried once the limit has reset (the marker holds the seconds until then, from the run's stream;
+# LIMIT_WAIT_S, default 1800, when it does not say; tried again until the window has reset).
 cmd_run() {
   plan=$1; shift; parse_jp "$@"; load_credentials; load_license
   [ "$RT" = native ] || ctr_volumes
@@ -193,11 +196,14 @@ cmd_run() {
     rm -f "results/$plan/.limit"
     by_group run "$plan"
     [ -f "results/$plan/.limit" ] || break
-    wait=${LIMIT_WAIT_S:-1800}; log "usage limit reached; waiting $wait s, then retrying the unfinished runs"
+    wait=$(cat "results/$plan/.limit" 2>/dev/null); case "$wait" in ''|*[!0-9]*) wait=${LIMIT_WAIT_S:-1800} ;; esac
+    log "usage limit reached; waiting $wait s, then retrying the unfinished runs"
     sleep "$wait"
   done
 }
 cmd_grade() { plan=$1; shift; parse_jp "$@"; by_group grade "$plan"; }
+# The post-hoc quality review of edit runs (docs/ANALYSIS_PLAN.md, outcome 3; harness/judge/prompt.md).
+cmd_review() { plan=$1; shift; parse_jp "$@"; load_credentials; by_group review "$plan"; }
 
 cmd_analyze() { env_run python analyze "$1"; }
 
@@ -212,7 +218,7 @@ cmd_status() {
 
 cmd_archive() {
   plan=$1 proj=$2; P=results/$plan; mkdir -p "$P/archive"
-  ids=$(plan_ids "$plan" "$proj" | while read -r r; do [ -f "$P/runs/$r/exit.json" ] && echo "$r"; done)
+  ids=$(plan_ids "$plan" "$proj" | while read -r r; do if [ -f "$P/runs/$r/exit.json" ]; then echo "$r"; fi; done)
   [ -n "$ids" ] || { log "archive: no finished runs for $proj"; return 0; }
   (cd "$P/runs" && tar -czf "../archive/$proj.tar.gz" $ids)
   log "archived $(echo "$ids" | wc -l | tr -d ' ') runs of $proj: $(du -h "$P/archive/$proj.tar.gz" | cut -f1)"
@@ -237,6 +243,7 @@ case "$c" in
   plan) cmd_plan "$@" ;;
   run) cmd_run "$@" ;;
   grade) cmd_grade "$@" ;;
+  review) cmd_review "$@" ;;
   analyze) cmd_analyze "$@" ;;
   status) cmd_status "$@" ;;
   archive) cmd_archive "$@" ;;

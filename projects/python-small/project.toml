@@ -13,9 +13,8 @@ stripped = []
 task_types = ["rename", "rename-file", "refs", "pr", "pr", "pr"]
 
 [probe]
-# ./study probe python-small (enforced), 2026-11-17.
+# ./study probe python-small enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = true
-seconds_to_first_answer = 2.25
-references = "complete in 2.3 s: Color from pydantic_extra_types/color.py finds its uses in the package and tests"
-definition = "complete in 1.9 s: PaymentCardNumber resolves to pydantic_extra_types/payment.py:35"
-diagnostics = "complete in 0.6 s: pydantic_extra_types/isbn.py checked, 2 diagnostics (lines 11 and 12, unresolved optional imports in the server's view)"
+seconds_to_first_answer = 0.64
+note = "references Color (cross-file): complete in 6 s; definition of PaymentCardNumber from another module: complete in 2.8 s; diagnostics on a file: complete in 0.7 s (results/probe/python-small-enforced)"
+

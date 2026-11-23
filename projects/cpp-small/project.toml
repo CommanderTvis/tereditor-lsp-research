@@ -16,5 +16,8 @@ task_types = ["rename", "rename-file", "dispatch", "pr", "pr", "pr"]
 # Mined: 8 qualifying pull requests; 421 was skipped (does not validate), 388, 416 and 439 taken (tasks/cpp-small/pr-log.md).
 
 [probe]
+# ./study probe cpp-small enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-note = "clangd unavailable on arm64; probe deferred to the x64 cloud VM"
+seconds_to_first_answer = 0.81
+note = "references md_parse (cross-file): complete in 5.9 s; definition of md_html from its header: INCOMPLETE in 181.5 s, missing 1; diagnostics md2html.c: complete in 0.2 s (results/probe/cpp-small-enforced)"
+

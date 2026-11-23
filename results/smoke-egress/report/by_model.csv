@@ -1,3 +1,0 @@
-stratum,outcome,contrast,estimate,ci_lo,ci_hi,p,tasks,cells,p_adj
-model=claude-haiku-5-5,success (pp),enforced - baseline,100.0,100.0,100.0,1.0,1,1,1.0
-model=claude-haiku-5-5,cost ratio,enforced / baseline,1.478128315551986,1.478128315551986,1.478128315551986,1.0,1,1,1.0

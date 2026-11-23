@@ -17,8 +17,8 @@ task_types = ["move", "signature", "callers", "pr", "pr", "pr"]
 substitutions = []
 
 [probe_intellij]
+# ./study probe java-small intellij-enforced, 2026-11-22, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = true
-seconds_to_first_answer = 3
-seconds_to_complete = 146
-licence = "intellij server state ready (version 263.7084.0), 7 of 7 calls succeeded"
-note = "references across modules, definition, references by name, diagnostics and lsp_status all complete (results/probe/java-small-intellij-enforced); the first references call needed 146 s until the project graph was loaded. Java has no tereditor server outside IntelliJ, so there is no [probe]."
+seconds_to_first_answer = 1.17
+note = "references of HttpProblem.getTitle at its declaration (cross-file, cross-module): complete in 154.7 s; definition of getTitle() from a call site in another package: complete in 1 s; references of ProblemPostProcessor by name (declaring file given): complete in 1.1 s; diagnostics clean file: complete in 2.2 s; servers: complete in 0.1 s (results/probe/java-small-intellij-enforced)"
+

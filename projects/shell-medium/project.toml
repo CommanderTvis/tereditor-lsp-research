@@ -15,8 +15,8 @@ substitutions = ["the impls slot is replaced by dispatch (Shell has no impls)"]
 removed = ["AGENTS.md"]
 
 [probe]
+# ./study probe shell-medium enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = true
-seconds_to_first_answer = 0.75
-references = "recorded in probe.json; nvm_version_greater (position) and nvm_get_os (by name) resolve to every call in nvm.sh"
-definition = "nvm_download_artifact resolves to nvm.sh:3813"
-diagnostics = "clean for nvm.sh"
+seconds_to_first_answer = 0.5
+note = "references at position (nvm_version_greater, called inside nvm.sh): complete in 0.5 s; references by name nvm_get_os: complete in 1.4 s; definition of nvm_download_artifact by name: complete in 0.2 s; diagnostics on nvm.sh: complete in 0 s (results/probe/shell-medium-enforced)"
+

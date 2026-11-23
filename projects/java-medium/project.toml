@@ -15,8 +15,8 @@ task_types = ["rename", "rename-file", "inspect", "pr", "pr", "pr"]
 substitutions = []
 
 [probe_intellij]
+# ./study probe java-medium intellij-enforced, 2026-11-22, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = true
-seconds_to_first_answer = 2
-seconds_to_complete = 52
-licence = "intellij server state ready (version 263.7084.0), 6 of 6 calls succeeded"
-note = "references at a position across modules, definition from another file, diagnostics, references by name (Gson/getDelegateAdapter with the declaring file given; the earlier Gson/getAdapter query is ambiguous because of its two overloads and was replaced), lsp_status servers and logs all complete; the first references call needed 52 s until the project graph was loaded (results/probe/java-medium-intellij-enforced). Java has no tereditor server outside IntelliJ, so there is no [probe]."
+seconds_to_first_answer = 1.2
+note = "references at position (Class overload): complete in 93.6 s; definition of gson.getDelegateAdapter from Excluder (cross-file): complete in 0.5 s; diagnostics clean file: complete in 1 s; references by name Gson/getDelegateAdapter: complete in 0.6 s; servers: complete in 0.2 s; logs: complete in 0.1 s (results/probe/java-medium-intellij-enforced)"
+

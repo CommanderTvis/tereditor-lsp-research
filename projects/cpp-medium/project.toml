@@ -15,13 +15,8 @@ task_types = ["move", "signature", "callers", "pr", "pr", "pr"]
 # Mined: 9 qualifying pull requests after 2026-07-01 (tasks/cpp-medium/pr-log.md); 4896, 4902, 4962 taken.
 
 [probe]
-# The values below are from the earlier curation run (2026-11-14); no clangd exists for arm64, so they are not
-# re-measured here: probe deferred to the x64 cloud VM.
-note = "clangd unavailable on arm64; probe deferred to the x64 cloud VM"
-# ./study probe cpp-medium (enforced), tereditor c6b343bd, clangd 23.1.5, 2026-11-14.
+# ./study probe cpp-medium enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = true
-seconds_to_first_answer = 0.14
-seconds_to_complete_references = 5.2
-references = "complete after one retry (5 s, background index): format_system_error from include/fmt/format.h finds its definition and uses in format-inl.h and test/format-test.cc"
-definition = "complete: the declaration in include/fmt/format.h resolves to include/fmt/format-inl.h:1440"
-diagnostics = "wrong: src/format.cc reports \"In included file: 'algorithm' file not found\", then std::locale unknown: the server sandbox has no C or C++ standard library headers"
+seconds_to_first_answer = 0.34
+note = "references format_system_error (cross-file): complete in 5.4 s; definition of format_system_error from its declaration: complete in 0 s; diagnostics src/format.cc: complete in 0.1 s (results/probe/cpp-medium-enforced)"
+

@@ -15,8 +15,8 @@ task_types = ["move", "signature", "refs", "pr", "pr", "pr"]
 substitutions = []
 
 [probe_intellij]
+# ./study probe java-large intellij-enforced, 2026-11-22, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = true
-seconds_to_first_answer = 2
-seconds_to_complete = 59
-licence = "intellij server state ready, 5 of 5 calls succeeded"
-note = "references at a declaration across main and test code, definition from a call site, references by name with the declaring file given, diagnostics and lsp_status all complete; the first references call needed 59 s until the project graph was loaded (results/probe/java-large-intellij-enforced). Java has no tereditor server outside IntelliJ, so there is no [probe]."
+seconds_to_first_answer = 1.32
+note = "references of InvalidFormatException.from at its declaration (cross-file): complete in 83.8 s; definition of from() from a call site in another package: complete in 0.1 s; references of ObjectIdWriter by name (declaring file given): complete in 0.7 s; diagnostics clean file: complete in 0.9 s; servers: complete in 0.2 s (results/probe/java-large-intellij-enforced)"
+

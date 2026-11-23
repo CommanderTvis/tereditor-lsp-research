@@ -15,8 +15,8 @@ task_types = ["move", "signature", "dispatch"]
 validation_note = "Validated on linux/amd64 (native backend, cloud session): all 6 tasks VALID."
 
 [probe]
+# ./study probe css-small enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 0.45
-references = "incomplete after 180 s (tereditor pin of harness/tereditor.env): references at the definition of divide in core/scss/mixins/_functions.scss return only the uses inside that file (lines 202, 216, 290); the uses in core/scss/_variables.scss and core/scss/mixins/bootstrap/_grid.scss, reached through @use ... as * across modules, are not found"
-definition = "incomplete: the definition of the focus-ring mixin by name returns nothing"
-diagnostics = "clean for core/scss/mixins/_functions.scss"
+seconds_to_first_answer = 1.01
+note = "references at position (divide in mixins/_functions.scss, used across the sources): INCOMPLETE in 182.5 s, missing 3; definition of focus-ring by name: INCOMPLETE in 183 s, missing 1; diagnostics on a partial: complete in 0.1 s (results/probe/css-small-enforced)"
+

@@ -13,6 +13,12 @@ if [ "${TEREDITOR_INTELLIJ:-0}" = 1 ]; then
   . /cache/study-intellij.env
   export TEREDITOR_PREFETCH=intellij TEREDITOR_ACCEPT_TERMS="intellij:$INTELLIJ_TERMS_HASH" INTELLIJ_REGION INTELLIJ_DATA_SHARING
 fi
+# Behind a TLS-re-signing egress proxy (a cloud session) the JVM tools that IntelliJ's Maven import starts get neither
+# JAVA_TOOL_OPTIONS nor the proxy's CA: Maven then fails with PKIX errors and IntelliJ has no project model. Maven's
+# launcher reads ~/.mavenrc whatever environment it is started with, so the trust store goes there (no proxy, no file).
+if [ -f /study/proxy-truststore ]; then
+  printf '%s\n' 'MAVEN_OPTS="${MAVEN_OPTS:-} -Djavax.net.ssl.trustStore=/study/proxy-truststore -Djavax.net.ssl.trustStoreType=JKS"' > "$HOME/.mavenrc"
+else rm -f "$HOME/.mavenrc"; fi
 for lf in /study/license/license.zip /study/license/license.txt; do [ -f "$lf" ] && export INTELLIJ_SERVER_LICENSE_FILE="$lf"; done
 case "$TEREDITOR_MODE" in
   enforced) exec /opt/tereditor/tereditor-headless mcp --workspace /workspace 2>>/study/lsplog/server.stderr ;;

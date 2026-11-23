@@ -19,12 +19,14 @@ substitutions = []
 validation_note = "Validated on linux/amd64 in the cloud VM with Gradle resolving from the Maven Central mirror (harness/gradle/maven-mirror.init.gradle): all 6 tasks VALID."
 
 [probe]
+# ./study probe java-kotlin-medium enforced, 2026-11-22, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 4
-note = "the Kotlin server (arm enforced) answered every call with 'This build of kotlin-server has expired' (language server disconnected), so references and definitions were empty for the whole 180 s; diagnostics and lsp_status calls returned. A finding about the pinned tereditor build, not about the project (results/probe/java-kotlin-medium-enforced)."
+seconds_to_first_answer = 45.57
+note = "references of PactDslRequestWithoutPath by name (Kotlin, Java and Groovy users): INCOMPLETE in 240.8 s, missing 2; definition of PactDslRequestWithoutPath from a return type: complete in 132.3 s; definition of PactDslRequestWithoutPath from Java code in another module: INCOMPLETE in 182 s, missing 1; diagnostics clean file: complete in 0.1 s; servers: complete in 0.1 s (results/probe/java-kotlin-medium-enforced)"
 
 [probe_intellij]
-ok = true
-seconds_to_first_answer = 3
-licence = "intellij server started and answered all calls"
-note = "definition from Kotlin and from Java code, diagnostics and lsp_status complete within 1 s; references by name of PactDslRequestWithoutPath found the Java use (BaseProviderRule.java:247) but not the Kotlin return-type use at PactDslWithProvider.kt:64 within 900 s (partial result, results/probe/java-kotlin-medium-intellij-enforced)."
+# ./study probe java-kotlin-medium intellij-enforced, 2026-11-22, cloud VM linux/amd64, tereditor d9fac10b8cce.
+ok = false
+seconds_to_first_answer = 3.52
+note = "references of PactDslRequestWithoutPath by name (Kotlin, Java and Groovy users): INCOMPLETE in 902.1 s, missing 1; definition of PactDslRequestWithoutPath from a return type: complete in 0.3 s; definition of PactDslRequestWithoutPath from Java code in another module: complete in 0.2 s; diagnostics clean file: complete in 1.9 s; servers: complete in 0.2 s (results/probe/java-kotlin-medium-intellij-enforced)"
+

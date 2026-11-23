@@ -14,7 +14,8 @@ stripped = []
 task_types = ["rename", "rename-file", "refs", "pr", "pr", "pr"]
 
 [probe]
-# ./study probe php-medium (enforced), tereditor pinned in harness/tereditor.env, Intelephense, 2026-11-17.
+# ./study probe php-medium enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 0
-note = "Cross-file references and diagnostics work; by-name definition and interface implementations missed the expected location. definition of TypeWalker by name: complete=false, first answer 6s, missing src/Support/Type/TypeWalker.php:8; references TypeWalker::map (cross-file): complete=true, first answer 1s, missing ; implementations of ExpressionTypeInferExtension: complete=false, first answer 0s, missing src/Support/InferExtensions/TypeTraceInfer.php; diagnostics clean file: complete=true, first answer 0s, missing"
+seconds_to_first_answer = 7.63
+note = "definition of TypeWalker by name: INCOMPLETE in 184.4 s, missing 1; references TypeWalker::map (cross-file): complete in 1.6 s; implementations of ExpressionTypeInferExtension: INCOMPLETE in 181.3 s, missing 1; diagnostics clean file: complete in 0 s (results/probe/php-medium-enforced)"
+

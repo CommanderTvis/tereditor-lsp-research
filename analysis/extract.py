@@ -201,6 +201,15 @@ def summarize(run_dir: str, plan_row: dict) -> dict:
     row["success"] = bool(g.get("success")) if g else ""
     for k in ("precision", "recall", "f1", "tp", "fp", "fn", "check_exit", "patch_applied"):
         row[f"grade_{k}"] = g.get(k, "")
+    # The post-hoc quality review (harness/judge/): flaw count, blank for answer tasks and unparsed reviews.
+    try:
+        with open(os.path.join(run_dir, "review", "result.json")) as f:
+            rv = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        rv = {}
+    row["flaws"] = rv.get("flaws") if rv.get("flaws") is not None else ""
+    row["review_skipped"] = rv.get("skipped", "")
+    row["review_cost_usd"] = rv.get("cost_usd", "")
     try:
         row["patch_bytes"] = os.path.getsize(os.path.join(run_dir, "patch.diff"))
     except OSError:
@@ -223,7 +232,7 @@ def main(plan: str) -> None:
             tasks[key] = {}
             tt = os.path.join(os.environ.get("STUDY_ROOT", "."), "tasks", pr["project"], pr["task"], "task.toml")
             with open(tt) as f:
-                m = re.search(r'^type\s*=\s*"([a-z]+)"', f.read(), re.M)
+                m = re.search(r'^type\s*=\s*"([a-z-]+)"', f.read(), re.M)
             tasks[key]["type"] = m.group(1) if m else ""
         row = summarize(run_dir, pr)
         lang, size = pr["project"].rsplit("-", 1)

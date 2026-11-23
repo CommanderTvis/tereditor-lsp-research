@@ -15,7 +15,8 @@ task_types = ["move", "signature", "inspect", "pr", "pr", "pr"]
 pr_note = "3 of 8 qualifying modern pull requests used (in seeded order: #3294, #3295, #3300); see tasks/php-small/pr-log.md"
 
 [probe]
-# ./study probe php-small (enforced), tereditor pinned in harness/tereditor.env, Intelephense, 2026-11-17.
+# ./study probe php-small enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 0
-note = "By-name definition and implementations of an interface missed the expected location; references and diagnostics work. definition of DataTableAbstract by name: complete=false, first answer 1s, missing src/DataTableAbstract.php:26; references Formatter (cross-file): complete=true, first answer 0s, missing ; implementations of Formatter: complete=false, first answer 0s, missing tests/Formatters/DateFormatter.php:9; diagnostics clean file: complete=true, first answer 0s, missing"
+seconds_to_first_answer = 1.29
+note = "definition of DataTableAbstract by name: INCOMPLETE in 183 s, missing 1; references Formatter (cross-file): complete in 0.2 s; implementations of Formatter: INCOMPLETE in 181.3 s, missing 1; diagnostics clean file: complete in 0.2 s (results/probe/php-small-enforced)"
+

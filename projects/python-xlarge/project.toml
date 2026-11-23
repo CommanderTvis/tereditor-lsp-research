@@ -18,9 +18,8 @@ validation_note = "Validated on linux/amd64 (native backend, cloud session): all
 vm_note = "cloud VM: peak not sampled; fits (validated, 6 tasks VALID)."
 
 [probe]
-# ./study probe python-xlarge (enforced), 2026-11-16.
+# ./study probe python-xlarge enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = false
-seconds_to_first_answer = 0.45
-references = "complete in 0.5 s: SaltException from salt/exceptions.py (probe expectation: its definition line only)"
-definition = "wrong: SaltException (salt/exceptions.py:33) not found after 199 s: workspace symbol lookup answered notFound, the python server reported 'A task was canceled'"
-diagnostics = "complete: salt/exceptions.py is checked and reports one error (line 21, an unresolved import: dependencies are not installed for the server)"
+seconds_to_first_answer = 0.48
+note = "references SaltException (cross-file): complete in 0.5 s; definition of SaltException from another module: INCOMPLETE in 210.2 s, missing 1; diagnostics on a file: complete in 0 s (results/probe/python-xlarge-enforced)"
+

@@ -16,6 +16,8 @@ substitutions = []
 validation_note = "Revalidated on linux/amd64 (native backend): all 6 tasks VALID. harness/grade/grade.sh now retries git apply with --ignore-whitespace, because this repository is committed with CRLF line endings and the reference patches carry LF context."
 
 [probe]
+# ./study probe csharp-small enforced, 2026-11-21, cloud VM linux/amd64, tereditor d9fac10b8cce.
 ok = true
-seconds_to_first_answer = 56
-note = "references, definition, implementations and diagnostics all correct (results/probe/csharp-small-enforced)"
+seconds_to_first_answer = 40.26
+note = "references INotificationPublisher (cross-project): complete in 40.3 s; definition of TaskWhenAllPublisher: complete in 0.5 s; implementations of INotificationPublisher: complete in 0.4 s; diagnostics clean file: complete in 2 s (results/probe/csharp-small-enforced)"
+

@@ -1,3 +1,0 @@
-stratum,outcome,contrast,estimate,ci_lo,ci_hi,p,tasks,cells,p_adj
-all,success (pp),enforced - baseline,0.0,0.0,0.0,1.0,8,24,1.0
-all,cost ratio,enforced / baseline,2.0133563118085007,1.4479119749652207,2.7116885945347105,0.0163983601639836,8,24,0.0327967203279672
