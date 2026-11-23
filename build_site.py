@@ -305,9 +305,21 @@ def main():
              ("unrelated", "edits to places that have nothing to do with the task")]
     flaw_table = table(["Kind", "What it is", "Reported"],
                        [[k, d, sum(1 for f in flaws if f["kind"] == k)] for k, d in kinds])
-    fx = find(flaws, run_id="r00110", kind="leftover")
-    fx_run = find(runs, run_id="r00110")
-    fx_passed = "passed" if fx_run["success"] == "True" else "failed"
+    # Real reports, picked by run id; the task line is a one-line summary of that task's prompt.
+    examples = [
+        ("Java", "r00110", "TestQueryBuilder.java", "rename Lucene's class <code>QueryBuilder</code> to <code>TextQueryBuilder</code>"),
+        ("Python", "r00392", "disk.py", "fix wrong byte-conversion factors in Salt's <code>disk</code> module (a mined pull request)"),
+        ("TypeScript", "r00128", "AuroraMysqlQueryRunner.ts", "swap the two parameters of TypeORM's <code>createCheckConstraint</code>"),
+        ("Kotlin", "r00198", "RedundantComposableDetector.kt", "fix a missed case in a Compose lint check (a mined pull request)"),
+    ]
+    flaw_examples = ""
+    for lang, rid, fname, task in examples:
+        f = next(x for x in flaws if x["run_id"] == rid and x["file"].endswith(fname))
+        r = find(runs, run_id=rid)
+        passed = "passed" if r["success"] == "True" else "failed"
+        flaw_examples += (f'<p><b>{lang}.</b> The task: {task}. The run ({esc(MODEL_NAME[r["model"]])}, {esc(r["arm"])} arm) '
+                          f'{passed} the tests, and the reviewer reported:</p>'
+                          f'<pre><code>{esc(f["kind"])}  {esc(f["file"])}:{esc(f["line"])}\n{esc(f["reason"])}</code></pre>')
 
     # Raw tables.
     desc_body = [[MODEL_NAME[r["model"]], r["arm"], r["runs"], num(r["success"], 3), f"{float(r['mean_cost_usd']):.4f}",
@@ -463,10 +475,8 @@ def main():
         (Haiku 5.5, which never sees the arm) reads the diff and searches the edited tree for five kinds of it;
         {len(flaws)} were reported in all.</p>
         {flaw_table}
-        <p>An example. The task: rename Lucene's class <code>QueryBuilder</code> to <code>TextQueryBuilder</code>. The run
-        ({esc(MODEL_NAME[fx_run["model"]])}, {esc(fx_run["arm"])} arm) {fx_passed} the tests, and the reviewer reported:</p>
-        <pre><code>{esc(fx["kind"])}  {esc(fx["file"])}:{esc(fx["line"])}
-{esc(fx["reason"])}</code></pre>
+        <p>Examples from the run:</p>
+        {flaw_examples}
         <p class="note">The reviewer's reports have not been checked by a human yet. All of them are in
         <a href="data/flaws.csv">flaws.csv</a>.</p>
 

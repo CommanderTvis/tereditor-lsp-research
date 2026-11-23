@@ -130,10 +130,12 @@
         (Haiku 5.5, which never sees the arm) reads the diff and searches the edited tree for five kinds of it;
         912 were reported in all.</p>
         <table><thead><tr><th>Kind</th><th>What it is</th><th>Reported</th></tr></thead><tbody><tr><td>leftover</td><td>an old name, path or signature the change should have updated but did not (comments, docstrings, strings, docs, configuration)</td><td>395</td></tr><tr><td>naming</td><td>a new name that is inconsistent with the task or the surrounding code</td><td>214</td></tr><tr><td>churn</td><td>formatting or whitespace changes to lines the task did not need to touch</td><td>149</td></tr><tr><td>dead</td><td>code, imports or files the change left dead or unused</td><td>97</td></tr><tr><td>unrelated</td><td>edits to places that have nothing to do with the task</td><td>57</td></tr></tbody></table>
-        <p>An example. The task: rename Lucene's class <code>QueryBuilder</code> to <code>TextQueryBuilder</code>. The run
-        (Haiku 5.5, intellij-enforced arm) passed the tests, and the reviewer reported:</p>
-        <pre><code>leftover  lucene/core/src/test/org/apache/lucene/util/TestQueryBuilder.java:30
-Test class still named TestQueryBuilder although it now tests TextQueryBuilder; old name left behind</code></pre>
+        <p>Examples from the run:</p>
+        <p><b>Java.</b> The task: rename Lucene's class <code>QueryBuilder</code> to <code>TextQueryBuilder</code>. The run (Haiku 5.5, intellij-enforced arm) passed the tests, and the reviewer reported:</p><pre><code>leftover  lucene/core/src/test/org/apache/lucene/util/TestQueryBuilder.java:30
+Test class still named TestQueryBuilder although it now tests TextQueryBuilder; old name left behind</code></pre><p><b>Python.</b> The task: fix wrong byte-conversion factors in Salt's <code>disk</code> module (a mined pull request). The run (Opus 5.5, baseline arm) passed the tests, and the reviewer reported:</p><pre><code>unrelated  salt/modules/disk.py:42
+Renamed postPrefixes to unit_multipliers, which the task did not require (the issue calls the rename out as unrelated); only the multiplier values needed changing</code></pre><p><b>TypeScript.</b> The task: swap the two parameters of TypeORM's <code>createCheckConstraint</code>. The run (Haiku 5.5, optional arm) passed the tests, and the reviewer reported:</p><pre><code>leftover  packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts:1780
+JSDoc @param order still tableOrName before checkConstraint, which no longer matches the signature</code></pre><p><b>Kotlin.</b> The task: fix a missed case in a Compose lint check (a mined pull request). The run (Sonnet 5.5, baseline-review arm) passed the tests, and the reviewer reported:</p><pre><code>naming  compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt:155
+`bodyUsage` now also includes the parameter default-value usages, so the name no longer describes what it holds</code></pre>
         <p class="note">The reviewer's reports have not been checked by a human yet. All of them are in
         <a href="data/flaws.csv">flaws.csv</a>.</p>
 
