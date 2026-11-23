@@ -17,8 +17,8 @@ LLMS = ROOT / "llms.txt"
 SITE = "https://commandertvis.github.io/tereditor-lsp-research/"
 
 # Categorical slots 1 and 2 of the validated reference palette (light surface).
-BLUE, ORANGE = "#2a78d6", "#eb6834"
-INK, MUTED, GRID = "#222", "#555", "#ddd"
+BLUE, ORANGE = "var(--blue)", "var(--orange)"
+INK, MUTED, GRID = "var(--ink)", "var(--muted)", "var(--grid)"
 
 ARMS = ["optional", "enforced", "baseline-review", "intellij-optional", "intellij-enforced"]
 MODELS = ["claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5"]
@@ -122,7 +122,7 @@ def forest(items, lo, hi, ref, fmt, title, log=False, width=680):
                      f'<rect x="{left}" y="{y - row_h / 2:.1f}" width="{plot_w}" height="{row_h}" fill="transparent"/>')
         if a is not None and b is not None:
             parts.append(f'<line x1="{x(max(a, lo)):.1f}" x2="{x(min(b, hi)):.1f}" y1="{y:.1f}" y2="{y:.1f}" stroke="{colour}" stroke-width="2" stroke-linecap="round"/>')
-        parts.append(f'<circle cx="{x(est):.1f}" cy="{y:.1f}" r="5" fill="{colour}" stroke="#fff" stroke-width="2"/></g>')
+        parts.append(f'<circle cx="{x(est):.1f}" cy="{y:.1f}" r="5" fill="{colour}" stroke="var(--bg)" stroke-width="2"/></g>')
     parts.append("</svg>")
     return "".join(parts)
 
@@ -307,7 +307,6 @@ def main():
                        [[k, d, sum(1 for f in flaws if f["kind"] == k)] for k, d in kinds])
     # Real reports, picked by run id; the task line is a one-line summary of that task's prompt.
     examples = [
-        ("Java", "r00110", "TestQueryBuilder.java", "rename Lucene's class <code>QueryBuilder</code> to <code>TextQueryBuilder</code>"),
         ("Python", "r00392", "disk.py", "fix wrong byte-conversion factors in Salt's <code>disk</code> module (a mined pull request)"),
         ("TypeScript", "r00128", "AuroraMysqlQueryRunner.ts", "swap the two parameters of TypeORM's <code>createCheckConstraint</code>"),
         ("Kotlin", "r00198", "RedundantComposableDetector.kt", "fix a missed case in a Compose lint check (a mined pull request)"),
@@ -351,15 +350,24 @@ def main():
         <meta name="description" content="Does a language server make a Claude Code agent better, faster or cheaper? Results of the LSP study confirmatory run." />
         <link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt" />
         <title>LSP study: results</title>
+        <meta name="color-scheme" content="light dark" />
         <style>
+            :root {{ --bg: #fff; --ink: #222; --muted: #555; --grid: #ddd; --rule: #999; --faint: #aaa; --code: #f6f6f4;
+                    --link: #1a0dab; --visited: #609; --blue: #2a78d6; --orange: #eb6834;
+                    --win: #d9f0e3; --mid: #fbefc4; --lose: #fbdcd3; }}
+            @media (prefers-color-scheme: dark) {{
+                :root {{ --bg: #1a1a19; --ink: #f0efec; --muted: #c3c2b7; --grid: #3a3a38; --rule: #77766f; --faint: #6b6a64;
+                        --code: #262624; --link: #8ab4f8; --visited: #c58af9; --blue: #3987e5; --orange: #d95926;
+                        --win: #1f4a36; --mid: #574a14; --lose: #5c2a20; }}
+            }}
             body {{ font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; font-size: 1rem; line-height: 1.6;
-                   max-width: 720px; margin: 40px auto; padding: 0 20px; color: {INK}; background: #fff; }}
+                   max-width: 720px; margin: 40px auto; padding: 0 20px; color: {INK}; background: var(--bg); }}
             h1 {{ font-size: 1.625rem; margin-bottom: 4px; }}
             h2 {{ font-size: 1.25rem; margin-top: 32px; margin-bottom: 8px; }}
             p, li {{ margin-bottom: 6px; }}
             ul {{ padding-left: 20px; }}
-            a {{ color: #1a0dab; }}
-            a:visited {{ color: #609; }}
+            a {{ color: var(--link); }}
+            a:visited {{ color: var(--visited); }}
             a:focus-visible, summary:focus-visible {{ outline: 3px solid currentColor; outline-offset: 3px; }}
             .subtitle, .note {{ color: {MUTED}; font-size: 0.9375rem; margin-top: 0; }}
             .chart {{ width: 100%; height: auto; display: block; margin: 8px 0 4px; }}
@@ -373,18 +381,18 @@ def main():
             .shelf .who {{ font-size: 0.8125rem; color: {MUTED}; }}
             .shelf .nums b {{ font-size: 1.375rem; }}
             .shelf .nums span {{ font-size: 0.8125rem; color: {MUTED}; }}
-            .faint {{ color: #aaa; font-size: 0.6875rem; margin-top: -6px; }}
-            .win {{ background: #d9f0e3; padding: 1px 5px; border-radius: 3px; }}
-            .mid {{ background: #fbefc4; padding: 1px 5px; border-radius: 3px; }}
-            .lose {{ background: #fbdcd3; padding: 1px 5px; border-radius: 3px; }}
+            .faint {{ color: var(--faint); font-size: 0.6875rem; margin-top: -6px; }}
+            .win {{ background: var(--win); padding: 1px 5px; border-radius: 3px; }}
+            .mid {{ background: var(--mid); padding: 1px 5px; border-radius: 3px; }}
+            .lose {{ background: var(--lose); padding: 1px 5px; border-radius: 3px; }}
             svg.use {{ vertical-align: -2px; }}
             .legend span {{ margin-right: 16px; white-space: nowrap; }}
             details {{ margin: 4px 0 20px; }}
             summary {{ cursor: pointer; color: {MUTED}; font-size: 0.875rem; }}
             table {{ border-collapse: collapse; width: 100%; font-size: 0.8125rem; margin: 10px 0; }}
             th, td {{ border-bottom: 1px solid {GRID}; padding: 5px 7px; text-align: left; vertical-align: top; }}
-            th {{ border-bottom: 2px solid #999; }}
-            pre {{ background: #f6f6f4; padding: 10px 12px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-size: 0.75rem; line-height: 1.45; }}
+            th {{ border-bottom: 2px solid var(--rule); }}
+            pre {{ background: var(--code); padding: 10px 12px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-size: 0.75rem; line-height: 1.45; }}
             code {{ font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.875em; }}
             dt {{ font-weight: 700; margin-top: 10px; }}
             dd {{ margin: 2px 0 0 0; }}
