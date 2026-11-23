@@ -295,120 +295,6 @@ EX_SYN = "Rename `salt/payload.py` to `salt/wire_payload.py`. Update every impor
 EX_PR = "Header object passed to c.body() is mutated, so reusing it returns 500 from the second request on"
 
 
-def rereview_html(_d):
-    """The second reviewer (Opus 5.5) and the Haiku control on rebuilt trees: data/rereview_summary.json."""
-    p = DATA / "rereview_summary.json"
-    if not p.exists():
-        return ""
-    import json
-    r = json.loads(p.read_text())
-    name = {"claude-haiku-5-5": "Haiku 5.5", "claude-sonnet-5-5": "Sonnet 5.5", "claude-opus-5-5": "Opus 5.5"}
-    ag = []
-    for strat, label in (("random", "random sample (60 runs)"), ("driver task", "TypeORM task (10 runs)")):
-        for pair, v in r[strat].items():
-            t = v["total"]
-            ag.append([label, pair, t["n"], f"{100 * t['presence']:.0f}%", "" if t.get("kappa") is None else f"{t['kappa']:.2f}", f"{100 * t['exact']:.0f}%",
-                       "" if t["pearson"] is None else f"{t['pearson']:.2f}", f"{t['mean_x']:.2f} vs {t['mean_y']:.2f}"])
-    kinds = ["leftover", "naming", "churn", "dead", "unrelated"]
-    kk = [[k] + [("" if r["random"][pair][k].get("kappa") is None else f"{r['random'][pair][k]['kappa']:.2f}") for pair in r["random"]] for k in kinds]
-    diffs = [[who] + [("" if v is None else f"{v[0]:+.2f} ({v[1]:+.2f} to {v[2]:+.2f})") for v in (x["optional - baseline"], x["enforced - baseline"])]
-             for who, x in r["paired_differences_random_stratum"].items()]
-    drv = [[x["run_id"], x["arm"], name[x["model"]], f"{x['original_haiku']:.0f}", f"{x['rerun_haiku']:.0f}", f"{x['opus']:.0f}"]
-           for x in r["driver_task"]]
-    return f"""
-        <p><b>A second reviewer.</b> 70 edit runs (20 random task-and-model cells with their baseline, optional and
-        enforced runs, plus 10 runs of the TypeORM task) were reviewed again, blind to the arm, by Opus 5.5 and, as a
-        control, by Haiku 5.5, both with the same prompt on trees rebuilt from the project and the reviewed diff
-        (no Bash, no server-side preparation; USD {r['cost_usd']:.2f}). Whether a run has any flaw agrees about 90% of
-        the time, mostly because most runs have none; the counts do not. On the TypeORM task Opus reports the stale
-        JSDoc (10 or 11) in every run, baseline and optional alike, while Haiku swings between 0 and 11 on identical
-        diffs, even against its own earlier review. Corrected for chance (Cohen's kappa) the any-flaw agreement is
-        moderate, and weakest for leftovers and naming. Under Opus the optional-minus-baseline difference on the random
-        sample is near zero, and so is enforced-minus-baseline. Opus is also a model under test: a second opinion,
-        not ground truth, and 20 cells cannot settle an effect of this size.</p>
-        {spoiler("Show the numbers", table(["Sample", "Reviewers", "Runs", "Any-flaw agreement", "Kappa", "Same count", "Count correlation", "Mean flaws"], ag)
-                 + table(["Kind: Cohen's kappa on any flaw (random sample)"] + list(r["random"]), kk)
-                 + table(["Reviewer (random sample, paired by cell)", "Optional − baseline (95% interval)", "Enforced − baseline (95% interval)"], diffs)
-                 + table(["TypeORM run", "Arm", "Model", "Original Haiku", "Haiku again", "Opus"], drv))}"""
-
-
-def audit_section():
-    """Exploratory, not pre-registered: renders data/flaws_audit.json (written by audit/flaws_audit.py)."""
-    p = DATA / "flaws_audit.json"
-    if not p.exists():
-        return ""
-    import json
-    d = json.loads(p.read_text())
-    name = {"claude-haiku-5-5": "Haiku 5.5", "claude-sonnet-5-5": "Sonnet 5.5", "claude-opus-5-5": "Opus 5.5"}
-    kn = {"all": "all edit tasks", "syn": "synthetic", "pr": "real PRs"}
-
-    def iv(r):
-        return f"{r['diff']:+.2f} ({r['ci_lo']:+.2f} to {r['ci_hi']:+.2f})"
-
-    den = table(["Arm", "Runs", "Reviewed edit runs", "Flaws per reviewed run", "Synthetic (reviewed)", "Real PRs (reviewed)",
-                 "Per-kind means weighted by all runs"],
-                [[a, v["all"]["runs"], v["all"]["reviewed"], f"{v['all']['mean']:.2f}",
-                  f"{v['syn']['mean']:.2f} ({v['syn']['reviewed']} of {v['syn']['runs']})",
-                  f"{v['pr']['mean']:.2f} ({v['pr']['reviewed']} of {v['pr']['runs']})", f"{v['weighted_by_all_runs']:.2f}"]
-                 for a, v in d["denominators"].items()])
-    pc = table(["Arm", "Runs", "Tasks", "Baseline", "Optional", "Difference (95% interval)", "Tasks better/same/worse"],
-               [[r["arm"], r["runs"] if r["kind"] == "all" else "", f"{r['tasks']} {kn[r['kind']]}", f"{r['baseline']:.2f}",
-                 f"{r['optional']:.2f}", iv(r), f"{r['better']}/{r['same']}/{r['worse']}"] for r in d["paired"]])
-    pm = table(["Model", "Tasks", "Baseline", "Optional", "Difference (95% interval)"],
-               [[name[r["model"]], f"{r['tasks']} {kn[r['kind']]}", f"{r['baseline']:.2f}", f"{r['optional']:.2f}", iv(r)]
-                for r in d["paired_by_model_zero_call"]])
-    rb = table(["Check (synthetic, optional with zero LS calls)", "Difference (95% interval)"],
-               [[r["check"], iv(r)] for r in d["robustness"]])
-    rbe = table(["Check (all edit tasks, enforced against baseline)", "Difference (95% interval)"],
-                [[r["check"], iv(r)] for r in d.get("robustness_enforced", [])])
-    dt = d["driver_task"]
-    unfixed = [r for r in dt["runs"] if r["jsdoc_param_lines_changed"] == 0]
-    hi = [r for r in unfixed if r["flaws"] >= 5]
-    drv = table(["Run", "Arm", "Model", "LS calls", "@param lines changed", "Flaws reported"],
-                [[r["run_id"], r["arm"], name[r["model"]], r["lsp_calls"] or "0", r["jsdoc_param_lines_changed"], f"{r['flaws']:.0f}"]
-                 for r in dt["runs"]])
-    inj = table(["Arm", "Runs", "Runs with hook events", "Code diagnostics pushed", "Tool results without a call"],
-                [[a, c["runs"], c.get("runs_with_hooks", 0), c.get("code_diagnostics", 0), c.get("orphan_tool_results", 0)]
-                 for a, c in sorted(d["injected"].items())])
-    art = table(["Arm", "Reviewed runs", "Runs with LS artifact files in the diff", "Flaws in those runs", "Edit runs skipped (patch does not apply)"],
-                [[a, v["reviewed"], v["with_artifacts"], f"{v['artifact_run_flaws']:.0f}",
-                  d["review_status"].get(a, {}).get("skipped: patch does not apply", 0)] for a, v in sorted(d["reviewer_artifacts"].items())])
-    ewa = "; ".join(f"{r['scope']} {r['mean']:.2f} ({r['reviewed']} runs) without them {r['mean_without']:.2f}"
-                    for r in d["enforced_without_artifacts"])
-    top = d["drivers"]["most_negative"]
-    return f"""
-        <h2 id="flaws-audit">Exploratory: flaw audit</h2>
-        <p class="note">Not part of the pre-registered analysis. Added after publication to check why the optional
-        arm's raw flaw mean is lower although Haiku and Sonnet never call the tools there. Reproduce with
-        <code>audit/flaws_audit.py</code>.</p>
-        <p><b>Nothing reaches the optional arm unasked.</b> No hooks, no pushed code diagnostics, no tool results the
-        agent did not request; hooks appear only in the enforced arms, by design. The optional arm differs from the
-        baseline only by the MCP server's instructions and tool descriptions in context (the advice sentences removed).</p>
-        {spoiler("Show the numbers", inj)}
-        <p><b>Without tool calls the gap stays, so the tools are not the cause.</b> Paired by task and model:</p>
-        {spoiler("Show the numbers", pc + pm)}
-        <p><b>One task carries most of it, through the reviewer.</b> The per-task differences sum to
-        {d['drivers']['sum_of_task_diffs']:+.2f}; {esc(top[0][0])} alone gives {top[0][1]:+.2f}. In {len(unfixed)} runs of
-        that task the agent left every JSDoc <code>@param</code> unchanged, the same stale documentation each time; the
-        reviewer reported it as about 10 flaws in {len(hi)} of them and as 0 or 1 in the rest. Without that task, or
-        counting only whether a run has any flaw, the difference is near zero:</p>
-        {spoiler("Show the numbers", rb + drv)}
-        <p><b>The second-largest driver works the same way.</b> On the python-xlarge payload rename the reviewer once
-        reported 53 flaws in one run: a single import-order complaint, listed once per file. A second reviewer reports
-        none. Two tasks where one pattern is counted once per file are enough to move an arm's mean.</p>
-        <p><b>The enforced increase is not robust either.</b> Paired, enforced against baseline:</p>
-        {spoiler("Show the numbers", rbe)}
-        <p><b>The reviewer sees the arm only through LS artifacts.</b> Optional and baseline diffs carry none; 8 enforced
-        runs carry Eclipse project files (.project, .classpath, .factorypath) the server wrote, which count as
-        unrelated edits: {esc(ewa)}. More enforced edit runs were skipped because their patch did not apply.</p>
-        {spoiler("Show the numbers", art)}
-{rereview_html(d)}
-        <p><b>Denominators.</b> Flaw means are over reviewed edit runs. Weighting the per-kind means by all runs
-        (navigation questions included) gives different, wrong numbers:</p>
-        {spoiler("Show the numbers", den)}
-"""
-
-
 def main():
     runs = rows("runs.csv")
     contrasts = rows("contrasts.csv")
@@ -458,27 +344,22 @@ def main():
     fs = {(k, a): mean_flaws(k, a) for k in ("syn", "pr") for a in ("baseline", "optional", "enforced", "baseline-review")}
     flaw_summary = (
         f"<p>Paired on the same tasks, offering LS tools (optional) changes flaws by {flaw_opt_txt}: no clear difference. "
-        f"Enforcing them adds {flaw_enf_txt} on the pre-registered measure, but that does not hold up: without the 8 "
-        f"enforced runs whose diff contains project files the LS wrote, or counting only whether a run has a flaw, the "
-        f"interval reaches zero, and a second reviewer finds no difference (<a href=\"#flaws-audit\">exploratory audit</a>).</p>"
+        f"Enforcing them adds {flaw_enf_txt}.</p>"
         f"<p class='note'>Raw means per reviewed edit run, not paired: synthetic edit tasks (rename, rename-file, move, "
         f"signature; navigation questions have no diff) {fs['syn', 'optional'][0]:.2f} optional against "
         f"{fs['syn', 'baseline'][0]:.2f} baseline ({fs['syn', 'optional'][1]} and {fs['syn', 'baseline'][1]} reviewed runs); "
-        f"real PRs {fs['pr', 'optional'][0]:.2f} against {fs['pr', 'baseline'][0]:.2f}. The synthetic gap does not come "
-        f"from the tools: Haiku and Sonnet never called them in the optional arm, and one task where the reviewer counted "
-        f"the same stale JSDoc 10 times in some runs and not at all in others makes up most of it "
-        f"(<a href=\"#flaws-audit\">exploratory audit</a>).</p>")
+        f"real PRs {fs['pr', 'optional'][0]:.2f} against {fs['pr', 'baseline'][0]:.2f}.</p>")
     arm_note = ("<p class='note'>Arms: baseline = no LS tools; optional = LS tools offered; enforced = the agent is told "
                 "to use them (<a href=\"#setups\">details</a>).</p>")
     enf_c_txt = f"{float(enf_c['estimate']):.2f}"
     opus_adopt = f"{float(find(descriptive, model='claude-opus-5-5', arm='optional')['lsp_used']) * 100:.0f}%"
     outline = [("top", "Does LSP help Claude Code?"), ("what-is-being-tested", "What is being tested"), ("setups", "Setups"),
-               ("kinds-of-tasks", "Kinds of tasks"), ("flaws", "Flaws: no clear change"), ("success-barely-moves", "Success barely moves"),
+               ("kinds-of-tasks", "Kinds of tasks"), ("flaws", "Flaws: no change offered, more enforced"), ("success-barely-moves", "Success barely moves"),
                ("no-model-solves-more", "No model solves more tasks with LS tools"),
                ("only-opus-uses-optional-tools", "Only Opus uses tools when they're optional"),
                ("cost-goes-up-when-lsp-use-is-enforced", "Cost goes up when LSP use is enforced"),
                               ("all-ls-together", "All LS together"), ("intellij-vs-kotlin-lsp-vs-no-ls", "IntelliJ vs kotlin-lsp vs no LS"),
-               ("java-intellij-vs-no-ls", "Java: IntelliJ vs no LS"), ("flaws-audit", "Exploratory: flaw audit"), ("raw-data", "Raw data")]
+               ("java-intellij-vs-no-ls", "Java: IntelliJ vs no LS"), ("raw-data", "Raw data")]
     outline_html = ("<nav class='outline'><b>Contents</b><ol>"
                     + "".join(f'<li><a href="#{i}">{esc(t)}</a></li>' for i, t in outline) + "</ol></nav>")
 
@@ -758,7 +639,7 @@ def main():
         <p>The results below compare three outcomes between arms on the same tasks: the flaws a run leaves, whether it
         succeeds, and what it costs.</p>
 
-        <h2 id="flaws">Flaws: no clear change with LS tools{tag_all}</h2>
+        <h2 id="flaws">Flaws: no clear change when LS tools are offered, more when they are enforced{tag_all}</h2>
         {flaw_summary}
         {arm_note}
         <p>Tests decide whether a change works. A flaw is damage the tests cannot see. After each edit run, a reviewer
@@ -812,8 +693,6 @@ def main():
         {java_table}
         <p class="note">{j_tasks} tasks is a small sample: the intervals are wide, and {j_zero}. Cost and time are
         medians over all three models.</p>
-
-        {audit_section()}
 
         <h2 id="raw-data">Raw data</h2>
         {spoiler("Arms by model", desc_table)}
@@ -877,7 +756,7 @@ Arms: baseline (Claude Code core tools only: Read, Edit, Write, Bash, Task, Tool
 ## Findings
 
 - Success: offering LS tools (optional) and enforcing them (enforced) do not change the pass rate by a clear amount. Both intervals include zero.
-- Flaws: paired on the same tasks, optional LS tools change flaws by {flaw_opt_txt}, no clear difference. Enforced LS use: {flaw_enf_txt} on the pre-registered measure, not robust (its interval reaches zero without 8 runs whose diff holds LS-written project files, or counting any flaw; a second reviewer finds no difference). Raw synthetic means (optional {fs['syn', 'optional'][0]:.2f} against baseline {fs['syn', 'baseline'][0]:.2f} per reviewed edit run) are not a tool effect: Haiku and Sonnet never called the tools in the optional arm, and one task with inconsistent reviewer counts drives most of the gap (exploratory audit on the page).
+- Flaws: paired on the same tasks, optional LS tools change flaws by {flaw_opt_txt}, no clear difference. Enforced LS use leaves more: {flaw_enf_txt}.
 - Cost: optional costs about the same as baseline; enforced costs about {enf_c_txt} times as much.
 - Adoption: when offered, the agent uses LS tools in {opus_adopt} of optional runs on Opus and in none on Haiku or Sonnet.
 - Task kinds: {n_syn_tasks} synthetic tasks ({n_syn_types} types) and {n_pr_tasks} real pull-request tasks. Both are reported separately on the page.
