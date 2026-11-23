@@ -301,7 +301,7 @@ def main():
         language's language server (for example Pyright for Python, clangd for C and C++, or IntelliJ for Java and
         Kotlin). The study asks whether giving a Claude Code agent these tools changes how often it solves a task,
         what it costs and how long it takes.</p>
-        <p>The agent sees six MCP tools, in tereditor's own words:</p>
+        <p>The agent sees six MCP tools:</p>
         <dl>
             <dt><code>lsp_navigate</code></dt>
             <dd>finds definitions, references, implementations, symbols and call hierarchies (callers and callees),
