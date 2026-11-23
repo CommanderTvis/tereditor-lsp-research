@@ -1,0 +1,4 @@
+run_id	project	task	arm	model	rep	effort	budget_usd	max_turns	timeout_s
+r00001	python-small	refs-get	baseline	claude-haiku-5-5	1	-	1	60	1200
+r00002	python-small	refs-get	optional	claude-haiku-5-5	1	-	1	60	1200
+r00003	python-small	refs-get	enforced	claude-haiku-5-5	1	-	1	60	1200

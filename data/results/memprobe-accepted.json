@@ -1,0 +1,403 @@
+{
+ "tasks": 79,
+ "scored": 79,
+ "goldAtLeast15": 38,
+ "cutoffCheckFlagged": [],
+ "rows": [
+  {
+   "task": "cpp-large/pr-15587",
+   "worst": 0.25,
+   "gold": 4
+  },
+  {
+   "task": "cpp-large/pr-15699",
+   "worst": 0,
+   "gold": 7
+  },
+  {
+   "task": "cpp-large/pr-16026",
+   "worst": 0,
+   "gold": 2
+  },
+  {
+   "task": "cpp-medium/pr-4896",
+   "worst": 0,
+   "gold": 36
+  },
+  {
+   "task": "cpp-medium/pr-4902",
+   "worst": 0,
+   "gold": 7
+  },
+  {
+   "task": "cpp-medium/pr-4962",
+   "worst": 0.009,
+   "gold": 115
+  },
+  {
+   "task": "cpp-small/pr-388",
+   "worst": 0,
+   "gold": 43
+  },
+  {
+   "task": "cpp-small/pr-416",
+   "worst": 0,
+   "gold": 9
+  },
+  {
+   "task": "cpp-small/pr-439",
+   "worst": 0,
+   "gold": 4
+  },
+  {
+   "task": "cpp-xlarge/pr-27499",
+   "worst": 0,
+   "gold": 1
+  },
+  {
+   "task": "cpp-xlarge/pr-27967",
+   "worst": 0,
+   "gold": 0
+  },
+  {
+   "task": "cpp-xlarge/pr-28333",
+   "worst": 0,
+   "gold": 4
+  },
+  {
+   "task": "csharp-xlarge/pr-39354",
+   "worst": 0.25,
+   "gold": 8
+  },
+  {
+   "task": "css-medium/pr-22713",
+   "worst": 0,
+   "gold": 107
+  },
+  {
+   "task": "css-medium/pr-22728",
+   "worst": 0.006,
+   "gold": 3471
+  },
+  {
+   "task": "css-medium/pr-23092",
+   "worst": 0.019,
+   "gold": 1292
+  },
+  {
+   "task": "css-small/pr-2751",
+   "worst": 0,
+   "gold": 1
+  },
+  {
+   "task": "css-small/pr-2848",
+   "worst": 0.6,
+   "gold": 5
+  },
+  {
+   "task": "css-small/pr-3111",
+   "worst": 0.125,
+   "gold": 8
+  },
+  {
+   "task": "java-kotlin-large/pr-1893",
+   "worst": 0.03,
+   "gold": 67
+  },
+  {
+   "task": "java-kotlin-large/pr-1894",
+   "worst": 0.031,
+   "gold": 518
+  },
+  {
+   "task": "java-kotlin-large/pr-2138",
+   "worst": 0.2,
+   "gold": 15
+  },
+  {
+   "task": "java-kotlin-medium/pr-1936",
+   "worst": 0.024,
+   "gold": 42
+  },
+  {
+   "task": "java-kotlin-medium/pr-1939",
+   "worst": 0.033,
+   "gold": 60
+  },
+  {
+   "task": "java-kotlin-medium/pr-1945",
+   "worst": 0.083,
+   "gold": 24
+  },
+  {
+   "task": "java-kotlin-xlarge/pr-39260",
+   "worst": 0,
+   "gold": 9
+  },
+  {
+   "task": "java-kotlin-xlarge/pr-39526",
+   "worst": 0,
+   "gold": 43
+  },
+  {
+   "task": "java-kotlin-xlarge/pr-39587",
+   "worst": 0,
+   "gold": 7
+  },
+  {
+   "task": "java-large/pr-6171",
+   "worst": 0.009,
+   "gold": 111
+  },
+  {
+   "task": "java-large/pr-6370",
+   "worst": 0.083,
+   "gold": 12
+  },
+  {
+   "task": "java-large/pr-6407",
+   "worst": 0.05,
+   "gold": 20
+  },
+  {
+   "task": "java-medium/pr-3059",
+   "worst": 0.115,
+   "gold": 26
+  },
+  {
+   "task": "java-medium/pr-3061",
+   "worst": 0.161,
+   "gold": 56
+  },
+  {
+   "task": "java-medium/pr-3098",
+   "worst": 0.176,
+   "gold": 17
+  },
+  {
+   "task": "java-small/pr-634",
+   "worst": 0,
+   "gold": 24
+  },
+  {
+   "task": "java-small/pr-640",
+   "worst": 0.103,
+   "gold": 78
+  },
+  {
+   "task": "java-small/pr-656",
+   "worst": 0,
+   "gold": 4
+  },
+  {
+   "task": "java-xlarge/pr-16547",
+   "worst": 0.667,
+   "gold": 3
+  },
+  {
+   "task": "java-xlarge/pr-16684",
+   "worst": 0,
+   "gold": 58
+  },
+  {
+   "task": "java-xlarge/pr-16706",
+   "worst": 0,
+   "gold": 41
+  },
+  {
+   "task": "kotlin-large/pr-2056",
+   "worst": 0,
+   "gold": 505
+  },
+  {
+   "task": "kotlin-large/pr-2176",
+   "worst": 0,
+   "gold": 29
+  },
+  {
+   "task": "kotlin-large/pr-2190",
+   "worst": 0.007,
+   "gold": 307
+  },
+  {
+   "task": "kotlin-medium/pr-2365",
+   "worst": 0,
+   "gold": 55
+  },
+  {
+   "task": "kotlin-medium/pr-2368",
+   "worst": 0,
+   "gold": 28
+  },
+  {
+   "task": "kotlin-medium/pr-2406",
+   "worst": 0.5,
+   "gold": 2
+  },
+  {
+   "task": "kotlin-small/pr-617",
+   "worst": 0,
+   "gold": 37
+  },
+  {
+   "task": "kotlin-small/pr-622",
+   "worst": 0.126,
+   "gold": 182
+  },
+  {
+   "task": "kotlin-small/pr-624",
+   "worst": 0,
+   "gold": 16
+  },
+  {
+   "task": "php-large/pr-61454",
+   "worst": 1,
+   "gold": 2
+  },
+  {
+   "task": "php-large/pr-61610",
+   "worst": 0,
+   "gold": 8
+  },
+  {
+   "task": "php-large/pr-61659",
+   "worst": 0,
+   "gold": 3
+  },
+  {
+   "task": "php-medium/pr-1213",
+   "worst": 0,
+   "gold": 3
+  },
+  {
+   "task": "php-medium/pr-1278",
+   "worst": 0.011,
+   "gold": 89
+  },
+  {
+   "task": "php-medium/pr-1280",
+   "worst": 0.091,
+   "gold": 11
+  },
+  {
+   "task": "php-small/pr-3294",
+   "worst": 0,
+   "gold": 8
+  },
+  {
+   "task": "php-small/pr-3295",
+   "worst": 0,
+   "gold": 3
+  },
+  {
+   "task": "php-small/pr-3300",
+   "worst": 0.025,
+   "gold": 40
+  },
+  {
+   "task": "php-xlarge/pr-20996",
+   "worst": 0.375,
+   "gold": 10
+  },
+  {
+   "task": "php-xlarge/pr-22186",
+   "worst": 0.07,
+   "gold": 43
+  },
+  {
+   "task": "php-xlarge/pr-22487",
+   "worst": 0,
+   "gold": 25
+  },
+  {
+   "task": "python-medium/pr-3241",
+   "worst": 0.1,
+   "gold": 10
+  },
+  {
+   "task": "python-medium/pr-3302",
+   "worst": 0,
+   "gold": 7
+  },
+  {
+   "task": "python-medium/pr-3311",
+   "worst": 0.167,
+   "gold": 6
+  },
+  {
+   "task": "python-small/pr-409",
+   "worst": 1,
+   "gold": 1
+  },
+  {
+   "task": "python-small/pr-439",
+   "worst": 0,
+   "gold": 9
+  },
+  {
+   "task": "python-small/pr-446",
+   "worst": 0,
+   "gold": 18
+  },
+  {
+   "task": "shell-medium/pr-3891",
+   "worst": 0,
+   "gold": 10
+  },
+  {
+   "task": "shell-medium/pr-3907",
+   "worst": 0,
+   "gold": 5
+  },
+  {
+   "task": "shell-medium/pr-3959",
+   "worst": 0,
+   "gold": 5
+  },
+  {
+   "task": "shell-small/pr-1212",
+   "worst": 0.091,
+   "gold": 11
+  },
+  {
+   "task": "shell-small/pr-1240",
+   "worst": 0,
+   "gold": 5
+  },
+  {
+   "task": "shell-small/pr-1249",
+   "worst": 0,
+   "gold": 5
+  },
+  {
+   "task": "typescript-small/pr-383",
+   "worst": 1,
+   "gold": 2
+  },
+  {
+   "task": "typescript-small/pr-402",
+   "worst": 0,
+   "gold": 402
+  },
+  {
+   "task": "typescript-small/pr-412",
+   "worst": 0.333,
+   "gold": 3
+  },
+  {
+   "task": "typescript-xlarge/pr-17441",
+   "worst": 0.032,
+   "gold": 64
+  },
+  {
+   "task": "typescript-xlarge/pr-18585",
+   "worst": 0,
+   "gold": 8
+  },
+  {
+   "task": "typescript-xlarge/pr-19006",
+   "worst": 0.2,
+   "gold": 20
+  }
+ ]
+}

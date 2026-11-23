@@ -1,0 +1,13 @@
+run_id	project	task	arm	model	rep	effort	budget_usd	max_turns	timeout_s
+r00001	java-large	signature-polymorphic-base-type	baseline-review	claude-opus-5-5	1	-	3	200	3600
+r00002	java-large	signature-polymorphic-base-type	baseline	claude-opus-5-5	1	-	3	200	3600
+r00003	java-large	refs-invalidformatexception-from	intellij-enforced	claude-opus-5-5	1	-	3	200	3600
+r00004	java-large	refs-invalidformatexception-from	baseline	claude-opus-5-5	1	-	3	200	3600
+r00005	java-large	signature-polymorphic-base-type	intellij-optional	claude-opus-5-5	1	-	3	200	3600
+r00006	java-large	refs-invalidformatexception-from	baseline-review	claude-opus-5-5	1	-	3	200	3600
+r00007	java-large	pr-6171	baseline	claude-opus-5-5	1	-	3	200	3600
+r00008	java-large	pr-6171	intellij-enforced	claude-opus-5-5	1	-	3	200	3600
+r00009	java-large	pr-6171	baseline-review	claude-opus-5-5	1	-	3	200	3600
+r00010	java-large	refs-invalidformatexception-from	intellij-optional	claude-opus-5-5	1	-	3	200	3600
+r00011	java-large	signature-polymorphic-base-type	intellij-enforced	claude-opus-5-5	1	-	3	200	3600
+r00012	java-large	pr-6171	intellij-optional	claude-opus-5-5	1	-	3	200	3600

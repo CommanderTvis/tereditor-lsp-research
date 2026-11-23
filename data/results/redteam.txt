@@ -1,0 +1,48 @@
+PASS direct-tcp 140.82.112.3:443 blocked
+PASS direct-tcp 1.1.1.1:443 blocked
+PASS direct-tcp 8.8.8.8:53 blocked
+PASS direct-tcp github.com:443 blocked
+PASS direct-tcp api.anthropic.com:443 blocked
+PASS proxy allows api.anthropic.com
+PASS proxy CONNECT github.com:443 refused
+PASS proxy CONNECT raw.githubusercontent.com:443 refused
+PASS proxy CONNECT api.github.com:443 refused
+PASS proxy CONNECT codeload.github.com:443 refused
+PASS proxy CONNECT pypi.org:443 refused
+PASS proxy CONNECT api.anthropic.com:22 refused
+PASS proxy CONNECT api.anthropic.com:80 refused
+PASS proxy CONNECT api.anthropic.com.evil.example:443 refused
+PASS proxy CONNECT evil.example.api.anthropic.com:443 refused
+PASS proxy CONNECT 1.1.1.1:443 refused
+PASS proxy CONNECT 140.82.112.3:443 refused
+PASS proxy CONNECT api.anthropic.com@github.com:443 refused
+PASS proxy CONNECT github.com#api.anthropic.com:443 refused
+PASS proxy CONNECT [::1]:443 refused
+PASS proxy CONNECT localhost:443 refused
+PASS proxy CONNECT 127.0.0.1:443 refused
+PASS proxy CONNECT API.ANTHROPIC.COM.:443 refused
+PASS proxy request GET http://github.com/ HTTP/1.1\r\nHost: refused
+PASS proxy request POST http://api.anthropic.com/ HTTP/1.1\ refused
+PASS proxy request CONNECT github.com:443 HTTP/1.1\r\nHost: refused
+PASS pipelined second CONNECT only reaches the first host
+PASS git ls-remote github blocked
+PASS canary (gold.patch stand-in) not found anywhere on the filesystem
+PASS no gold.patch, oracle, task.toml or hidden/ anywhere
+PASS host path /study-root absent
+PASS host path /state absent
+PASS host path /study absent
+PASS host path /nix/var absent
+PASS host path /root absent
+PASS host path /home/claude absent
+PASS host path /tasks absent
+PASS host path /results absent
+PASS only the intended sockets exist: /run/study/egress.sock 
+PASS no capabilities
+PASS own PID namespace
+PASS /bin read-only
+PASS /etc read-only
+PASS /in read-only
+PASS one commit, no history
+PASS no unreachable git objects
+PASS no git remote
+PASS no stashes, tags or other refs

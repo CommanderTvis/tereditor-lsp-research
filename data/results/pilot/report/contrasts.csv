@@ -1,0 +1,28 @@
+stratum,outcome,contrast,estimate,ci_lo,ci_hi,better,same,worse,tasks,cells
+all,success (pp),baseline-review - baseline,-4.166666666666666,-12.5,0.0,1,21,2,12,24
+all,cost ratio,baseline-review / baseline,2.479797233322379,2.247382091979944,2.7697573844868506,0,0,24,12,24
+all,flaws (mean diff),baseline-review - baseline,-0.5625,,,5,10,1,8,16
+all,success (pp),optional - baseline,-5.555555555555555,,,0,17,1,9,18
+all,cost ratio,optional / baseline,1.0823109035644707,,,8,0,10,9,18
+all,flaws (mean diff),optional - baseline,-0.5833333333333334,,,4,7,1,6,12
+all,success (pp),enforced - baseline,0.0,,,0,18,0,9,18
+all,cost ratio,enforced / baseline,1.7307126321111153,,,1,0,17,9,18
+all,flaws (mean diff),enforced - baseline,-0.75,,,5,6,1,6,12
+all,success (pp),intellij-optional - baseline,-16.666666666666664,,,0,5,1,3,6
+all,cost ratio,intellij-optional / baseline,0.9016785024116277,,,3,0,3,3,6
+all,flaws (mean diff),intellij-optional - baseline,0.0,,,0,4,0,2,4
+all,success (pp),intellij-enforced - baseline,-16.666666666666664,,,0,5,1,3,6
+all,cost ratio,intellij-enforced / baseline,2.3248548836994654,,,0,0,6,3,6
+all,flaws (mean diff),intellij-enforced - baseline,0.0,,,0,4,0,2,4
+all,success (pp),optional - baseline-review,0.0,,,0,18,0,9,18
+all,cost ratio,optional / baseline-review,0.44343481671144136,,,17,0,1,9,18
+all,flaws (mean diff),optional - baseline-review,0.08333333333333333,,,0,11,1,6,12
+all,success (pp),enforced - baseline-review,5.555555555555555,,,1,17,0,9,18
+all,cost ratio,enforced / baseline-review,0.7090922176546779,,,15,0,3,9,18
+all,flaws (mean diff),enforced - baseline-review,-0.08333333333333333,,,2,9,1,6,12
+all,success (pp),intellij-optional - baseline-review,-16.666666666666664,,,0,5,1,3,6
+all,cost ratio,intellij-optional / baseline-review,0.34669993843643715,,,6,0,0,3,6
+all,flaws (mean diff),intellij-optional - baseline-review,0.25,,,0,3,1,2,4
+all,success (pp),intellij-enforced - baseline-review,-16.666666666666664,,,0,5,1,3,6
+all,cost ratio,intellij-enforced / baseline-review,0.8939184453177672,,,4,0,2,3,6
+all,flaws (mean diff),intellij-enforced - baseline-review,0.25,,,0,3,1,2,4

@@ -1,0 +1,16 @@
+stratum,outcome,contrast,estimate,ci_lo,ci_hi,better,same,worse,tasks,cells
+model=claude-opus-5-5,success (pp),baseline-review - baseline,0.0,,,0,3,0,3,3
+model=claude-opus-5-5,cost ratio,baseline-review / baseline,2.7508061999312083,,,0,0,3,3,3
+model=claude-opus-5-5,flaws (mean diff),baseline-review - baseline,0.0,,,0,2,0,2,2
+model=claude-opus-5-5,success (pp),intellij-optional - baseline,0.0,,,0,3,0,3,3
+model=claude-opus-5-5,cost ratio,intellij-optional / baseline,0.9995628429245815,,,1,0,2,3,3
+model=claude-opus-5-5,flaws (mean diff),intellij-optional - baseline,0.5,,,0,1,1,2,2
+model=claude-opus-5-5,success (pp),intellij-enforced - baseline,0.0,,,0,3,0,3,3
+model=claude-opus-5-5,cost ratio,intellij-enforced / baseline,1.7282576945366581,,,0,0,3,3,3
+model=claude-opus-5-5,flaws (mean diff),intellij-enforced - baseline,0.5,,,0,1,1,2,2
+model=claude-opus-5-5,success (pp),intellij-optional - baseline-review,0.0,,,0,3,0,3,3
+model=claude-opus-5-5,cost ratio,intellij-optional / baseline-review,0.36337087031052145,,,3,0,0,3,3
+model=claude-opus-5-5,flaws (mean diff),intellij-optional - baseline-review,0.5,,,0,1,1,2,2
+model=claude-opus-5-5,success (pp),intellij-enforced - baseline-review,0.0,,,0,3,0,3,3
+model=claude-opus-5-5,cost ratio,intellij-enforced / baseline-review,0.6282731566403617,,,3,0,0,3,3
+model=claude-opus-5-5,flaws (mean diff),intellij-enforced - baseline-review,0.5,,,0,1,1,2,2

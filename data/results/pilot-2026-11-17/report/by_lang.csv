@@ -1,0 +1,13 @@
+stratum,outcome,contrast,estimate,ci_lo,ci_hi,better,same,worse,tasks,cells
+lang=python,success (pp),baseline-review - baseline,0.0,,,0,12,0,4,12
+lang=python,cost ratio,baseline-review / baseline,2.5415889086730545,,,0,0,12,4,12
+lang=python,success (pp),enforced - baseline,0.0,,,0,12,0,4,12
+lang=python,cost ratio,enforced / baseline,1.584622382356961,,,2,0,10,4,12
+lang=python,success (pp),enforced - baseline-review,0.0,,,0,12,0,4,12
+lang=python,cost ratio,enforced / baseline-review,0.6234770607274491,,,10,0,2,4,12
+lang=typescript,success (pp),baseline-review - baseline,0.0,,,0,12,0,4,12
+lang=typescript,cost ratio,baseline-review / baseline,2.648957776985467,,,0,0,12,4,12
+lang=typescript,success (pp),enforced - baseline,0.0,,,0,12,0,4,12
+lang=typescript,cost ratio,enforced / baseline,2.558088086746456,,,0,0,12,4,12
+lang=typescript,success (pp),enforced - baseline-review,0.0,,,0,12,0,4,12
+lang=typescript,cost ratio,enforced / baseline-review,0.9656960593979639,,,8,0,4,4,12

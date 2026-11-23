@@ -1,0 +1,7 @@
+run_id	project	task	arm	model	rep	effort	budget_usd	max_turns	timeout_s
+r00001	java-smoke	rename-delegate-adapter	intellij-optional	claude-haiku-5-5	1	-	3	100	2400
+r00002	java-smoke	refs-getadapter-class	intellij-enforced	claude-haiku-5-5	1	-	3	100	2400
+r00003	java-smoke	rename-delegate-adapter	intellij-enforced	claude-haiku-5-5	1	-	3	100	2400
+r00004	java-smoke	rename-delegate-adapter	baseline	claude-haiku-5-5	1	-	3	100	2400
+r00005	java-smoke	refs-getadapter-class	baseline	claude-haiku-5-5	1	-	3	100	2400
+r00006	java-smoke	refs-getadapter-class	intellij-optional	claude-haiku-5-5	1	-	3	100	2400

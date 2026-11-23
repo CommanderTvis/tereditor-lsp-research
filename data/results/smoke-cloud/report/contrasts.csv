@@ -1,0 +1,11 @@
+stratum,outcome,contrast,estimate,ci_lo,ci_hi,better,same,worse,tasks,cells
+all,success (pp),baseline-review - baseline,0.0,,,0,1,0,1,1
+all,cost ratio,baseline-review / baseline,1.4290047088230462,,,0,0,1,1,1
+all,success (pp),optional - baseline,0.0,,,0,1,0,1,1
+all,cost ratio,optional / baseline,0.6104774468836867,,,1,0,0,1,1
+all,success (pp),enforced - baseline,-100.0,,,0,0,1,1,1
+all,cost ratio,enforced / baseline,1.6445974776867431,,,0,0,1,1,1
+all,success (pp),optional - baseline-review,0.0,,,0,1,0,1,1
+all,cost ratio,optional / baseline-review,0.42720464328384666,,,1,0,0,1,1
+all,success (pp),enforced - baseline-review,-100.0,,,0,0,1,1,1
+all,cost ratio,enforced / baseline-review,1.1508691801591493,,,0,0,1,1,1

@@ -1,0 +1,7 @@
+stratum,outcome,contrast,estimate,ci_lo,ci_hi,p,tasks,cells,p_adj
+model=claude-haiku-5-5,success (pp),optional - baseline,0.0,0.0,0.0,1.0,4,4,1.0
+model=claude-haiku-5-5,cost ratio,optional / baseline,1.2421140231450953,1.0851229252987864,1.4614144860067604,0.12108789121087891,4,4,0.24737526247375263
+model=claude-haiku-5-5,success (pp),enforced - baseline,0.0,0.0,0.0,1.0,4,4,1.0
+model=claude-haiku-5-5,cost ratio,enforced / baseline,2.8042482066692207,1.9466092178781003,3.9340447588590393,0.1197880211978802,4,4,0.24737526247375263
+model=claude-haiku-5-5,success (pp),enforced - optional,0.0,0.0,0.0,1.0,4,4,1.0
+model=claude-haiku-5-5,cost ratio,enforced / optional,2.257641532432524,1.6962967103703834,3.092834786505198,0.12368763123687632,4,4,0.24737526247375263

@@ -1,0 +1,5 @@
+run_id	project	task	arm	model	rep	effort	budget_usd	max_turns	timeout_s
+r00001	python-small	refs-payment-card-number	baseline	claude-haiku-5-5	1	-	3	200	3600
+r00002	python-small	refs-payment-card-number	enforced	claude-haiku-5-5	1	-	3	200	3600
+r00003	python-small	refs-payment-card-number	baseline-review	claude-haiku-5-5	1	-	3	200	3600
+r00004	python-small	refs-payment-card-number	optional	claude-haiku-5-5	1	-	3	200	3600

@@ -1,0 +1,212 @@
+[
+ {
+  "run": "r01773",
+  "kind": "leftover",
+  "file": "src/main/java/tools/jackson/databind/deser/SettableAnyProperty.java",
+  "line": 219,
+  "reason": "New method's @since tag says 3.1, but the project version is 3.3.0-SNAPSHOT (pom.xml:12, release-notes/VERSION shows 3.3.0 unreleased)"
+ },
+ {
+  "run": "r00556",
+  "kind": "naming",
+  "file": "interop/kotlin-metadata/src/main/kotlin/com/squareup/kotlinpoet/metadata/specs/KotlinPoetMetadataSpecs.kt",
+  "line": 49,
+  "reason": "moved import out of ASCII sort order; parameterspec.ParameterSpec should follow the TypeSpec import"
+ },
+ {
+  "run": "r02019",
+  "kind": "unrelated",
+  "file": "packages/styles/scss/utilities/__tests__/skeleton-animation-test.js",
+  "line": 1,
+  "reason": "Test file renamed from skeleton-test.js, which the task did not ask for"
+ },
+ {
+  "run": "r01763",
+  "kind": "leftover",
+  "file": "lucene/core/src/test/org/apache/lucene/util/TestQueryBuilder.java",
+  "line": 1,
+  "reason": "Test file and class are still named after the old QueryBuilder while every use inside now targets TextQueryBuilder"
+ },
+ {
+  "run": "r00593",
+  "kind": "leftover",
+  "file": "packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts",
+  "line": 2994,
+  "reason": "JSDoc @param order still lists tableOrName before checkConstraint, not matching the new signature"
+ },
+ {
+  "run": "r00128",
+  "kind": "leftover",
+  "file": "packages/typeorm/src/driver/sap/SapQueryRunner.ts",
+  "line": 2446,
+  "reason": "JSDoc @param order still tableOrName before checkConstraint, which no longer matches the signature"
+ },
+ {
+  "run": "r01013",
+  "kind": "churn",
+  "file": "packages/styles/docs/sass.md",
+  "line": 557,
+  "reason": "Table row widened to `skeleton-animation` without realigning the column, so the table is misaligned against its neighbours."
+ },
+ {
+  "run": "r00885",
+  "kind": "leftover",
+  "file": "packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts",
+  "line": 1039,
+  "reason": "JSDoc @param tableOrName is listed before @param checkConstraint, the old order"
+ },
+ {
+  "run": "r01930",
+  "kind": "churn",
+  "file": "kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/FunSpecTest.kt",
+  "line": 43,
+  "reason": "new import placed after java.*/kotlin.* imports, out of sorted order"
+ },
+ {
+  "run": "r01644",
+  "kind": "naming",
+  "file": "salt/modules/data.py",
+  "line": 10,
+  "reason": "import salt.wire_payload is out of isort order before salt.utils.files"
+ },
+ {
+  "run": "r00689",
+  "kind": "unrelated",
+  "file": ".build/compat-baseline.txt",
+  "line": 96,
+  "reason": "Adds a new compat-baseline entry (two sass:@mixin deprecate lines, not marked accepted) that the task did not ask for and that would register as an unlisted break in check-compat"
+ },
+ {
+  "run": "r01644",
+  "kind": "naming",
+  "file": "tests/pytests/unit/channel/test_server.py",
+  "line": 12,
+  "reason": "import salt.wire_payload is out of isort order before salt.utils.event"
+ },
+ {
+  "run": "r00290",
+  "kind": "leftover",
+  "file": "gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java",
+  "line": 97,
+  "reason": "Javadoc prose still calls the returned type an 'object constructor' instead of referring to ObjectFactory"
+ },
+ {
+  "run": "r00320",
+  "kind": "dead",
+  "file": "lucene/core/src/java/org/apache/lucene/search/package-info.java",
+  "line": 566,
+  "reason": "New import of TextQueryBuilder is only referenced from a Javadoc link; the original used the fully qualified name, so the import was not needed"
+ },
+ {
+  "run": "r01197",
+  "kind": "leftover",
+  "file": "gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java",
+  "line": 97,
+  "reason": "Javadoc still says 'object constructor' where it describes the renamed ObjectFactory return type"
+ },
+ {
+  "run": "r01644",
+  "kind": "naming",
+  "file": "salt/cache/localfs.py",
+  "line": 20,
+  "reason": "import salt.wire_payload is out of isort order before salt.utils.atomicfile"
+ },
+ {
+  "run": "r00069",
+  "kind": "leftover",
+  "file": "src/MediatR/obj/project.assets.json",
+  "line": 1,
+  "reason": "Old src/MediatR/ directory remains with stale NuGet obj files (project.assets.json, MediatR.csproj.nuget.*, project.nuget.cache) that refer to MediatR.csproj; the task requires no file to remain under src/MediatR/"
+ },
+ {
+  "run": "r00554",
+  "kind": "naming",
+  "file": "salt/modules/state.py",
+  "line": 24,
+  "reason": "isort order broken: salt.wire_payload placed before salt.state"
+ },
+ {
+  "run": "r01566",
+  "kind": "leftover",
+  "file": "embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt",
+  "line": 49,
+  "reason": "KDoc still lists @param actions before @param goal; the signature is now (goal, actions)"
+ },
+ {
+  "run": "r01644",
+  "kind": "naming",
+  "file": "salt/crypt.py",
+  "line": 29,
+  "reason": "import salt.wire_payload is out of isort order before salt.utils.crypt"
+ },
+ {
+  "run": "r01823",
+  "kind": "dead",
+  "file": "src/DataTableAbstract.php",
+  "line": 946,
+  "reason": "setupKeyword() lost its only caller when getColumnSearchKeyword() stopped calling it; nothing references it now"
+ },
+ {
+  "run": "r00402",
+  "kind": "leftover",
+  "file": "doc/api/astroid.exceptions.rst",
+  "line": 30,
+  "reason": "UseInferenceDefault still listed under astroid.exceptions automodule although it is no longer defined or in __all__ of that module"
+ },
+ {
+  "run": "r00745",
+  "kind": "leftover",
+  "file": "embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt",
+  "line": 45,
+  "reason": "KDoc lists @param actions before @param goal, but the signature now takes goal first"
+ },
+ {
+  "run": "r00511",
+  "kind": "dead",
+  "file": "src/bitops.c",
+  "line": 882,
+  "reason": "setbitCommand's strOldSize is passed to lookupStringForBitCommand but never read after the removed histogram block; only strGrowSize is still used"
+ },
+ {
+  "run": "r01118",
+  "kind": "churn",
+  "file": "compose-lint-checks/src/test/java/slack/lint/compose/RedundantComposableDetectorTest.kt",
+  "line": 656,
+  "reason": "New comment line is 104 characters, over the 100-column limit"
+ },
+ {
+  "run": "r01754",
+  "kind": "leftover",
+  "file": "test-data/unit/check-typevar-tuple.test",
+  "line": 450,
+  "reason": "Comment still refers to the old module name \"typeops\" instead of \"type_operations\""
+ },
+ {
+  "run": "r01259",
+  "kind": "leftover",
+  "file": "src/MediatR/obj/project.assets.json",
+  "line": 1,
+  "reason": "Old src/MediatR/ directory still exists with stale obj/ build output (project.assets.json, MediatR.csproj.nuget.* files); the task requires no file to remain under src/MediatR/"
+ },
+ {
+  "run": "r01791",
+  "kind": "naming",
+  "file": "salt/metaproxy/proxy.py",
+  "line": 26,
+  "reason": "salt.wire_payload import sorts after salt.pillar, breaking import order"
+ },
+ {
+  "run": "r02088",
+  "kind": "leftover",
+  "file": "src/MediatR/obj/",
+  "line": 1,
+  "reason": "Old obj directory with MediatR.csproj.* restore artifacts and project.assets.json remains under src/MediatR/, which the task says must be removed"
+ },
+ {
+  "run": "r01013",
+  "kind": "churn",
+  "file": "docs/migration/v11.md",
+  "line": 247,
+  "reason": "Table cell widened without realigning the table; the row's trailing padding no longer matches the other rows."
+ }
+]

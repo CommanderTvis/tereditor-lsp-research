@@ -1,0 +1,5 @@
+stratum,outcome,contrast,estimate,ci_lo,ci_hi,p,tasks,cells,p_adj
+model=claude-haiku-5-5,success (pp),intellij-optional - baseline,0.0,0.0,0.0,1.0,2,2,1.0
+model=claude-haiku-5-5,cost ratio,intellij-optional / baseline,1.0937703803770489,1.0696449108254833,1.1184399915172791,0.5015498450154985,2,2,1.0
+model=claude-haiku-5-5,success (pp),intellij-enforced - baseline,0.0,0.0,0.0,1.0,2,2,1.0
+model=claude-haiku-5-5,cost ratio,intellij-enforced / baseline,2.0270378235927033,1.1844735634649652,3.46895233883958,0.5030496950304969,2,2,1.0
