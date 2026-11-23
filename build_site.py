@@ -294,6 +294,42 @@ EX_SYN = "Rename `salt/payload.py` to `salt/wire_payload.py`. Update every impor
 EX_PR = "Header object passed to c.body() is mutated, so reusing it returns 500 from the second request on"
 
 
+def rereview_html(_d):
+    """The second reviewer (Opus 5.5) and the Haiku control on rebuilt trees: data/rereview_summary.json."""
+    p = DATA / "rereview_summary.json"
+    if not p.exists():
+        return ""
+    import json
+    r = json.loads(p.read_text())
+    name = {"claude-haiku-5-5": "Haiku 5.5", "claude-sonnet-5-5": "Sonnet 5.5", "claude-opus-5-5": "Opus 5.5"}
+    ag = []
+    for strat, label in (("random", "random sample (60 runs)"), ("driver task", "TypeORM task (10 runs)")):
+        for pair, v in r[strat].items():
+            t = v["total"]
+            ag.append([label, pair, t["n"], f"{100 * t['presence']:.0f}%", f"{100 * t['exact']:.0f}%",
+                       "" if t["pearson"] is None else f"{t['pearson']:.2f}", f"{t['mean_x']:.2f} vs {t['mean_y']:.2f}"])
+    kinds = ["leftover", "naming", "churn", "dead", "unrelated"]
+    kk = [[k] + [f"{100 * r['all'][pair][k]['presence']:.0f}%" for pair in r["all"]] for k in kinds]
+    diffs = [[who] + [("" if v is None else f"{v[0]:+.2f} ({v[1]:+.2f} to {v[2]:+.2f})") for v in (x["optional - baseline"], x["enforced - baseline"])]
+             for who, x in r["paired_differences_random_stratum"].items()]
+    drv = [[x["run_id"], x["arm"], name[x["model"]], f"{x['original_haiku']:.0f}", f"{x['rerun_haiku']:.0f}", f"{x['opus']:.0f}"]
+           for x in r["driver_task"]]
+    return f"""
+        <p><b>A second reviewer.</b> 70 edit runs (20 random task-and-model cells with their baseline, optional and
+        enforced runs, plus 10 runs of the TypeORM task) were reviewed again, blind to the arm, by Opus 5.5 and, as a
+        control, by Haiku 5.5, both with the same prompt on trees rebuilt from the project and the reviewed diff
+        (no Bash, no server-side preparation; USD {r['cost_usd']:.2f}). Whether a run has any flaw agrees about 90% of
+        the time, mostly because most runs have none; the counts do not. On the TypeORM task Opus reports the stale
+        JSDoc (10 or 11) in every run, baseline and optional alike, while Haiku swings between 0 and 11 on identical
+        diffs, even against its own earlier review. Under Opus the optional-minus-baseline difference on the random
+        sample is near zero, and so is enforced-minus-baseline. Opus is also a model under test: a second opinion,
+        not ground truth, and 20 cells cannot settle an effect of this size.</p>
+        {spoiler("Show the numbers", table(["Sample", "Reviewers", "Runs", "Any-flaw agreement", "Same count", "Count correlation", "Mean flaws"], ag)
+                 + table(["Kind: any-flaw agreement"] + list(r["all"]), kk)
+                 + table(["Reviewer (random sample, paired by cell)", "Optional − baseline (95% interval)", "Enforced − baseline (95% interval)"], diffs)
+                 + table(["TypeORM run", "Arm", "Model", "Original Haiku", "Haiku again", "Opus"], drv))}"""
+
+
 def audit_section():
     """Exploratory, not pre-registered: renders data/flaws_audit.json (written by audit/flaws_audit.py)."""
     p = DATA / "flaws_audit.json"
@@ -357,6 +393,7 @@ def audit_section():
         runs carry Eclipse project files (.project, .classpath, .factorypath) the server wrote, which count as
         unrelated edits: {esc(ewa)}. More enforced edit runs were skipped because their patch did not apply.</p>
         {spoiler("Show the numbers", art)}
+{rereview_html(d)}
         <p><b>Denominators.</b> Flaw means are over reviewed edit runs. Weighting the per-kind means by all runs
         (navigation questions included) gives different, wrong numbers:</p>
         {spoiler("Show the numbers", den)}
