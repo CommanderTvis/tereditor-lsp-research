@@ -149,8 +149,11 @@ def legend(series):
 
 # ---------- page ----------
 
-def server_section(runs, is_project, arms, title):
-    """Language-server arms against the baseline on one group of projects. arms: [(arm, label)], baseline first."""
+def server_section(runs, is_project, arms, title, merge=None):
+    """Language-server arms against the baseline on one group of projects. arms: [(arm, label)], baseline first.
+    merge maps an arm onto another one, to pool them (the IntelliJ arms into optional and enforced)."""
+    if merge:
+        runs = [dict(r, arm=merge.get(r["arm"], r["arm"])) for r in runs]
     import random
     import statistics
     sub = [r for r in runs if is_project(r["project"]) and r["arm"] in {a for a, _ in arms}]
@@ -285,6 +288,12 @@ def main():
          ("enforced", "kotlin-lsp, enforced"), ("intellij-optional", "IntelliJ, optional"),
          ("intellij-enforced", "IntelliJ, enforced")],
         "Success difference against baseline on Kotlin tasks")
+    a_tasks, a_runs, _, all_ls_table, _ = server_section(
+        runs, lambda p: True,
+        [("baseline", "baseline (no language server)"), ("optional", "optional, any language server"),
+         ("enforced", "enforced, any language server")],
+        "Success difference against baseline, all language servers",
+        merge={"intellij-optional": "optional", "intellij-enforced": "enforced"})
     j_tasks, j_runs, chart_java, java_table, j_zero = server_section(
         runs, lambda p: p.startswith("java-") and not p.startswith("java-kotlin-"),
         [("baseline", "baseline (no language server)"), ("intellij-optional", "IntelliJ, optional"),
@@ -420,11 +429,6 @@ def main():
         IntelliJ versions of optional and enforced, where IntelliJ is the language server (Java and Kotlin projects
         only). On Kotlin this compares IntelliJ with <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a>, which the plain optional and enforced arms use.</p>
 
-        <h2>Headline</h2>
-        <p>{esc(headline)}</p>
-        <p class="note">Every contrast is paired on the tasks both arms ran; intervals are 95% task-resampling intervals.
-        Total run cost recorded: USD {total_cost:,.2f}. Runs excluded by the contamination check: {excluded}.</p>
-
         <h2>Success barely moves</h2>
         <p>Change in success rate against the baseline arm, all models pooled. The dashed line is no change.</p>
         {chart_success}
@@ -444,6 +448,11 @@ def main():
         <h2>Offered, the tools go unused</h2>
         <p>Share of runs that called at least one language-server tool.</p>
         {chart_adoption}
+
+        <h2>All language servers together</h2>
+        <p>Every language server pooled: the IntelliJ runs are counted with optional and enforced.
+        {a_tasks} tasks, {a_runs:,} runs.</p>
+        {all_ls_table}
 
         <h2>IntelliJ vs kotlin-lsp vs no language server</h2>
         <p>The {k_tasks} Kotlin and mixed Java+Kotlin tasks ran with both language servers:
