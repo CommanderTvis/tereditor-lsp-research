@@ -307,9 +307,9 @@ def main():
                        [[k, d, sum(1 for f in flaws if f["kind"] == k)] for k, d in kinds])
     # Real reports, picked by run id; the task line is a one-line summary of that task's prompt.
     examples = [
-        ("Python", "r00392", "disk.py", "fix wrong byte-conversion factors in Salt's <code>disk</code> module (a mined pull request)"),
-        ("TypeScript", "r00128", "AuroraMysqlQueryRunner.ts", "swap the two parameters of TypeORM's <code>createCheckConstraint</code>"),
-        ("Kotlin", "r00198", "RedundantComposableDetector.kt", "fix a missed case in a Compose lint check (a mined pull request)"),
+        ("Python", "r00260", "check-typevar-tuple.test", "rename mypy's module <code>typeops</code> to <code>type_operations</code>"),
+        ("TypeScript", "r01482", "base64.ts", "rename the module <code>utils/encode</code> to <code>utils/base64</code>"),
+        ("Kotlin", "r02187", "kotlinpoet.api", "move KotlinPoet's class <code>ParameterSpec</code> into its own package"),
     ]
     flaw_examples = ""
     for lang, rid, fname, task in examples:
