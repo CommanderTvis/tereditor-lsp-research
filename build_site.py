@@ -99,8 +99,20 @@ def contrast_name(arm, outcome):
 
 # ---------- charts ----------
 
-def forest(items, lo, hi, ref, fmt, title, log=False, width=680):
-    """Dot-and-interval rows. items: (label, est, ci_lo, ci_hi, colour, tooltip)."""
+def rank_colours(values, higher_better):
+    """Best value green, worst red, the rest yellow; ties share the colour, and all-equal stays neutral."""
+    if len(set(values)) < 2:
+        return ["var(--okay)"] * len(values)
+    best = max(values) if higher_better else min(values)
+    worst = min(values) if higher_better else max(values)
+    return ["var(--good)" if v == best else "var(--bad)" if v == worst else "var(--okay)" for v in values]
+
+
+def forest(items, lo, hi, ref, fmt, title, log=False, width=680, higher_better=True):
+    """Dot-and-interval rows with the baseline (the reference) as the first row. Colours rank the rows like the
+    tables do: best green, worst red, the rest yellow. items: (label, est, ci_lo, ci_hi, colour (ignored), tooltip)."""
+    items = [("baseline", ref, None, None, None, "baseline (the reference)")] + list(items)
+    colours = rank_colours([it[1] for it in items], higher_better)
     left, right, row_h, top = 190, 20, 30, 26
     height = top + row_h * len(items) + 34
     plot_w = width - left - right
@@ -120,12 +132,56 @@ def forest(items, lo, hi, ref, fmt, title, log=False, width=680):
     parts.append(f'<line x1="{x(ref):.1f}" x2="{x(ref):.1f}" y1="{top - 10}" y2="{height - 28}" stroke="{MUTED}" stroke-width="1.5" stroke-dasharray="4 3"/>')
     for i, (label, est, a, b, colour, tip) in enumerate(items):
         y = top + row_h * i + row_h / 2
+        colour = colours[i]
         parts.append(f'<text x="{left - 10}" y="{y + 4:.1f}" text-anchor="end" class="label">{esc(label)}</text>')
         parts.append(f'<g class="mark"><title>{esc(tip)}</title>'
                      f'<rect x="{left}" y="{y - row_h / 2:.1f}" width="{plot_w}" height="{row_h}" fill="transparent"/>')
         if a is not None and b is not None:
-            parts.append(f'<line x1="{x(max(a, lo)):.1f}" x2="{x(min(b, hi)):.1f}" y1="{y:.1f}" y2="{y:.1f}" stroke="{colour}" stroke-width="2" stroke-linecap="round"/>')
+            parts.append(f'<line x1="{x(max(a, lo)):.1f}" x2="{x(min(b, hi)):.1f}" y1="{y:.1f}" y2="{y:.1f}" stroke="{colour}" stroke-width="2" stroke-linecap="round" opacity="0.4"/>')
         parts.append(f'<circle cx="{x(est):.1f}" cy="{y:.1f}" r="5" fill="{colour}" stroke="var(--bg)" stroke-width="2"/></g>')
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def wilson(k, n, z=1.96):
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return c - h, c + h
+
+
+def rate_groups(groups, lo, hi, title, width=680):
+    """Success rate per arm, grouped by model, with the baseline rate as a dashed line through each group.
+    groups: [(group label, [(arm label, rate, ci_lo, ci_hi, colour, tooltip)])]; the first row of a group is the baseline."""
+    left, right, row_h, top, gap = 190, 20, 26, 14, 14
+    n_rows = sum(len(g[1]) for g in groups)
+    height = top + row_h * n_rows + gap * (len(groups) - 1) + 40
+    plot_w = width - left - right
+
+    def x(v):
+        return left + (v - lo) / (hi - lo) * plot_w
+
+    parts = [f'<svg viewBox="0 0 {width} {height}" role="img" aria-label="{esc(title)}" class="chart">']
+    for t in range(math.ceil(lo / 10) * 10, int(hi) + 1, 10):
+        parts.append(f'<line x1="{x(t):.1f}" x2="{x(t):.1f}" y1="{top - 6}" y2="{height - 34}" stroke="{GRID}" stroke-width="1"/>')
+        parts.append(f'<text x="{x(t):.1f}" y="{height - 14}" text-anchor="middle" class="tick">{t}%</text>')
+    y = top
+    for gi, (label, rows_) in enumerate(groups):
+        base = rows_[0][1]
+        colours = rank_colours([r[1] for r in rows_], True)
+        parts.append(f'<line x1="{x(base):.1f}" x2="{x(base):.1f}" y1="{y - 4}" y2="{y + row_h * len(rows_) + 4}" '
+                     f'stroke="{MUTED}" stroke-width="1.5" stroke-dasharray="4 3"/>')
+        for i, (arm, rate, a, b, _, tip) in enumerate(rows_):
+            colour = colours[i]
+            cy = y + row_h * i + row_h / 2
+            name = f"{label}, {arm}"
+            parts.append(f'<text x="{left - 10}" y="{cy + 4:.1f}" text-anchor="end" class="label">{esc(name)}</text>')
+            parts.append(f'<g class="mark"><title>{esc(tip)}</title>'
+                         f'<rect x="{left}" y="{cy - row_h / 2:.1f}" width="{plot_w}" height="{row_h}" fill="transparent"/>'
+                         f'<line x1="{x(a):.1f}" x2="{x(b):.1f}" y1="{cy:.1f}" y2="{cy:.1f}" stroke="{colour}" stroke-width="2" stroke-linecap="round" opacity="0.4"/>'
+                         f'<circle cx="{x(rate):.1f}" cy="{cy:.1f}" r="5" fill="{colour}" stroke="var(--bg)" stroke-width="2"/></g>')
+        y += row_h * len(rows_) + gap
     parts.append("</svg>")
     return "".join(parts)
 
@@ -200,7 +256,7 @@ def server_section(runs, is_project, arms, title, merge=None):
     chart = forest(items, -lim, lim, 0, lambda t: "0 pp" if t == 0 else f"{t:+g} pp",
                    title)
     tbl = table(["Arm", "Runs", "Success", "Median cost (USD)", "Median wall time (s)", "Runs using LSP tools",
-                 "Mean flaws"], body)
+                 "Flaws per run (mean)"], body)
     zero = "every one includes zero" if all(i[2] <= 0 <= i[3] for i in items) else "not all include zero"
     return len(tasks), len(sub), chart, tbl, zero
 
@@ -231,7 +287,7 @@ def kind_table(runs):
     rank(body, 5, False, groups)
     rank(body, 8, False, groups)
     return table(["Kind", "Tasks", "Arm", "Runs", "Success", "Median cost (USD)", "Median wall time (s)",
-                  "Runs using LSP tools", "Mean flaws"], body, continued=[i for i, r in enumerate(body) if r[0] == ""])
+                  "Runs using LSP tools", "Flaws per run (mean)"], body, continued=[i for i, r in enumerate(body) if r[0] == ""])
 
 
 EX_SYN = "Rename `salt/payload.py` to `salt/wire_payload.py`. Update every import and module reference, preserving behavior and removing the old path."
@@ -271,15 +327,47 @@ def main():
         f = c_all(arm, "flaws (mean diff)")
         return f"{float(f['estimate']):+.2f} flaws per run (95% interval {float(f['ci_lo']):+.2f} to {float(f['ci_hi']):+.2f})"
     flaw_enf_txt, flaw_opt_txt = flaw_txt("enforced"), flaw_txt("optional")
+    def fewer_flaws(rs):
+        """True when an LS arm that is merely offered (optional) leaves fewer flaws than the baseline."""
+        def mean(arms):
+            v = [float(r["flaws"]) for r in rs if r["arm"] in arms and r["flaws"] not in ("", None)]
+            return sum(v) / len(v) if v else None
+        base, opt = mean({"baseline"}), mean({"optional", "intellij-optional"})
+        return base is not None and opt is not None and opt < base
+
+    def tag(rs):
+        return ' <span class="tag win">fewer flaws</span>' if fewer_flaws(rs) else ""
+    tag_kinds = tag([r for r in runs if r["task_type"] != "pr"])
+    tag_all = tag(runs)
+    tag_kotlin = tag([r for r in runs if r["project"].startswith(("kotlin-", "java-kotlin-"))])
+    tag_java = tag([r for r in runs if r["project"].startswith("java-") and not r["project"].startswith("java-kotlin-")])
+
+    def mean_flaws(kind, arm):
+        merge = {"intellij-optional": "optional", "intellij-enforced": "enforced"}
+        v = [float(r["flaws"]) for r in runs if r["flaws"] not in ("", None)
+             and (r["task_type"] == "pr") == (kind == "pr") and merge.get(r["arm"], r["arm"]) == arm]
+        return sum(v) / len(v)
+    fs = {(k, a): mean_flaws(k, a) for k in ("syn", "pr") for a in ("baseline", "optional", "enforced", "baseline-review")}
+    flaw_summary = (
+        f"<p>On synthetic tasks (short, precise tasks; see <a href=\"#kinds-of-tasks\">kinds of tasks</a>) runs leave "
+        f"{fs['syn', 'optional']:.2f} flaws on average with optional LS tools against {fs['syn', 'baseline']:.2f} for the baseline "
+        f"({100 * (fs['syn', 'optional'] / fs['syn', 'baseline'] - 1):+.0f}%). On real PRs there is no change "
+        f"({fs['pr', 'optional']:.2f} against {fs['pr', 'baseline']:.2f}). Enforcing LS use does not help: "
+        f"{fs['syn', 'enforced']:.2f} on synthetic tasks and {fs['pr', 'enforced']:.2f} on PRs. "
+        f"A second review turn lowers flaws further ({fs['syn', 'baseline-review']:.2f} on synthetic tasks) but costs "
+        f"{num(rev_c['estimate'])}× the baseline.</p>"
+        f"<p class='note'>These are raw means per run. Over all tasks the paired difference for optional is "
+        f"{flaw_opt_txt}, so it is suggestive, not proven.</p>")
+    arm_note = ("<p class='note'>Arms: baseline = no LS tools; optional = LS tools offered; enforced = the agent is told "
+                "to use them (<a href=\"#setups\">details</a>).</p>")
     enf_c_txt = f"{float(enf_c['estimate']):.2f}"
     opus_adopt = f"{float(find(descriptive, model='claude-opus-5-5', arm='optional')['lsp_used']) * 100:.0f}%"
-    outline = [("what-is-being-tested", "What is being tested"), ("setups", "Setups"),
-               ("kinds-of-tasks", "Kinds of tasks"),  ("success-barely-moves", "Success barely moves"),
+    outline = [("top", "Does LSP help Claude Code?"), ("what-is-being-tested", "What is being tested"), ("setups", "Setups"),
+               ("kinds-of-tasks", "Kinds of tasks"), ("flaws", "Flaws: the one improvement"), ("success-barely-moves", "Success barely moves"),
+               ("no-model-solves-more", "No model solves more tasks with LS tools"),
+               ("only-opus-uses-optional-tools", "Only Opus uses tools when they're optional"),
                ("cost-goes-up-when-lsp-use-is-enforced", "Cost goes up when LSP use is enforced"),
-               ("no-model-gains-from-it", "No model gains from it"),
-               ("when-offered-only-opus-reaches-for-the-tools-and-only-now-and-then", "When offered, only Opus reaches for the tools"),
-               ("what-counts-as-a-flaw", "What counts as a flaw"), 
-               ("all-ls-together", "All LS together"), ("intellij-vs-kotlin-lsp-vs-no-ls", "IntelliJ vs kotlin-lsp vs no LS"),
+                              ("all-ls-together", "All LS together"), ("intellij-vs-kotlin-lsp-vs-no-ls", "IntelliJ vs kotlin-lsp vs no LS"),
                ("java-intellij-vs-no-ls", "Java: IntelliJ vs no LS"), ("raw-data", "Raw data")]
     outline_html = ("<nav class='outline'><b>Contents</b><ol>"
                     + "".join(f'<li><a href="#{i}">{esc(t)}</a></li>' for i, t in outline) + "</ol></nav>")
@@ -311,7 +399,7 @@ def main():
             e, a, b = float(r["estimate"]), float(r["ci_lo"]), float(r["ci_hi"])
             c_items.append((arm, e, a, b, ORANGE, f"{arm} / baseline: {e:.2f}× cost (95% interval {a:.2f} to {b:.2f}), {r['tasks']} tasks"))
             c_rows.append([arm, f"{e:.2f}", f"{a:.2f} to {b:.2f}", r["better"], r["same"], r["worse"], r["tasks"]])
-    chart_cost = forest(c_items, 0.75, 3, 1, lambda t: f"{t:g}×", "Cost ratio against baseline", log=True)
+    chart_cost = forest(c_items, 0.75, 3, 1, lambda t: f"{t:g}×", "Cost ratio against baseline", log=True, higher_better=False)
 
     # Chart 3: per model, optional and enforced success difference.
     m_items, m_rows = [], []
@@ -323,7 +411,17 @@ def main():
                 m_items.append((f"{MODEL_NAME[m]}, {arm}", e, a, b, colour,
                                 f"{MODEL_NAME[m]}, {arm} vs baseline: {e:+.1f} pp (95% interval {a:+.1f} to {b:+.1f})"))
                 m_rows.append([MODEL_NAME[m], arm, f"{e:+.2f}", f"{a:+.2f} to {b:+.2f}", r["tasks"]])
-    chart_models = forest(m_items, -10, 10, 0, lambda t: "0 pp" if t == 0 else f"{t:+g} pp", "Success difference by model")
+    r_groups = []
+    for m in MODELS:
+        d = {a: find(descriptive, model=m, arm=a) for a in ("baseline", "optional", "enforced")}
+        rows_ = []
+        for arm in ("baseline", "optional", "enforced"):
+            n, rate = int(d[arm]["runs"]), float(d[arm]["success"])
+            a, b = wilson(round(rate * n), n)
+            rows_.append((arm, 100 * rate, 100 * a, 100 * b, None,
+                          f"{MODEL_NAME[m]}, {arm}: {100 * rate:.0f}% of {n} runs (95% interval {100 * a:.0f}% to {100 * b:.0f}%)"))
+        r_groups.append((MODEL_NAME[m], rows_))
+    chart_models = rate_groups(r_groups, 40, 100, "Success rate by model and arm")
 
     # Chart 4: LSP adoption, optional vs enforced.
     groups = []
@@ -331,8 +429,9 @@ def main():
         o = find(descriptive, model=m, arm="optional")
         e = find(descriptive, model=m, arm="enforced")
         groups.append((MODEL_NAME[m], [float(o["lsp_used"]), float(e["lsp_used"])]))
+    best_opt = max(g[1][0] for g in groups)
     chart_adoption = '<div class="shelf">' + "".join(
-        f'<div><div class="who">{esc(label)}</div>'
+        f'<div{' class="top"' if o == best_opt else ''}><div class="who">{esc(label)}</div>'
         f'<div class="nums">{usage(o, "optional").rsplit(" ", 1)[0]} <b>{o * 100:.0f}%</b> <span>optional</span></div>'
         f'<div class="nums">{usage(e, "enforced").rsplit(" ", 1)[0]} <b>{e * 100:.0f}%</b> <span>enforced</span></div></div>'
         for label, (o, e) in groups) + "</div>"
@@ -389,7 +488,7 @@ def main():
     rank(desc_body, 5, False, by_m)
     desc_table = table(
         ["Model", "Arm", "Runs", "Success", "Mean cost (USD)", "Median cost (USD)", "Median wall time (s)",
-         "Share of runs using LSP", "Mean flaws"], desc_body)
+         "Share of runs using LSP", "Flaws per run (mean)"], desc_body)
     hdr = ["Arm", "Estimate", "Interval (95%)", "Better", "Same", "Worse", "Tasks"]
 
     def strat_table(rs):
@@ -405,17 +504,17 @@ def main():
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="Does a language server make a Claude Code agent better, faster or cheaper? Results of the LSP study confirmatory run." />
+        <meta name="description" content="Does LSP help Claude Code? Results of the LSP study." />
         <link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt" />
         <title>LSP study: results</title>
         <meta name="color-scheme" content="light dark" />
         <style>
             :root {{ --bg: #fff; --ink: #222; --muted: #555; --grid: #ddd; --rule: #999; --faint: #aaa; --code: #f6f6f4;
-                    --link: #1a0dab; --visited: #609; --blue: #2a78d6; --orange: #eb6834;
+                    --link: #1a0dab; --visited: #609; --blue: #2a78d6; --orange: #eb6834; --good: #2e9e6a; --okay: #d9a21b; --bad: #d14b3a;
                     --win: #d9f0e3; --mid: #fbefc4; --lose: #fbdcd3; }}
             @media (prefers-color-scheme: dark) {{
                 :root {{ --bg: #1a1a19; --ink: #f0efec; --muted: #c3c2b7; --grid: #3a3a38; --rule: #77766f; --faint: #6b6a64;
-                        --code: #262624; --link: #8ab4f8; --visited: #c58af9; --blue: #3987e5; --orange: #d95926;
+                        --code: #262624; --link: #8ab4f8; --visited: #c58af9; --blue: #3987e5; --orange: #d95926; --good: #3fbf86; --okay: #e0b43a; --bad: #e5654f;
                         --win: #1f4a36; --mid: #574a14; --lose: #5c2a20; }}
             }}
             body {{ font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; font-size: 1rem; line-height: 1.6;
@@ -436,6 +535,7 @@ def main():
             .legend {{ font-size: 0.8125rem; color: {MUTED}; }}
             .shelf {{ display: flex; gap: 12px; flex-wrap: wrap; margin: 10px 0 20px; }}
             .shelf > div {{ flex: 1 1 150px; border: 1px solid {GRID}; border-radius: 6px; padding: 10px 14px; }}
+            .shelf > div.top {{ background: var(--win); }}
             .shelf .who {{ font-size: 0.8125rem; color: {MUTED}; }}
             .shelf .nums b {{ font-size: 1.375rem; }}
             .shelf .nums span {{ font-size: 0.8125rem; color: {MUTED}; }}
@@ -455,8 +555,11 @@ def main():
                 .page > nav {{ position: fixed; top: 40px; left: max(16px, calc(50% - 480px)); width: 200px;
                               margin: 0; padding: 0; border: none; background: none; }}
                 nav.outline b {{ display: block; margin-bottom: 4px; }}
-                nav.outline ol {{ flex-direction: column; gap: 4px; }}
+                nav.outline ol {{ flex-direction: column; gap: 0; }}
+                nav.outline li {{ border-bottom: 1px solid var(--grid); padding: 5px 0; }}
+                nav.outline li:last-child {{ border-bottom: none; }}
             }}
+            h2 .tag {{ font-size: 0.75rem; font-weight: 600; vertical-align: middle; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }}
             .win {{ background: var(--win); padding: 1px 5px; border-radius: 3px; }}
             .mid {{ background: var(--mid); padding: 1px 5px; border-radius: 3px; }}
             .lose {{ background: var(--lose); padding: 1px 5px; border-radius: 3px; }}
@@ -479,8 +582,8 @@ def main():
     <div class="page">
         {outline_html}
         <main>
-        <h1>Does a language server make a Claude Code agent better, faster or cheaper?</h1>
-        <p class="subtitle">Confirmatory run: {n_runs:,} runs, {n_tasks} tasks, {n_projects} projects, three Claude models, {n_langs} programming languages.</p>
+        <h1 id="top">Does LSP help Claude Code?</h1>
+        <p class="subtitle">{n_runs:,} runs, {n_tasks} tasks, {n_projects} projects, three Claude models, {n_langs} programming languages.</p>
 
         <h2 id="what-is-being-tested">What is being tested</h2>
         <p><a href="https://github.com/CommanderTvis/tereditor">tereditor</a> gives a coding agent a project's
@@ -528,63 +631,68 @@ def main():
             <dt>enforced</dt>
             <dd>LS tools available, and the agent is told and nudged by hooks to use them.</dd>
         </dl>
-        <p class="note">Also in the charts: baseline-review (baseline plus a second "review your work" turn) and the
+        <p class="faint" style="margin-top: 0">Also in the charts: baseline-review (baseline plus a second "review your work" turn) and the
         IntelliJ versions of optional and enforced, where IntelliJ is the LS (Java and Kotlin projects
         only). On Kotlin this compares IntelliJ with <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a>, which the plain optional and enforced arms use.</p>
 
-        <h2 id="kinds-of-tasks">Kinds of tasks</h2>
+        <h2 id="kinds-of-tasks">Kinds of tasks{tag_kinds}</h2>
         <p><b>Synthetic</b> ({n_syn_tasks} tasks, {n_syn_types} types: rename, rename-file, move, signature, refs,
         callers, impls, dispatch, inspect). A short, precise change or question about a real open-source project.
         Example: <i>{esc(EX_SYN)}</i></p>
         <p><b>Real PRs</b> ({n_pr_tasks} tasks). Mined from real pull requests: the prompt is the issue text, and the
         tests come from the PR. Example: <i>{esc(EX_PR)}</i></p>
         {kind_tbl}
+        <p>The results below compare three outcomes between arms on the same tasks: the flaws a run leaves, whether it
+        succeeds, and what it costs. Only flaws improve, so they come first.</p>
 
-        <h2 id="success-barely-moves">Success barely moves</h2>
-        <p>Change in success rate against the baseline arm, all models pooled. The dashed line is no change.</p>
-        {chart_success}
-        {spoiler("Show the numbers", table(hdr, s_rows))}
-
-        <h2 id="cost-goes-up-when-lsp-use-is-enforced">Cost goes up when LSP use is enforced</h2>
-        <p>Cost of each arm as a multiple of the baseline (log scale). The dashed line is equal cost.</p>
-        {chart_cost}
-        {spoiler("Show the numbers", table(hdr, c_rows))}
-
-        <h2 id="no-model-gains-from-it">No model gains from it</h2>
-        <p>Success change against the baseline, per model.</p>
-        {legend([("optional", BLUE), ("enforced", ORANGE)])}
-        {chart_models}
-        {spoiler("Show the numbers", table(["Model", "Arm", "Estimate (pp)", "Interval (95%)", "Tasks"], m_rows))}
-
-        <h2 id="when-offered-only-opus-reaches-for-the-tools-and-only-now-and-then">When offered, only Opus reaches for the tools, and only now and then</h2>
-        <p>Share of runs that called at least one LS tool.</p>
-        {chart_adoption}
-
-        <h2 id="what-counts-as-a-flaw">What counts as a flaw</h2>
+        <h2 id="flaws">Flaws are the one thing LS tools improve, mostly on synthetic tasks <span class="tag win">fewer flaws</span></h2>
+        {flaw_summary}
+        {arm_note}
         <p>Tests decide whether a change works. A flaw is damage the tests cannot see. After each edit run, a reviewer
-        (Haiku 5.5, which never sees the arm) reads the diff and searches the edited tree for five kinds of it;
+        (Haiku 5.5) reads the diff and searches the edited tree for five kinds of it;
         {len(flaws)} were reported in all.</p>
         {flaw_table}
-        <p>Examples from the run:</p>
-        {flaw_examples}
+        {spoiler("Examples from the run", flaw_examples)}
         <p class="note">The reviewer's reports have not been checked by a human yet. All of them are in
         <a href="data/flaws.csv">flaws.csv</a>.</p>
 
-        <h2 id="all-ls-together">All LS together</h2>
-        <p>Every LS pooled: the IntelliJ runs are counted with optional and enforced.
+        <h2 id="success-barely-moves">Success barely moves</h2>
+        {arm_note}
+        <p>A run succeeds when an automatic grader accepts the result. For real PRs the grader runs the tests from the
+        pull request. For synthetic tasks it checks the change with a build and tests, or, for questions, compares the
+        written answer with the known one. Success rate is the share of runs that pass.</p>
+        <p>Change in success rate against the baseline arm, all models pooled. The dashed line is no change. Colours: green best, red worst, yellow in between. Bars show 95% intervals.</p>
+        {chart_success}
+        {spoiler("Show the numbers", table(hdr, s_rows))}
+
+        <h2 id="no-model-solves-more">No model solves more tasks with LS tools</h2>
+        <p>Success rate of each arm, for each model. The dashed line is that model's baseline. Colours rank the arms within each model: green best, red worst, yellow in between.</p>
+        {chart_models}
+        {spoiler("Show the numbers", table(["Model", "Arm", "Estimate (pp)", "Interval (95%)", "Tasks"], m_rows))}
+
+        <h2 id="only-opus-uses-optional-tools">Only Opus uses tools when they're optional</h2>
+        <p>Share of runs that called at least one LS tool. With optional tools Haiku and Sonnet never call them, and Opus does in {opus_adopt} of runs. When enforced, all three use them in most runs.</p>
+        {chart_adoption}
+
+        <h2 id="cost-goes-up-when-lsp-use-is-enforced">Cost goes up when LSP use is enforced</h2>
+        <p>Enforced runs cost about {enf_c_txt}× the baseline; optional runs about the same. Cost of each arm as a multiple of the baseline (log scale); baseline-review is the baseline plus a second review turn. The dashed line is equal cost.</p>
+        {chart_cost}
+        {spoiler("Show the numbers", table(hdr, c_rows))}
+
+        <h2 id="all-ls-together">All LS together{tag_all}</h2>
+        <p>Success, cost, time, adoption and flaws for each arm, pooled over all language servers: the IntelliJ runs are counted with optional and enforced.
         {a_tasks} tasks, {a_runs:,} runs.</p>
         {all_ls_table}
 
-        <h2 id="intellij-vs-kotlin-lsp-vs-no-ls">IntelliJ vs kotlin-lsp vs no LS</h2>
+        <h2 id="intellij-vs-kotlin-lsp-vs-no-ls">IntelliJ vs kotlin-lsp vs no LS{tag_kotlin}</h2>
         <p>The {k_tasks} Kotlin and mixed Java+Kotlin tasks ran with both LS:
         <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a> (the optional and enforced arms) and IntelliJ
         (the intellij arms), {k_runs} runs in all. Success change against the baseline on these tasks:</p>
-        {legend([("IntelliJ", BLUE), ("kotlin-lsp", ORANGE)])}
         {chart_kotlin}
         {kotlin_table}
         <p class="note">{k_tasks} tasks is a small sample: the intervals are wide, and {k_zero}. Cost and time are medians over all three models.</p>
 
-        <h2 id="java-intellij-vs-no-ls">Java: IntelliJ vs no LS</h2>
+        <h2 id="java-intellij-vs-no-ls">Java: IntelliJ vs no LS{tag_java}</h2>
         <p>On the {j_tasks} pure Java tasks IntelliJ is the only LS (tereditor has no other headless
         Java server), so the comparison is IntelliJ against the baseline, {j_runs} runs in all.</p>
         {chart_java}
@@ -616,14 +724,25 @@ def main():
         <script>
             const links = {{}};
             document.querySelectorAll("nav.outline a").forEach(a => links[a.hash.slice(1)] = a);
-            const seen = new Set();
-            const observer = new IntersectionObserver(entries => {{
-                entries.forEach(e => e.isIntersecting ? seen.add(e.target.id) : seen.delete(e.target.id));
-                const current = [...document.querySelectorAll("h2[id]")].filter(h => seen.has(h.id)).pop();
+            const heads = [...document.querySelectorAll("h1[id], h2[id]")];
+            let picked = null;  // set by a click on the outline, kept until the reader scrolls by hand
+            function mark() {{
+                // the last heading that has reached the upper part of the window
+                const line = window.innerHeight * 0.3;
+                let current = heads[0];
+                heads.forEach(h => {{ if (h.getBoundingClientRect().top <= line) current = h; }});
+                if (picked) current = picked;
                 Object.values(links).forEach(a => a.classList.remove("here"));
                 if (current && links[current.id]) links[current.id].classList.add("here");
-            }}, {{ rootMargin: "0px 0px -70% 0px" }});
-            document.querySelectorAll("h2[id]").forEach(h => observer.observe(h));
+            }}
+            Object.values(links).forEach(a => a.addEventListener("click", () => {{
+                picked = document.getElementById(a.hash.slice(1));
+                mark();
+            }}));
+            ["wheel", "touchmove", "keydown"].forEach(t => addEventListener(t, () => {{ picked = null; }}, {{ passive: true }}));
+            addEventListener("scroll", mark, {{ passive: true }});
+            addEventListener("resize", mark);
+            mark();
         </script>
         </main>
     </div>
@@ -632,7 +751,7 @@ def main():
 """
     OUT.write_text(page, encoding="utf-8")
 
-    llms = f"""# LSP study: does a language server make a Claude Code agent better, faster or cheaper?
+    llms = f"""# LSP study: does LSP help Claude Code?
 
 > A controlled comparison of Claude Code agents with and without language-server (LSP) tools: {n_runs:,} runs on {n_tasks} tasks in {n_projects} projects, three Claude models (Haiku 5.5, Sonnet 5.5, Opus 5.5), {n_langs} programming languages. {headline}
 
@@ -643,7 +762,7 @@ Arms: baseline (Claude Code core tools only: Read, Edit, Write, Bash, Task, Tool
 ## Findings
 
 - Success: offering LS tools (optional) and enforcing them (enforced) do not change the pass rate by a clear amount. Both intervals include zero.
-- Flaws: enforced LS use leaves more flaws the reviewer reports, {flaw_enf_txt}. Optional: {flaw_opt_txt}.
+- Flaws (the one improvement): optional LS tools leave fewer flaws on synthetic tasks ({fs['syn', 'optional']:.2f} per run against {fs['syn', 'baseline']:.2f} for the baseline), with no change on real PRs ({fs['pr', 'optional']:.2f} against {fs['pr', 'baseline']:.2f}). Paired difference over all tasks for optional: {flaw_opt_txt}, suggestive only. Enforced LS use leaves more flaws: {flaw_enf_txt}.
 - Cost: optional costs about the same as baseline; enforced costs about {enf_c_txt} times as much.
 - Adoption: when offered, the agent uses LS tools in {opus_adopt} of optional runs on Opus and in none on Haiku or Sonnet.
 - Task kinds: {n_syn_tasks} synthetic tasks ({n_syn_types} types) and {n_pr_tasks} real pull-request tasks. Both are reported separately on the page.
