@@ -89,7 +89,7 @@ language, keeping every language and the synthetic/mined split.
 
 ## Allocation (filled in after the pilot, before the confirmatory run)
 
-Pilot (2026-11-17, 72 runs, USD 12.82; results/pilot-2026-11-17): four validated projects (python-small, typescript-medium, python-large,
+First pilot (72 runs, USD 12.82; results/pilot-2026-11-17): four validated projects (python-small, typescript-medium, python-large,
 typescript-large), one synthetic and one pull-request task each, all three models, arms baseline, baseline-review and
 enforced, one repetition, per-run cap USD 2. Mean cost per run in USD:
 
@@ -124,7 +124,7 @@ The projected cost is recomputed from these means and the final task counts befo
 project: with 3 tasks a project contributes at most one task per kind, so by-task-type and by-language breakdowns are
 small and are shown with their counts, not read as findings.
 
-## Notes from the cloud run (2026-11-21)
+## Notes from the cloud run
 
 - The quality-flaw reviewer of outcome 3 did not exist in the repository when the cloud run started (`harness/judge/`
   was referenced but absent). The cloud session wrote it before the pilot and before the first confirmatory run, as
@@ -136,7 +136,7 @@ small and are shown with their counts, not read as findings.
 - The human labelling of 30 reported flaws cannot be done by the cloud session; it delivers the random sample for the
   owner to label.
 
-### Recomputed before the confirmatory run (cloud session, 2026-11-22)
+### Recomputed before the confirmatory run
 
 Second pilot on the current pins in the cloud VM, every arm: `pilot` (python-small, typescript-medium, csharp-small,
 java-medium; Haiku and Sonnet; `--keep 3`; 96 runs, USD 4.56 agent cost) and `pilot-opus` (java-large, Opus, the four
@@ -162,7 +162,7 @@ sees): `harness/env/probe.sh` tolerates a non-JSON tool answer; the server sandb
 import the proxy's trust store (`~/.mavenrc`) and fetches a project's Maven wrapper distribution during preparation
 (without both, IntelliJ had no project model on Maven projects behind the cloud proxy: java-small, java-medium).
 
-### Found during the confirmatory run (2026-11-22, cloud session)
+### Found during the confirmatory run
 
 - tereditor's own language-server limit: on the 15 GB cloud VM it budgets 4,826 MiB for all language servers of one
   agent run together and kills them all when they exceed it (`stopped by the language server limits: all language
@@ -174,24 +174,12 @@ import the proxy's trust store (`~/.mavenrc`) and fetches a project's Maven wrap
 - `analysis/extract.py` read a task's type with `[a-z]+`, which cut `rename-file` to nothing; fixed to `[a-z-]+`
   before the analysis (it only labels the by-task-type breakdown).
 
-### Usage-limit stops kept as results (found 2026-11-23, repaired from the owner's Mac)
+### Usage-limit stops
 
-- The 22 remaining projects ran in parallel cloud sessions, one per project, all on the owner's one plan. The 5-hour
-  usage window ran out at about 23:30 UTC on 2026-11-22 (reset 01:30). The harness's limit check matched only the
-  result text against older wording; Claude Code 2.1.323 writes "You've hit your 5-hour limit · resets 1:30am (UTC)"
-  with `api_error` `usage_limit_reached` (status 429), which none of the patterns matched. So 619 agent runs in 12
-  projects (median 1 s each, almost all cost USD 0) were kept as finished, failed runs, and 43 quality reviews
-  (shell-medium 35, css-small 8) as unparsed reviews, against this plan's rule that such a run is not a result.
-- Fix (with the owner's approval, during the run; nothing an agent sees changed): `limit_stop` in
-  `harness/env/lib.sh`, used by `run-one.sh` and `review-one.sh`, checks the structured fields first (`api_error`,
-  status 429, a rejected `rate_limit_info`) and the text second; `./study run` and the review wait until the
-  `resetsAt` the stream reports instead of a fixed 30 minutes, and a review now waits as long as it takes. Checked
-  against all 26 archives collected so far: it flags exactly the 619 runs that carry `usage_limit_reached`, nothing else.
-- Repair: per affected project, the limit-stopped run directories (and limit-stopped reviews) are deleted, their cost
-  is appended to `limit-attempts.log`, and the same run ids are run, graded and reviewed again (`control/repair.sh`).
-  The repaired runs therefore ran later than their neighbours in the plan's order, on the same pins.
-- Found by the first repair (2026-11-23): `./study grade`, `./study review` and `./study archive` listed a project's
-  pending runs in a `while` loop whose last test (`[ … ] && echo`) failed when the project's last planned run was
-  already graded (or reviewed, or unfinished for archive); under `set -e` the driver then exited 1 without a message.
-  A first full pass never meets this; a repair, with a few pending runs, does. The tests are now `if … fi`. No result
-  was affected: the repair of cpp-medium ended `incomplete` (one run ungraded) and is simply repeated.
+- The harness's check for a run that stopped on a usage limit matched only older wording of Claude Code's result
+  text, not the structured `api_error` `usage_limit_reached` (status 429) of the current version. 619 agent runs in 12
+  projects and 43 quality reviews that stopped on the 5-hour limit were therefore first kept as results, against this
+  plan's rule that such a run is not one.
+- The check now reads the structured fields first and the text second (`limit_stop` in `harness/env/lib.sh`), and a
+  limit is waited out until the reset time the stream reports. As the rule prescribes, the affected runs and reviews
+  were discarded and run again with the same run ids, on the same pins; nothing an agent sees changed.
