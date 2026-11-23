@@ -175,7 +175,7 @@ by_group() { # <run|grade> <plan>
   ids=$(plan_ids "$plan" "$only" | while read -r r; do
     f=results/$plan/runs/$r
     if [ "$what" = run ]; then [ -f "$f/exit.json" ] || echo "$r"
-    else [ -f "$f/exit.json" ] && [ ! -f "$f/grade/result.json" ] && echo "$r"; fi
+    else if [ -f "$f/exit.json" ] && [ ! -f "$f/grade/result.json" ]; then echo "$r"; fi; fi
   done)
   [ -n "$ids" ] || { log "nothing to $what"; return 0; }
   for g in $(for r in $ids; do group_of "$(awk -F'\t' -v r="$r" '$1==r {print $2}' "results/$plan/plan.tsv")"; done | sort -u); do
@@ -214,7 +214,7 @@ cmd_status() {
 
 cmd_archive() {
   plan=$1 proj=$2; P=results/$plan; mkdir -p "$P/archive"
-  ids=$(plan_ids "$plan" "$proj" | while read -r r; do [ -f "$P/runs/$r/exit.json" ] && echo "$r"; done)
+  ids=$(plan_ids "$plan" "$proj" | while read -r r; do if [ -f "$P/runs/$r/exit.json" ]; then echo "$r"; fi; done)
   [ -n "$ids" ] || { log "archive: no finished runs for $proj"; return 0; }
   (cd "$P/runs" && tar -czf "../archive/$proj.tar.gz" $ids)
   log "archived $(echo "$ids" | wc -l | tr -d ' ') runs of $proj: $(du -h "$P/archive/$proj.tar.gz" | cut -f1)"
