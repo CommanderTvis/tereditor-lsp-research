@@ -171,6 +171,19 @@ def main(base, out_path):
         {"check": "flaw count capped at 3", **summary(paired(runs, {"optional"}, True, kinds={"syn"}, metric=lambda x: min(x, 3.0)))},
     ]
 
+    # 2b. The same checks for enforced vs baseline (the pre-registered +0.26 rests on the same reviewer).
+    bad_runs = {r["run_id"] for r in runs if r["arm"] == "enforced" and os.path.exists(f"{base}/runs/{r['run_id']}/review/patch.reviewed.diff")
+                and any(ARTIFACT.search(x) for x in re.findall(r"^diff --git a/(\S+)", open(f"{base}/runs/{r['run_id']}/review/patch.reviewed.diff", errors="replace").read(), re.M))}
+    clean = [r for r in runs if r["run_id"] not in bad_runs]
+    drv2 = tuple(t.split("/", 1)[1] for t, _ in drivers[:2])
+    res["robustness_enforced"] = [
+        {"check": "flaw count, all runs", **summary(paired(runs, {"enforced"}, False))},
+        {"check": "without the 8 runs with LS artifact files", **summary(paired(clean, {"enforced"}, False))},
+        {"check": "without artifacts, any flaw (0/1)", **summary(paired(clean, {"enforced"}, False, metric=lambda x: 1.0 if x > 0 else 0.0))},
+        {"check": "without artifacts, flaw count capped at 3", **summary(paired(clean, {"enforced"}, False, metric=lambda x: min(x, 3.0)))},
+        {"check": "without artifacts and the two driver tasks", **summary(paired(clean, {"enforced"}, False, exclude_tasks=drv2))},
+    ]
+
     # 3. What reaches the session unasked, per arm.
     inj = collections.defaultdict(collections.Counter)
     for r in runs:

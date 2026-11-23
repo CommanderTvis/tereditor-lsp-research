@@ -221,7 +221,11 @@ def agreement(xs, ys):
     sxy = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
     sx = sum((x - mx) ** 2 for x in xs) ** 0.5
     sy = sum((y - my) ** 2 for y in ys) ** 0.5
-    return {"n": n, "exact": round(sum(x == y for x, y in zip(xs, ys)) / n, 3),
+    px, py = sum(x > 0 for x in xs) / n, sum(y > 0 for y in ys) / n
+    po = sum((x > 0) == (y > 0) for x, y in zip(xs, ys)) / n
+    pe = px * py + (1 - px) * (1 - py)
+    kappa = round((po - pe) / (1 - pe), 3) if pe < 1 else None  # Cohen's kappa on "has any flaw"
+    return {"n": n, "kappa": kappa, "exact": round(sum(x == y for x, y in zip(xs, ys)) / n, 3),
             "presence": round(sum((x > 0) == (y > 0) for x, y in zip(xs, ys)) / n, 3),
             "mean_abs_diff": round(sum(abs(x - y) for x, y in zip(xs, ys)) / n, 3),
             "pearson": round(sxy / (sx * sy), 3) if sx and sy else None, "mean_x": round(mx, 3), "mean_y": round(my, 3)}

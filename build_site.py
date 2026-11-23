@@ -306,10 +306,10 @@ def rereview_html(_d):
     for strat, label in (("random", "random sample (60 runs)"), ("driver task", "TypeORM task (10 runs)")):
         for pair, v in r[strat].items():
             t = v["total"]
-            ag.append([label, pair, t["n"], f"{100 * t['presence']:.0f}%", f"{100 * t['exact']:.0f}%",
+            ag.append([label, pair, t["n"], f"{100 * t['presence']:.0f}%", "" if t.get("kappa") is None else f"{t['kappa']:.2f}", f"{100 * t['exact']:.0f}%",
                        "" if t["pearson"] is None else f"{t['pearson']:.2f}", f"{t['mean_x']:.2f} vs {t['mean_y']:.2f}"])
     kinds = ["leftover", "naming", "churn", "dead", "unrelated"]
-    kk = [[k] + [f"{100 * r['all'][pair][k]['presence']:.0f}%" for pair in r["all"]] for k in kinds]
+    kk = [[k] + [("" if r["random"][pair][k].get("kappa") is None else f"{r['random'][pair][k]['kappa']:.2f}") for pair in r["random"]] for k in kinds]
     diffs = [[who] + [("" if v is None else f"{v[0]:+.2f} ({v[1]:+.2f} to {v[2]:+.2f})") for v in (x["optional - baseline"], x["enforced - baseline"])]
              for who, x in r["paired_differences_random_stratum"].items()]
     drv = [[x["run_id"], x["arm"], name[x["model"]], f"{x['original_haiku']:.0f}", f"{x['rerun_haiku']:.0f}", f"{x['opus']:.0f}"]
@@ -321,11 +321,12 @@ def rereview_html(_d):
         (no Bash, no server-side preparation; USD {r['cost_usd']:.2f}). Whether a run has any flaw agrees about 90% of
         the time, mostly because most runs have none; the counts do not. On the TypeORM task Opus reports the stale
         JSDoc (10 or 11) in every run, baseline and optional alike, while Haiku swings between 0 and 11 on identical
-        diffs, even against its own earlier review. Under Opus the optional-minus-baseline difference on the random
+        diffs, even against its own earlier review. Corrected for chance (Cohen's kappa) the any-flaw agreement is
+        moderate, and weakest for leftovers and naming. Under Opus the optional-minus-baseline difference on the random
         sample is near zero, and so is enforced-minus-baseline. Opus is also a model under test: a second opinion,
         not ground truth, and 20 cells cannot settle an effect of this size.</p>
-        {spoiler("Show the numbers", table(["Sample", "Reviewers", "Runs", "Any-flaw agreement", "Same count", "Count correlation", "Mean flaws"], ag)
-                 + table(["Kind: any-flaw agreement"] + list(r["all"]), kk)
+        {spoiler("Show the numbers", table(["Sample", "Reviewers", "Runs", "Any-flaw agreement", "Kappa", "Same count", "Count correlation", "Mean flaws"], ag)
+                 + table(["Kind: Cohen's kappa on any flaw (random sample)"] + list(r["random"]), kk)
                  + table(["Reviewer (random sample, paired by cell)", "Optional − baseline (95% interval)", "Enforced − baseline (95% interval)"], diffs)
                  + table(["TypeORM run", "Arm", "Model", "Original Haiku", "Haiku again", "Opus"], drv))}"""
 
@@ -357,6 +358,8 @@ def audit_section():
                 for r in d["paired_by_model_zero_call"]])
     rb = table(["Check (synthetic, optional with zero LS calls)", "Difference (95% interval)"],
                [[r["check"], iv(r)] for r in d["robustness"]])
+    rbe = table(["Check (all edit tasks, enforced against baseline)", "Difference (95% interval)"],
+                [[r["check"], iv(r)] for r in d.get("robustness_enforced", [])])
     dt = d["driver_task"]
     unfixed = [r for r in dt["runs"] if r["jsdoc_param_lines_changed"] == 0]
     hi = [r for r in unfixed if r["flaws"] >= 5]
@@ -389,6 +392,11 @@ def audit_section():
         reviewer reported it as about 10 flaws in {len(hi)} of them and as 0 or 1 in the rest. Without that task, or
         counting only whether a run has any flaw, the difference is near zero:</p>
         {spoiler("Show the numbers", rb + drv)}
+        <p><b>The second-largest driver works the same way.</b> On the python-xlarge payload rename the reviewer once
+        reported 53 flaws in one run: a single import-order complaint, listed once per file. A second reviewer reports
+        none. Two tasks where one pattern is counted once per file are enough to move an arm's mean.</p>
+        <p><b>The enforced increase is not robust either.</b> Paired, enforced against baseline:</p>
+        {spoiler("Show the numbers", rbe)}
         <p><b>The reviewer sees the arm only through LS artifacts.</b> Optional and baseline diffs carry none; 8 enforced
         runs carry Eclipse project files (.project, .classpath, .factorypath) the server wrote, which count as
         unrelated edits: {esc(ewa)}. More enforced edit runs were skipped because their patch did not apply.</p>
@@ -449,7 +457,9 @@ def main():
     fs = {(k, a): mean_flaws(k, a) for k in ("syn", "pr") for a in ("baseline", "optional", "enforced", "baseline-review")}
     flaw_summary = (
         f"<p>Paired on the same tasks, offering LS tools (optional) changes flaws by {flaw_opt_txt}: no clear difference. "
-        f"Enforcing them adds {flaw_enf_txt}.</p>"
+        f"Enforcing them adds {flaw_enf_txt} on the pre-registered measure, but that does not hold up: without the 8 "
+        f"enforced runs whose diff contains project files the LS wrote, or counting only whether a run has a flaw, the "
+        f"interval reaches zero, and a second reviewer finds no difference (<a href=\"#flaws-audit\">exploratory audit</a>).</p>"
         f"<p class='note'>Raw means per reviewed edit run, not paired: synthetic edit tasks (rename, rename-file, move, "
         f"signature; navigation questions have no diff) {fs['syn', 'optional'][0]:.2f} optional against "
         f"{fs['syn', 'baseline'][0]:.2f} baseline ({fs['syn', 'optional'][1]} and {fs['syn', 'baseline'][1]} reviewed runs); "
@@ -748,7 +758,7 @@ def main():
         <p>The results below compare three outcomes between arms on the same tasks: the flaws a run leaves, whether it
         succeeds, and what it costs.</p>
 
-        <h2 id="flaws">Flaws: no clear change when LS tools are offered, more when they are enforced{tag_all}</h2>
+        <h2 id="flaws">Flaws: no clear change with LS tools{tag_all}</h2>
         {flaw_summary}
         {arm_note}
         <p>Tests decide whether a change works. A flaw is damage the tests cannot see. After each edit run, a reviewer
@@ -867,7 +877,7 @@ Arms: baseline (Claude Code core tools only: Read, Edit, Write, Bash, Task, Tool
 ## Findings
 
 - Success: offering LS tools (optional) and enforcing them (enforced) do not change the pass rate by a clear amount. Both intervals include zero.
-- Flaws: paired on the same tasks, optional LS tools change flaws by {flaw_opt_txt}, no clear difference; enforced LS use leaves more: {flaw_enf_txt}. Raw synthetic means (optional {fs['syn', 'optional'][0]:.2f} against baseline {fs['syn', 'baseline'][0]:.2f} per reviewed edit run) are not a tool effect: Haiku and Sonnet never called the tools in the optional arm, and one task with inconsistent reviewer counts drives most of the gap (exploratory audit on the page).
+- Flaws: paired on the same tasks, optional LS tools change flaws by {flaw_opt_txt}, no clear difference. Enforced LS use: {flaw_enf_txt} on the pre-registered measure, not robust (its interval reaches zero without 8 runs whose diff holds LS-written project files, or counting any flaw; a second reviewer finds no difference). Raw synthetic means (optional {fs['syn', 'optional'][0]:.2f} against baseline {fs['syn', 'baseline'][0]:.2f} per reviewed edit run) are not a tool effect: Haiku and Sonnet never called the tools in the optional arm, and one task with inconsistent reviewer counts drives most of the gap (exploratory audit on the page).
 - Cost: optional costs about the same as baseline; enforced costs about {enf_c_txt} times as much.
 - Adoption: when offered, the agent uses LS tools in {opus_adopt} of optional runs on Opus and in none on Haiku or Sonnet.
 - Task kinds: {n_syn_tasks} synthetic tasks ({n_syn_types} types) and {n_pr_tasks} real pull-request tasks. Both are reported separately on the page.

@@ -9,7 +9,7 @@ Arms: baseline (Claude Code core tools only: Read, Edit, Write, Bash, Task, Tool
 ## Findings
 
 - Success: offering LS tools (optional) and enforcing them (enforced) do not change the pass rate by a clear amount. Both intervals include zero.
-- Flaws: paired on the same tasks, optional LS tools change flaws by -0.14 flaws per run (95% interval -0.40 to +0.04), no clear difference; enforced LS use leaves more: +0.26 flaws per run (95% interval +0.07 to +0.47). Raw synthetic means (optional 0.62 against baseline 1.10 per reviewed edit run) are not a tool effect: Haiku and Sonnet never called the tools in the optional arm, and one task with inconsistent reviewer counts drives most of the gap (exploratory audit on the page).
+- Flaws: paired on the same tasks, optional LS tools change flaws by -0.14 flaws per run (95% interval -0.40 to +0.04), no clear difference. Enforced LS use: +0.26 flaws per run (95% interval +0.07 to +0.47) on the pre-registered measure, not robust (its interval reaches zero without 8 runs whose diff holds LS-written project files, or counting any flaw; a second reviewer finds no difference). Raw synthetic means (optional 0.62 against baseline 1.10 per reviewed edit run) are not a tool effect: Haiku and Sonnet never called the tools in the optional arm, and one task with inconsistent reviewer counts drives most of the gap (exploratory audit on the page).
 - Cost: optional costs about the same as baseline; enforced costs about 1.57 times as much.
 - Adoption: when offered, the agent uses LS tools in 16% of optional runs on Opus and in none on Haiku or Sonnet.
 - Task kinds: 58 synthetic tasks (9 types) and 29 real pull-request tasks. Both are reported separately on the page.

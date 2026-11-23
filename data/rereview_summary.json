@@ -4,6 +4,7 @@
   "original Haiku vs re-run Haiku (environment + test-retest)": {
    "total": {
     "n": 60,
+    "kappa": 0.641,
     "exact": 0.867,
     "presence": 0.9,
     "mean_abs_diff": 1.133,
@@ -13,6 +14,7 @@
    },
    "leftover": {
     "n": 60,
+    "kappa": 0.196,
     "exact": 0.883,
     "presence": 0.9,
     "mean_abs_diff": 0.117,
@@ -22,6 +24,7 @@
    },
    "unrelated": {
     "n": 60,
+    "kappa": 0.0,
     "exact": 0.983,
     "presence": 0.983,
     "mean_abs_diff": 0.017,
@@ -31,6 +34,7 @@
    },
    "churn": {
     "n": 60,
+    "kappa": 0.792,
     "exact": 0.983,
     "presence": 0.983,
     "mean_abs_diff": 0.133,
@@ -40,6 +44,7 @@
    },
    "naming": {
     "n": 60,
+    "kappa": 0.196,
     "exact": 0.9,
     "presence": 0.9,
     "mean_abs_diff": 1.217,
@@ -49,6 +54,7 @@
    },
    "dead": {
     "n": 60,
+    "kappa": 0.659,
     "exact": 0.983,
     "presence": 0.983,
     "mean_abs_diff": 0.017,
@@ -60,6 +66,7 @@
   "re-run Haiku vs Opus (reviewer)": {
    "total": {
     "n": 60,
+    "kappa": 0.739,
     "exact": 0.883,
     "presence": 0.933,
     "mean_abs_diff": 0.233,
@@ -69,6 +76,7 @@
    },
    "leftover": {
     "n": 60,
+    "kappa": 0.64,
     "exact": 0.95,
     "presence": 0.95,
     "mean_abs_diff": 0.05,
@@ -78,6 +86,7 @@
    },
    "unrelated": {
     "n": 60,
+    "kappa": 0.0,
     "exact": 0.983,
     "presence": 0.983,
     "mean_abs_diff": 0.017,
@@ -87,6 +96,7 @@
    },
    "churn": {
     "n": 60,
+    "kappa": 0.792,
     "exact": 0.967,
     "presence": 0.983,
     "mean_abs_diff": 0.15,
@@ -96,6 +106,7 @@
    },
    "naming": {
     "n": 60,
+    "kappa": 0.0,
     "exact": 0.933,
     "presence": 0.933,
     "mean_abs_diff": 0.067,
@@ -105,6 +116,7 @@
    },
    "dead": {
     "n": 60,
+    "kappa": 1.0,
     "exact": 0.983,
     "presence": 1.0,
     "mean_abs_diff": 0.017,
@@ -116,6 +128,7 @@
   "original Haiku vs Opus": {
    "total": {
     "n": 60,
+    "kappa": 0.76,
     "exact": 0.917,
     "presence": 0.933,
     "mean_abs_diff": 1.2,
@@ -125,6 +138,7 @@
    },
    "leftover": {
     "n": 60,
+    "kappa": 0.64,
     "exact": 0.933,
     "presence": 0.95,
     "mean_abs_diff": 0.067,
@@ -134,6 +148,7 @@
    },
    "unrelated": {
     "n": 60,
+    "kappa": 1.0,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -143,6 +158,7 @@
    },
    "churn": {
     "n": 60,
+    "kappa": 1.0,
     "exact": 0.983,
     "presence": 1.0,
     "mean_abs_diff": 0.017,
@@ -152,6 +168,7 @@
    },
    "naming": {
     "n": 60,
+    "kappa": 0.0,
     "exact": 0.933,
     "presence": 0.933,
     "mean_abs_diff": 1.183,
@@ -161,6 +178,7 @@
    },
    "dead": {
     "n": 60,
+    "kappa": 0.659,
     "exact": 0.983,
     "presence": 0.983,
     "mean_abs_diff": 0.033,
@@ -174,6 +192,7 @@
   "original Haiku vs re-run Haiku (environment + test-retest)": {
    "total": {
     "n": 10,
+    "kappa": 0.375,
     "exact": 0.4,
     "presence": 0.8,
     "mean_abs_diff": 5.0,
@@ -183,6 +202,7 @@
    },
    "leftover": {
     "n": 10,
+    "kappa": 0.375,
     "exact": 0.4,
     "presence": 0.8,
     "mean_abs_diff": 5.0,
@@ -192,6 +212,7 @@
    },
    "unrelated": {
     "n": 10,
+    "kappa": null,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -201,6 +222,7 @@
    },
    "churn": {
     "n": 10,
+    "kappa": null,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -210,6 +232,7 @@
    },
    "naming": {
     "n": 10,
+    "kappa": null,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -219,6 +242,7 @@
    },
    "dead": {
     "n": 10,
+    "kappa": null,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -230,6 +254,7 @@
   "re-run Haiku vs Opus (reviewer)": {
    "total": {
     "n": 10,
+    "kappa": 0.0,
     "exact": 0.1,
     "presence": 0.8,
     "mean_abs_diff": 6.3,
@@ -239,6 +264,7 @@
    },
    "leftover": {
     "n": 10,
+    "kappa": 0.0,
     "exact": 0.1,
     "presence": 0.8,
     "mean_abs_diff": 6.3,
@@ -248,6 +274,7 @@
    },
    "unrelated": {
     "n": 10,
+    "kappa": null,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -257,6 +284,7 @@
    },
    "churn": {
     "n": 10,
+    "kappa": null,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -266,6 +294,7 @@
    },
    "naming": {
     "n": 10,
+    "kappa": null,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -275,6 +304,7 @@
    },
    "dead": {
     "n": 10,
+    "kappa": null,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -286,6 +316,7 @@
   "original Haiku vs Opus": {
    "total": {
     "n": 10,
+    "kappa": 0.0,
     "exact": 0.4,
     "presence": 0.8,
     "mean_abs_diff": 5.1,
@@ -295,6 +326,7 @@
    },
    "leftover": {
     "n": 10,
+    "kappa": 0.0,
     "exact": 0.4,
     "presence": 0.8,
     "mean_abs_diff": 5.1,
@@ -304,6 +336,7 @@
    },
    "unrelated": {
     "n": 10,
+    "kappa": null,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -313,6 +346,7 @@
    },
    "churn": {
     "n": 10,
+    "kappa": null,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -322,6 +356,7 @@
    },
    "naming": {
     "n": 10,
+    "kappa": null,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -331,6 +366,7 @@
    },
    "dead": {
     "n": 10,
+    "kappa": null,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -344,6 +380,7 @@
   "original Haiku vs re-run Haiku (environment + test-retest)": {
    "total": {
     "n": 70,
+    "kappa": 0.701,
     "exact": 0.8,
     "presence": 0.886,
     "mean_abs_diff": 1.686,
@@ -353,6 +390,7 @@
    },
    "leftover": {
     "n": 70,
+    "kappa": 0.598,
     "exact": 0.814,
     "presence": 0.886,
     "mean_abs_diff": 0.814,
@@ -362,6 +400,7 @@
    },
    "unrelated": {
     "n": 70,
+    "kappa": 0.0,
     "exact": 0.986,
     "presence": 0.986,
     "mean_abs_diff": 0.014,
@@ -371,6 +410,7 @@
    },
    "churn": {
     "n": 70,
+    "kappa": 0.793,
     "exact": 0.986,
     "presence": 0.986,
     "mean_abs_diff": 0.114,
@@ -380,6 +420,7 @@
    },
    "naming": {
     "n": 70,
+    "kappa": 0.205,
     "exact": 0.914,
     "presence": 0.914,
     "mean_abs_diff": 1.043,
@@ -389,6 +430,7 @@
    },
    "dead": {
     "n": 70,
+    "kappa": 0.66,
     "exact": 0.986,
     "presence": 0.986,
     "mean_abs_diff": 0.014,
@@ -400,6 +442,7 @@
   "re-run Haiku vs Opus (reviewer)": {
    "total": {
     "n": 70,
+    "kappa": 0.776,
     "exact": 0.771,
     "presence": 0.914,
     "mean_abs_diff": 1.1,
@@ -409,6 +452,7 @@
    },
    "leftover": {
     "n": 70,
+    "kappa": 0.771,
     "exact": 0.829,
     "presence": 0.929,
     "mean_abs_diff": 0.943,
@@ -418,6 +462,7 @@
    },
    "unrelated": {
     "n": 70,
+    "kappa": 0.0,
     "exact": 0.986,
     "presence": 0.986,
     "mean_abs_diff": 0.014,
@@ -427,6 +472,7 @@
    },
    "churn": {
     "n": 70,
+    "kappa": 0.793,
     "exact": 0.971,
     "presence": 0.986,
     "mean_abs_diff": 0.129,
@@ -436,6 +482,7 @@
    },
    "naming": {
     "n": 70,
+    "kappa": 0.0,
     "exact": 0.943,
     "presence": 0.943,
     "mean_abs_diff": 0.057,
@@ -445,6 +492,7 @@
    },
    "dead": {
     "n": 70,
+    "kappa": 1.0,
     "exact": 0.986,
     "presence": 1.0,
     "mean_abs_diff": 0.014,
@@ -456,6 +504,7 @@
   "original Haiku vs Opus": {
    "total": {
     "n": 70,
+    "kappa": 0.783,
     "exact": 0.843,
     "presence": 0.914,
     "mean_abs_diff": 1.757,
@@ -465,6 +514,7 @@
    },
    "leftover": {
     "n": 70,
+    "kappa": 0.771,
     "exact": 0.857,
     "presence": 0.929,
     "mean_abs_diff": 0.786,
@@ -474,6 +524,7 @@
    },
    "unrelated": {
     "n": 70,
+    "kappa": 1.0,
     "exact": 1.0,
     "presence": 1.0,
     "mean_abs_diff": 0.0,
@@ -483,6 +534,7 @@
    },
    "churn": {
     "n": 70,
+    "kappa": 1.0,
     "exact": 0.986,
     "presence": 1.0,
     "mean_abs_diff": 0.014,
@@ -492,6 +544,7 @@
    },
    "naming": {
     "n": 70,
+    "kappa": 0.0,
     "exact": 0.943,
     "presence": 0.943,
     "mean_abs_diff": 1.014,
@@ -501,6 +554,7 @@
    },
    "dead": {
     "n": 70,
+    "kappa": 0.66,
     "exact": 0.986,
     "presence": 0.986,
     "mean_abs_diff": 0.029,
