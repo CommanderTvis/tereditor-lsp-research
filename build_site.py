@@ -56,6 +56,21 @@ def usage(share, arm):
     return Raw(f'<svg class="use" width="24" height="14" role="img" aria-label="{word}"><title>{word}</title>{dots}</svg> {pct}')
 
 
+def rank(body, col, higher_is_better, groups=None):
+    """Tint the best and the worst cell of a column (within each group of rows); ties share the tint."""
+    for idx in (groups or [range(len(body))]):
+        vals = {i: float(str(body[i][col]).rstrip("%")) for i in idx if str(body[i][col]) != ""}
+        if len(set(vals.values())) < 2:
+            continue
+        best = max(vals.values()) if higher_is_better else min(vals.values())
+        worst = min(vals.values()) if higher_is_better else max(vals.values())
+        for i, v in vals.items():
+            if v == best:
+                body[i][col] = Raw(f'<span class="win" title="best in this table">{esc(body[i][col])}</span>')
+            elif v == worst:
+                body[i][col] = Raw(f'<span class="lose" title="worst in this table">{esc(body[i][col])}</span>')
+
+
 def table(headers, body):
     head = "".join(f"<th>{esc(h)}</th>" for h in headers)
     lines = ["<tr>" + "".join(f"<td>{c if isinstance(c, Raw) else esc(c)}</td>" for c in r) + "</tr>" for r in body]
@@ -217,6 +232,8 @@ def server_section(runs, is_project, arms, title):
         else:
             row.append("")
         body.append(row)
+    rank(body, 2, True)
+    rank(body, 6, False)
     lim = max(10, 5 * math.ceil(max(max(abs(i[2]), abs(i[3])) for i in items) / 5))
     chart = forest(items, -lim, lim, 0, lambda t: "0 pp" if t == 0 else f"{t:+g} pp",
                    title)
@@ -312,12 +329,15 @@ def main():
         "Success difference against baseline on Java tasks")
 
     # Raw tables.
+    desc_body = [[MODEL_NAME[r["model"]], r["arm"], r["runs"], num(r["success"], 3), f"{float(r['mean_cost_usd']):.4f}",
+          f"{float(r['median_cost_usd']):.4f}", num(r["median_wall_s"], 1), usage(float(r["lsp_used"]), r["arm"]), num(r["mean_flaws"], 2)]
+         for r in descriptive]
+    by_m = [[i for i, r in enumerate(desc_body) if r[0] == MODEL_NAME[m]] for m in MODELS]
+    rank(desc_body, 3, True, by_m)
+    rank(desc_body, 8, False, by_m)
     desc_table = table(
         ["Model", "Arm", "Runs", "Success", "Mean cost (USD)", "Median cost (USD)", "Median wall time (s)",
-         "Share of runs using LSP", "Mean flaws"],
-        [[MODEL_NAME[r["model"]], r["arm"], r["runs"], num(r["success"], 3), f"{float(r['mean_cost_usd']):.4f}",
-          f"{float(r['median_cost_usd']):.4f}", num(r["median_wall_s"], 1), usage(float(r["lsp_used"]), r["arm"]), num(r["mean_flaws"], 2)]
-         for r in descriptive])
+         "Share of runs using LSP", "Mean flaws"], desc_body)
     hdr = ["Arm", "Estimate", "Interval (95%)", "Better", "Same", "Worse", "Tasks"]
 
     def strat_table(rs):
@@ -353,6 +373,8 @@ def main():
             .chart .value {{ font-size: 11px; fill: {INK}; }}
             .chart .mark:hover circle, .chart .mark:hover path {{ opacity: 0.75; }}
             .legend {{ font-size: 0.8125rem; color: {MUTED}; }}
+            .win {{ background: #d9f0e3; padding: 1px 5px; border-radius: 3px; }}
+            .lose {{ background: #fbdcd3; padding: 1px 5px; border-radius: 3px; }}
             svg.use {{ vertical-align: -2px; }}
             .legend span {{ margin-right: 16px; white-space: nowrap; }}
             details {{ margin: 4px 0 20px; }}
