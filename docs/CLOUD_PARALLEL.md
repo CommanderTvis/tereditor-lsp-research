@@ -9,7 +9,7 @@ through an S3-compatible bucket the operator brings. `./study cloud` does the la
 
 Use `docs/CLOUD_RUN.md` when one session should do everything (curation, validation, the pilot, the plan, the runs and
 the report) and wall-clock time does not matter: it runs one project at a time and needs nothing but a Claude
-subscription. Use this document when a plan is already fixed and committed (`results/<plan>/plan.tsv`) and its
+subscription. Use this document when a plan is already fixed (`results/<plan>/plan.tsv`, local or from `./study data pull <plan>`) and its
 projects should run side by side: each project gets its own VM, its own 30 GB disk and its own worker, so a plan that
 takes days in one session takes hours. Curation, validation, the pilot and the report stay with the single-session
 runbook or the operator.
@@ -44,9 +44,9 @@ project.
    S3_SECRET=<secret access key>
    ```
 
-2. Commit the plan (`./study plan <plan> ...`, then `git add results/<plan>/plan.tsv && git commit`). The helpers
-   clone a git bundle of the current branch, so whatever they should run must be committed on it; `launch` refuses an
-   uncommitted or modified plan and warns about uncommitted harness changes.
+2. Have the plan in `results/<plan>/plan.tsv` (`./study plan <plan> ...`, or `./study data pull <plan>` for a
+   published one). Results are not part of the repository: `launch` uploads the plan with its sha256 next to a git
+   bundle of the current branch, and warns about uncommitted harness changes, which the bundle would not carry.
 3. Check the launch without starting anything: `STUDY_CLOUD_DRY_RUN=1 ./study cloud launch <plan>` prints the uploads,
    the `script ... claude ... --cloud` command and the prompt with the key masked, and makes no network call.
 4. Launch, from the repository root:
@@ -71,8 +71,9 @@ project.
    checks that each tarball unpacks, and scans it for runs and reviews that stopped on a usage limit. It prints the
    counts per project and calls a project "collected clean" only when its state is done and nothing stopped on a limit;
    it exits non-zero otherwise. `./study cloud scan <archive.tar.gz>...` runs the same scan on archives already on disk.
-   Collect commits nothing: review the output, then `git add results/<plan>/archive results/<plan>/cloud/sessions.tsv`
-   and commit (`./study restore <plan>` and `./study analyze <plan>` as usual afterwards).
+   Collect publishes nothing: review the output, then `./study data push <plan>` (it publishes `results/<plan>/`,
+   archives, `cloud/sessions.tsv` and the report, never raw `runs/`, on gh-pages under `data/results/<plan>/`);
+   `./study restore <plan>` and `./study analyze <plan>` as usual.
 
 ## What a helper does
 

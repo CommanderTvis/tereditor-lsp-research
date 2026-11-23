@@ -86,7 +86,8 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
 - `projects/<lang>-<size>/`, `tasks/<lang>-<size>/<task>/`: see `docs/TASKS.md`. Most projects are stubs
   (`status = "stub"` in `project.toml`); done so far: python-small (4 tasks), java-medium (2), csharp-small
   (2, not validated).
-- `analysis/`: planner, extraction, report. `results/<plan>/`: plan, runs.csv, report (raw runs are git-ignored).
+- `analysis/`: planner, extraction, report. `results/<plan>/`: plan, runs.csv, report, archives. Never in this branch
+  (git-ignored): published on gh-pages under `data/results/`; `./study data pull [plan]` / `./study data push <plan>`.
 - Upstream checkout (read-only from this repo): `~/TereditorProjects/tereditor`, remote
   `github.com/CommanderTvis/tereditor` (formerly `CommanderTvis/sharprail`); headless archives on its nightly releases.
 - Local secrets live git-ignored in the repository root: `study.env` (`CLAUDE_CODE_OAUTH_TOKEN=` or

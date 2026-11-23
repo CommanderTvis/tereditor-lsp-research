@@ -1,5 +1,5 @@
 #!/bin/sh
-# child.sh <project> <plan>: one project of a committed plan in a helper cloud session, end to end, results to the
+# child.sh <project> <plan>: one project of the operator's plan in a helper cloud session, end to end, results to the
 # operator's S3 bucket (docs/CLOUD_PARALLEL.md). Started by the helper session's prompt (harness/cloud/prompt.tmpl),
 # with s3.sh next to it and S3_ENDPOINT, S3_REGION, S3_ACCESS and S3_SECRET in the environment. Idempotent: run it again
 # after an interruption and it continues (finished runs and gradings are skipped by ./study).
@@ -60,11 +60,12 @@ l=${P%-*}; case "$l" in kotlin|java|java-kotlin) g=jvm ;; *) g=$l ;; esac
 export STUDY_RUNTIME=native STUDY_CPUS=3 STUDY_MEMORY=10g; j=2
 case "$P" in *-xlarge) STUDY_MEMORY=14g; j=1 ;; esac
 
-# The plan is the operator's committed one, never regenerated here.
+# The plan is the operator's (results/ is not in the repository), uploaded by ./study cloud launch, never regenerated here.
 status running plan ""
 want=$(s3_try control/plan.sha256 | cut -c1-64)
 [ -n "$want" ] || fail plan "cannot download control/plan.sha256"
-[ -f "results/$PLAN/plan.tsv" ] || fail plan "results/$PLAN/plan.tsv is not in the bundle"
+mkdir -p "results/$PLAN"
+[ -f "results/$PLAN/plan.tsv" ] || s3_get control/plan.tsv "results/$PLAN/plan.tsv" || fail plan "cannot download control/plan.tsv"
 sha=$(sha256_of "results/$PLAN/plan.tsv")
 [ "$sha" = "$want" ] || fail plan "plan.tsv sha256 $sha differs from the operator's $want"
 ids=$(awk -F'\t' -v p="$P" 'NR>1 && $2==p {print $1}' "results/$PLAN/plan.tsv")

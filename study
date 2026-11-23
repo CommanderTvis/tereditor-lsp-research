@@ -18,6 +18,8 @@
 #   ./study prune <project> ...        drop a finished project's snapshot and caches
 #   ./study cloud launch|status|collect <plan> ...  one helper cloud session per project, results through an S3
 #                                      bucket of the operator's (docs/CLOUD_PARALLEL.md); cloud scan <archive>...
+#   ./study data pull [plan]           fetch results/ (all plans, or one) from the data branch: results never live in
+#   ./study data push <plan>           this branch; they are published on gh-pages under data/results/ (README.md)
 #
 # Environment: STUDY_RUNTIME=docker|container|native, STUDY_CPUS (default 4), STUDY_MEMORY (default 8g) per container
 # (a container holds all parallel runs of a language group: size it for -j runs),
@@ -33,7 +35,7 @@ if [ -z "${STUDY_RUNTIME:-}" ]; then
   if command -v docker >/dev/null 2>&1; then STUDY_RUNTIME=docker
   elif command -v container >/dev/null 2>&1; then STUDY_RUNTIME=container
   elif [ "$(uname -s)" = Linux ]; then STUDY_RUNTIME=native
-  else case "${1:-}" in cloud) ;; *) die "need Docker or Apple container" ;; esac; fi   # ./study cloud needs none
+  else case "${1:-}" in cloud|data) ;; *) die "need Docker or Apple container" ;; esac; fi   # cloud and data need none
 fi
 RT=${STUDY_RUNTIME:-}
 # An amd64 builder on an arm64 host (DOCKER_DEFAULT_PLATFORM=linux/amd64, needed for clangd) keeps its own volume pair:
@@ -179,7 +181,7 @@ by_group() { # <run|grade> <plan>
     f=results/$plan/runs/$r
     if [ "$what" = run ]; then [ -f "$f/exit.json" ] || echo "$r"
     elif [ "$what" = review ]; then if [ -f "$f/exit.json" ] && [ ! -f "$f/review/result.json" ]; then echo "$r"; fi
-    else if [ -f "$f/exit.json" ] && [ ! -f "$f/grade/result.json" ]; then echo "$r"; fi; fi
+    elif [ -f "$f/exit.json" ] && [ ! -f "$f/grade/result.json" ]; then echo "$r"; fi
   done)
   [ -n "$ids" ] || { log "nothing to $what"; return 0; }
   for g in $(for r in $ids; do group_of "$(awk -F'\t' -v r="$r" '$1==r {print $2}' "results/$plan/plan.tsv")"; done | sort -u); do
@@ -322,9 +324,7 @@ cmd_cloud_launch() {
   # Every refusal comes before any network call.
   cloud_env
   pl=results/$plan/plan.tsv
-  [ -f "$pl" ] || die "no $pl: ./study plan $plan ..., then commit it"
-  git ls-files --error-unmatch "$pl" >/dev/null 2>&1 || die "$pl is not committed: the helpers take the plan from a git bundle of this branch"
-  git diff --quiet HEAD -- "$pl" || die "$pl differs from the committed one: commit or restore it"
+  [ -f "$pl" ] || die "no $pl: ./study data pull $plan, or ./study plan $plan ... (and ./study data push $plan to publish it)"
   [ -f "$ROOT/license.zip" ] || die "no license.zip (the JetBrains offline activation code) in $ROOT, see README.md"
   branch=$(git symbolic-ref --short -q HEAD) || die "detached HEAD: check out the branch the helpers should clone"
   [ -z "$(git status --porcelain -- study harness analysis projects tasks nix)" ] \
@@ -341,7 +341,7 @@ cmd_cloud_launch() {
   git bundle create -q "$t/study.bundle" "$branch" 2>/dev/null || git bundle create "$t/study.bundle" "$branch"
   echo "$branch" > "$t/branch.txt"; sha256_of "$pl" > "$t/plan.sha256"
   for kv in "$ROOT/license.zip=control/license.zip" "$t/study.bundle=control/study.bundle" "$t/branch.txt=control/branch.txt" \
-            "$t/plan.sha256=control/plan.sha256" "$ROOT/harness/cloud/child.sh=control/child.sh" "$ROOT/harness/cloud/s3.sh=control/s3.sh"; do
+            "$pl=control/plan.tsv" "$t/plan.sha256=control/plan.sha256" "$ROOT/harness/cloud/child.sh=control/child.sh" "$ROOT/harness/cloud/s3.sh=control/s3.sh"; do
     if cloud_dry; then echo "dry run: upload ${kv%%=*} to ${kv#*=}"
     else s3_put "${kv%%=*}" "${kv#*=}" || die "upload of ${kv#*=} failed"; fi
   done
@@ -435,7 +435,7 @@ cmd_cloud_collect() {
     if [ "$state" = "done" ] && [ "$ok" = 1 ]; then echo "$p: done, $sc: collected clean"
     else echo "$p: $state, $sc: NOT clean (re-run the limit-stopped or missing runs before using it)"; bad=$((bad+1)); fi
   done
-  log "collected $got archives into $A; $bad not clean. Nothing is committed: review, then git add $A and commit."
+  log "collected $got archives into $A; $bad not clean. Nothing is published: review, then ./study data push $plan."
   [ "$bad" = 0 ] || exit 1
 }
 
@@ -451,6 +451,38 @@ cmd_cloud() {
 }
 
 c=${1:-}; [ -n "$c" ] || { sed -n '2,22p' "$0"; exit 2; }; shift
+# Results never live in this branch (/results/ is ignored): they are published on a data branch, by default gh-pages
+# of origin, under data/results/<plan>/ (plans, archives, reports; never the raw runs/ directories).
+DATA_REMOTE=${STUDY_DATA_REMOTE:-origin} DATA_BRANCH=${STUDY_DATA_BRANCH:-gh-pages}
+cmd_data() {
+  op=${1:-}; plan=${2:-}
+  case "$op" in
+    pull)
+      git fetch -q "$DATA_REMOTE" "$DATA_BRANCH" || die "cannot fetch $DATA_REMOTE $DATA_BRANCH"
+      src=data/results${plan:+/$plan}
+      git cat-file -e "FETCH_HEAD:$src" 2>/dev/null || die "no $src on $DATA_REMOTE/$DATA_BRANCH"
+      git archive --format=tar FETCH_HEAD "$src" | tar -xf - --strip-components=1
+      log "pulled $src into ${src#data/}" ;;
+    push)
+      [ -n "$plan" ] || die "usage: ./study data push <plan>"
+      [ -d "results/$plan" ] || die "no results/$plan"
+      git fetch -q "$DATA_REMOTE" "$DATA_BRANCH" || die "cannot fetch $DATA_REMOTE $DATA_BRANCH"
+      idx=$(mktemp "${TMPDIR:-/tmp}/study-data-index.XXXXXX")
+      GIT_INDEX_FILE=$idx git read-tree FETCH_HEAD
+      GIT_INDEX_FILE=$idx git rm -r -q --cached --ignore-unmatch "data/results/$plan"
+      find "results/$plan" -type f ! -path "results/$plan/runs/*" ! -name '.*' | while IFS= read -r f; do
+        GIT_INDEX_FILE=$idx git update-index --add --cacheinfo "100644,$(git hash-object -w "$f"),data/$f"
+      done
+      tree=$(GIT_INDEX_FILE=$idx git write-tree); rm -f "$idx"
+      [ "$tree" != "$(git rev-parse 'FETCH_HEAD^{tree}')" ] || { log "data/results/$plan is already up to date"; return 0; }
+      sign=; [ "$(git config --bool commit.gpgsign)" = true ] && sign=-S
+      commit=$(git commit-tree $sign "$tree" -p FETCH_HEAD -m "Data: results/$plan") || die "commit failed (signing?)"
+      git push -q "$DATA_REMOTE" "$commit:refs/heads/$DATA_BRANCH" || die "push to $DATA_REMOTE $DATA_BRANCH failed"
+      log "published results/$plan to $DATA_REMOTE/$DATA_BRANCH as data/results/$plan ($commit)" ;;
+    *) die "usage: ./study data pull [plan] | push <plan>" ;;
+  esac
+}
+
 case "$c" in
   setup) cmd_setup "$@" ;;
   project) cmd_project "$@" ;;
@@ -467,5 +499,6 @@ case "$c" in
   restore) cmd_restore "$@" ;;
   prune) cmd_prune "$@" ;;
   cloud) cmd_cloud "$@" ;;
+  data) cmd_data "$@" ;;
   *) die "unknown command $c" ;;
 esac

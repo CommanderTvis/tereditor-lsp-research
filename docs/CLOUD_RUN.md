@@ -49,7 +49,9 @@ whether the session can run its sandboxes under the permission mode cloud sessio
 - Never end your turn while work remains: the VM pauses when the session is idle and running commands die with it.
   Run long commands in the background and poll them every few minutes until the final files are sent.
 - Work in `/root/study` on the branch `run/<YYYY-MM-DD>` (the date the run starts). Commit after every project and
-  every phase. Commit only study files: never the licence, never tokens, never raw `results/*/runs/` (archives only).
+  every phase. Commit only study files: never the licence, never tokens, never anything under `results/` (it is not
+  part of the repository: results are published on gh-pages under `data/results/`, see README.md). Send results as
+  `study-results-<date>.tar.gz` (`results/<plan>/` without the raw `runs/`) after every project, next to the bundle.
 - Checkpoint after every project and every phase: `git bundle create /root/study-<date>.bundle main..HEAD` (the whole
   branch, so the latest bundle supersedes earlier ones) and send it to the owner as a download, with one line saying
   what it now contains.
@@ -118,7 +120,7 @@ For each `projects/<lang>-<size>` in `docs/PROJECTS.md`, smallest first within e
 ./study plan main --models "claude-haiku-5-5 claude-sonnet-5-5 claude-opus-5-5" \
   --arms "baseline optional enforced intellij-optional intellij-enforced" \
   --reps-per-model "<from the allocation>" --budget 10 --turns 200 --timeout 3600
-git add results/main/plan.tsv && git commit -m "Confirmatory plan"      # and send the bundle
+tar -czf /root/study-results-<date>.tar.gz --exclude=runs results/main   # send it; the owner publishes the plan
 ```
 
 Then for each project (the planner already randomised the run order; run projects in the order of their first run in
@@ -131,7 +133,7 @@ Then for each project (the planner already randomised the run order; run project
 ./study run main --project <p> -j 2
 ./study grade main --project <p> -j 2
 ./study archive main <p>
-git add results/main/archive/<p>.tar.gz && git commit -m "Runs: <p>"     # and send the bundle
+tar -czf /root/study-results-<date>.tar.gz --exclude=runs results/main   # send it with the bundle
 ./study prune <p>
 ```
 
@@ -146,10 +148,10 @@ git add results/main/archive/<p>.tar.gz && git commit -m "Runs: <p>"     # and s
    threats to validity. No claim without a number from `results/main/report/`.
 3. Sign it at the end with the date: `Report generated on <YYYY-MM-DD> (UTC) by a Claude Code cloud session from
    plan results/main/plan.tsv, tereditor <TEREDITOR_COMMIT>, Claude Code <version>.`
-4. Commit `REPORT.md` and `results/main/` (plan, runs.csv, report, archives) and send three downloads: the final
-   bundle, `REPORT.md` itself, and `study-results-<date>.tar.gz` (REPORT.md plus `results/main/`). Print the report's
-   summary in the chat. The owner applies the bundle (`git pull study-<date>.bundle run/<date>`) and opens the pull
-   request.
+4. Commit `REPORT.md` and send three downloads: the final bundle, `REPORT.md` itself, and
+   `study-results-<date>.tar.gz` (REPORT.md plus `results/main/` without `runs/`). Print the report's summary in the
+   chat. The owner applies the bundle (`git pull study-<date>.bundle run/<date>`) and opens the pull request, unpacks
+   the results tarball into `results/` and publishes it with `./study data push main` (results never enter main).
 
 ## Measured limits of the cloud VM (cloud session, linux/amd64, 4 vCPUs, 15 GB, about 40 GB of disk with 14 GB base image)
 

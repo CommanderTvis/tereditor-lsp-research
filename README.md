@@ -29,9 +29,10 @@ and two prompting regimes.
    ./study plan mine --models "claude-haiku-5-5 claude-sonnet-5-5 claude-opus-5-5" --reps 3 --budget 5
    ./study run mine -j 3        # resumable
    ./study grade mine -j 3
-   ./study analyze mine         # results/mine/report/report.md
+   ./study analyze mine         # results/mine/report/report.md (results/ is not in the repository: ./study data pull
+                                # fetches published plans, ./study data push publishes yours on gh-pages data/results/)
    ```
 
 `STUDY_RUNTIME=docker|container` picks the runtime when both exist. Docker (OrbStack on macOS) and Apple `container` are tested.
 The author's run uses one Claude Code cloud session: [docs/CLOUD_PROMPT.md](docs/CLOUD_PROMPT.md) (the runbook it follows is [docs/CLOUD_RUN.md](docs/CLOUD_RUN.md)).
-A committed plan can also run in parallel cloud sessions, one per project, with results returned through your own S3 bucket: [docs/CLOUD_PARALLEL.md](docs/CLOUD_PARALLEL.md).
+A plan can also run in parallel cloud sessions, one per project, with results returned through your own S3 bucket: [docs/CLOUD_PARALLEL.md](docs/CLOUD_PARALLEL.md).
