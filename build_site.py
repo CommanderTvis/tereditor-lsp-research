@@ -57,7 +57,7 @@ def usage(share, arm):
 
 
 def rank(body, col, higher_is_better, groups=None):
-    """Tint the best and the worst cell of a column (within each group of rows); ties share the tint."""
+    """Tint a column (within each group of rows): best green, worst red, the rest yellow; ties share the tint."""
     for idx in (groups or [range(len(body))]):
         vals = {i: float(str(body[i][col]).rstrip("%")) for i in idx if str(body[i][col]) != ""}
         if len(set(vals.values())) < 2:
@@ -69,6 +69,8 @@ def rank(body, col, higher_is_better, groups=None):
                 body[i][col] = Raw(f'<span class="win" title="best in this table">{esc(body[i][col])}</span>')
             elif v == worst:
                 body[i][col] = Raw(f'<span class="lose" title="worst in this table">{esc(body[i][col])}</span>')
+            else:
+                body[i][col] = Raw(f'<span class="mid" title="in between">{esc(body[i][col])}</span>')
 
 
 def table(headers, body):
@@ -374,6 +376,7 @@ def main():
             .chart .mark:hover circle, .chart .mark:hover path {{ opacity: 0.75; }}
             .legend {{ font-size: 0.8125rem; color: {MUTED}; }}
             .win {{ background: #d9f0e3; padding: 1px 5px; border-radius: 3px; }}
+            .mid {{ background: #fbefc4; padding: 1px 5px; border-radius: 3px; }}
             .lose {{ background: #fbdcd3; padding: 1px 5px; border-radius: 3px; }}
             svg.use {{ vertical-align: -2px; }}
             .legend span {{ margin-right: 16px; white-space: nowrap; }}
