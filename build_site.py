@@ -236,6 +236,7 @@ def server_section(runs, is_project, arms, title):
         body.append(row)
     rank(body, 2, True)
     rank(body, 6, False)
+    rank(body, 3, False)
     lim = max(10, 5 * math.ceil(max(max(abs(i[2]), abs(i[3])) for i in items) / 5))
     chart = forest(items, -lim, lim, 0, lambda t: "0 pp" if t == 0 else f"{t:+g} pp",
                    title)
@@ -337,6 +338,8 @@ def main():
     by_m = [[i for i, r in enumerate(desc_body) if r[0] == MODEL_NAME[m]] for m in MODELS]
     rank(desc_body, 3, True, by_m)
     rank(desc_body, 8, False, by_m)
+    rank(desc_body, 4, False, by_m)
+    rank(desc_body, 5, False, by_m)
     desc_table = table(
         ["Model", "Arm", "Runs", "Success", "Mean cost (USD)", "Median cost (USD)", "Median wall time (s)",
          "Share of runs using LSP", "Mean flaws"], desc_body)
