@@ -42,9 +42,34 @@ def esc(x):
     return html.escape(str(x))
 
 
+class Raw(str):
+    """A table cell that is already HTML."""
+
+
+def usage(share, arm):
+    """Share of runs that called an LSP tool, with an icon: filled = uses it a lot, half = sometimes, empty = ignores it."""
+    pct = f"{100 * share:.0f}%"
+    if arm.startswith("baseline"):
+        return pct
+    if share >= 0.75:
+        word, inner = "uses the tools a lot", f'<circle cx="7" cy="7" r="5.5" fill="{INK}"/>'
+    elif share <= 0.10:
+        word, inner = "ignores the tools", f'<circle cx="7" cy="7" r="5" fill="none" stroke="{INK}" stroke-width="1.5"/>'
+    else:
+        word, inner = "uses the tools sometimes", (f'<circle cx="7" cy="7" r="5" fill="none" stroke="{INK}" stroke-width="1.5"/>'
+                                                   f'<path d="M7,2 A5,5 0 0,0 7,12 Z" fill="{INK}"/>')
+    return Raw(f'<svg class="use" width="14" height="14" role="img" aria-label="{word}"><title>{word}</title>{inner}</svg> {pct}')
+
+
+USAGE_KEY = Raw('<p class="legend">'
+                + usage(1, "x").split(" 100%")[0] + ' uses the tools a lot (75% of runs or more) &nbsp; '
+                + usage(0.5, "x").split(" 50%")[0] + ' sometimes &nbsp; '
+                + usage(0, "x").split(" 0%")[0] + ' ignores them (10% or less)</p>')
+
+
 def table(headers, body):
     head = "".join(f"<th>{esc(h)}</th>" for h in headers)
-    lines = ["<tr>" + "".join(f"<td>{esc(c)}</td>" for c in r) + "</tr>" for r in body]
+    lines = ["<tr>" + "".join(f"<td>{c if isinstance(c, Raw) else esc(c)}</td>" for c in r) + "</tr>" for r in body]
     return f"<table><thead><tr>{head}</tr></thead><tbody>{''.join(lines)}</tbody></table>"
 
 
@@ -190,7 +215,7 @@ def server_section(runs, is_project, arms, title):
         row = [label, len(rs), f"{100 * sum(ok(r) for r in rs) / len(rs):.0f}%",
                f"{statistics.median(float(r['cost_usd'] or 0) for r in rs):.3f}",
                f"{statistics.median(float(r['wall_s'] or 0) for r in rs):.0f}",
-               f"{100 * sum(r['lsp_used'] in ('True', 'true', '1') for r in rs) / len(rs):.0f}%",
+               usage(sum(r['lsp_used'] in ('True', 'true', '1') for r in rs) / len(rs), arm),
                f"{sum(flaws) / len(flaws):.2f}" if flaws else ""]
         if arm != "baseline":
             est = diff(arm, tasks)
@@ -302,7 +327,7 @@ def main():
         ["Model", "Arm", "Runs", "Success", "Mean cost (USD)", "Median cost (USD)", "Median wall time (s)",
          "Share of runs using LSP", "Mean flaws"],
         [[MODEL_NAME[r["model"]], r["arm"], r["runs"], num(r["success"], 3), f"{float(r['mean_cost_usd']):.4f}",
-          f"{float(r['median_cost_usd']):.4f}", num(r["median_wall_s"], 1), num(r["lsp_used"], 2), num(r["mean_flaws"], 2)]
+          f"{float(r['median_cost_usd']):.4f}", num(r["median_wall_s"], 1), usage(float(r["lsp_used"]), r["arm"]), num(r["mean_flaws"], 2)]
          for r in descriptive])
     hdr = ["Arm", "Estimate", "Interval (95%)", "Better", "Same", "Worse", "Tasks"]
 
@@ -339,6 +364,7 @@ def main():
             .chart .value {{ font-size: 11px; fill: {INK}; }}
             .chart .mark:hover circle, .chart .mark:hover path {{ opacity: 0.75; }}
             .legend {{ font-size: 0.8125rem; color: {MUTED}; }}
+            svg.use {{ vertical-align: -2px; }}
             .legend span {{ margin-right: 16px; white-space: nowrap; }}
             details {{ margin: 4px 0 20px; }}
             summary {{ cursor: pointer; color: {MUTED}; font-size: 0.875rem; }}
@@ -444,6 +470,7 @@ def main():
         {legend([("IntelliJ", BLUE), ("kotlin-lsp", ORANGE)])}
         {chart_kotlin}
         {kotlin_table}
+        {USAGE_KEY}
         <p class="note">{k_tasks} tasks is a small sample: the intervals are wide, and {k_zero}. Cost and time are medians over all three models.</p>
 
         <h2>Java: IntelliJ vs no language server</h2>
@@ -451,11 +478,12 @@ def main():
         Java server), so the comparison is IntelliJ against the baseline, {j_runs} runs in all.</p>
         {chart_java}
         {java_table}
+        {USAGE_KEY}
         <p class="note">{j_tasks} tasks is a small sample: the intervals are wide, and {j_zero}. Cost and time are
         medians over all three models.</p>
 
         <h2>Raw data</h2>
-        {spoiler("Arms by model", desc_table)}
+        {spoiler("Arms by model", desc_table + USAGE_KEY)}
         {spoiler("Contrasts by model", strat_table(by_model))}
         {spoiler("Contrasts by language", strat_table(by_lang))}
         {spoiler("Contrasts by project size", strat_table(by_size))}
