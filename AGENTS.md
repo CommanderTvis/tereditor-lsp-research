@@ -101,7 +101,8 @@ its work to the owner as downloads (a git bundle of its branch after every proje
 tarball). The owner sets up one cloud environment (Full network access, the JetBrains activation code as the variable
 `STUDY_LICENSE_B64`) and starts it with the `claude --cloud` command of `docs/CLOUD_PROMPT.md`, which is the owner's go
 for the confirmatory run; an outside reproducer with a Claude subscription does the same. Local runs on this Mac are for
-development.
+development. Alternatively, `./study cloud` runs a committed plan in parallel cloud sessions, one per project, paced
+and returning results through the operator's S3 bucket (`docs/CLOUD_PARALLEL.md`).
 
 ## Working here
 
