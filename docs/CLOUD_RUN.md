@@ -3,6 +3,7 @@
 The runbook for the session that carries out the whole study unattended, one project at a time, and ends by handing
 the owner the dated report and every result as downloads. Read `AGENTS.md` first; it is the contract. Everything here
 uses `./study` with the native backend (docs/ENVIRONMENT.md): no Docker daemon is needed in the cloud VM.
+To run a committed plan in many sessions at once, one per project, see `docs/CLOUD_PARALLEL.md`.
 
 ## Why one cloud session, and what it implies
 

@@ -14,3 +14,4 @@ __pycache__/
 /study.env
 /.study-lock/
 /results/
+/cloud.env
