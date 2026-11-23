@@ -22,6 +22,7 @@ BLUE, ORANGE = "var(--blue)", "var(--orange)"
 INK, MUTED, GRID = "var(--ink)", "var(--muted)", "var(--grid)"
 
 ARMS = ["optional", "enforced", "baseline-review", "intellij-optional", "intellij-enforced"]
+CHART_ARMS = [a for a in ARMS if a != "baseline-review"]  # baseline-review stays in the raw data only
 MODELS = ["claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5"]
 MODEL_NAME = {"claude-haiku-5-5": "Haiku 5.5", "claude-sonnet-5-5": "Sonnet 5.5", "claude-opus-5-5": "Opus 5.5"}
 
@@ -383,7 +384,7 @@ def main():
 
     # Chart 1: success difference vs baseline, per arm, all models.
     s_items, s_rows = [], []
-    for arm in ARMS:
+    for arm in CHART_ARMS:
         r = c_all(arm, "success (pp)")
         if r:
             e, a, b = float(r["estimate"]), float(r["ci_lo"]), float(r["ci_hi"])
@@ -393,7 +394,7 @@ def main():
 
     # Chart 2: cost ratio vs baseline, per arm.
     c_items, c_rows = [], []
-    for arm in ARMS:
+    for arm in CHART_ARMS:
         r = c_all(arm, "cost ratio")
         if r:
             e, a, b = float(r["estimate"]), float(r["ci_lo"]), float(r["ci_hi"])
@@ -631,8 +632,7 @@ def main():
             <dt>enforced</dt>
             <dd>LS tools available, and the agent is told and nudged by hooks to use them.</dd>
         </dl>
-        <p class="faint" style="margin-top: 0">Also in the charts: baseline-review (baseline plus a second "review your work" turn) and the
-        IntelliJ versions of optional and enforced, where IntelliJ is the LS (Java and Kotlin projects
+        <p class="faint" style="margin-top: 0">Also in the charts: the IntelliJ versions of optional and enforced, where IntelliJ is the LS (Java and Kotlin projects
         only). On Kotlin this compares IntelliJ with <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a>, which the plain optional and enforced arms use.</p>
 
         <h2 id="kinds-of-tasks">Kinds of tasks{tag_kinds}</h2>
@@ -675,7 +675,7 @@ def main():
         {chart_adoption}
 
         <h2 id="cost-goes-up-when-lsp-use-is-enforced">Cost goes up when LSP use is enforced</h2>
-        <p>Enforced runs cost about {enf_c_txt}× the baseline; optional runs about the same. Cost of each arm as a multiple of the baseline (log scale); baseline-review is the baseline plus a second review turn. The dashed line is equal cost.</p>
+        <p>Enforced runs cost about {enf_c_txt}× the baseline; optional runs about the same. Cost of each arm as a multiple of the baseline (log scale). The dashed line is equal cost.</p>
         {chart_cost}
         {spoiler("Show the numbers", table(hdr, c_rows))}
 
