@@ -185,7 +185,8 @@ by_group() { # <run|grade> <plan>
 }
 
 # A usage or rate limit (a Max plan's 5-hour window, an API quota) pauses the run, it does not end it: runs that stopped on
-# one are discarded and retried, after LIMIT_WAIT_S seconds (default 1800, tried again until the window has reset).
+# one are discarded and retried once the limit has reset (the marker holds the seconds until then, from the run's stream;
+# LIMIT_WAIT_S, default 1800, when it does not say; tried again until the window has reset).
 cmd_run() {
   plan=$1; shift; parse_jp "$@"; load_credentials; load_license
   [ "$RT" = native ] || ctr_volumes
@@ -193,7 +194,8 @@ cmd_run() {
     rm -f "results/$plan/.limit"
     by_group run "$plan"
     [ -f "results/$plan/.limit" ] || break
-    wait=${LIMIT_WAIT_S:-1800}; log "usage limit reached; waiting $wait s, then retrying the unfinished runs"
+    wait=$(cat "results/$plan/.limit" 2>/dev/null); case "$wait" in ''|*[!0-9]*) wait=${LIMIT_WAIT_S:-1800} ;; esac
+    log "usage limit reached; waiting $wait s, then retrying the unfinished runs"
     sleep "$wait"
   done
 }

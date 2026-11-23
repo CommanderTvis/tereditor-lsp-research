@@ -76,13 +76,14 @@ kill "$egress" 2>/dev/null || true; wait "$egress" 2>/dev/null || true
 
 # A run that stopped on a usage, quota or rate limit is not a result: log the attempt's cost, discard it, flag the limit
 # so ./study run waits and starts this run again from the beginning with the same run id.
-limit_re='limit reached|usage limit|session limit|rate.?limit|quota|credit balance|overloaded|too many requests'
-if { jq -r 'select(.type=="result" and .is_error==true) | (.result // "")' "$out/stream.jsonl" 2>/dev/null; \
-     [ -s "$out/stream-review.jsonl" ] && jq -r 'select(.type=="result" and .is_error==true) | (.result // "")' "$out/stream-review.jsonl" 2>/dev/null; } \
-   | grep -q -i -E "$limit_re"; then
-  cost=$(jq -s '[.[] | select(.type=="result") | .total_cost_usd // 0] | add // 0' "$out/stream.jsonl" 2>/dev/null || echo 0)
+# The marker holds the seconds to wait (until the limit resets, from the stream; the longest of parallel runs wins).
+if limit_stop "$out/stream.jsonl" "$out/stream-review.jsonl"; then
+  cost=$(cat "$out/stream.jsonl" "$out/stream-review.jsonl" 2>/dev/null | jq -s '[.[] | select(type=="object" and .type=="result") | .total_cost_usd // 0] | add // 0' 2>/dev/null || echo 0)
   printf '%s\t%s\tcost_usd=%s\n' "$(date -u +%FT%TZ)" "$rid" "${cost:-0}" >> "$P/limit-attempts.log"
-  touch "$P/.limit"; log "run $rid stopped on a usage limit; discarded, will be retried"
+  ws=$(limit_wait_s "$out/stream.jsonl" "$out/stream-review.jsonl"); old=$(cat "$P/.limit" 2>/dev/null || true)
+  case "$old" in ''|*[!0-9]*) old=0 ;; esac
+  [ "$ws" -gt "$old" ] && echo "$ws" > "$P/.limit" || touch "$P/.limit"
+  log "run $rid stopped on a usage limit; discarded, will be retried (wait ${ws} s)"
   rm -rf "$w" "$out"; exit 75
 fi
 g -C "$w/ws" add -A >/dev/null 2>&1 || true

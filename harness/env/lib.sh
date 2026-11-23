@@ -8,6 +8,32 @@
 log() { echo "[env $(date -u +%H:%M:%S)] $*" >&2; }
 die() { echo "env: $*" >&2; exit 2; }
 
+# limit_stop <stream.jsonl>...: true if a Claude Code run stopped on a usage, quota or rate limit (docs/ANALYSIS_PLAN.md:
+# such a run is not a result). Structured fields first (api_error, api_error_status 429, a rejected rate_limit_info), the
+# message text second, since its wording changes between Claude Code versions ("You've hit your 5-hour limit").
+limit_re='limit reached|usage.limit|hit your .*limit|session limit|rate.?limit|quota|credit balance|overloaded|too many requests'
+limit_stop() {
+  local f
+  for f in "$@"; do
+    [ -s "$f" ] || continue
+    jq -r 'select(type=="object" and .type=="result" and .is_error==true)
+           | [(.api_error // "" | tostring), (.api_error_status // "" | tostring),
+              (.error_params.rate_limit_info.status // "" | tostring), (.result // "" | tostring)] | join(" ")' "$f" 2>/dev/null \
+      | grep -q -i -E "usage_limit|rate_limit|(^| )429( |$)|(^| )rejected( |$)|$limit_re" && return 0
+  done
+  return 1
+}
+# limit_wait_s <stream.jsonl>...: seconds until the limit resets (the latest resetsAt in the streams) plus 2 minutes, at
+# least 5 minutes; LIMIT_WAIT_S (default 1800) when the streams do not say.
+limit_wait_s() {
+  local r now
+  r=$(cat "$@" 2>/dev/null | jq -r 'select(type=="object") | .. | objects | .resetsAt? // empty' 2>/dev/null | sort -n | tail -n1)
+  now=$(date +%s)
+  if [ -n "$r" ] && [ "$r" -gt "$now" ] 2>/dev/null; then
+    echo $(( r - now + 120 > 300 ? r - now + 120 : 300 ))
+  else echo "${LIMIT_WAIT_S:-1800}"; fi
+}
+
 TEREDITOR_COMMIT=$(sed -n 's/^TEREDITOR_COMMIT=//p' "$STUDY_ROOT/harness/tereditor.env")
 TEREDITOR_DIR="$STUDY_STATE/tereditor/$TEREDITOR_COMMIT-$(uname -m)"
 # Everything built on a machine (language-server caches, managed runtimes, prepared snapshots) is keyed by its
