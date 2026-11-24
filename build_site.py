@@ -679,19 +679,13 @@ def main():
         {flaw_table}
         {spoiler("Examples from the run", flaw_examples)}
         <h3 id="flaws-rechecked">Flaw counts re-checked</h3>
-        <p>The reviewer (Haiku 5.5) over-reports, so every flaw it reported was checked again, one by one, by a second
-        model (Opus 5.5), given the task, the diff and the reviewer's own definitions, and blind to the arm and the model
-        of the run. Only flaws it confirmed count; every flaw number on this page uses these counts. Of {len(flaws)}
-        reported flaws, {n_counted} were confirmed. The rest: {dropped["formatting_changed_line"]} were formatting of a
-        line the change had to touch anyway, such as import order after a rename (none of the reviewer's five kinds);
-        {dropped["duplicate"]} were the same defect listed again for another file; {dropped["wrong"]} were contradicted by
-        the diff or the task; {dropped["optional"]} concerned something the task declared optional; and
-        {dropped["not_introduced"]} were not caused by the change. The check is
-        <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/main/analysis/recheck_flaws.py"><code>analysis/recheck_flaws.py</code></a>; every reported flaw with
-        its verdict is in <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/flaws.csv">flaws.csv</a>, and each run's original count is
-        <code>flaws_raw</code> in <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/runs.csv">runs.csv</a>. Without this check the reviewer's
-        numbers would be misleading: it reported one optional-only arm as having fewer flaws on Kotlin because of
-        import-order notes on a single task. No human has checked the confirmed flaws yet.</p>
+        <p>The first reviewer (Haiku 5.5) flagged far too much, so a second model (Opus 5.5) re-checked each of its
+        {len(flaws)} flaws without knowing which setup produced the run. Only the {n_counted} it confirmed are counted on
+        this page. The rest were mostly harmless formatting on lines the change had to touch anyway, such as import
+        order ({dropped["formatting_changed_line"]}), the same mistake repeated across files
+        ({dropped["duplicate"]}), or simply wrong ({dropped["wrong"]}). No human has checked the confirmed flaws yet.
+        Details: <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/main/analysis/recheck_flaws.py">the check</a>,
+        <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/flaws.csv">every flaw with its verdict</a>.</p>
 
         <h2 id="success-barely-moves">Success barely moves</h2>
         {arm_note}
