@@ -374,15 +374,20 @@ def main():
                 "to use them (<a href=\"#setups\">details</a>).</p>")
     enf_c_txt = f"{float(enf_c['estimate']):.2f}"
     opus_adopt = f"{float(find(descriptive, model='claude-opus-5-5', arm='optional')['lsp_used']) * 100:.0f}%"
-    outline = [("top", "Does LSP help Claude Code?"), ("what-is-being-tested", "What is being tested"), ("setups", "Setups"),
-               ("kinds-of-tasks", "Kinds of tasks"), ("flaws", "LS tools do not reduce refactoring flaws"), ("success-barely-moves", "LS tools don't raise success rates"),
+    results = [("success-barely-moves", "LS tools don't raise success rates"),
+               ("flaws", "LS tools do not reduce refactoring flaws"),
                ("no-model-solves-more", "No model solves more tasks with LS tools"),
                ("only-opus-uses-optional-tools", "Only Opus uses tools when they're optional"),
                ("cost-goes-up-when-lsp-use-is-enforced", "Cost goes up when LSP use is enforced"),
-                              ("all-ls-together", "All LS together"), ("intellij-vs-kotlin-lsp-vs-no-ls", "IntelliJ vs kotlin-lsp vs no LS"),
-               ("java-intellij-vs-no-ls", "Java: IntelliJ vs no LS"), ("raw-data", "Raw data")]
+               ("all-ls-together", "All LS together"), ("intellij-vs-kotlin-lsp-vs-no-ls", "IntelliJ vs kotlin-lsp vs no LS"),
+               ("java-intellij-vs-no-ls", "Java: IntelliJ vs no LS")]
+    outline = [("top", "Does LSP help Claude Code?", []), ("what-is-being-tested", "What is being tested", []),
+               ("setups", "Setups", []), ("kinds-of-tasks", "Kinds of tasks", []), ("results", "Results", results),
+               ("raw-data", "Raw data", [])]
     outline_html = ("<nav class='outline'><b>Contents</b><ol>"
-                    + "".join(f'<li><a href="#{i}">{esc(t)}</a></li>' for i, t in outline) + "</ol></nav>")
+                    + "".join(f'<li><a href="#{i}">{esc(t)}</a>'
+                              + ("<ol class='sub'>" + "".join(f'<li><a href="#{ci}">{esc(ct)}</a></li>' for ci, ct in sub) + "</ol>" if sub else "")
+                              + "</li>" for i, t, sub in outline) + "</ol></nav>")
 
     headline = (
         f"Across {n_tasks} tasks, offering the LS (optional arm) changed success by "
@@ -536,6 +541,8 @@ def main():
                    max-width: 720px; margin: 40px auto; padding: 0 20px; color: {INK}; background: var(--bg); }}
             h1 {{ font-size: 1.625rem; margin-bottom: 4px; }}
             h2 {{ font-size: 1.25rem; margin-top: 32px; margin-bottom: 8px; }}
+            h3 {{ font-size: 1.125rem; margin-top: 28px; margin-bottom: 8px; }}
+            h4 {{ font-size: 1rem; margin-top: 20px; margin-bottom: 6px; }}
             p, li {{ margin-bottom: 6px; }}
             ul {{ padding-left: 20px; }}
             a {{ color: var(--link); }}
@@ -561,6 +568,7 @@ def main():
             nav.outline b {{ display: none; }}
             nav.outline ol {{ display: flex; flex-wrap: wrap; gap: 2px 14px; list-style: none; margin: 0; padding: 0; }}
             nav.outline li {{ margin: 0; }}
+            nav.outline ol.sub {{ display: none; }}
             nav.outline a {{ color: {MUTED}; text-decoration: none; }}
             nav.outline a[href="#raw-data"] {{ color: var(--faint); }}
             nav.outline a.here {{ color: {INK}; font-weight: 600; }}
@@ -573,8 +581,10 @@ def main():
                 nav.outline ol {{ flex-direction: column; gap: 0; }}
                 nav.outline li {{ border-bottom: 1px solid var(--grid); padding: 5px 0; }}
                 nav.outline li:last-child {{ border-bottom: none; }}
+                nav.outline ol.sub {{ display: flex; margin: 4px 0 0 12px; }}
+                nav.outline ol.sub li {{ border-bottom: none; padding: 3px 0; }}
             }}
-            h2 .tag {{ font-size: 0.75rem; font-weight: 600; vertical-align: middle; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }}
+            h3 .tag, h2 .tag {{ font-size: 0.75rem; font-weight: 600; vertical-align: middle; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }}
             .term {{ border-bottom: 1px dotted currentColor; cursor: help; position: relative; }}
             .term:hover::after, .term:focus::after {{ content: attr(data-tip); position: absolute; left: 0; top: 100%;
                    margin-top: 4px; width: max-content; max-width: 260px; white-space: normal; z-index: 10;
@@ -667,27 +677,11 @@ def main():
         and signature tasks (navigation questions have no diff to review), and the number in brackets is the count of
         reviewed runs behind it, not the Runs column. These are raw means; the paired comparison is under
         <a href="#flaws">Flaws</a>.</p>
-        <p>The results below compare three outcomes between arms on the same tasks: the flaws a run leaves, whether it
-        succeeds, and what it costs.</p>
+        <p>The results below compare three outcomes between arms on the same tasks: whether a run
+        succeeds, the flaws it leaves, and what it costs.</p>
 
-        <h2 id="flaws">LS tools do not reduce refactoring flaws{tag_all}</h2>
-        {flaw_summary}
-        {arm_note}
-        <p>Tests decide whether a change works. A flaw is damage the tests cannot see. After each edit run, a reviewer
-        (Haiku 5.5) reads the diff and searches the edited tree for five kinds of it;
-        {len(flaws)} were reported in all, {n_counted} of them confirmed by the re-check below.</p>
-        {flaw_table}
-        {spoiler("Examples from the run", flaw_examples)}
-        <h3 id="flaws-rechecked">Flaw counts re-checked</h3>
-        <p>The first reviewer (Haiku 5.5) flagged far too much, so a second model (Opus 5.5) re-checked each of its
-        {len(flaws)} flaws without knowing which setup produced the run. Only the {n_counted} it confirmed are counted on
-        this page. The rest were mostly harmless formatting on lines the change had to touch anyway, such as import
-        order ({dropped["formatting_changed_line"]}), the same mistake repeated across files
-        ({dropped["duplicate"]}), or simply wrong ({dropped["wrong"]}). No human has checked the confirmed flaws yet.
-        Details: <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/main/analysis/recheck_flaws.py">the check</a>,
-        <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/flaws.csv">every flaw with its verdict</a>.</p>
-
-        <h2 id="success-barely-moves">LS tools don't raise success rates</h2>
+        <h2 id="results">Results</h2>
+        <h3 id="success-barely-moves">LS tools don't raise success rates</h3>
         {arm_note}
         <p>A run succeeds when an automatic grader accepts the result. For real PRs the grader runs the tests from the
         pull request. For synthetic tasks it checks the change with a build and tests, or, for questions, compares the
@@ -696,26 +690,43 @@ def main():
         {chart_success}
         {spoiler("Show the numbers", table(hdr, s_rows))}
 
-        <h2 id="no-model-solves-more">No model solves more tasks with LS tools</h2>
+        <h3 id="flaws">LS tools do not reduce refactoring flaws{tag_all}</h3>
+        {flaw_summary}
+        {arm_note}
+        <p>Tests decide whether a change works. A flaw is damage the tests cannot see. After each edit run, a reviewer
+        (Haiku 5.5) reads the diff and searches the edited tree for five kinds of it;
+        {len(flaws)} were reported in all, {n_counted} of them confirmed by the re-check below.</p>
+        {flaw_table}
+        {spoiler("Examples from the run", flaw_examples)}
+        <h4 id="flaws-rechecked">Flaw counts re-checked</h4>
+        <p>The first reviewer (Haiku 5.5) flagged far too much, so a second model (Opus 5.5) re-checked each of its
+        {len(flaws)} flaws without knowing which setup produced the run. Only the {n_counted} it confirmed are counted on
+        this page. The rest were mostly harmless formatting on lines the change had to touch anyway, such as import
+        order ({dropped["formatting_changed_line"]}), the same mistake repeated across files
+        ({dropped["duplicate"]}), or simply wrong ({dropped["wrong"]}). No human has checked the confirmed flaws yet.
+        Details: <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/main/analysis/recheck_flaws.py">the check</a>,
+        <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/flaws.csv">every flaw with its verdict</a>.</p>
+
+        <h3 id="no-model-solves-more">No model solves more tasks with LS tools</h3>
         <p>Success rate of each arm, for each model. The dashed line is that model's baseline. Colours rank the arms within each model: green best, red worst, yellow in between.</p>
         {chart_models}
         {spoiler("Show the numbers", table(["Model", "Arm", "Estimate (pp)", "Interval (95%)", "Tasks"], m_rows))}
 
-        <h2 id="only-opus-uses-optional-tools">Only Opus uses tools when they're optional</h2>
+        <h3 id="only-opus-uses-optional-tools">Only Opus uses tools when they're optional</h3>
         <p>Share of runs that called at least one LS tool. With optional tools Haiku and Sonnet never call them, and Opus does in {opus_adopt} of runs. When enforced, all three use them in most runs.</p>
         {chart_adoption}
 
-        <h2 id="cost-goes-up-when-lsp-use-is-enforced">Cost goes up when LSP use is enforced</h2>
+        <h3 id="cost-goes-up-when-lsp-use-is-enforced">Cost goes up when LSP use is enforced</h3>
         <p>Enforced runs cost about {enf_c_txt}× the baseline; optional runs about the same. Cost of each arm as a multiple of the baseline (log scale). The dashed line is equal cost.</p>
         {chart_cost}
         {spoiler("Show the numbers", table(hdr, c_rows))}
 
-        <h2 id="all-ls-together">All LS together{tag_all}</h2>
+        <h3 id="all-ls-together">All LS together{tag_all}</h3>
         <p>Success, cost, time, adoption and flaws for each arm, pooled over all language servers: the IntelliJ runs are counted with optional and enforced.
         {a_tasks} tasks, {a_runs:,} runs.</p>
         {all_ls_table}
 
-        <h2 id="intellij-vs-kotlin-lsp-vs-no-ls">IntelliJ vs kotlin-lsp vs no LS{tag_kotlin}</h2>
+        <h3 id="intellij-vs-kotlin-lsp-vs-no-ls">IntelliJ vs kotlin-lsp vs no LS{tag_kotlin}</h3>
         <p>The {k_tasks} Kotlin and mixed Java+Kotlin tasks ran with both LS:
         <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a> (the optional and enforced arms) and IntelliJ
         (the intellij arms), {k_runs} runs in all. Success change against the baseline on these tasks:</p>
@@ -723,7 +734,7 @@ def main():
         {kotlin_table}
         <p class="note">{k_tasks} tasks is a small sample: the intervals are wide, and {k_zero}. Cost and time are medians over all three models.</p>
 
-        <h2 id="java-intellij-vs-no-ls">Java: IntelliJ vs no LS{tag_java}</h2>
+        <h3 id="java-intellij-vs-no-ls">Java: IntelliJ vs no LS{tag_java}</h3>
         <p>On the {j_tasks} pure Java tasks IntelliJ is the only LS (tereditor has no other headless
         Java server), so the comparison is IntelliJ against the baseline, {j_runs} runs in all.</p>
         {chart_java}
@@ -755,7 +766,7 @@ def main():
         <script>
             const links = {{}};
             document.querySelectorAll("nav.outline a").forEach(a => links[a.hash.slice(1)] = a);
-            const heads = [...document.querySelectorAll("h1[id], h2[id]")];
+            const heads = [...document.querySelectorAll("h1[id], h2[id], h3[id]")];
             let picked = null;  // set by a click on the outline, kept until the reader scrolls by hand
             function mark() {{
                 // the last heading that has reached the upper part of the window
