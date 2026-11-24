@@ -183,3 +183,15 @@ import the proxy's trust store (`~/.mavenrc`) and fetches a project's Maven wrap
 - The check now reads the structured fields first and the text second (`limit_stop` in `harness/env/lib.sh`), and a
   limit is waited out until the reset time the stream reports. As the rule prescribes, the affected runs and reviews
   were discarded and run again with the same run ids, on the same pins; nothing an agent sees changed.
+
+### Flaw counts re-checked
+
+- The Haiku reviewer's counts were re-checked and inflated in two mechanical ways: it reported flaws about what the
+  task's prompt declared optional (for example "Updating the documentation is optional", or KotlinPoet's API dump), and
+  it listed one defect once per file it touched (the same stale JSDoc in ten query runners, the same import-order note
+  in 53 files), and did so inconsistently between runs of the same diff. Of 912 reported flaws, 27 are of the first
+  kind and 328 of the second.
+- Correction (`analysis/correct_flaws.py`, run by `./study analyze` between extraction and the report): flaws about
+  what the task declared optional are not counted, and each defect pattern counts once per run. The outcome is the
+  corrected count; the reviewer's own count stays in `runs.csv` as `flaws_raw`, and `flaws.csv` lists every reported
+  flaw with whether it counts. Success and cost are unaffected. The human check of a 30-flaw sample is still owed.

@@ -78,7 +78,8 @@ plan, run archives, `runs.csv` and analysis report (`main` is the confirmatory r
 - Success: no measurable change. Optional vs baseline +0.3 pp (-2.2 to +3.0), enforced vs baseline -2.0 pp (-5.2 to +1.0).
 - Cost: optional about equal (1.02x), enforced 1.57x the baseline (1.45 to 1.70).
 - Adoption: offered but not pushed, Haiku and Sonnet called the LS tools in 0% of runs, Opus in 16%; enforced, 86 to 93%.
-- Flaws (Haiku-reviewed, not yet checked by a human): optional -0.14 per run (-0.40 to +0.04), enforced +0.26 (+0.07 to +0.47).
+- Flaws (Haiku-reviewed, re-checked: a defect repeated per file counts once, flaws about what a task declared optional
+  are dropped; not yet checked by a human): optional -0.01 per run (-0.10 to +0.09), enforced +0.13 (+0.02 to +0.24).
 
 For tereditor upstream (report, do not fix from here): with IntelliJ, lookup by name (`Gson/getAdapter`) returns
 nothing while lookup at a position works; Gradle import of a Kotlin Multiplatform project (kotlin-result) stalled at
