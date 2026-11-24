@@ -26,9 +26,9 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
   Nix (used to define the environments, docs/ENVIRONMENT.md) must never be a requirement for a reproducer; it runs inside a
   builder container, or self-bootstrapped in the native backend.
 - The owner's `~/.claude/CLAUDE.md` (and any other user configuration) must not contaminate the study.
-- Budget about USD 400 (API-equivalent, as Claude Code reports it; the Max 5x plan allows about USD 100 per 5-hour window) for the confirmatory run. It is an indicative price level, not a hard spending cap: the owner's subscription covers roughly USD 1,000 to 2,000 a month, so a moderate overshoot to buy power is acceptable, but ask before going far past it. The run is ON HOLD: the owner asked to wait for the IntelliJ
-  contestant. IntelliJ works in the harness, but get an explicit go from the owner
-  before launching anything beyond small smoke or calibration runs.
+- Budget about USD 400 (API-equivalent, as Claude Code reports it; the Max 5x plan allows about USD 100 per 5-hour window) for the confirmatory run. It is an indicative price level, not a hard spending cap: the owner's subscription covers roughly USD 1,000 to 2,000 a month, so a moderate overshoot to buy power is acceptable, but ask before going far past it. The confirmatory run waited for the IntelliJ
+  contestant. That run is DONE (see "Results" below); get an explicit go from the owner before launching any new
+  run beyond small smoke or calibration runs.
 
 ## Decisions already made, and why
 
@@ -66,15 +66,24 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
 - The analysis is described in `docs/ANALYSIS_PLAN.md` (a descriptive paired comparison on the tasks with a task-resampling interval for spread; includes a
   Haiku-reviewed quality-flaw count).
 
-## Findings so far (smoke only, not evidence)
+## Results (the confirmatory run is complete)
 
-- Toolz (Python small) and gson (Java medium) tasks: every arm succeeds with Haiku; tasks of this size are at
-  ceiling, so success cannot separate arms. Harder tasks on larger projects are needed.
-- Offered but not pushed, Haiku used the LSP tools in 0 of 6 runs; enforced, always, at 1.2 to 4.4x the cost.
-- For tereditor upstream (report, do not fix from here): with IntelliJ, lookup by name
-  (`Gson/getAdapter`) returns nothing while lookup at a position works; Gradle import of a Kotlin Multiplatform
-  project (kotlin-result) stalled at "2%; Gradle" for minutes; at pin 95f7048 Pyright returned no cross-file
-  references on toolz (fixed by later pins).
+The confirmatory run is finished and analysed: 2,232 runs, 87 tasks, 29 projects, three models, every arm. Nothing of
+it is on main: the results live on the `gh-pages` branch, published at https://commandertvis.github.io/tereditor-lsp-research/
+(`index.html`, built by `build_site.py` from `data/`; `llms.txt` for agents). `data/results/<plan>/` holds every plan's
+plan, run archives, `runs.csv` and analysis report (`main` is the confirmatory run; also the pilots and smokes);
+`./study data pull [plan]` fetches them into `results/`, `./study restore <plan>` unpacks the archives. Read the page or
+`llms.txt` before claiming anything about the results. In short (paired on tasks, 95% task-resampling intervals):
+
+- Success: no measurable change. Optional vs baseline +0.3 pp (-2.2 to +3.0), enforced vs baseline -2.0 pp (-5.2 to +1.0).
+- Cost: optional about equal (1.02x), enforced 1.57x the baseline (1.45 to 1.70).
+- Adoption: offered but not pushed, Haiku and Sonnet called the LS tools in 0% of runs, Opus in 16%; enforced, 86 to 93%.
+- Flaws (Haiku-reviewed, not yet checked by a human): optional -0.14 per run (-0.40 to +0.04), enforced +0.26 (+0.07 to +0.47).
+
+For tereditor upstream (report, do not fix from here): with IntelliJ, lookup by name (`Gson/getAdapter`) returns
+nothing while lookup at a position works; Gradle import of a Kotlin Multiplatform project (kotlin-result) stalled at
+"2%; Gradle"; on the cloud VM tereditor's 4,826 MiB memory budget for all servers of a run killed IntelliJ arms on
+java-kotlin-large; php-large definition by name was not found.
 
 ## Where things are
 
@@ -83,9 +92,8 @@ anything here; the details live in `docs/` (DESIGN, ANALYSIS_PLAN, TASKS, PROJEC
   `harness/server/`: what runs inside the language server's sandbox. tereditor comes from a dated release
   archive, pinned by sha256 in `harness/tereditor.env`.
 - `harness/arms/<arm>/`: `mcp.json` and the workspace overlay. `harness/grade/grade.sh`, `harness/bin/probe-inside.sh`.
-- `projects/<lang>-<size>/`, `tasks/<lang>-<size>/<task>/`: see `docs/TASKS.md`. Most projects are stubs
-  (`status = "stub"` in `project.toml`); done so far: python-small (4 tasks), java-medium (2), csharp-small
-  (2, not validated).
+- `projects/<lang>-<size>/`, `tasks/<lang>-<size>/<task>/`: see `docs/TASKS.md`. 29 projects are curated and
+  validated (6 tasks each, 3 used by the confirmatory plan); 5 are postponed (below).
 - `analysis/`: planner, extraction, report. `results/<plan>/`: plan, runs.csv, report, archives. Never in this branch
   (git-ignored): published on gh-pages under `data/results/`; `./study data pull [plan]` / `./study data push <plan>`.
 - Upstream checkout (read-only from this repo): `~/TereditorProjects/tereditor`, remote
@@ -102,7 +110,7 @@ its work to the owner as downloads (a git bundle of its branch after every proje
 tarball). The owner sets up one cloud environment (Full network access, the JetBrains activation code as the variable
 `STUDY_LICENSE_B64`) and starts it with the `claude --cloud` command of `docs/CLOUD_PROMPT.md`, which is the owner's go
 for the confirmatory run; an outside reproducer with a Claude subscription does the same. Local runs on this Mac are for
-development. Alternatively, `./study cloud` runs a committed plan in parallel cloud sessions, one per project, paced
+development. Alternatively, `./study cloud` runs a plan in parallel cloud sessions, one per project, paced
 and returning results through the operator's S3 bucket (`docs/CLOUD_PARALLEL.md`).
 
 ## Working here
@@ -123,9 +131,6 @@ Rule: a project of any size that cannot be developed inside the 30 GB cloud VM i
 
 ## Next steps
 
-1. Curate the stub projects (tasks, prepare.sh, grade-setup.sh, check.sh, probe.json), validate and probe them on
-   the current tereditor pin, both servers for JVM projects.
-2. Re-run the toolz and gson smokes on the renamed images.
-3. Calibration pilot (Haiku on small projects, a few Opus runs on large ones) to fix repetitions per model under
-   the budget; record the allocation in `docs/ANALYSIS_PLAN.md`.
-4. With the owner's go: the confirmatory run, then `./study analyze`.
+1. The owner labels the random sample of 30 reported flaws (outcome 3's human check, docs/ANALYSIS_PLAN.md); its
+   share of real flaws goes onto the results page.
+2. Any new run (more repetitions, the postponed projects, newer pins) needs the owner's explicit go.
