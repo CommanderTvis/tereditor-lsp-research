@@ -375,7 +375,7 @@ def main():
     enf_c_txt = f"{float(enf_c['estimate']):.2f}"
     opus_adopt = f"{float(find(descriptive, model='claude-opus-5-5', arm='optional')['lsp_used']) * 100:.0f}%"
     outline = [("top", "Does LSP help Claude Code?"), ("what-is-being-tested", "What is being tested"), ("setups", "Setups"),
-               ("kinds-of-tasks", "Kinds of tasks"), ("flaws", "LS tools do not reduce refactoring flaws"), ("success-barely-moves", "Success barely moves"),
+               ("kinds-of-tasks", "Kinds of tasks"), ("flaws", "LS tools do not reduce refactoring flaws"), ("success-barely-moves", "LS tools don't raise success rates"),
                ("no-model-solves-more", "No model solves more tasks with LS tools"),
                ("only-opus-uses-optional-tools", "Only Opus uses tools when they're optional"),
                ("cost-goes-up-when-lsp-use-is-enforced", "Cost goes up when LSP use is enforced"),
@@ -687,7 +687,7 @@ def main():
         Details: <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/main/analysis/recheck_flaws.py">the check</a>,
         <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/flaws.csv">every flaw with its verdict</a>.</p>
 
-        <h2 id="success-barely-moves">Success barely moves</h2>
+        <h2 id="success-barely-moves">LS tools don't raise success rates</h2>
         {arm_note}
         <p>A run succeeds when an automatic grader accepts the result. For real PRs the grader runs the tests from the
         pull request. For synthetic tasks it checks the change with a build and tests, or, for questions, compares the
