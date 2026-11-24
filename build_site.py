@@ -10,6 +10,7 @@ import csv
 import html
 import math
 import pathlib
+import re
 
 ROOT = pathlib.Path(__file__).resolve().parent
 DATA = ROOT / "data"
@@ -75,10 +76,29 @@ def rank(body, col, higher_is_better, groups=None):
                 body[i][col] = Raw(f'<span class="mid" title="in between">{esc(body[i][col])}</span>')
 
 
+# Terms that get a dotted underline and a quick tooltip in tables (CSS only, no delay, keyboard-focusable).
+TERMS = {
+    "baseline": "No language-server tools: Claude Code with its core tools only (read, edit, shell and grep).",
+    "optional": "Language-server tools available; the agent decides by itself whether to use them.",
+    "enforced": "Language-server tools available, and the agent is told and nudged by hooks to use them.",
+    "flaw": "Damage the tests cannot see, found by a reviewer in the diff: a leftover old name, an unrelated edit, "
+            "formatting churn, inconsistent naming or dead code.",
+}
+TERM_RE = re.compile(r"(?<![-\w])(baseline|optional|enforced|flaws?)(?![-\w])", re.I)
+
+
+def gloss(text):
+    """Escape plain text and wrap each glossary term in it with an underlined, tooltipped span."""
+    def wrap(m):
+        key = m.group(1).lower().rstrip("s") if m.group(1).lower().startswith("flaw") else m.group(1).lower()
+        return f'<span class="term" tabindex="0" data-tip="{esc(TERMS[key])}">{m.group(1)}</span>'
+    return TERM_RE.sub(wrap, esc(text))
+
+
 def table(headers, body, continued=()):
     """continued: indexes of rows that continue the row above (their first cells are joined to it)."""
-    head = "".join(f"<th>{esc(h)}</th>" for h in headers)
-    lines = [("<tr class='join'>" if i + 1 in continued else "<tr>") + "".join(f"<td>{c if isinstance(c, Raw) else esc(c)}</td>" for c in r) + "</tr>"
+    head = "".join(f"<th>{gloss(h)}</th>" for h in headers)
+    lines = [("<tr class='join'>" if i + 1 in continued else "<tr>") + "".join(f"<td>{c if isinstance(c, Raw) else gloss(c)}</td>" for c in r) + "</tr>"
              for i, r in enumerate(body)]
     return f"<table><thead><tr>{head}</tr></thead><tbody>{''.join(lines)}</tbody></table>"
 
@@ -551,6 +571,12 @@ def main():
                 nav.outline li:last-child {{ border-bottom: none; }}
             }}
             h2 .tag {{ font-size: 0.75rem; font-weight: 600; vertical-align: middle; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }}
+            .term {{ border-bottom: 1px dotted currentColor; cursor: help; position: relative; }}
+            .term:hover::after, .term:focus::after {{ content: attr(data-tip); position: absolute; left: 0; top: 100%;
+                   margin-top: 4px; width: max-content; max-width: 260px; white-space: normal; z-index: 10;
+                   background: var(--ink); color: var(--bg); font-size: 0.75rem; font-weight: 400; line-height: 1.4;
+                   padding: 6px 8px; border-radius: 4px; text-align: left; pointer-events: none; }}
+            .term:focus {{ outline: none; }}
             .win {{ background: var(--win); padding: 1px 5px; border-radius: 3px; }}
             .mid {{ background: var(--mid); padding: 1px 5px; border-radius: 3px; }}
             .lose {{ background: var(--lose); padding: 1px 5px; border-radius: 3px; }}
@@ -579,7 +605,8 @@ def main():
         <h2 id="what-is-being-tested">What is being tested</h2>
         <p><a href="https://github.com/CommanderTvis/tereditor">tereditor</a> gives a coding agent a project's
         language server (LS) over <a href="https://modelcontextprotocol.io">MCP</a> (Pyright for Python, clangd for C and
-        C++, <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a> for Kotlin, and so on). Does that make
+        C++, <a href="https://github.com/Kotlin/kotlin-lsp">kotlin-lsp</a> for Kotlin, and so on), and can serve
+        IntelliJ's language server instead for Java and Kotlin, which the study tests as a separate contestant. Does that make
         Claude Code solve more tasks, cheaper or faster?</p>
         <details>
         <summary>MCP tools and an example call</summary>
