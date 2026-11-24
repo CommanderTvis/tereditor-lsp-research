@@ -1,0 +1,913 @@
+run_id,index,verdict,note,cost_usd
+r00013,1,valid,"JUnit4 class; new method lacks @Test so it is never executed, i.e. dead code added by the change",0.02596
+r00005,1,formatting_changed_line,Closing brace line was necessarily touched to append the new test; the added EOF newline is incidental formatting of a changed line,0.0467
+r00009,1,formatting_changed_line,import order of a use line the rename had to change; not churn,0.03058
+r00009,2,formatting_changed_line,import order of a use line the rename had to change; not churn,
+r00018,1,not_introduced,Codemod mapping predates the change and is untouched; no name was renamed and preview_FeatureFlags still exists,0.03748
+r00004,1,valid,Eclipse IDE metadata files added across the repo are unrelated to the planToGoal parameter reorder,0.37046
+r00004,2,duplicate,"Same defect as finding 1 (generated Eclipse settings files), which already covers all IDE files",
+r00008,1,valid,Plausible: replacing the only logger().error call with a throw leaves the logger() helper and its Logger import unused,0.02455
+r00031,1,valid,Old early-return on any default-arg composition usage was replaced by merging usages; a KDoc describing the old suppression is now stale (plausible from diff).,0.02554
+r00036,1,valid,Diff updated the precedence docstring for LicenseKeyFactory; a README precedence list past the hunk plausibly still omits it.,0.04703
+r00043,1,wrong,"Task mandates the exact name sdsnewbuf and renames only sdsnewlen; siblings keeping their names is required scope, not a naming defect.",0.24092
+r00039,1,formatting_changed_line,"Import order of an import the change had to add; formatting of a touched line, not churn",0.08517
+r00044,1,valid,"New docstring claims setupKeyword only normalizes, but wildcard mode still adds % via wildcardLikeString in the same function",0.02714
+r00059,1,formatting_changed_line,Import order of newly added imports the change required; not churn on untouched lines,0.13919
+r00070,1,valid,"Plausible doc example outside the diff still shows the old (name, since, removed) order after the signature changed; a real leftover.",0.02781
+r00066,1,wrong,"container_buffer must remain in detail and precede the iterator_buffer specialization using it; relocating it is required by the namespace split, not unrelated",0.04988
+r00046,1,valid,"The diff swaps what is plausibly the only caller of internal trim() to trimBalanced(), leaving trim() unused apart from a KDoc reference.",0.05472
+r00069,1,valid,Task requires no file remain under src/MediatR/; stale obj artifacts referencing MediatR.csproj left behind by the move are a plausible leftover of this change,0.07736
+r00077,1,valid,Added blank line next to an existing one creates a double blank line; not needed by the task,0.19036
+r00077,2,valid,Types doc plausibly still says roles come only from embabel.models.llms; the diff does not update it,
+r00077,3,valid,Config reference table plausibly omits the new embabel.models.roles property; the diff does not touch it,
+r00082,1,valid,"ResolveLicenseKey now receives the ConfigureMediatRLicenseKey value, but its doc comment (unchanged) still lists only cfg.LicenseKey and Mediator.LicenseKey",0.04748
+r00085,1,valid,Removing the resolveToCall import has nothing to do with the class rename; the claimed remaining call sites are plausible.,0.0707
+r00092,1,valid,Task requires updating documentation naming the path; packages/styles/docs/sass.md is not in the diff and plausibly still names the old module path.,0.14244
+r00078,1,not_introduced,"obj/ files are untracked, gitignored restore/build output, not part of the diff; every tracked file under src/MediatR/ was moved",0.08004
+r00096,1,wrong,lowercase descriptive phrase 'object constructor' is not a reference to the interface name; all actual ObjectConstructor references in Javadoc were updated,0.07765
+r00105,1,formatting_changed_line,import order of a line rewritten by the rename,0.18661
+r00105,2,formatting_changed_line,import order of a line rewritten by the rename,
+r00105,3,formatting_changed_line,import order of a line rewritten by the rename,
+r00105,4,formatting_changed_line,import order of a line rewritten by the rename,
+r00105,5,formatting_changed_line,ordering of imports the move had to add,
+r00125,1,valid,"New KDoc states roles-then-llms fallback order, but resolveRole (and its own KDoc) checks llms first; inaccurate doc introduced by the change",0.13158
+r00115,1,not_introduced,"Config comment predates the change; starts_with already overrode smart in prepareKeyword before, and the diff renames nothing the comment references.",0.03138
+r00121,1,not_introduced,obj/project.assets.json is an untracked restore/build artifact that predates the change; the diff moves every tracked file out of src/MediatR/,0.0759
+r00129,1,formatting_changed_line,row had to change to name the new path; misalignment is formatting of a required line,0.12912
+r00129,2,formatting_changed_line,row had to change to name the new path; misalignment is formatting of a required line,
+r00110,1,valid,Needless import added to package-info only for a Javadoc link that could stay fully qualified; also drops the trailing newline.,0.11399
+r00110,2,valid,Test class/file still named after the old class name; leftover after the rename.,
+r00134,1,valid,Docs name a nonexistent type RoleModel; the introduced class is RoleModelProperties,0.09076
+r00134,2,valid,Plausible stale doc statement that roles come only from embabel.models.llms; the change adds embabel.models.roles,
+r00128,1,valid,JSDoc @param order not updated after parameter swap,0.07787
+r00128,2,duplicate,same stale @param order as #1,
+r00128,3,duplicate,same stale @param order as #1,
+r00128,4,duplicate,same stale @param order as #1,
+r00128,5,duplicate,same stale @param order as #1,
+r00128,6,duplicate,same stale @param order as #1,
+r00128,7,duplicate,same stale @param order as #1,
+r00128,8,duplicate,same stale @param order as #1,
+r00128,9,duplicate,same stale @param order as #1,
+r00128,10,duplicate,same stale @param order as #1,
+r00128,11,optional,documentation updates are optional per task,
+r00136,1,formatting_changed_line,line length of a line the rename had to rewrite,0.14902
+r00136,2,formatting_changed_line,import order changed by the rename of a touched import line,
+r00136,3,formatting_changed_line,import order changed by the rename of a touched import line,
+r00146,1,formatting_changed_line,"Position of a jsr.json entry the task required renaming; ordering of a necessarily-touched line, and the key name matches the task",0.04842
+r00140,1,wrong,"logger() still used by other build steps; tests keep logger mock with verify/times/anyString imports, so it is not dead",0.03703
+r00153,1,formatting_changed_line,Ordering of the jsr.json entry the task required renaming in place; not a naming defect.,0.0507
+r00179,1,formatting_changed_line,"Placement of a newly required import; ordering of a line the change had to add, not churn",0.0918
+r00151,1,valid,stale guidance pointing to withLlmService instead of RoleResolver/credential path,0.05263
+r00151,2,duplicate,same stale withLlmService guidance as finding 1,
+r00151,3,valid,"config reference still lists only the old llms map, not the new roles key",
+r00198,1,valid,Rewritten variable now aggregates body and default-argument usages but keeps the misleading name bodyUsage,0.03338
+r00199,1,valid,Skill doc plausibly still shows the old name-first argument order for deprecate after the parameter reorder; stale documentation leftover.,0.03121
+r00173,1,valid,Configured key now resolved in Initialize; ResolveLicenseKey doc describing config-key-first is plausibly stale,0.06385
+r00173,2,valid,New service-supplied precedence level not reflected in README precedence list; docs not declared optional,
+r00173,3,valid,Trailing-whitespace removal on closing brace that did not need to change,
+r00203,1,not_introduced,Codemod mapping predates the change and is untouched; unstable_FeatureFlags was already an alias of stable FeatureFlags and preview_FeatureFlags still exists,0.03931
+r00216,1,formatting_changed_line,"Key name is exactly what the task requires; only the position of a line the change had to touch is at issue, like import order after a rename.",0.05077
+r00212,1,wrong,"Test still imports times/anyString/verify, which the removed test did not use, so other tests still verify logger calls and logger() is still used in production.",0.03167
+r00222,1,valid,ResolveLicenseKey now takes the options key as an extra source; its doc comment's precedence description was not updated,0.04197
+r00222,2,valid,README precedence list plausibly omits the new IOptions source; the task does not declare docs optional,
+r00233,1,wrong,"Kotlin interface defaults are not JVM defaults without jvm-default=all, so the Groovy anonymous implementers need these stubs to compile; they are not dead.",0.05668
+r00238,1,valid,Comment still references sed although the branch was rewritten to use awk; stale leftover from this change.,0.03634
+r00223,1,valid,"Pre-existing blank docstring separator line only had trailing whitespace stripped; the new paragraph was inserted after it, so the line itself did not need touching.",0.05314
+r00236,1,valid,"File renamed at 100% similarity, so the @module doc still names it 'Encode utility.' after the old module name; a leftover the rename should have updated",0.05125
+r00260,1,valid,Plausible leftover reference to old module name in test data comment; task requires updating all module references,0.14347
+r00241,1,valid,Plausible stale KDoc describing the removed skip of composition-using default arguments,0.04016
+r00241,2,wrong,Edit is required by the behavior change; otherwise the existing expectClean test would now get a ReadOnlyComposable hint,
+r00268,1,valid,Test-data comment outside the diff; a leftover typeops mention is plausible since the change updated comment references elsewhere but touched no test-data files.,0.14661
+r00283,1,formatting_changed_line,"Ordering of the jsr.json entry the rename had to rewrite; the key name matches the task, so this is not a naming defect",0.05189
+r00275,1,valid,JSDoc @param order still reflects old argument order after the swap,0.07436
+r00275,2,duplicate,same stale JSDoc order as finding 1,
+r00275,3,duplicate,same stale JSDoc order as finding 1,
+r00275,4,duplicate,same stale JSDoc order as finding 1,
+r00275,5,duplicate,same stale JSDoc order as finding 1,
+r00275,6,duplicate,same stale JSDoc order as finding 1,
+r00275,7,duplicate,same stale JSDoc order as finding 1,
+r00275,8,duplicate,same stale JSDoc order as finding 1,
+r00275,9,duplicate,same stale JSDoc order as finding 1,
+r00275,10,duplicate,same stale JSDoc order as finding 1,
+r00248,1,wrong,"ISASCII is a generic character-class utility macro in md4c's helper family, not code owned by this change; keeping an unused utility macro is not dead code left by the fix",0.0394
+r00287,1,valid,JSDoc @param order not updated to match reordered signature,0.07563
+r00287,2,duplicate,same stale JSDoc param order as #1,
+r00287,3,duplicate,same stale JSDoc param order as #1,
+r00287,4,duplicate,same stale JSDoc param order as #1,
+r00287,5,duplicate,same stale JSDoc param order as #1,
+r00287,6,duplicate,same stale JSDoc param order as #1,
+r00287,7,duplicate,same stale JSDoc param order as #1,
+r00287,8,duplicate,same stale JSDoc param order as #1,
+r00287,9,duplicate,same stale JSDoc param order as #1,
+r00287,10,duplicate,same stale JSDoc param order as #1,
+r00287,11,optional,task declares documentation updates optional,
+r00309,1,valid,"the change redefined bodyUsage to cover default initializers as well as the body, so the kept name now misdescribes its value",0.03472
+r00305,1,wrong,"Naming the IOptions .Value 'options' is idiomatic, distinguishes it from the directly registered 'config', and matches the 'optionsConfiguration' parameter",0.04013
+r00290,1,valid,"Javadoc of get() still describes the returned ObjectFactory as an 'object constructor', echoing the old interface name",0.08022
+r00312,1,valid,"Suppress annotation added by the change; the body uses only star-projected safe casts and reified filterIsInstance, so there is no unchecked cast to suppress",0.053
+r00310,1,wrong,The Groovy anonymous classes must implement the new Kotlin interface method (the default may not be a JVM default) and it matches the existing stub pattern; it is not dead code.,0.05478
+r00321,1,formatting_changed_line,"Ordering of the jsr.json entry the task required renaming; the key name itself matches the task, so this is not a naming defect",0.04963
+r00320,1,valid,Import added only to shorten a Javadoc link that was previously fully qualified; unnecessary import in package-info,0.10978
+r00320,2,valid,Change removed the trailing newline at end of file while appending unneeded lines,
+r00331,1,not_introduced,"the unstable_ hooks were already aliases of the stable ones before the change; the stale carbon.yml entry predates the diff, which does not touch that file",0.04858
+r00336,1,formatting_changed_line,Import order of a line the rename had to touch.,0.14915
+r00336,2,formatting_changed_line,Import order of a line the rename had to touch.,
+r00336,3,formatting_changed_line,Import order of a line the rename had to touch.,
+r00336,4,valid,Plausible stale reference to old module name outside the diff; task requires updating all references.,
+r00374,1,wrong,Kotlin interface defaults aren't JVM defaults for Groovy implementers by default; the stub must implement the new abstract method to compile,0.05811
+r00374,2,wrong,Same reason: the second anonymous Pact stub must implement the new interface method,
+r00383,1,formatting_changed_line,"Alphabetical position of the jsr.json entry the rename had to change; ordering, not naming.",0.04909
+r00376,1,formatting_changed_line,The Javadoc line had to change for the rename; dropping the package prefix only changes how the rewritten reference is written.,0.10848
+r00376,2,valid,A needless import line was appended to package-info.java and the trailing newline was removed; neither was required by the rename.,
+r00392,1,optional,Issue suggests the rename but explicitly calls it unrelated/not required; the touched lines were being rewritten anyway.,0.04067
+r00392,2,valid,New changelog fragment uses a descriptive slug instead of the issue-number naming Salt's towncrier fragments use.,
+r00396,1,valid,Eclipse IDE metadata files added across all modules are unrelated to the task,0.39515
+r00396,2,valid,Doc still says roles must come from embabel.models.llms; stale after roles table/RoleResolver added,
+r00396,3,valid,Config property table not updated for new embabel.models.roles settings,
+r00402,1,optional,documentation update is declared optional by the task,0.05548
+r00402,2,optional,documentation update is declared optional by the task,
+r00402,3,formatting_changed_line,import order of a line the move had to add,
+r00405,1,valid,"Line 790 only had trailing whitespace stripped; the parameter rename is on the next line, so this is pure whitespace churn on a line the task did not need to touch.",0.03917
+r00407,1,valid,Newly introduced one-letter N is inconsistent with descriptive names like MAC_OS_NESTED_SESSION_PATH/NEW_PATH in the file,0.04102
+r00410,1,valid,diff renames the assignment to NVM_RUNNER_SOURCE but leaves `local NVM_EXEC_SOURCE`; stale dead declaration and the new variable is not local,0.07983
+r00414,1,optional,"Concerns documentation, which the task explicitly declares optional to update.",0.06153
+r00415,1,valid,"Diff context shows @param goal is last in the KDoc, so @param actions still comes first, matching the old order the change did not update",0.09247
+r00422,1,not_introduced,"obj/ holds untracked restore/build output generated before the change; all tracked files were moved, so this is not a defect left by the diff",0.0841
+r00427,1,valid,"IDE metadata files added, unrelated to role-resolution task",0.37629
+r00427,2,duplicate,same IDE metadata defect as #1,
+r00427,3,duplicate,same IDE metadata defect as #1,
+r00427,4,duplicate,same IDE metadata defect as #1,
+r00427,5,duplicate,same IDE metadata defect as #1,
+r00427,6,duplicate,same IDE metadata defect as #1,
+r00427,7,duplicate,same IDE metadata defect as #1,
+r00427,8,duplicate,same IDE metadata defect as #1,
+r00427,9,duplicate,same IDE metadata defect as #1,
+r00427,10,duplicate,same IDE metadata defect as #1,
+r00427,11,duplicate,same IDE metadata defect as #1,
+r00427,12,duplicate,same IDE metadata defect as #1,
+r00427,13,duplicate,same IDE metadata defect as #1,
+r00427,14,duplicate,same IDE metadata defect as #1,
+r00427,15,duplicate,same IDE metadata defect as #1,
+r00427,16,duplicate,same IDE metadata defect as #1,
+r00427,17,duplicate,same IDE metadata defect as #1,
+r00427,18,duplicate,same IDE metadata defect as #1,
+r00427,19,duplicate,"same IDE metadata defect as #1, at repo root",
+r00432,1,optional,"Concerns doc files, which the task declares optional to update.",0.04719
+r00436,1,formatting_changed_line,Import order on a line the rename had to change; not a naming defect.,0.1492
+r00436,2,formatting_changed_line,Import order after the rename on a line that had to change; not naming.,
+r00444,1,formatting_changed_line,import order of a line the move had to rewrite; not naming,0.18381
+r00444,2,formatting_changed_line,import order of a line the move had to rewrite,
+r00444,3,formatting_changed_line,import order of a line the move had to rewrite,
+r00449,1,not_introduced,"Stale range is executable logic, not a leftover in comments/docs; it predates the change in code the diff did not touch (the missing regeneration is a functional gap)",0.03622
+r00452,1,valid,"trim() now re-appends trailing ⇤ for unclosed ⇥, so the KDoc saying it strips all leading/trailing no-arg placeholders is stale",0.02856
+r00454,1,formatting_changed_line,"Lines had to be rewritten to add the start condition; quoted vs unquoted literal is equivalent in Sass, so it is only style on a touched line.",0.02881
+r00459,1,wrong,8+25+11=44 matches neighbours' value column (8+16+20=44); the define is correctly aligned,0.04483
+r00463,1,optional,documentation file; task declares doc updates optional,0.04826
+r00463,2,optional,documentation file; task declares doc updates optional,
+r00479,1,valid,tool under src/ uses Redis sds; call not renamed,0.2474
+r00479,2,duplicate,same missed rename as #1,
+r00479,3,duplicate,same missed rename as #1,
+r00479,4,duplicate,same missed rename as #1,
+r00479,5,duplicate,same missed rename as #1,
+r00479,6,duplicate,same missed rename as #1,
+r00479,7,duplicate,same missed rename as #1,
+r00479,8,duplicate,same missed rename as #1,
+r00479,9,wrong,task renames only public sdsnewlen; internal _sdsnewlen is a different function,
+r00484,1,valid,"trim() KDoc still says trailing no-arg placeholders are removed, but the change now appends ⇤ markers; docstring left stale by this change",0.03519
+r00494,1,optional,Concerns a documentation file; the task declares doc updates optional.,0.05306
+r00497,1,formatting_changed_line,Row had to be edited for the rename; column padding is formatting of a required changed line,0.13033
+r00497,2,formatting_changed_line,Row had to be edited to the new @use path; padding misalignment is formatting of a required changed line,
+r00499,1,formatting_changed_line,"Line length of a KDoc comment the change rewrote, not churn on an untouched line",0.03625
+r00511,1,valid,"The removed histogram block was the only reader; strOldSize is now write-only in setbitCommand, kept only because the reworked helper still requires it.",0.05627
+r00511,2,duplicate,"Same write-only strOldSize leftover as finding 1, in the other caller (bitfieldGeneric).",
+r00520,1,wrong,"obj/ is untracked build output, not part of the change; the diff moves every tracked file out of src/MediatR/",0.07233
+r00522,1,valid,"The file was renamed with 100% similarity, so the @module docstring still names the old 'encode' module; it is a leftover from the rename.",0.05316
+r00525,1,not_introduced,"obj/ holds untracked, gitignored build output from an earlier restore/build; the diff moves every tracked file out of src/MediatR/",0.07927
+r00527,1,formatting_changed_line,Line wrapping of a signature the rename had to touch anyway; not churn on an untouched line.,0.07434
+r00529,1,optional,Concerns a documentation file; the task declares doc updates optional.,0.05402
+r00547,1,wrong,cli_common.c includes hiredis sds.h from deps; its sdsnewlen is the vendored one and must keep its name,0.26327
+r00547,2,wrong,"redis-cli uses hiredis's vendored SDS, not src/sds.c; renaming would break linking",
+r00547,3,wrong,"redis-cli uses hiredis's vendored SDS, which keeps its names",
+r00547,4,wrong,"redis-cli uses hiredis's vendored SDS, which keeps its names",
+r00547,5,wrong,"redis-cli uses hiredis's vendored SDS, which keeps its names",
+r00547,6,wrong,"redis-cli uses hiredis's vendored SDS, which keeps its names",
+r00547,7,wrong,"redis-cli uses hiredis's vendored SDS, which keeps its names",
+r00547,8,wrong,"redis-cli uses hiredis's vendored SDS, which keeps its names",
+r00547,9,wrong,task renames only the public sdsnewlen; _sdsnewlen is a separate internal helper (also used by sdstrynewlen) not in scope,
+r00554,1,formatting_changed_line,import order after rename of a line the change had to touch,0.12681
+r00554,2,formatting_changed_line,import order after rename,
+r00554,3,formatting_changed_line,import order after rename,
+r00554,4,formatting_changed_line,import order after rename,
+r00554,5,formatting_changed_line,import order after rename,
+r00554,6,formatting_changed_line,import order after rename,
+r00554,7,formatting_changed_line,import order after rename,
+r00554,8,formatting_changed_line,import order after rename,
+r00554,9,formatting_changed_line,import order after rename,
+r00554,10,formatting_changed_line,import order after rename,
+r00554,11,formatting_changed_line,import order after rename,
+r00554,12,formatting_changed_line,import order after rename,
+r00554,13,formatting_changed_line,import order after rename,
+r00554,14,formatting_changed_line,import order after rename,
+r00554,15,formatting_changed_line,import order after rename,
+r00554,16,formatting_changed_line,import order after rename,
+r00556,1,formatting_changed_line,import order of an import line the move had to rewrite; not naming,0.18481
+r00556,2,formatting_changed_line,import order of a necessarily rewritten import line,
+r00556,3,formatting_changed_line,import order of a necessarily rewritten import line,
+r00557,1,valid,Unchanged context comment still references sed though the change replaced sed with awk,0.03735
+r00558,1,wrong,ISASCII/ISASCII_ are general utility macros in md4c's char-class family (ISASCII_ is plausibly used elsewhere); swapping one call site does not leave dead code,0.03604
+r00560,1,valid,"Diff makes 'start' behave like 'left' (::before, ::after cleared); a header comment in the same test file saying only 'left' does this is plausibly stale and was not updated.",0.03671
+r00567,1,wrong,"New warning text, not an old name left un-updated; correctness of migration advice is not one of the five kinds",0.04023
+r00574,1,wrong,"A missing import is a compile/functional break the build would catch, not a leftover name in comments/docs/config",0.06171
+r00574,2,formatting_changed_line,Blank-line leftover at the import the move had to remove; formatting of a necessarily touched line,
+r00585,1,wrong,"A code call missing the new argument is a compile error the build catches, not a leftover in comments, docs, strings or config.",0.09528
+r00591,1,wrong,"The future import is a project-wide convention (likely enforced as a required import), consistent with the other modules; not dead code.",0.0547
+r00592,1,valid,New constant repeats CodeBlock's existing NO_ARG_PLACEHOLDERS set under an inconsistent new name; plausible from the diff's own reference to trim().,0.04193
+r00593,1,valid,JSDoc @param order not updated to match the swapped parameters,0.07567
+r00593,2,duplicate,same stale JSDoc order as finding 1,
+r00593,3,duplicate,same stale JSDoc order as finding 1,
+r00593,4,duplicate,same stale JSDoc order as finding 1,
+r00593,5,duplicate,same stale JSDoc order as finding 1,
+r00593,6,duplicate,same stale JSDoc order as finding 1,
+r00593,7,duplicate,same stale JSDoc order as finding 1,
+r00593,8,duplicate,same stale JSDoc order as finding 1,
+r00593,9,duplicate,same stale JSDoc order as finding 1,
+r00593,10,duplicate,same stale JSDoc order as finding 1,
+r00594,1,formatting_changed_line,import order after rename on a line the change had to touch; not a naming defect,0.14
+r00598,1,valid,"Docs elsewhere still say roles live only under embabel.models.llms; the change adds embabel.models.roles, so this is a plausible stale reference the change should have updated",0.16309
+r00606,1,not_introduced,Codemod mapping predates the change and is untouched; the diff renames nothing the codemod references.,0.03117
+r00609,1,valid,"Change replaced the only visible logger() call with a throw, plausibly leaving logger() without production callers (dead).",0.03203
+r00610,1,valid,"Plausible doc outside diff still describes old name-first argument order; diff changed signature without updating docs, and task doesn't make docs optional",0.02909
+r00620,1,valid,test_thin.py not updated though salt/payload.py was removed and thin.py touched; stale path literal is a plausible leftover,0.03045
+r00622,1,formatting_changed_line,Style of a newly added parameter line the change had to write; not churn of untouched lines,0.0629
+r00624,1,wrong,Diff updates both install-layout lists (install and uninstall checks); no third per-library list at line 72 is plausible from the diff or upstream file.,0.07927
+r00625,1,valid,Mixin now applies ::before/::after-none structure to start too; a header comment describing it as left-only is a plausible stale leftover not updated by the diff.,0.03135
+r00629,1,valid,"Replacing the logger().error call with a throw plausibly leaves logger() with no production callers, only a test seam.",0.03256
+r00631,1,valid,"Skill doc still documents the old (name, since, removed) argument order; plausible leftover not updated by the diff",0.02859
+r00633,1,valid,Plausible: Shopware docblocks annotate repository args with generic @param types; the new $customerRepository was added without updating the constructor docblock.,0.04038
+r00647,1,optional,documentation update is declared optional by the task,0.04752
+r00647,2,optional,documentation update is declared optional by the task,
+r00654,1,valid,renamed @use yields namespace skeleton-animation; skeleton.skeleton in the test's Sass string is a stale leftover,0.1354
+r00654,2,duplicate,"same stale namespace as finding 1, in another test block",
+r00654,3,duplicate,"same stale namespace as finding 1, in another test block",
+r00656,1,wrong,"abort passes the message to printf as the format string, which interprets \n regardless of quoting; also not a leftover-type defect",0.0282
+r00657,1,formatting_changed_line,import order after rename on a line the change had to touch,0.16372
+r00657,2,formatting_changed_line,import order after rename,
+r00657,3,formatting_changed_line,import order after rename,
+r00657,4,formatting_changed_line,import order after rename,
+r00657,5,formatting_changed_line,import order after rename,
+r00657,6,formatting_changed_line,import order after rename,
+r00657,7,formatting_changed_line,import order after rename,
+r00657,8,formatting_changed_line,import order after rename,
+r00657,9,formatting_changed_line,import order after rename,
+r00657,10,formatting_changed_line,import order after rename,
+r00657,11,wrong,"plain import before from-import is correct ordering, same position as the original",
+r00657,12,formatting_changed_line,import order after rename,
+r00657,13,formatting_changed_line,import order after rename,
+r00657,14,formatting_changed_line,import order after rename,
+r00657,15,formatting_changed_line,import order after rename,
+r00657,16,formatting_changed_line,import order after rename,
+r00657,17,formatting_changed_line,import order after rename,
+r00657,18,formatting_changed_line,import order after rename,
+r00657,19,formatting_changed_line,import order after rename,
+r00659,1,valid,"trim() doc still promises no trailing no-arg placeholders, but the change now appends trailing ⇤ to rebalance indentation; doc not updated",0.02942
+r00662,1,valid,Kept comment still says sed; the branch now uses awk.,0.04981
+r00662,2,wrong,"New comment text, not a stale name or path; an incomplete link fits none of the five kinds.",
+r00665,1,wrong,Relocating container_buffer is a direct consequence of the required namespace split: it must stay in detail and precede the specialization using it; not an unrelated edit,0.05412
+r00668,1,wrong,"Kept sentence still accurately describes body analysis; no stale name, path or signature",0.04163
+r00668,2,formatting_changed_line,Wrapping of a KDoc line the change rewrote anyway,
+r00671,1,valid,"The change removed createFeature's logger().error call; plausibly the only production use, leaving logger() and the test override dead.",0.03318
+r00672,1,formatting_changed_line,Row had to be edited for the path rename; padding misalignment is formatting of a required changed line.,0.13249
+r00672,2,formatting_changed_line,Row had to be edited for the @use path rename; padding misalignment is formatting of a required changed line.,
+r00673,1,valid,New constructor argument added but the diff never updates the DI service definition; a plausible configuration leftover caused by this change.,0.03872
+r00209,1,wrong,"ISASCII is a general macro in md4c's character-class family; the 'only call site' claim can't be checked from the diff and is implausible, and a one-token fix doesn't leave a shared utility macro dead",2.59742
+r00686,1,valid,Change makes `start` also use ::before; a test header saying only `left` does is plausibly a stale leftover comment.,0.02799
+r00689,1,wrong,Recording the mixin signature break in the compat baseline follows directly from the task; not unrelated,0.0469
+r00689,2,wrong,Changeset describing the public mixin change is part of the task's release workflow; not unrelated,
+r00693,1,optional,Documentation updates are declared optional by the task; bullet order in docs falls under that.,0.06101
+r00697,1,valid,"Plausible stale documentation of the old deprecate argument order; the diff changed the signature but not this doc, and the task does not make docs optional.",0.02934
+r00340,1,wrong,"Other tests still check logger calls (anyString/times imports remain), so logger() still has callers elsewhere in ProblemProcessor.",2.59292
+r00700,1,not_introduced,"Cited file is in an untouched legacy package outside the diff; unstable_FeatureFlags still exists as a deprecated alias, so the comment was not left stale by this change.",0.0549
+r00707,1,valid,"After @use '../skeleton-animation' the default namespace is skeleton-animation; the test's Sass string literals still call skeleton.skeleton, a leftover old name the change introduced.",0.13174
+r00714,1,wrong,"The diff extends that comment block with lines describing the stripping of stale nvm paths, and the original 'prepend instead of replacing' still holds.",0.04912
+r00393,1,valid,Doc still shows the old deprecate() argument order; the diff did not update it and the task does not make docs optional.,2.58971
+r00721,1,valid,"Test body was changed to assert indent placeholders are kept, but its name keeps the NoArg wording the change dropped from the constant and from the sibling tests.",0.04846
+r00724,1,valid,"Fully qualified class name instead of an import, inconsistent with the file's import style; introduced by the change.",0.02822
+r00724,2,formatting_changed_line,"Line length of a line the change itself added, not churn on an untouched line.",
+r00722,1,valid,"Grep shows ISASCII(off) is only defined at line 351; the diff replaced its sole use with ISALPHA, leaving the macro unused.",0.03319
+r00744,1,wrong,obj/ is untracked generated build output; the diff moves all tracked files out of src/MediatR/,0.07929
+r00744,2,wrong,"PackageId keeps the package name the project previously defaulted to; a direct consequence of the rename, not unrelated",
+r00745,1,valid,"KDoc @param order still follows the old (actions, goal) signature; the diff did not update it",0.0937
+r00756,1,formatting_changed_line,import order of a line rewritten by the move,0.17976
+r00756,2,formatting_changed_line,import order of a line rewritten by the move,
+r00756,3,formatting_changed_line,import order of a line rewritten by the move,
+r00756,4,formatting_changed_line,import order of a line rewritten by the move,
+r00767,1,formatting_changed_line,"Case change sits on lines the fix had to rewrite anyway; cosmetic, not churn of an untouched line",0.0353
+r00753,1,wrong,"setupKeyword is still reached via the base getColumnSearchKeyword (e.g. CollectionDataTable); only QueryDataTable's override stopped calling it, and the diff adds a branch to it on purpose",0.03824
+r00753,2,valid,"after the change both paths return $keyword unchanged, so the raw/regex condition is now dead logic introduced by this edit",
+r00762,1,valid,@ReadOnlyComposable annotation removed from stub but its import was kept,0.04442
+r00762,2,valid,LocalThing removed so compositionLocalOf import is now unused,
+r00762,3,formatting_changed_line,"placement of the newly added remember import, a line the change had to add",
+r00788,1,formatting_changed_line,Import order of imports the change had to add; not churn of untouched lines,0.09796
+r00788,2,formatting_changed_line,Placement/formatting of a doc line the change itself added; not churn of untouched lines,
+r00788,3,valid,"New temperature property is never read; resolution uses only model, so the field is dead",
+r00791,1,valid,"Javadoc of get(TypeToken, boolean) still describes the returned interface as an 'object constructor' though the return type is now ObjectFactory",0.07569
+r00792,1,valid,Change introduces deepMergeValues instead of reusing/mirroring the existing deepMerge the task names; the name is inconsistent with the task and the codebase,0.05008
+r00800,1,valid,"@use '../skeleton-animation' now binds namespace skeleton-animation; the test's Sass strings still call skeleton.skeleton, an old name left unupdated",0.13131
+r00794,1,not_introduced,"obj/ restore output is untracked, generated by builds before the rename, not part of the diff; all tracked files were moved",0.07507
+r00799,1,not_introduced,unstable_useFeatureFlag was already an alias of the stable hook before the change; the stale carbon.yml status predates it,0.05492
+r00799,2,not_introduced,unstable_useFeatureFlags was already an alias of the stable hook before the change; the stale carbon.yml status predates it,
+r00810,1,formatting_changed_line,Line length of a doc comment line the change rewrote for the task; not churn.,0.03408
+r00807,1,formatting_changed_line,import order on a line the rename had to touch,0.02929
+r00807,2,duplicate,same import-order issue as finding 1 in another file,
+r00820,1,valid,"Test-only helper added by the change, but no test or other code in the diff imports it, so it is dead.",0.04914
+r00827,1,formatting_changed_line,Line length of a Javadoc line the rename had to touch; not churn,0.09872
+r00840,1,valid,New CHANGES entry uses an invented contributor tag inconsistent with the file's attribution convention.,0.0637
+r00846,1,valid,Test docstring still describes the old str-argument check while the body now asserts args is Uninferable,0.03931
+r00846,2,valid,New fragment file breaks the issue-number naming convention of towncrier fragments,
+r00855,1,valid,"trim() KDoc still claims ⇥/⇤ are removed, but the change now preserves them; stale doc left by the change",0.02945
+r00864,1,formatting_changed_line,"Alignment of the #define line the rename had to touch; formatting of a required changed line, not churn.",0.03896
+r00862,1,formatting_changed_line,Formatting of a newly written raise the change had to add; not churn. Double quotes are needed because the string contains single quotes.,0.03853
+r00866,1,not_introduced,"_sdsnewlen is a pre-existing, distinct internal helper the change did not touch; the task names only the public sdsnewlen",0.24514
+r00873,1,formatting_changed_line,Line length of a KDoc line the change rewrote; not churn on an untouched line,0.04011
+r00871,1,valid,Fragment number 4000 is invented (task gives no issue number) and the fragment lacks the conventional Refs line; naming inconsistency introduced by the change.,0.03235
+r00878,1,valid,ResolveLicenseKey now takes the options key between config and Mediator.LicenseKey; precedence doc comment not updated,0.04045
+r00878,2,valid,README precedence list not updated for the new options-pattern key source; docs not declared optional,
+r00885,1,optional,Documentation updates are declared optional by the task,0.07902
+r00885,2,valid,JSDoc @param order still reflects old signature after reorder,
+r00885,3,duplicate,Same stale JSDoc param order as finding 2,
+r00885,4,duplicate,Same stale JSDoc param order as finding 2,
+r00885,5,duplicate,Same stale JSDoc param order as finding 2,
+r00885,6,duplicate,Same stale JSDoc param order as finding 2,
+r00885,7,duplicate,Same stale JSDoc param order as finding 2,
+r00885,8,duplicate,Same stale JSDoc param order as finding 2,
+r00885,9,duplicate,Same stale JSDoc param order as finding 2,
+r00885,10,duplicate,Same stale JSDoc param order as finding 2,
+r00885,11,duplicate,Same stale JSDoc param order as finding 2,
+r00886,1,valid,JSDoc @param order not updated to match the swapped signature,0.07177
+r00886,2,duplicate,same stale JSDoc order as #1,
+r00886,3,duplicate,same stale JSDoc order as #1,
+r00886,4,duplicate,same stale JSDoc order as #1,
+r00886,5,duplicate,same stale JSDoc order as #1,
+r00886,6,duplicate,same stale JSDoc order as #1,
+r00886,7,duplicate,same stale JSDoc order as #1,
+r00886,8,duplicate,same stale JSDoc order as #1,
+r00886,9,duplicate,same stale JSDoc order as #1,
+r00886,10,duplicate,same stale JSDoc order as #1,
+r00886,11,optional,task says documentation update is optional,
+r00890,1,valid,Doc still shows the old argument order (name first) after the signature changed to put the version first; plausible stale leftover that the change did not update.,0.02827
+r00894,1,wrong,"diff moves all tracked files; obj is untracked build output, not a leftover from the change",0.07664
+r00894,2,wrong,PackageId preserves the package name that would otherwise change with the project rename; directly related,
+r00896,1,valid,"Added ObjectProvider import is out of order, plausibly a duplicate of an existing Spring import",0.08619
+r00896,2,valid,New toLlmOptions() is never called; resolution reads only entry.model,
+r00901,1,valid,"Historical release-note entries rewritten; past changelogs should keep the old module name, unrelated to the rename",0.05735
+r00901,2,duplicate,"Same historical changelog rewrite as finding 1, repeated in the RPM spec",
+r00901,3,valid,Fixing a pre-existing stale test path in a comment is unrelated to renaming the module,
+r00902,1,valid,Comment on the edited condition still says uppercase letter while ISALPHA accepts lowercase,0.03095
+r00902,2,valid,Diff removes the only shown use of ISASCII; plausibly leaves the macro and its helper unused,
+r00909,1,valid,"Doc still shows the old (name, since, removed) argument order after the signature change; plausible and not declared optional",0.02898
+r00903,1,wrong,"lookupStringForBitCommand writes *created unconditionally and requires all arguments, so the local is a required out-parameter sink, not dead code",0.05136
+r00924,1,not_introduced,"obj/ build output is untracked and generated before the change; it is not source, docs or config, so not a leftover in the diff",0.07248
+r00918,1,valid,The internal helper _sdsnewlen is a separate identifier the task did not ask to rename; renaming it is out of scope and leaves sdstrynewlen calling a mismatched *newbuf helper.,0.25171
+r00931,1,valid,"KDoc @param tags still follow the old actions-then-goal order; the diff context shows @param goal last, just above the reordered signature",0.09064
+r00935,1,formatting_changed_line,"Sort position of the jsr.json entry the task required rewriting; an ordering issue on a necessarily changed line, not a naming defect",0.05
+r00938,1,valid,"KDoc still lists @param actions before @param goal (goal is last line before fun), reflecting the old parameter order the change did not update",0.09302
+r00937,1,valid,"grep shows ISASCII/ISASCII_ only at their definitions; the diff replaced the sole call site with ISALPHA, leaving them dead",0.02754
+r00952,1,formatting_changed_line,"import line had to change for the move; its position is ordering of a changed line, not churn",0.03064
+r00952,2,formatting_changed_line,"same situation: rewritten import line, ordering after the move",
+r00947,1,formatting_changed_line,Line length of a newly added test line the change needed; not churn of untouched lines,0.16879
+r00947,2,formatting_changed_line,"Same: line length of a newly added, required test line",
+r00964,1,valid,"generic prose word in test-data comment, not a module reference; editing it is unrelated to the rename",0.15136
+r00964,2,formatting_changed_line,import sort order of a line the rename had to touch anyway,
+r00957,1,wrong,"Generic lowercase prose 'object constructor', not the old identifier; all {@link}/{@code} references to the interface were updated",0.07904
+r00969,1,valid,"Replacing the only logger().error call with a throw plausibly leaves logger() unused in main code, kept only as a test seam.",0.03241
+r00967,1,valid,JSDoc @param order still reflects old signature after reorder,0.07556
+r00967,2,duplicate,same stale JSDoc order as finding 1,
+r00967,3,duplicate,same stale JSDoc order as finding 1,
+r00967,4,duplicate,same stale JSDoc order as finding 1,
+r00967,5,duplicate,same stale JSDoc order as finding 1,
+r00967,6,duplicate,same stale JSDoc order as finding 1,
+r00967,7,duplicate,same stale JSDoc order as finding 1,
+r00967,8,duplicate,same stale JSDoc order as finding 1,
+r00967,9,duplicate,same stale JSDoc order as finding 1,
+r00967,10,duplicate,same stale JSDoc order as finding 1,
+r00967,11,optional,documentation update is optional per task,
+r00978,1,wrong,"Qualification style, not an inconsistent name; the surrounding parameter list already uses inline fully qualified references.",0.04943
+r00979,1,wrong,"Test still mocks Logger and keeps verify/times/anyString imports, so other build steps still log through logger(); the claim of no production caller is implausible.",0.03182
+r00980,1,valid,trim() KDoc plausibly still describes unconditional removal of placeholders; new early return on unbalanced indent markers makes it stale,0.03184
+r00986,1,formatting_changed_line,Import line had to be added; its ordering is formatting of a required line,0.09254
+r00986,2,wrong,"Unchanged code call is not a leftover in docs/strings/config; new SPI overload is public API, not dead",
+r00987,1,wrong,"ISASCII is a general character-class helper macro, not code the change made dead; the no-callers claim is unsupported by the diff",0.03131
+r01000,1,valid,created is written by the helper but never read in setbitCommand; dead variable introduced by the change,0.04934
+r01000,2,duplicate,"same unused created variable as finding 1, in bitfieldGeneric",
+r01000,3,valid,trailing-space removal on a blank comment line the insertion did not require touching,
+r01005,1,wrong,"trim() still removes leading/trailing placeholders; the KDoc names no old identifier or signature, and the new behavior is documented by the added inline comment",0.0365
+r01001,1,valid,"KDoc @param order still actions, goal; not updated with signature",0.07855
+r01001,2,valid,implementation override not updated to new parameter order as task requires,
+r01001,3,duplicate,same un-updated override as #2,
+r01001,4,duplicate,same un-updated override as #2,
+r01001,5,valid,"validator call not updated, task explicitly requires it",
+r01001,6,duplicate,same un-updated call site as #5,
+r01001,7,duplicate,same as #5,
+r01001,8,duplicate,same as #5,
+r01001,9,duplicate,same as #5,
+r01001,10,duplicate,same as #5,
+r01001,11,duplicate,same as #5,
+r01001,12,duplicate,same as #5,
+r01001,13,duplicate,same as #5,
+r01001,14,duplicate,same as #5,
+r01001,15,duplicate,same as #5,
+r01001,16,duplicate,same as #5,
+r01001,17,duplicate,same as #5,
+r01001,18,duplicate,same as #5,
+r01001,19,duplicate,same as #5,
+r01001,20,duplicate,same as #5,
+r01001,21,duplicate,same as #5,
+r01001,22,duplicate,same as #5,
+r01001,23,duplicate,same as #5,
+r01001,24,duplicate,same as #5,
+r01001,25,duplicate,same as #5,
+r01001,26,duplicate,same as #5,
+r01001,27,duplicate,same as #5,
+r01001,28,duplicate,same as #5,
+r01001,29,duplicate,same as #5,
+r01001,30,duplicate,same as #5,
+r01001,31,duplicate,same as #5,
+r01001,32,duplicate,same as #5,
+r01001,33,duplicate,same as #5,
+r01001,34,duplicate,same as #5,
+r01001,35,duplicate,same as #5,
+r01001,36,duplicate,same as #5,
+r01001,37,duplicate,same as #5,
+r01001,38,duplicate,same as #5,
+r01001,39,duplicate,same as #5,
+r01001,40,duplicate,same as #5,
+r01009,1,optional,Documentation update is declared optional by the task; parameter list order in docs is not required.,0.06066
+r01012,1,formatting_changed_line,import order of a line the rename had to rewrite,0.03087
+r01012,2,formatting_changed_line,import order of a line the rename had to rewrite,
+r01006,1,valid,Precedence doc on ResolveLicenseKey plausibly not updated for the new factory tier,0.0625
+r01006,2,duplicate,"Same stale-precedence-list mistake as #1, in README",
+r01006,3,valid,Whitespace-only change to closing brace line not needed by the task,
+r01006,4,duplicate,Same trailing-whitespace churn as #3 on adjacent line,
+r01013,1,formatting_changed_line,"Misalignment of a table row the rename had to edit; formatting of a necessarily touched line, not churn.",0.13112
+r01013,2,formatting_changed_line,Same kind of column misalignment on a doc row that had to change for the new path.,
+r01015,1,valid,"created out-param is written but never read; both callers only void-cast it, which is dead code introduced by the change",0.03422
+r01014,1,valid,"Comment added by the change says IOptions is only present if options infrastructure is registered, but AddOptions() is now always called",0.07642
+r01014,2,valid,Whitespace-only edit to adjacent lines the insertion did not require,
+r01014,3,wrong,"Key is deliberately fake, so the corrupted-key error proves the provided key was used; name is accurate",
+r01021,1,wrong,"obj/ is untracked build output, not part of the change; all tracked files under src/MediatR/ were moved",0.07218
+r01025,1,valid,test_thin.py not in diff; stale 'salt/payload.py' literal plausibly left while thin.py was updated,0.03242
+r01027,1,optional,Documentation update is declared optional by the task,0.05595
+r01045,1,valid,upsert line was otherwise unchanged; removing the space after the comma is pure churn,0.02253
+r01030,1,valid,"Doc comment on ResolveLicenseKey still lists only the explicit LicenseKey then Mediator.LicenseKey, although the first argument can now come from ConfigureLicenseKey sources.",0.0639
+r01030,2,valid,"Whitespace-only change on the closing-brace line, which the functional edit did not require.",
+r01058,1,valid,Test file name still uses the old module name while its contents were updated to skeleton-animation; the change created this inconsistency.,0.13132
+r01049,1,not_introduced,"Cited lines are outside the diff and untouched; the task does not require renaming local variables, so the variable name predates the change.",0.0774
+r01072,1,wrong,task requires the helper to explicitly report creation via this out-param,0.04989
+r01072,2,wrong,same: the task mandates the created flag interface,
+r01072,3,formatting_changed_line,"line is in the doc comment the change extends at that point, not unrelated",
+r01068,1,wrong,"cli_common.c uses hiredis's vendored sds (deps/), whose sdsnewlen keeps its name per the task",0.24802
+r01068,2,wrong,"redis-cli.c uses hiredis's sds from deps/, not src/sds.h; must not be renamed",
+r01068,3,wrong,redis-cli.c uses hiredis's sds from deps/; must not be renamed,
+r01068,4,wrong,redis-cli.c uses hiredis's sds from deps/; must not be renamed,
+r01068,5,wrong,redis-cli.c uses hiredis's sds from deps/; must not be renamed,
+r01068,6,wrong,redis-cli.c uses hiredis's sds from deps/; must not be renamed,
+r01068,7,wrong,redis-cli.c uses hiredis's sds from deps/; must not be renamed,
+r01068,8,wrong,redis-cli.c uses hiredis's sds from deps/; must not be renamed,
+r01077,1,formatting_changed_line,"Ordering of the jsr.json entry the rename had to rewrite; the key name itself is what the task requires, so this is not a naming defect",0.04878
+r01091,1,valid,"The created out-param is set but never read by setbitCommand or bitfieldGeneric; the histogram logic moved into the helper, leaving the new variables dead.",0.04451
+r01096,1,wrong,"container_buffer is the base of an iterator_buffer specialization; moving it before the fmt-namespace block is needed to keep it in detail without splitting the namespace, so it is part of the task",0.04744
+r01099,1,formatting_changed_line,"Sort position of the jsr.json entry the rename had to rewrite; the name itself matches the task, so this is ordering of a touched line, not naming",0.05294
+r01105,1,formatting_changed_line,Line wrapping of a KDoc paragraph the change had to rewrite; not churn,0.03657
+r01106,1,valid,"The change adds embabel.models.roles, so a doc saying roles come only from embabel.models.llms is now stale; plausible leftover outside the diff.",0.18488
+r01107,1,wrong,task explicitly requires the helper to report whether it created the key; callers must supply the out-param,0.04322
+r01107,2,wrong,same as 1: the created out-param is mandated by the task,
+r01112,1,formatting_changed_line,"Extra blank line is part of the newly added imports the change needed; formatting of touched lines, not churn",0.03423
+r01116,1,not_introduced,"obj/ files are untracked build output from earlier builds, not part of the change; every tracked file was moved out of src/MediatR/",0.07532
+r01118,1,formatting_changed_line,Line length of a KDoc line the change rewrote,0.05041
+r01118,2,formatting_changed_line,Line length of a comment the change newly wrote,
+r01118,3,formatting_changed_line,Line length of a test comment the change had to reword,
+r01118,4,formatting_changed_line,Line length of a test comment the change had to reword,
+r01121,1,valid,Diff removes all Mockito usage from the deployment test; the mockito test dependency plausibly became dead,0.03583
+r01131,1,formatting_changed_line,Line length of a KDoc comment the change had to rewrite for the new behavior,0.03166
+r01125,1,wrong,ISASCII is a generic char-class macro still used elsewhere in md4c.c; diff gives no evidence it became unused,0.03335
+r01125,2,wrong,ISASCII_ is used directly by UTF-8/Unicode helpers; not left dead by this change,
+r01149,1,valid,"Diff removes the space in the validate signature, a line the task did not need to touch.",0.02848
+r01147,1,valid,"the only logger() call was replaced by a throw, leaving logger() and its Logger import unused in ProblemProcessor",0.03751
+r01150,1,formatting_changed_line,Import order of a use line that had to change for the rename; not churn of an untouched line.,0.02826
+r01161,1,formatting_changed_line,import order of a use line the rename had to touch,0.03264
+r01161,2,formatting_changed_line,import order of a use line the rename had to touch,
+r01177,1,optional,Documentation updates are declared optional by the task; bullet order in docs is not required.,0.05946
+r01175,1,wrong,task requires the helper to explicitly report key creation via an out-param; caller storage for it is mandated,0.04522
+r01175,2,wrong,same as 1: the created out-param is required by the task,
+r01179,1,valid,created is written by the helper but never read in bitfieldGeneric; dead local introduced by the change,0.04305
+r01179,2,duplicate,same dead created variable as finding 1; the (void) cast only hides it,
+r01179,3,duplicate,same unread created output repeated in setbitCommand,
+r01183,1,wrong,"The diff moves all tracked files out of src/MediatR/; obj/ is untracked build output, not part of the change or a leftover reference",0.07492
+r01182,1,wrong,"unqualified name inside fmt::detail correctly resolves to fmt::iterator_buffer; it was never detail-qualified, so no old name is left",0.06205
+r01182,2,wrong,"move is a structural consequence of closing namespace detail before iterator_buffer; content unchanged, not formatting churn",
+r01188,1,optional,Documentation update is declared optional by the task,0.04614
+r01185,1,valid,Change added a same-namespace import that is redundant; DataTables.php correctly just dropped it,0.02972
+r01197,1,valid,"Javadoc for get(TypeToken, boolean) still describes the return value as an 'object constructor'; the task requires Javadoc referring to the interface to follow the new name",0.07853
+r01217,1,not_introduced,"format-inl.h is untouched by the diff; the stale is_printable range predates the change and is a missing functional fix, not a leftover name/path in comments, docs or config",0.03099
+r01227,1,wrong,"The diff adds a comment right after it explaining the stale-entry stripping, so the comment block was updated.",0.04926
+r01229,1,not_introduced,_sdsnewlen is a pre-existing internal helper untouched by the diff; task only requires renaming public sdsnewlen,0.24327
+r01231,1,formatting_changed_line,"Misalignment is on the #define line the rename had to edit; it is formatting of a required change, not churn.",0.03962
+r01244,1,valid,"Plausible stale KDoc: the old behavior skipped any default using composition; read-only defaults are now reported, so the doc was not updated.",0.03902
+r01246,1,wrong,"ParameterSpec.kt declares a top-level internal extension List<ParameterSpec>.emit, now in the new package; FunSpec calls parameters.emit, so the import resolves and is required",0.19602
+r01246,2,wrong,LambdaTypeName calls the top-level List<ParameterSpec>.emit extension; the import is needed after the move,
+r01246,3,wrong,TypeSpec emits primary-constructor parameters through the top-level List<ParameterSpec>.emit extension; the import is needed,
+r01248,1,not_introduced,"Stale ranges are pre-existing executable code the diff never touched; failing to regenerate them is a missing functional fix, not a non-functional leftover in comments, strings or docs.",0.03474
+r01256,1,valid,"KDoc @param order (actions then goal, goal at line 50) still reflects the old signature; the change did not update it",0.09233
+r01260,1,formatting_changed_line,import order after rename of a line the change had to touch,0.02539
+r01259,1,valid,Task explicitly requires no file remain under src/MediatR/; stale obj output from old project left behind by the move is plausible and not visible in diff,0.08222
+r01264,1,wrong,"Placeholder issue id in a new changelog is not a stale name the change failed to update, nor any of the five defect kinds; the task supplies no real issue id.",0.03568
+r01269,1,valid,"Helper was inserted between constructAnySetter's existing Javadoc and the method, orphaning that doc and leaving constructAnySetter undocumented.",0.05745
+r01270,1,valid,Test strings still use old `skeleton.` namespace while `@use '../skeleton-animation'` now yields namespace `skeleton-animation`; leftover old name in literals the change edited.,0.13213
+r01276,1,wrong,"The new test was inserted before the class's closing brace, so git shows the brace rewritten; the line had to change, so this is not churn.",0.05896
+r01276,2,wrong,"Same as finding 1: the brace moved because the new theory test was inserted before it, not as gratuitous formatting.",
+r01277,1,formatting_changed_line,"The blank line replaces the removed 'TODO needs context' comment, which the task resolves; it is formatting of a line that had to change, not new whitespace churn.",0.08579
+r01281,1,optional,Documentation updates are declared optional by the task,0.05157
+r01279,1,optional,task itself suggests this rename while declaring it unrelated/not required,0.03722
+r01279,2,valid,Salt changelog fragments are named <issue-number>.<type>.md; descriptive slug breaks convention,
+r01283,1,valid,"test_thin.py is not in the diff; its expected path still names the removed salt/payload.py, a leftover old path in a string literal",0.03235
+r01286,1,formatting_changed_line,import order of an import the move required,0.05222
+r01286,2,formatting_changed_line,import order of a rewritten import line,
+r01286,3,formatting_changed_line,import order of a rewritten import line,
+r01291,1,wrong,The task itself recommends renaming postPrefixes to unit_suffixes; the rename uses the suggested name and only touches the lines the fix rewrites.,0.03598
+r01299,1,wrong,"Cites executable is_printable logic, not a comment/string/doc/config leftover; a stale range there is a functional issue (missing regeneration), outside the five non-functional kinds.",0.03798
+r01302,1,valid,"the diff removes the only call to setupKeyword(), leaving it plausibly unused",0.03166
+r01302,2,valid,"both paths now return $keyword unchanged, so the raw/regex check is redundant",
+r01315,1,formatting_changed_line,Final brace line was necessarily rewritten to append the new test; EOF newline is formatting of a touched line,0.04274
+r01317,1,not_introduced,obj/ is untracked restore/build output that predates the change; the diff moves every tracked file out of src/MediatR/,0.07545
+r01319,1,formatting_changed_line,"Import block had to be edited to drop the old import; reordering follows project import style, not unrelated churn.",0.05586
+r01342,1,valid,"Diff adds a blank line after FMT_BEGIN_EXPORT next to the existing blank line, leaving a needless double blank line.",0.04621
+r01333,1,valid,A nearby license-key precedence list is plausible; leaving out the new ConfigureMediatR source that the added paragraph says takes precedence leaves the docs stale,0.05272
+r01359,1,valid,"Branch now uses awk, but the context comment still mentions sed; the change left it stale.",0.03904
+r01350,1,valid,The old early return for composition-using defaults was removed; a KDoc still describing that no-report behaviour is a plausible stale leftover.,0.03908
+r01360,1,formatting_changed_line,Long line is part of the KDoc paragraph the change had to rewrite; line length of a rewritten comment,0.05873
+r01399,1,valid,Salt changelog fragments are named by issue number; the new slug-named fragment breaks that convention and was introduced by this change,0.02474
+r01391,1,valid,"Change turned the value into an array and renamed it to $info in map but left $cast in the adjacent reject closure, now misleading and inconsistent",0.0353
+r01411,1,formatting_changed_line,"Ordering of the jsr.json entry the task required renaming; the key name itself is correct, so this is not naming.",0.04934
+r01403,1,valid,_sdsnewlen is a distinct helper not named by the task; renaming it is an unrequested extra change,0.24424
+r01413,1,valid,"Plausible doc outside the diff still shows the old (name, since, removed) order; the change swapped it to version-first without updating the docs.",0.02922
+r01430,1,valid,Task explicitly requires no file remain under src/MediatR/; stale obj restore artifacts naming old MediatR.csproj left behind by the move are plausible and violate it.,0.0778
+r01436,1,valid,The private helper _sdsnewlen is a separate identifier outside the task's scope; renaming it is an edit the task did not ask for.,0.24767
+r01439,1,wrong,"ISASCII/ISASCII_ belong to md4c's general character-class macro family; the claim that they are now dead is unsupported, and switching one call site is the required fix",0.05071
+r01462,1,formatting_changed_line,"Line had to change for detail::buffer qualification; its wrapping is formatting of a required edit, not churn",0.04881
+r01463,1,formatting_changed_line,"Alignment slip on the define line the rename had to rewrite (value is actually one column left, not two right); not churn of an untouched line",0.04991
+r01472,1,formatting_changed_line,import order of an import the move required adding,0.05294
+r01472,2,formatting_changed_line,import order of an import the move required adding,
+r01477,1,valid,new file carries a stale 'package com.embabel.agent.spi' line above the real package declaration,0.13166
+r01477,2,duplicate,"same stale package line mistake as finding 1, repeated in the test file",
+r01482,1,valid,File renamed unchanged (100% similarity); header comment plausibly still names the old 'Encode' module,0.05479
+r01482,2,formatting_changed_line,"Sort position of a key the task required renaming; ordering after rename, not naming",
+r01483,1,valid,"resetNoticedFeatureFlags is added by the diff but nothing uses it, including the new test",0.06394
+r01483,2,not_introduced,the codemod mapping predates the change and the diff renames nothing it references,
+r01487,1,wrong,"Executable call site relying on a defaulted parameter; not a stale reference in comments/docs/strings/config. A functional gap, outside the five kinds",0.09383
+r01496,1,valid,"Skill doc plausibly still shows the old (name, since, removed) argument order; the diff updated no docs and the task does not make docs optional",0.00657
+r01499,1,valid,Plausible leftover reference to old module name in a test-data comment; diff updated similar comments elsewhere but not this file.,0.14583
+r01505,1,wrong,container_buffer had to be moved out of the region that became namespace fmt so it stays in detail; the move follows from the task,0.04297
+r01510,1,valid,"Default arguments now count toward the read-only analysis, so a test comment saying only the body is inspected is a plausible stale leftover.",0.0388
+r01512,1,valid,Plausible leftover old module name in test-data comment; diff updated other comments but not test-data,0.14977
+r01512,2,formatting_changed_line,Import order on a line the rename had to touch; not a naming issue,
+r01512,3,formatting_changed_line,Same import-order issue on a necessarily touched line,
+r01516,1,wrong,"created is a mandatory out-parameter of lookupStringForBitCommand, which dereferences it unconditionally; bitfieldGeneric must supply it even if unused, so it is not dead code",0.0452
+r01523,1,not_introduced,obj/ holds untracked build artifacts from an earlier restore; the change cannot produce them under src/MediatR and moved every tracked file,0.07795
+r01524,1,wrong,"A stale isinstance assertion in a test is executable code that would fail; tests would catch it, so it is not a non-functional leftover",0.0389
+r01528,1,formatting_changed_line,import order of a newly required import added by the move,0.18913
+r01528,2,formatting_changed_line,import order of a newly required import added by the move,
+r01528,3,formatting_changed_line,import order of a newly required import added by the move,
+r01529,1,valid,Diff removes all Mockito usage from the deployment test; quarkus-junit-mockito dependency plausibly left unused,0.03754
+r01532,1,formatting_changed_line,Import order on a line the rename had to touch; not a naming defect.,0.156
+r01532,2,formatting_changed_line,Same import-order issue on a touched import line.,
+r01532,3,valid,"Generic prose 'typeops' in a test comment was not a module reference, so rewriting it was an unneeded edit.",
+r01533,1,valid,"Removing the resolveToCall import is not needed for the rename; plausibly still used, risking build failure",0.07184
+r01541,1,formatting_changed_line,"The ./utils import had to be edited to drop the moved name; collapsing it is formatting of a necessarily touched line, not churn",0.04243
+r01543,1,formatting_changed_line,Import order of a line the rename had to touch; not a naming defect,0.14573
+r01543,2,formatting_changed_line,Import order of a line the rename had to touch; not a naming defect,
+r01548,1,wrong,"Newly written doc, not a stale old name; 'options' accurately describes MediatRServiceConfiguration (task treats it as an options type) and matches existing AddMediatR param doc wording",0.05182
+r01551,1,valid,Plausible leftover reference to the old module name 'typeops' in a test-data comment; the task requires updating all module references and the diff updated similar comments elsewhere,0.14085
+r01560,1,valid,Removing the else branch in __new__ is unrelated to the slash-step fix and leaves cron_obj unassigned when _cron is passed.,0.03188
+r01566,1,valid,"KDoc @param order still reflects old (actions, goal) signature; diff did not touch the doc block",0.09319
+r01569,1,valid,"Documentation outside the diff still describes the old (name, since, removed) order; plausible leftover the change should have updated",0.02858
+r01578,1,wrong,container_buffer sat between iterator_buffer specializations; moving it up to stay in detail and precede its use by the fmt:: specialization is a necessary part of the namespace move,0.05165
+r01415,1,valid,Documentation outside the diff plausibly still shows the old (name-first) argument order for deprecate; the task does not make docs optional.,0.0604
+r00297,1,valid,Plausible doc example of the deprecate call still uses the old name-first order; the diff does not update it and the task does not make docs optional.,2.62407
+r01580,1,valid,"Plausible stale docstring: old early-return on any composition-using default is replaced by folding usage, so READ_ONLY defaults are now reported; doc not updated.",0.06968
+r00838,1,valid,Change removed the only visible Mockito usage in the deployment tests; the mockito test dependency plausibly became unused.,0.08369
+r01582,1,wrong,"obj/ is untracked build output, not part of the change; the diff moves every tracked file out of src/MediatR/, so no committed file remains there",0.07438
+r01628,1,valid,new KDoc links a package where RoleResolver does not live; diff places it in com.embabel.common.ai.model,0.13114
+r01628,2,valid,unused lambda parameter introduced by the new test; other resolvers use _,
+r01628,3,valid,fully qualified annotation added; plausible inconsistency with existing Jackson imports,
+r01631,1,wrong,"'various typeops' is a generic plural for type operations, not a reference to the mypy.typeops module path",0.14496
+r01642,1,formatting_changed_line,new import required by the move; wrapping is formatting of a line the change had to add,0.04768
+r01642,2,formatting_changed_line,import had to be split/updated for the move; wrapping is formatting of a required line,
+r01642,3,formatting_changed_line,test import update is required by the task; wrapping is formatting of a required line,
+r01644,1,formatting_changed_line,import order after rename,0.28267
+r01644,2,formatting_changed_line,import order after rename,
+r01644,3,formatting_changed_line,import order after rename,
+r01644,4,formatting_changed_line,import order after rename,
+r01644,5,formatting_changed_line,import order after rename,
+r01644,6,formatting_changed_line,import order after rename,
+r01644,7,formatting_changed_line,import order after rename,
+r01644,8,formatting_changed_line,import order after rename,
+r01644,9,formatting_changed_line,import order after rename,
+r01644,10,formatting_changed_line,import order after rename,
+r01644,11,formatting_changed_line,import order after rename,
+r01644,12,formatting_changed_line,import order after rename,
+r01644,13,formatting_changed_line,import order after rename,
+r01644,14,formatting_changed_line,import order after rename,
+r01644,15,formatting_changed_line,import order after rename,
+r01644,16,formatting_changed_line,import order after rename,
+r01644,17,formatting_changed_line,import order after rename,
+r01644,18,formatting_changed_line,import order after rename,
+r01644,19,formatting_changed_line,import order after rename,
+r01644,20,formatting_changed_line,import order after rename,
+r01644,21,formatting_changed_line,import order after rename,
+r01644,22,formatting_changed_line,import order after rename,
+r01644,23,formatting_changed_line,import order after rename,
+r01644,24,formatting_changed_line,import order after rename,
+r01644,25,formatting_changed_line,import order after rename,
+r01644,26,formatting_changed_line,import order after rename,
+r01644,27,formatting_changed_line,import order after rename,
+r01644,28,formatting_changed_line,import order after rename,
+r01644,29,formatting_changed_line,import order after rename,
+r01644,30,formatting_changed_line,import order after rename,
+r01644,31,formatting_changed_line,import order after rename,
+r01644,32,formatting_changed_line,import order after rename,
+r01644,33,formatting_changed_line,import order after rename,
+r01644,34,formatting_changed_line,import order after rename,
+r01644,35,formatting_changed_line,import order after rename,
+r01644,36,formatting_changed_line,import order after rename,
+r01644,37,formatting_changed_line,import order after rename,
+r01644,38,formatting_changed_line,import order after rename,
+r01644,39,formatting_changed_line,import order after rename,
+r01644,40,formatting_changed_line,import order after rename,
+r01644,41,formatting_changed_line,import order after rename,
+r01644,42,formatting_changed_line,import order after rename,
+r01644,43,formatting_changed_line,import order after rename,
+r01644,44,formatting_changed_line,import order after rename,
+r01644,45,formatting_changed_line,import order after rename,
+r01644,46,formatting_changed_line,import order after rename,
+r01644,47,formatting_changed_line,import order after rename,
+r01644,48,formatting_changed_line,import order after rename,
+r01644,49,formatting_changed_line,import order after rename,
+r01644,50,formatting_changed_line,import order after rename,
+r01644,51,formatting_changed_line,import order after rename,
+r01644,52,formatting_changed_line,import order after rename,
+r01644,53,formatting_changed_line,import order after rename,
+r01646,1,valid,"Skill doc plausibly still shows old (name, since, removed) order; diff did not update it and task does not make docs optional.",0.03089
+r01607,1,valid,"New code uses fully qualified annotation class names inline, inconsistent with the file's imported short-name style (e.g. JsonToken); introduced by this change.",0.03086
+r01626,1,wrong,"Comment is newly added; an incomplete URL is not a stale old name/path the change failed to update, so it is not a leftover or any other listed kind",0.04407
+r01586,1,formatting_changed_line,"Alphabetical position of the jsr.json export entry the task required rewriting; an ordering matter on a necessarily touched line, not a naming defect",0.04881
+r01648,1,not_introduced,"untracked obj/ restore artifacts from before the change; all tracked files were moved, so the change leaves no source file under src/MediatR/",0.07583
+r01617,1,valid,Only visible caller removed while the method was extended; plausibly left dead,0.03572
+r01617,2,valid,"Both branches now return $keyword, so the conditional and $raw are dead",
+r01655,1,valid,Unchanged comment still references sed while the branch was rewritten to use awk,0.03593
+r01653,1,wrong,"_sdsnewlen is a distinct internal helper; the task only renames the public sdsnewlen, so keeping the helper's name is not a leftover",0.24218
+r01657,1,valid,salt/utils/thin.py was updated but test_thin.py (untouched) plausibly still lists the old 'salt/payload.py' path string,0.03223
+r01664,1,not_introduced,PactMerge.kt is untouched by the diff and not among the four call sites the task asks to switch; a functional call to a still-existing overload is not a comment/doc leftover,0.05242
+r01670,1,formatting_changed_line,import order of a line the rename had to touch; not a naming defect,0.1511
+r01670,2,formatting_changed_line,import order of a line the rename had to touch; not a naming defect,
+r01711,1,optional,documentation update declared optional by the task,0.04571
+r01711,2,optional,documentation update declared optional by the task,
+r01714,1,valid,ResolveLicenseKey now takes an options key; its doc comment listing sources is stale,0.04239
+r01714,2,valid,README precedence list not updated for the new IOptions source; docs not declared optional,
+r01692,1,valid,"Doc example of deprecate() still shows old (name, since, removed) order; task changes the signature and doesn't make docs optional; plausible leftover outside the diff.",0.0419
+r01696,1,formatting_changed_line,import order on the import line the move required rewriting,0.1797
+r01696,2,formatting_changed_line,import order on the import line the move required rewriting,
+r01696,3,formatting_changed_line,import order on the import line the move required rewriting,
+r01696,4,formatting_changed_line,import order on the import line the move required rewriting,
+r01715,1,valid,"Change made reject's first param an info array and renamed it to $info in the adjacent map, leaving $cast stale and inconsistent",0.03845
+r01721,1,wrong,"ISASCII is a general helper macro in md4c's character-class family, likely used elsewhere; the change does not leave dead code",0.02709
+r01719,1,formatting_changed_line,Closing brace belongs to the constructor the change restructured; trailing whitespace trimmed on a line within the rewritten block.,0.08006
+r01723,1,formatting_changed_line,KDoc sentence had to be rewritten for new default-arg behavior; overlong wrapping is formatting of a necessarily touched comment line,0.03424
+r01729,1,formatting_changed_line,Import order of a line the move required changing; not churn of an untouched line,0.05215
+r01733,1,valid,"Skill doc still shows old (name, since, removed) argument order; diff did not update it and task doesn't make docs optional",0.02938
+r01748,1,valid,Generic prose 'typeops' (plural noun) is not a module reference; editing it is unrelated to the rename,0.1438
+r01754,1,valid,Test-data file outside the diff and not updated; a stale typeops comment there is plausible and the task requires every reference updated,0.14273
+r01758,1,optional,Documentation updates are declared optional by the task.,0.0513
+r01763,1,valid,Test class/file TestQueryBuilder still carries the old class name after the rename; by convention it should become TestTextQueryBuilder,0.09894
+r01691,1,valid,"Diff removes the plausibly sole use of ISASCII(off); the macro is left unused (file not visible to confirm, accepted as plausible)",0.18018
+r01761,1,wrong,"generic phrase 'object constructor', not the interface name; line not touched",0.08602
+r01761,2,formatting_changed_line,wrapping of a signature line the rename had to touch,
+r01761,3,formatting_changed_line,wrapping of a parameter line the rename had to touch,
+r01767,1,valid,Plausible leftover old path string in test_thin.py expected list; task requires updating every reference and thin.py was updated,0.03185
+r01770,1,valid,_sdsnewlen is a separate internal helper not covered by the task; renaming it is an out-of-scope change and leaves sdstrynewlen calling _sdsnewbuf inconsistently,0.24601
+r01771,1,wrong,"Name keeps the find... prefix; the leading underscore follows Jackson's convention for protected helpers, so it is consistent.",0.05993
+r01776,1,valid,"trim() KDoc still says all trailing no-arg placeholders are removed; new code keeps balancing ⇤/», so the doc is stale",0.0278
+r01773,1,valid,Newly added javadoc carries a stale @since 3.1 while the project is 3.3.0-SNAPSHOT; the change introduced it,0.0415
+r01785,1,wrong,"The empty branch is live control flow that skips buffering null values; this is a readability complaint, not dead code or any of the five kinds",0.07648
+r01787,1,valid,Internal helper _sdsnewlen is a distinct symbol outside the task; renaming it leaves sdstrynewlen inconsistently calling _sdsnewbuf.,0.2481
+r01792,1,formatting_changed_line,Reflow of a KDoc paragraph whose line had to change for the rename; the shorter name triggers re-wrapping,0.06985
+r01797,1,wrong,Task explicitly requires the helper to report whether it created the key; the caller-side out-param is mandated by that interface.,0.04312
+r01797,2,wrong,"Same as 1: created out-param is required by the task's helper interface, not dead code.",
+r01800,1,valid,JSDoc @param order still reflects the old argument order,0.07569
+r01800,2,duplicate,same JSDoc leftover as finding 1,
+r01800,3,duplicate,same JSDoc leftover as finding 1,
+r01800,4,duplicate,same JSDoc leftover as finding 1,
+r01800,5,duplicate,same JSDoc leftover as finding 1,
+r01800,6,duplicate,same JSDoc leftover as finding 1,
+r01800,7,duplicate,same JSDoc leftover as finding 1,
+r01800,8,duplicate,same JSDoc leftover as finding 1,
+r01800,9,duplicate,same JSDoc leftover as finding 1,
+r01800,10,duplicate,same JSDoc leftover as finding 1,
+r01791,1,formatting_changed_line,import order of renamed import line,0.29608
+r01791,2,formatting_changed_line,import order of renamed import line,
+r01791,3,formatting_changed_line,import order of renamed import line,
+r01791,4,formatting_changed_line,import order of renamed import line,
+r01791,5,formatting_changed_line,import order of renamed import line,
+r01791,6,formatting_changed_line,import order of renamed import line,
+r01791,7,formatting_changed_line,import order of renamed import line,
+r01791,8,formatting_changed_line,import order of renamed import line,
+r01791,9,formatting_changed_line,import order of renamed import line,
+r01791,10,formatting_changed_line,import order of renamed import line,
+r01791,11,formatting_changed_line,import order of renamed import line,
+r01791,12,formatting_changed_line,import order of renamed import line,
+r01791,13,formatting_changed_line,import order of renamed import line,
+r01791,14,formatting_changed_line,import order of renamed import line,
+r01791,15,formatting_changed_line,import order of renamed import line,
+r01791,16,formatting_changed_line,import order of renamed import line,
+r01791,17,formatting_changed_line,import order of renamed import line,
+r01791,18,formatting_changed_line,import order of renamed import line,
+r01791,19,formatting_changed_line,import order of renamed import line,
+r01791,20,formatting_changed_line,import order of renamed import line,
+r01791,21,formatting_changed_line,import order of renamed import line,
+r01791,22,formatting_changed_line,import order of renamed import line,
+r01791,23,formatting_changed_line,import order of renamed import line,
+r01791,24,formatting_changed_line,import order of renamed import line,
+r01791,25,formatting_changed_line,import order of renamed import line,
+r01791,26,formatting_changed_line,import order of renamed import line,
+r01791,27,formatting_changed_line,import order of renamed import line,
+r01791,28,formatting_changed_line,import order of renamed import line,
+r01791,29,formatting_changed_line,import order of renamed import line,
+r01791,30,formatting_changed_line,import order of renamed import line,
+r01791,31,formatting_changed_line,import order of renamed import line,
+r01791,32,formatting_changed_line,import order of renamed import line,
+r01791,33,formatting_changed_line,import order of renamed import line,
+r01791,34,formatting_changed_line,import order of renamed import line,
+r01791,35,formatting_changed_line,import order of renamed import line,
+r01791,36,formatting_changed_line,import order of renamed import line,
+r01791,37,formatting_changed_line,import order of renamed import line,
+r01791,38,formatting_changed_line,import order of renamed import line,
+r01791,39,formatting_changed_line,import order of renamed import line,
+r01791,40,formatting_changed_line,import order of renamed import line,
+r01791,41,formatting_changed_line,import order of renamed import line,
+r01791,42,formatting_changed_line,import order of renamed import line,
+r01791,43,formatting_changed_line,import order of renamed import line,
+r01791,44,formatting_changed_line,import order of renamed import line,
+r01791,45,formatting_changed_line,import order of renamed import line,
+r01791,46,formatting_changed_line,import order of renamed import line,
+r01791,47,formatting_changed_line,import order of renamed import line,
+r01791,48,formatting_changed_line,import order of renamed import line,
+r01791,49,formatting_changed_line,import order of renamed import line,
+r01791,50,formatting_changed_line,import order of renamed import line,
+r01791,51,formatting_changed_line,import order of renamed import line,
+r01791,52,formatting_changed_line,import order of renamed import line,
+r01791,53,formatting_changed_line,import order of renamed import line,
+r01802,1,optional,"The task itself suggests renaming postPrefixes to unit_to_bytes and only marks it as not required, so doing it is optional, not an unrelated edit.",0.03772
+r01805,1,formatting_changed_line,Line length of a KDoc paragraph the change rewrote to document the new behavior; not churn.,0.04254
+r01803,1,valid,Change now counts default-value usage toward the verdict; a test comment claiming the rule only inspects the body is plausibly stale and was not updated.,0.03843
+r01821,1,valid,"Change added a same-package import, which is redundant/dead",0.04902
+r01808,1,valid,The new set copies the existing NO_ARG_PLACEHOLDERS in CodeBlock.kt under an inconsistent name; the change could have reused it.,0.04039
+r01816,1,valid,"Change turned the value into a pair and renamed the map closure's param to $castInfo, but left the reject closure's $cast, which is now inconsistent and misleading",0.03984
+r01831,1,formatting_changed_line,"Spacing problem inside the newly added method, not a formatting edit to untouched lines.",0.05206
+r01822,1,valid,cli_common.c is a src/ tool in scope and its sdsnewlen call was not renamed,0.25565
+r01822,2,duplicate,same missed rename in src tools as finding 1,
+r01822,3,duplicate,same missed rename as finding 1,
+r01822,4,duplicate,same missed rename as finding 1,
+r01822,5,duplicate,same missed rename as finding 1,
+r01822,6,duplicate,same missed rename as finding 1,
+r01822,7,duplicate,same missed rename as finding 1,
+r01822,8,duplicate,same missed rename as finding 1,
+r01822,9,wrong,task renames only the public sdsnewlen; internal _sdsnewlen is a distinct symbol not required to change,
+r01823,1,valid,"The diff removes setupKeyword()'s only caller in getColumnSearchKeyword(), leaving the protected method (still edited by the diff) unused",0.05606
+r01842,1,valid,Types page doc still says roles must be defined via embabel.models.llms; change adds embabel.models.roles and only updated the llms page,0.14046
+r01853,1,formatting_changed_line,Line length/wrapping of a Javadoc line the rename had to touch; not churn of an untouched line.,0.10286
+r01852,1,valid,"@use '../skeleton-animation' yields namespace skeleton-animation; the test's Sass strings still reference the old skeleton. namespace, left stale by the change",0.13262
+r01855,1,formatting_changed_line,Line length/wrapping of a KDoc line the change rewrote; not churn of untouched lines,0.02171
+r01845,1,wrong,"Existing comment (replace nvm path, preserve order) remains accurate; the diff adds a new comment documenting the stripping, so nothing is left stale",0.05318
+r01864,1,formatting_changed_line,"Ordering of the jsr.json entry the task required renaming; placement/order of a required changed line, not a naming defect.",0.05196
+r01868,1,valid,Plausible stale test comment; the change now inspects default values,0.03682
+r01868,2,valid,"bodyUsage now includes default-argument usage, so the name is misleading",
+r01883,1,valid,Diff removes all Mockito usage from the deployment test; the leftover test dependency is plausibly dead because of this change.,0.03804
+r01890,1,valid,"Line 41 was rewritten to point at nvm-runner but kept the name NVM_EXEC, while the sibling test and install.sh renamed the same variables to NVM_RUNNER*.",0.0806
+r01885,1,valid,Plausible remaining constructor call in the test file still uses the old signature; the diff updated only two calls,0.05084
+r01885,2,duplicate,"Same missed constructor-argument update as finding 1, another call site",
+r01886,1,valid,whitespace-only edit to a blank comment line the change did not need to modify,0.04898
+r01886,2,wrong,task requires the helper to report creation via out-param; caller must supply the variable,
+r01886,3,wrong,same as 2: variable needed to receive the task-mandated created out-param,
+r01900,1,wrong,future import is a compiler directive kept per astroid's project-wide convention (isort add_imports); not dead code,0.0558
+r01904,1,wrong,"The CHANGES entry is part of the fix, not unrelated; its section is a placement question outside the five kinds, and the diff does not show 10.6.0 is released.",0.06752
+r01905,1,valid,"Removing the class left both pairs of surrounding blank lines, giving 4 blank lines instead of the file's usual 2; the change introduced this whitespace defect.",0.05689
+r01928,1,valid,"Slash-preservation assertions were put in a test named for whitespace stripping, so the name no longer matches its body",0.02592
+r01925,1,valid,Call no longer passes configured key; a doc describing it is stale,0.04955
+r01925,2,valid,Plausible README precedence list not updated for the new factory level,
+r01925,3,valid,"Outer lambda captures nothing; inner lambda captures only its own locals, so static could stay",
+r01930,1,formatting_changed_line,import order of an import the move required,0.19943
+r01930,2,formatting_changed_line,import order of imports the move required,
+r01930,3,formatting_changed_line,import order of imports the move required,
+r01930,4,formatting_changed_line,import order of imports the move required,
+r01930,5,formatting_changed_line,import order of an import the move required,
+r01930,6,formatting_changed_line,import order of an import the move required,
+r01930,7,formatting_changed_line,import order of an import the move required,
+r01930,8,formatting_changed_line,import order of an import the move required,
+r01930,9,formatting_changed_line,import order of an import the move required,
+r01930,10,formatting_changed_line,import order of an import the move required,
+r01930,11,formatting_changed_line,import order of a moved import,
+r01930,12,formatting_changed_line,import order of an import the move required,
+r01930,13,formatting_changed_line,import order of an import the move required,
+r01930,14,formatting_changed_line,import order of an import the move required,
+r01930,15,formatting_changed_line,import order of an import the move required,
+r01930,16,formatting_changed_line,import order of an import the move required,
+r01948,1,valid,Test file content was retargeted to skeleton-animation but the file name still uses the old module name.,0.1339
+r01909,1,valid,The removed error log was logger()'s only visible use; the accessor plausibly has no production caller left after the switch to throwing.,0.07592
+r01950,1,valid,withRole docs still say roles come only from embabel.models.llms; the change adds embabel.models.roles,0.1478
+r01950,2,valid,configuration reference not updated for the new embabel.models.roles property,
+r01951,1,not_introduced,"obj/ files are untracked build artifacts from an earlier build, not part of the change; the diff moves every tracked file out of src/MediatR/",0.08065
+r01955,1,valid,"KDoc @param order still reflects the old (actions, goal) signature; diff context shows @param goal last, right above the reordered parameters",0.09222
+r01952,1,optional,"Concerns the API dump, which the task declares welcome but not required; the stale ordering is only a quality issue of an optional update.",0.17706
+r01960,1,formatting_changed_line,Line length of a KDoc paragraph the change had to rewrite for the new default-argument behavior; not churn.,0.02617
+r01963,1,valid,Test class/file TestQueryBuilder mirrors the renamed class by convention and still carries the old name after the rename,0.10025
+r01957,1,valid,Removing its only call site in QueryDataTable leaves setupKeyword() unused,0.03259
+r01957,2,valid,"Both branches now return $keyword unchanged, so the raw/regex condition is dead logic left by the change",
+r01965,1,valid,Replacing the logger().error call with a throw plausibly leaves the protected logger() hook unused in production code.,0.02987
+r01973,1,valid,"Plausible stale header comment: the change makes `start` share the ::before/::after structure that was previously exclusive to `left`, but the test file header was not updated.",0.03249
+r01970,1,valid,Plausible leftover reference to old module name in test data comment; the diff updates comment references elsewhere but not this one,0.14528
+r01986,1,formatting_changed_line,"Ordering of an entry the rename had to touch anyway, like import order after a rename; not a naming defect",0.05146
+r01995,1,valid,"File renamed with 100% similarity, so the module docstring still describes it as the Encode utility.",0.055
+r01995,2,formatting_changed_line,Ordering of a jsr.json entry the rename had to touch; the key name itself matches the task.,
+r01980,1,valid,"change adds an extra blank line, leaving two consecutive blank lines",0.16193
+r01980,2,valid,new block runs straight into init with no separating blank line,
+r01980,3,formatting_changed_line,order of an import the change had to add,
+r01980,4,formatting_changed_line,order of imports the change had to add,
+r01999,1,valid,"Doc outside diff plausibly still shows old (name, since, ...) order; change should have updated it",0.02742
+r01997,1,valid,"Docs still say roles come only from embabel.models.llms; the change adds embabel.models.roles, so the line is stale and docs are not optional here.",0.13824
+r01997,2,valid,Comment added by the change points to an external 'spec' that readers of the repo cannot see.,
+r02000,1,valid,Task requires updating test migrations; this migration call is plausibly left with the old argument order.,0.06646
+r02000,2,optional,Documentation updates are declared optional by the task; the bullets only differ in ordering.,
+r02001,1,valid,Plausible stale comment reference to old module name in a file the rename did not update; task requires updating all references.,0.14282
+r02009,1,valid,"Plausible stale KDoc: old early-return on composition in defaults was removed, so read-only defaults are now reported, contradicting such documentation.",0.03351
+r02016,1,formatting_changed_line,Line length of a Javadoc line the rename had to touch; not churn of an untouched line.,0.09896
+r02006,1,wrong,NO_ARG_PLACEHOLDERS is still used elsewhere in CodeBlock.kt (placeholder parsing in the builder); only trim() changed,0.03912
+r02006,2,valid,Plausible stale KDoc listing indent markers as trimmed after the change restricted trimming to « and »,
+r02020,1,valid,"Committed build/IDE artifacts (bin/, .class, Eclipse files) are unrelated to the task",0.3309
+r02019,1,valid,@use '../skeleton-animation' gives namespace skeleton-animation; skeleton.skeleton was left unchanged in the Sass string,0.13577
+r02019,2,duplicate,"same stale namespace as finding 1, at another line",
+r02019,3,duplicate,"same stale namespace as finding 1, at another line",
+r02019,4,wrong,renaming the module's own test to match the renamed partial belongs to the task,
+r02021,1,valid,KDoc still describes unconditional trimming of all no-arg placeholders; the change made indent trimming conditional but did not update the doc,0.03799
+r02033,1,valid,"New doc row names the type RoleModel, but the class introduced in the diff is RoleModelProperties.",0.08988
+r01739,1,valid,"Doc still shows old (name, since, removed) order; signature changed to version-first and the doc was not updated; plausible and not declared optional.",0.05269
+r02039,1,not_introduced,"obj/ holds untracked, generated restore/build files from a build before the change; not part of the diff, and every tracked file was moved out of src/MediatR/",0.07648
+r02043,1,formatting_changed_line,Line length of a newly written line the change had to add; not churn on an untouched line.,0.0364
+r02053,1,wrong,Task renames only the public sdsnewlen; the private helper _sdsnewlen is a distinct identifier the task does not ask to rename.,0.243
+r02058,1,formatting_changed_line,row had to change for the new path; misaligned padding is formatting of a required line,0.13247
+r02058,2,formatting_changed_line,row had to change for the new path; table alignment is formatting of a required line,
+r02051,1,wrong,"Groovy stubs implementing a Kotlin interface must implement the new method (Kotlin defaults are abstract on the JVM without -Xjvm-default), so the override is required, not dead",0.05775
+r02073,1,valid,"new public method introduced by the change, unused in main code and tests",0.24096
+r02073,2,valid,plausible stale doc claim that roles live only under embabel.models.llms,
+r02073,3,valid,configuration reference not updated for new embabel.models.roles property; distinct from finding 2,
+r02069,1,valid,"Replacing ISASCII with ISALPHA plausibly removes the macro's only use, leaving ISASCII/ISASCII_ dead.",0.03969
+r02088,1,wrong,"obj/ holds untracked, gitignored restore output, not versioned content; the diff moves every tracked file out of src/MediatR/",0.07533
+r02089,1,valid,withRole doc still claims roles must be in embabel.models.llms; change adds roles table and default-LLM fallback,0.19291
+r02089,2,valid,config property reference not updated for new embabel.models.roles property added by the change,
+r02119,1,valid,new javadoc introduces @since 3.1 while plausible project version is 3.3.0-SNAPSHOT,0.07508
+r02119,2,duplicate,same stale @since tag as finding 1,
+r02119,3,duplicate,same stale @since tag as finding 1,
+r02119,4,duplicate,same stale @since tag as finding 1,
+r02127,1,wrong,"Task explicitly requires the helper to report whether it created the key; the caller variable receiving that out-parameter is required by the task, not dead code left by the change.",0.04551
+r02127,2,wrong,"Same as 1: the created out-parameter is mandated by the task, so the caller's receiving variable is not a dead-code defect.",
+r02130,1,valid,Test file is new in this change; the .let { it } wrapper is a no-op that should be removed.,0.11012
+r02142,1,formatting_changed_line,closing brace line had to be rewritten to append new tests inside the class; EOF newline is incidental formatting of a touched line,0.04947
+r02141,1,wrong,"Only one logger() call was removed; retained test imports (times, anyString) and the remaining parameterized test indicate other logger() uses in the processor, so logger() is not dead.",0.04645
+r02148,1,valid,"JSDoc @param order still reflects old (tableOrName, checkConstraint) signature",0.07536
+r02148,2,duplicate,same JSDoc param-order leftover as #1,
+r02148,3,duplicate,same JSDoc param-order leftover as #1,
+r02148,4,duplicate,same JSDoc param-order leftover as #1,
+r02148,5,duplicate,same JSDoc param-order leftover as #1,
+r02148,6,duplicate,same JSDoc param-order leftover as #1,
+r02148,7,duplicate,same JSDoc param-order leftover as #1,
+r02148,8,duplicate,same JSDoc param-order leftover as #1,
+r02148,9,duplicate,same JSDoc param-order leftover as #1,
+r02148,10,duplicate,same JSDoc param-order leftover as #1,
+r02165,1,valid,Plausible stale obj/ artifacts left under src/MediatR/ by the move; task explicitly requires no file remain there,0.08362
+r02169,1,not_introduced,"format-inl.h is untouched by the diff; the stale range check is pre-existing executable code (a functional omission), not a non-functional leftover introduced by the change",0.03472
+r02171,1,valid,created is assigned but never read in setbitCommand,0.04745
+r02171,2,duplicate,"same unused created defect as finding 1, in bitfieldGeneric",
+r02171,3,valid,first signature line content unchanged; only trailing whitespace stripped,
+r02183,1,valid,"New `use Throwable;` import plausibly conflicts with an existing fully qualified `\Throwable` catch in the same file, so the change introduces two styles for one class.",0.05595
+r02186,1,valid,"Eclipse/Buildship .project files newly added, unrelated to the mergeInteractions fix",0.28651
+r02186,2,duplicate,Same defect as finding 1: committed IDE workspace/settings files,
+r02186,3,valid,"bin/ build-output copies added, unrelated to the task and distinct from IDE files",
+r02187,1,optional,Task states updating the API dump is welcome but not required,0.09189
+r02200,1,valid,"The diff adds a blank line after an existing blank line, a needless whitespace change that leaves a double blank before the new section.",0.14624
+r02209,1,valid,New Buildship/Eclipse metadata files added by the patch are unrelated to the rename,0.2295
+r02216,1,not_introduced,"Untracked, normally gitignored build output from earlier builds; not part of the diff, which moves all tracked files out of src/MediatR/",0.07657
+r02232,1,valid,Diff removes all Mockito usage from the deployment test; the now-unused mockito test dependency is plausibly left dead by this change.,0.03682
+r02158,1,valid,"Doc still shows old (name, since, removed) order after signature change; plausible leftover",1.14065
+r01658,1,valid,Diff removes the ISASCII call site; plausible that the ISASCII/ISASCII_ macros are now unused (source not available to confirm).,2.0874
+r02085,1,wrong,"ISASCII belongs to md4c's general char-class macro family; switching one call site to ISALPHA doesn't make the change responsible for dead code, and 'only use' is unsupported by the diff",2.66016
+r00679,1,wrong,"ISASCII_ is still used by md4c's Unicode helpers (e.g. md_is_unicode_whitespace__), so the claim that it becomes unused is false; ISASCII belongs to a generic macro family, not code the change orphaned.",0.0333
+r02027,1,wrong,"ISASCII_ is still used by the Unicode helpers (ISASCII_(codepoint)); ISASCII is part of a generic macro family, not dead code the change should remove",0.03626
+r00253,1,valid,Diff replaces the visible ISASCII use with ISALPHA; plausible the macro (and ISASCII_) is now unused and was left dead by this change.,2.60889

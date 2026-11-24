@@ -6,6 +6,7 @@ Every number on the page is read from data/, never typed in. Charts are inline S
 """
 
 import statistics
+import collections
 import csv
 import html
 import math
@@ -364,7 +365,7 @@ def main():
     fs = {(k, a): mean_flaws(k, a) for k in ("syn", "pr") for a in ("baseline", "optional", "enforced", "baseline-review")}
     flaw_summary = (
         f"<p>Paired on the same tasks, offering LS tools (optional) changes flaws by {flaw_opt_txt}: no clear difference. "
-        f"Enforcing them adds {flaw_enf_txt}.</p>"
+        f"Enforcing them changes flaws by {flaw_enf_txt}.</p>"
         f"<p class='note'>Raw means per reviewed edit run, not paired: synthetic edit tasks (rename, rename-file, move, "
         f"signature; navigation questions have no diff) {fs['syn', 'optional'][0]:.2f} optional against "
         f"{fs['syn', 'baseline'][0]:.2f} baseline ({fs['syn', 'optional'][1]} and {fs['syn', 'baseline'][1]} reviewed runs); "
@@ -475,8 +476,7 @@ def main():
                        [[k, d, sum(1 for f in flaws if f["kind"] == k), sum(1 for f in flaws if f["kind"] == k and f["counted"] == "yes")]
                         for k, d in kinds])
     n_counted = sum(1 for f in flaws if f["counted"] == "yes")
-    n_optional = sum(1 for f in flaws if f["dropped_by"] == "optional in the task")
-    n_repeat = sum(1 for f in flaws if f["dropped_by"] == "same defect, another file")
+    dropped = collections.Counter(f["dropped_by"] for f in flaws if f["counted"] != "yes")
     # Real reports, picked by run id; the task line is a one-line summary of that task's prompt.
     examples = [
         ("Python", "r00260", "check-typevar-tuple.test", "rename mypy's module <code>typeops</code> to <code>type_operations</code>"),
@@ -675,17 +675,23 @@ def main():
         {arm_note}
         <p>Tests decide whether a change works. A flaw is damage the tests cannot see. After each edit run, a reviewer
         (Haiku 5.5) reads the diff and searches the edited tree for five kinds of it;
-        {len(flaws)} were reported in all, {n_counted} of them counted after the re-check below.</p>
+        {len(flaws)} were reported in all, {n_counted} of them confirmed by the re-check below.</p>
         {flaw_table}
         {spoiler("Examples from the run", flaw_examples)}
         <h3 id="flaws-rechecked">Flaw counts re-checked</h3>
-        <p>The reviewer's counts were re-checked and corrected in two mechanical ways, and every flaw number on this page
-        uses the corrected counts. {n_optional} reported flaws concerned something the task itself declared optional
-        (such as "Updating the documentation is optional"), so they are not counted. {n_repeat} were one defect listed
-        again for each file it touched, such as the same stale JSDoc reported once per query runner; each such defect
-        counts once per run. The rules are in <code>analysis/correct_flaws.py</code>; every reported flaw, with whether it
-        counts and why not, is in <a href="data/flaws.csv">flaws.csv</a>, and each run's original count is
-        <code>flaws_raw</code> in <a href="data/runs.csv">runs.csv</a>. No human has checked the remaining reports yet.</p>
+        <p>The reviewer (Haiku 5.5) over-reports, so every flaw it reported was checked again, one by one, by a second
+        model (Opus 5.5), given the task, the diff and the reviewer's own definitions, and blind to the arm and the model
+        of the run. Only flaws it confirmed count; every flaw number on this page uses these counts. Of {len(flaws)}
+        reported flaws, {n_counted} were confirmed. The rest: {dropped["formatting_changed_line"]} were formatting of a
+        line the change had to touch anyway, such as import order after a rename (none of the reviewer's five kinds);
+        {dropped["duplicate"]} were the same defect listed again for another file; {dropped["wrong"]} were contradicted by
+        the diff or the task; {dropped["optional"]} concerned something the task declared optional; and
+        {dropped["not_introduced"]} were not caused by the change. The check is
+        <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/main/analysis/recheck_flaws.py"><code>analysis/recheck_flaws.py</code></a>; every reported flaw with
+        its verdict is in <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/flaws.csv">flaws.csv</a>, and each run's original count is
+        <code>flaws_raw</code> in <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/runs.csv">runs.csv</a>. Without this check the reviewer's
+        numbers would be misleading: it reported one optional-only arm as having fewer flaws on Kotlin because of
+        import-order notes on a single task. No human has checked the confirmed flaws yet.</p>
 
         <h2 id="success-barely-moves">Success barely moves</h2>
         {arm_note}
@@ -739,13 +745,13 @@ def main():
         {spoiler("Contrasts by task type", strat_table(by_task))}
         {spoiler("Contrasts by memorization probe score", strat_table(by_probe))}
         <ul>
-            <li><a href="data/runs.csv">runs.csv</a>: one row per run</li>
-            <li><a href="data/plan.tsv">plan.tsv</a>: the seeded run plan</li>
-            <li><a href="data/flaws.csv">flaws.csv</a>: every flaw the reviewer reported</li>
-            <li><a href="data/descriptive.csv">descriptive.csv</a>, <a href="data/contrasts.csv">contrasts.csv</a>,
-                <a href="data/by_model.csv">by_model.csv</a>, <a href="data/by_lang.csv">by_lang.csv</a>,
-                <a href="data/by_size.csv">by_size.csv</a>, <a href="data/by_task_type.csv">by_task_type.csv</a>,
-                <a href="data/by_probe_half.csv">by_probe_half.csv</a></li>
+            <li><a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/runs.csv">runs.csv</a>: one row per run</li>
+            <li><a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/plan.tsv">plan.tsv</a>: the seeded run plan</li>
+            <li><a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/flaws.csv">flaws.csv</a>: every flaw the reviewer reported</li>
+            <li><a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/descriptive.csv">descriptive.csv</a>, <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/contrasts.csv">contrasts.csv</a>,
+                <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/by_model.csv">by_model.csv</a>, <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/by_lang.csv">by_lang.csv</a>,
+                <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/by_size.csv">by_size.csv</a>, <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/by_task_type.csv">by_task_type.csv</a>,
+                <a href="https://github.com/CommanderTvis/tereditor-lsp-research/blob/gh-pages/data/by_probe_half.csv">by_probe_half.csv</a></li>
             
         </ul>
 
