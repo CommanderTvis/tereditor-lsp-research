@@ -471,17 +471,21 @@ def main():
              ("churn", "formatting or whitespace changes to lines the task did not need to touch"),
              ("dead", "code, imports or files the change left dead or unused"),
              ("unrelated", "edits to places that have nothing to do with the task")]
-    flaw_table = table(["Kind", "What it is", "Reported"],
-                       [[k, d, sum(1 for f in flaws if f["kind"] == k)] for k, d in kinds])
+    flaw_table = table(["Kind", "What it is", "Reported", "Counted"],
+                       [[k, d, sum(1 for f in flaws if f["kind"] == k), sum(1 for f in flaws if f["kind"] == k and f["counted"] == "yes")]
+                        for k, d in kinds])
+    n_counted = sum(1 for f in flaws if f["counted"] == "yes")
+    n_optional = sum(1 for f in flaws if f["dropped_by"] == "optional in the task")
+    n_repeat = sum(1 for f in flaws if f["dropped_by"] == "same defect, another file")
     # Real reports, picked by run id; the task line is a one-line summary of that task's prompt.
     examples = [
         ("Python", "r00260", "check-typevar-tuple.test", "rename mypy's module <code>typeops</code> to <code>type_operations</code>"),
         ("TypeScript", "r01482", "base64.ts", "rename the module <code>utils/encode</code> to <code>utils/base64</code>"),
-        ("Kotlin", "r02187", "kotlinpoet.api", "move KotlinPoet's class <code>ParameterSpec</code> into its own package"),
+        ("Kotlin", "r00415", "Planner.kt", "swap the two parameters of embabel's <code>Planner.planToGoal</code>"),
     ]
     flaw_examples = ""
     for lang, rid, fname, task in examples:
-        f = next(x for x in flaws if x["run_id"] == rid and x["file"].endswith(fname))
+        f = next(x for x in flaws if x["run_id"] == rid and x["file"].endswith(fname) and x["counted"] == "yes")
         r = find(runs, run_id=rid)
         passed = "passed" if r["success"] == "True" else "failed"
         flaw_examples += (f'<p><b>{lang}.</b> The task: {task}. The run ({esc(MODEL_NAME[r["model"]])}, {esc(r["arm"])} arm) '
@@ -671,11 +675,17 @@ def main():
         {arm_note}
         <p>Tests decide whether a change works. A flaw is damage the tests cannot see. After each edit run, a reviewer
         (Haiku 5.5) reads the diff and searches the edited tree for five kinds of it;
-        {len(flaws)} were reported in all.</p>
+        {len(flaws)} were reported in all, {n_counted} of them counted after the re-check below.</p>
         {flaw_table}
         {spoiler("Examples from the run", flaw_examples)}
-        <p class="note">The reviewer's reports have not been checked by a human yet. All of them are in
-        <a href="data/flaws.csv">flaws.csv</a>.</p>
+        <h3 id="flaws-rechecked">Flaw counts re-checked</h3>
+        <p>The reviewer's counts were re-checked and corrected in two mechanical ways, and every flaw number on this page
+        uses the corrected counts. {n_optional} reported flaws concerned something the task itself declared optional
+        (such as "Updating the documentation is optional"), so they are not counted. {n_repeat} were one defect listed
+        again for each file it touched, such as the same stale JSDoc reported once per query runner; each such defect
+        counts once per run. The rules are in <code>analysis/correct_flaws.py</code>; every reported flaw, with whether it
+        counts and why not, is in <a href="data/flaws.csv">flaws.csv</a>, and each run's original count is
+        <code>flaws_raw</code> in <a href="data/runs.csv">runs.csv</a>. No human has checked the remaining reports yet.</p>
 
         <h2 id="success-barely-moves">Success barely moves</h2>
         {arm_note}

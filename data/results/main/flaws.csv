@@ -1,0 +1,913 @@
+run_id,kind,file,line,reason,counted,dropped_by
+r00004,unrelated,.project,1,"New Eclipse project descriptor unrelated to the planToGoal signature change; 390 such IDE files (.project, .classpath, .settings/*.prefs, .factorypath) are in the diff",yes,
+r00004,unrelated,.settings/org.eclipse.core.resources.prefs,1,New Eclipse settings file unrelated to the task,yes,
+r00005,churn,src/Spectre.Console.Tests/Unit/Widgets/Table/TableTests.cs,1110,Closing brace line rewritten only to add a trailing newline that the original file lacked; the task did not require it,yes,
+r00008,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,241,logger() is no longer called anywhere in the class after the error log was replaced by a throw; its Logger import (line 15) is only used by it,yes,
+r00009,churn,tests/Integration/MaxLengthTest.php,10,"Relocated `use Yajra\DataTables\Request;` now sits after the `Yajra\DataTables\Tests\...` imports, breaking the alphabetical import order it should follow.",yes,
+r00009,churn,tests/Unit/RequestTest.php,7,"Relocated `use Yajra\DataTables\Request;` now sits after `Yajra\DataTables\Tests\TestCase`, breaking the alphabetical import order it should follow.",yes,
+r00013,dead,gson/src/test/java/com/google/gson/JsonPrimitiveTest.java,369,"testEqualsIntegerAndLazilyParsedInteger lacks @Test, so the runner never executes it",yes,
+r00018,leftover,packages/upgrade/transforms/nonStableMapping.js,9,"Still maps unstable_FeatureFlags to preview_FeatureFlags, while the change now tells consumers to import the stable FeatureFlags directly",yes,
+r00031,leftover,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,69,"Class KDoc says the detector does not report when a default argument uses composition, which the change no longer does for read-only default arguments",yes,
+r00036,leftover,README.md,158,License key precedence list omits the new LicenseKeyFactory source that LicenseAccessor now consults after cfg.LicenseKey,yes,
+r00039,churn,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/config/spring/AgentPlatformConfiguration.kt,40,Added import CredentialLlmServiceFactory is out of alphabetical order in the import block; it belongs before ConfigurableModelProvider (line 37).,yes,
+r00043,naming,src/sds.c,195,"Renamed sdsnewlen to sdsnewbuf, but the sibling functions sdstrynewlen (line 199) and the internal _sdsnewlen (line 98) keep the newlen suffix, so the family is now inconsistently named.",yes,
+r00044,leftover,src/DataTableAbstract.php,945,"Added docstring says wildcards are applied only by QueryDataTable::prepareKeyword(), but setupKeyword() still applies Helper::wildcardLikeString() in wildcard mode (line 955).",yes,
+r00046,dead,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt,123,trim() has no callers after FunSpec.asExpressionBody switched to trimBalanced(); only the new doc comment refers to it,yes,
+r00059,churn,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/config/spring/AgentPlatformConfiguration.kt,51,"java.util.stream.Collectors import inserted among org.springframework imports, breaking lexical import order; CredentialLlmServiceFactory import at line 40 is similarly out of order",yes,
+r00066,unrelated,include/fmt/base.h,1922,container_buffer was moved above the end of namespace detail and its surrounding code. The task did not require this reorder.,yes,
+r00069,leftover,src/MediatR/obj/project.assets.json,1,"Old src/MediatR/ directory remains with stale NuGet obj files (project.assets.json, MediatR.csproj.nuget.*, project.nuget.cache) that refer to MediatR.csproj; the task requires no file to remain under src/MediatR/",yes,
+r00070,leftover,.agents/skills/backward-compat/SKILL.md,56,"Doc example still shows the old argument order `deprecate('<name>', '<since>', '<removed in>')`; should be `deprecate('<since>', '<name>', '<removed in>')`.",yes,
+r00077,churn,embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableModelProvider.kt,429,"Extra blank line added after the ByRoleModelSelectionCriteria branch in getLlm, creating a double blank line",yes,
+r00077,leftover,embabel-agent-docs/src/main/asciidoc/reference/types/page.adoc,47,Says roles must be defined via embabel.models.llms only; the change also allows embabel.models.roles,yes,
+r00077,leftover,embabel-agent-docs/src/main/asciidoc/reference/configuration/page.adoc,66,Configuration reference table lists embabel.models.llms as the role map but omits the new embabel.models.roles property,yes,
+r00078,leftover,src/MediatR/obj/project.assets.json,1,"Stale build output left under the old src/MediatR/ directory; the task requires no file to remain there. Sibling obj files (MediatR.csproj.nuget.dgspec.json, .nuget.g.props, .nuget.g.targets, project.nuget.cache) name the old project too.",yes,
+r00082,leftover,src/MediatR/Licensing/LicenseAccessor.cs,86,ResolveLicenseKey doc comment lists only cfg.LicenseKey and Mediator.LicenseKey as explicit keys; it omits the new ConfigureMediatRLicenseKey source added in Initialize(),yes,
+r00085,unrelated,compose-lint-checks/src/main/java/slack/lint/compose/ModifierReusedCheck.kt,15,"Removes the import of resolveToCall, which the rename does not need; the file still calls resolveToCall() at lines 397, 576 and 607, so this may break the build",yes,
+r00092,leftover,packages/styles/docs/sass.md,557,Documentation still names the old module path `@carbon/styles/scss/utilities/skeleton`; should be `skeleton-animation`,yes,
+r00096,leftover,gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java,97,"Javadoc still says ""Retrieves an object constructor"" for a method that now returns the renamed ObjectFactory interface",yes,
+r00105,churn,interop/kotlin-metadata/src/main/kotlin/com/squareup/kotlinpoet/metadata/specs/KotlinPoetMetadataSpecs.kt,49,moved import left in the old position; it is out of lexical order and should follow the com.squareup.kotlinpoet.* names,yes,
+r00105,churn,interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/KsTypes.kt,35,"import placed before STAR, breaking lexical import order",yes,
+r00105,churn,interop/ksp/test-processor/src/main/kotlin/com/squareup/kotlinpoet/ksp/test/processor/TestProcessor.kt,37,"import placed before ParameterizedTypeName, breaking lexical import order",yes,
+r00105,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/jvm/JvmAnnotationsTest.kt,29,"import placed before ParameterizedTypeName, breaking lexical import order",no,"same defect, another file"
+r00105,churn,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/parameterspec/ParameterSpec.kt,21,"ClassName import listed after CodeBlock, out of lexical order",yes,
+r00110,unrelated,lucene/core/src/java/org/apache/lucene/search/package-info.java,566,Added a `TextQueryBuilder` import after the package statement (no trailing newline) only to support a Javadoc link that was previously fully qualified; unnecessary edit to an unrelated file,yes,
+r00110,leftover,lucene/core/src/test/org/apache/lucene/util/TestQueryBuilder.java,30,Test class still named TestQueryBuilder although it now tests TextQueryBuilder; old name left behind,yes,
+r00115,leftover,src/config/datatables.php,15,"Smart-search doc comment still says it always wraps the keyword as ""%keyword%"", but with starts_with enabled it now yields ""keyword%""",yes,
+r00121,leftover,src/MediatR/obj/project.assets.json,754,Stale obj/ directory remains under src/MediatR/ (violates 'no file should remain under src/MediatR/') and records the old project path src/MediatR/MediatR.csproj,yes,
+r00125,leftover,embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/RoleResolver.kt,83,"KDoc says the fallback order is embabel.models.roles then embabel.models.llms, but resolveRole checks llms first, then roles",yes,
+r00128,leftover,packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts,1780,"JSDoc @param order still tableOrName before checkConstraint, which no longer matches the signature",yes,
+r00128,leftover,packages/typeorm/src/driver/oracle/OracleQueryRunner.ts,2106,"JSDoc @param order still tableOrName before checkConstraint, which no longer matches the signature",no,"same defect, another file"
+r00128,leftover,packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts,2539,"JSDoc @param order still tableOrName before checkConstraint, which no longer matches the signature",no,"same defect, another file"
+r00128,leftover,packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts,1184,"JSDoc @param order still tableOrName before checkConstraint, which no longer matches the signature",no,"same defect, another file"
+r00128,leftover,packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts,2994,"JSDoc @param order still tableOrName before checkConstraint, which no longer matches the signature",no,"same defect, another file"
+r00128,leftover,packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts,1039,"JSDoc @param order still tableOrName before checkConstraint, which no longer matches the signature",no,"same defect, another file"
+r00128,leftover,packages/typeorm/src/driver/sap/SapQueryRunner.ts,2446,"JSDoc @param order still tableOrName before checkConstraint, which no longer matches the signature",no,"same defect, another file"
+r00128,leftover,packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts,1366,"JSDoc @param order still tableOrName before checkConstraint, which no longer matches the signature",no,"same defect, another file"
+r00128,leftover,packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts,2211,"JSDoc @param order still tableOrName before checkConstraint, which no longer matches the signature",no,"same defect, another file"
+r00128,leftover,packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts,2714,"JSDoc @param order still tableOrName before checkConstraint, which no longer matches the signature",no,"same defect, another file"
+r00128,leftover,docs/docs/migrations/09-api.md,463,"Parameter bullets still list table before checkConstraint, contradicting the updated signature",no,optional in the task
+r00129,churn,docs/migration/v11.md,247,Table row widened by the new path breaks column alignment with the rest of the table,yes,
+r00129,churn,packages/styles/docs/sass.md,557,Table row widened by the new path breaks column alignment with the rest of the table,no,"same defect, another file"
+r00134,naming,embabel-agent-docs/src/main/asciidoc/reference/configuration/page.adoc,72,"Documents the value type as RoleModel, but the class introduced is RoleModelProperties",yes,
+r00134,leftover,embabel-agent-docs/src/main/asciidoc/reference/types/page.adoc,47,Says roles must be defined via embabel.models.llms only; roles can now also be defined under embabel.models.roles,yes,
+r00136,churn,mypy/subtypes.py,347,"renamed line is 107 chars, exceeds the project's 99-char line-length limit",yes,
+r00136,churn,mypy/applytype.py,10,type_operations import is out of isort order; it should precede mypy.type_visitor,yes,
+r00136,churn,mypy/semanal_shared.py,33,type_operations import is out of isort order; it should precede mypy.type_visitor,no,"same defect, another file"
+r00140,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,241,logger() has no remaining callers in the main processor since createFeature() now throws instead of logging; it is kept only as a test-injection hook.,yes,
+r00146,naming,jsr.json,90,Renamed export key is out of alphabetical order; ./utils/base64 sits between crypto and filepath instead of after body and before buffer,yes,
+r00151,leftover,embabel-agent-autoconfigure/models/embabel-agent-byok-autoconfigure/src/main/kotlin/com/embabel/agent/config/models/byok/SetupRequiredLlmConfig.kt,45,"Startup log still says a per-request key is supplied via PromptRunner.withLlmService, contradicting the new RoleResolver/CredentialLlmServiceFactory path documented in the same patch",yes,
+r00151,leftover,embabel-agent-autoconfigure/models/embabel-agent-byok-autoconfigure/src/main/kotlin/com/embabel/agent/config/models/byok/SetupRequiredLlm.kt,119,"MESSAGE text still says a key must be supplied per request via PromptRunner.withLlmService(...), which the patch's own AgentByokAutoConfiguration javadoc no longer describes",yes,
+r00151,leftover,embabel-agent-docs/src/main/asciidoc/reference/configuration/page.adoc,66,Configuration reference lists only embabel.models.llms; the new embabel.models.roles key added by the patch is not documented here,yes,
+r00153,naming,jsr.json,90,"New ""./utils/base64"" export is placed after ""./utils/crypto"" instead of in alphabetical order with the surrounding ./utils/* entries",yes,
+r00173,leftover,src/MediatR/Licensing/LicenseAccessor.cs,84,"ResolveLicenseKey doc comment still says it resolves the configured LicenseKey first; that key is now resolved by Initialize, not this method",yes,
+r00173,leftover,README.md,149,License precedence list omits the service-supplied key (ConfigureLicenseKey) added between the explicit config key and Mediator.LicenseKey,yes,
+r00173,churn,src/MediatR/Licensing/LicenseAccessor.cs,35,Trailing whitespace on the constructor's closing brace removed; the line was not part of the task,yes,
+r00179,churn,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/config/spring/AgentPlatformConfiguration.kt,41,"RoleResolver import inserted between EmbeddingService and ModelProvider, breaking the alphabetical import order of the surrounding block",yes,
+r00198,naming,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,155,"`bodyUsage` now also includes the parameter default-value usages, so the name no longer describes what it holds",yes,
+r00199,leftover,.agents/skills/backward-compat/SKILL.md,56,"documents the old deprecate argument order `('<name>', '<since>', '<removed in>')` instead of the new `('<since>', '<name>', '<removed in>')`",yes,
+r00203,leftover,packages/upgrade/transforms/nonStableMapping.js,9,"unstable_FeatureFlags still maps to preview_FeatureFlags, although the change makes it a deprecated alias of the now-stable FeatureFlags",yes,
+r00209,dead,src/md4c.c,351,ISASCII(off) macro (and its helper ISASCII_ at line 335) has no remaining users after the change replaced its only call site with ISUPPER(off+1),yes,
+r00212,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,240,logger() is no longer called by production code after the change; it is only kept as a test-only override hook in ProblemProcessorTest,yes,
+r00216,naming,jsr.json,90,New export key ./utils/base64 is out of alphabetical order with the surrounding ./utils/* entries; it was left at the old encode position instead of moving before ./utils/body,yes,
+r00222,leftover,src/MediatR/Licensing/LicenseAccessor.cs,85,ResolveLicenseKey doc comment lists only configuration and static keys as explicit sources; the new options key is not mentioned in the precedence description,yes,
+r00222,leftover,README.md,147,License key precedence list omits the new IOptions<MediatRServiceConfiguration> source that now sits between the code value and the environment variables,yes,
+r00223,churn,src/bitops.c,787,Trailing whitespace removed from an untouched blank docstring separator line (' * ' changed to ' *'),yes,
+r00233,dead,core/model/src/test/groovy/au/com/dius/pact/core/model/V3PactSpec.groovy,123,Override stub for the new default mergeInteractions(Pact) is unnecessary; the interface provides the default (same redundant stub repeated at line 183),yes,
+r00236,leftover,src/utils/base64.ts,3,"Module doc comment still says ""Encode utility."" instead of naming the base64 module",yes,
+r00238,leftover,nvm.sh,1567,"Comment still says ""use sed to replace the existing nvm path"" but the branch now uses awk",yes,
+r00241,leftover,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,69,"Class KDoc says the detector does not report when a default argument uses composition, but it now reports read-only-only default arguments",yes,
+r00241,unrelated,compose-lint-checks/src/test/java/slack/lint/compose/RedundantComposableDetectorTest.kt,659,"Removed @ReadOnlyComposable from the existing provideValue fixture, which the task did not require and which changes that test's scenario",yes,
+r00248,dead,src/md4c.c,351,ISASCII(off) macro has no remaining users after the type-4 check switched to ISALPHA; only its definition and ISASCII_ remain,yes,
+r00253,dead,src/md4c.c,351,ISASCII(off) macro has no remaining users after the type-4 check switched to ISALPHA; the change left it dead (ISASCII_ at line 335 is only used by it),yes,
+r00260,leftover,test-data/unit/check-typevar-tuple.test,450,"Comment still refers to the old module name ""typeops"" after the rename to type_operations",yes,
+r00268,leftover,test-data/unit/check-typevar-tuple.test,450,"Comment still refers to the old module name ""typeops"" instead of type_operations",yes,
+r00275,leftover,packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts,2211,JSDoc lists @param tableOrName before @param checkConstraint; signature order was swapped but the comment was not updated,yes,
+r00275,leftover,packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts,2714,JSDoc lists @param tableOrName before @param checkConstraint; stale after signature swap,yes,
+r00275,leftover,packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts,1366,JSDoc lists @param tableOrName before @param checkConstraint; stale after signature swap,no,"same defect, another file"
+r00275,leftover,packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts,1039,JSDoc lists @param tableOrName before @param checkConstraint; stale after signature swap,no,"same defect, another file"
+r00275,leftover,packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts,2539,JSDoc lists @param tableOrName before @param checkConstraint; stale after signature swap,no,"same defect, another file"
+r00275,leftover,packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts,2994,JSDoc lists @param tableOrName before @param checkConstraint; stale after signature swap,no,"same defect, another file"
+r00275,leftover,packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts,1184,JSDoc lists @param tableOrName before @param checkConstraint; stale after signature swap,no,"same defect, another file"
+r00275,leftover,packages/typeorm/src/driver/oracle/OracleQueryRunner.ts,2106,JSDoc lists @param tableOrName before @param checkConstraint; stale after signature swap,no,"same defect, another file"
+r00275,leftover,packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts,1780,JSDoc lists @param tableOrName before @param checkConstraint; stale after signature swap,no,"same defect, another file"
+r00275,leftover,packages/typeorm/src/driver/sap/SapQueryRunner.ts,2446,JSDoc lists @param tableOrName before @param checkConstraint; stale after signature swap,no,"same defect, another file"
+r00283,naming,jsr.json,90,"Renamed export key ""./utils/base64"" is left in the old encode position between crypto and filepath, breaking the alphabetical order of the ./utils/* entries; it belongs before ./utils/body",yes,
+r00287,leftover,packages/typeorm/src/driver/sap/SapQueryRunner.ts,2446,"JSDoc @param tableOrName listed before checkConstraint, but signature order is now checkConstraint, tableOrName",yes,
+r00287,leftover,packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts,1039,"JSDoc @param order still tableOrName then checkConstraint, stale after signature reorder",yes,
+r00287,leftover,packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts,2714,"JSDoc @param order still tableOrName then checkConstraint, stale after signature reorder",no,"same defect, another file"
+r00287,leftover,packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts,1366,"JSDoc @param order still tableOrName then checkConstraint, stale after signature reorder",no,"same defect, another file"
+r00287,leftover,packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts,2994,"JSDoc @param order still tableOrName then checkConstraint, stale after signature reorder",no,"same defect, another file"
+r00287,leftover,packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts,1184,"JSDoc @param order still tableOrName then checkConstraint, stale after signature reorder",no,"same defect, another file"
+r00287,leftover,packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts,2211,"JSDoc @param order still tableOrName then checkConstraint, stale after signature reorder",no,"same defect, another file"
+r00287,leftover,packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts,2539,"JSDoc @param order still tableOrName then checkConstraint, stale after signature reorder",no,"same defect, another file"
+r00287,leftover,packages/typeorm/src/driver/oracle/OracleQueryRunner.ts,2106,"JSDoc @param order still tableOrName then checkConstraint, stale after signature reorder",no,"same defect, another file"
+r00287,leftover,packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts,1780,"JSDoc @param order still tableOrName then checkConstraint, stale after signature reorder",no,"same defect, another file"
+r00287,leftover,docs/docs/migrations/09-api.md,463,"Parameter bullets still list table before checkConstraint, mismatching the new signature order",no,optional in the task
+r00290,leftover,gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java,97,Javadoc prose still calls the returned type an 'object constructor' instead of referring to ObjectFactory,yes,
+r00297,leftover,.agents/skills/backward-compat/SKILL.md,56,"documents the deprecate mixin call with the old argument order (name first, version second); the mixin now takes the deprecate version first",yes,
+r00305,naming,src/MediatR/Registration/ServiceRegistrar.cs,792,"Local `options` holds a MediatRServiceConfiguration value, inconsistent with the sibling local `config` of the same type on line 791",yes,
+r00309,naming,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,155,"bodyUsage now aggregates the body and all parameter default initializers, so the name no longer matches its contents",yes,
+r00310,dead,core/model/src/test/groovy/au/com/dius/pact/core/model/V3PactSpec.groovy,123,New mergeInteractions(Pact) override is redundant because the Pact interface now provides a default implementation; same redundancy at line 183.,yes,
+r00312,dead,core/model/src/main/kotlin/au/com/dius/pact/core/model/V4Pact.kt,695,"@Suppress(""UNCHECKED_CAST"") on mergeMetadata, which contains no unchecked cast",yes,
+r00320,dead,lucene/core/src/java/org/apache/lucene/search/package-info.java,566,"New import of TextQueryBuilder is only referenced from a Javadoc link; the original used the fully qualified name, so the import was not needed",yes,
+r00320,churn,lucene/core/src/java/org/apache/lucene/search/package-info.java,566,"File now lacks a trailing newline, which the original did not",yes,
+r00321,naming,jsr.json,90,"Renamed export key ./utils/base64 was left in the old ./utils/encode alphabetical slot; it sorts before ./utils/body, so the exports list is now out of order",yes,
+r00331,leftover,packages/react/carbon.yml,1013,"unstable_useFeatureFlag is still listed as the canonical name with status experimental, though it is now a deprecated alias of the stable useFeatureFlag (same for unstable_useFeatureFlags at line 1021)",yes,
+r00336,churn,mypy/applytype.py,10,renamed import mypy.type_operations is now out of isort order (should precede mypy.type_visitor),yes,
+r00336,churn,mypy/checker.py,238,renamed import mypy.type_operations is now out of isort order (should precede mypy.typeanal),no,"same defect, another file"
+r00336,churn,mypy/checkexpr.py,148,renamed import mypy.type_operations is now out of isort order (should precede mypy.typeanal),no,"same defect, another file"
+r00336,leftover,test-data/unit/check-typevar-tuple.test,450,comment still refers to the old module name as 'typeops',yes,
+r00340,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,241,logger() has no callers in production code after createFeature() stopped logging; it survives only as a test override,yes,
+r00374,unrelated,core/model/src/test/groovy/au/com/dius/pact/core/model/V3PactSpec.groovy,123,Added an unneeded mergeInteractions(Pact) override to an anonymous Pact stub; the interface default already covers it,yes,
+r00374,unrelated,core/model/src/test/groovy/au/com/dius/pact/core/model/V3PactSpec.groovy,183,Added an unneeded mergeInteractions(Pact) override to a second anonymous Pact stub; the interface default already covers it,yes,
+r00376,churn,lucene/core/src/java/org/apache/lucene/search/package-info.java,369,"Javadoc link was fully qualified and is now bare TextQueryBuilder, relying on a newly added import rather than a plain rename",yes,
+r00376,churn,lucene/core/src/java/org/apache/lucene/search/package-info.java,566,"Import appended after the package statement at end of package-info.java, and the file now lacks a trailing newline",yes,
+r00383,naming,jsr.json,90,"Renamed export key ./utils/base64 is left in the position of ./utils/encode, out of alphabetical order; it belongs before ./utils/body (line 84).",yes,
+r00392,unrelated,salt/modules/disk.py,42,"Renamed postPrefixes to unit_multipliers, which the task did not require (the issue calls the rename out as unrelated); only the multiplier values needed changing",yes,
+r00392,naming,changelog/disk-parse-numbers-units.fixed.md,1,Changelog fragment is named by a descriptive slug instead of the issue/PR number used by every other fragment in changelog/,yes,
+r00393,leftover,.agents/skills/backward-compat/SKILL.md,56,"documents the old deprecate() argument order ('<name>', '<since>', ...) instead of the new ('<since>', '<name>', ...)",yes,
+r00396,unrelated,.project,1,"Adds 478 Eclipse/m2e metadata files (.project, .classpath, .factorypath, .settings/*) across all modules; unrelated to the role-resolution change",yes,
+r00396,leftover,embabel-agent-docs/src/main/asciidoc/reference/types/page.adoc,47,Says a role must be defined via embabel.models.llms; roles can now come from the roles table or a RoleResolver,yes,
+r00396,leftover,embabel-agent-docs/src/main/asciidoc/reference/configuration/page.adoc,66,Property table lists embabel.models.llms but not the new embabel.models.roles or credentialServiceCacheSize properties,yes,
+r00402,leftover,doc/api/astroid.exceptions.rst,30,UseInferenceDefault still listed under astroid.exceptions automodule although it is no longer defined or in __all__ of that module,no,optional in the task
+r00402,leftover,doc/api/general.rst,15,UseInferenceDefault still listed in the astroid.exceptions member list although the class moved out of that module,no,optional in the task
+r00402,churn,astroid/brain/brain_namedtuple_enum.py,28,"new import of astroid.use_inference_default is placed before astroid.nodes.scoped_nodes import, breaking the sorted import order",yes,
+r00405,churn,src/bitops.c,790,"Trailing whitespace removed from the signature's first line, which has no content change and is not needed for the task",yes,
+r00407,naming,test/fast/Unit tests/nvm_change_path,75,one-letter variable N is inconsistent with the descriptive upper-case path variable names used throughout the file,yes,
+r00410,naming,install.sh,266,"stale `local NVM_EXEC_SOURCE` declaration; the renamed variable NVM_RUNNER_SOURCE (line 267, used at 289-290) is never declared local",yes,
+r00414,leftover,docs/docs/migrations/09-api.md,462,"Signature now takes checkConstraint first, but the parameter bullets still list `table` before `checkConstraint`",no,optional in the task
+r00415,leftover,embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt,48,"KDoc for planToGoal still lists @param actions before @param goal, the old parameter order",yes,
+r00422,leftover,src/MediatR/obj/project.assets.json,1,Old project directory src/MediatR/ still exists with stale build output (obj/ containing MediatR.csproj.nuget.* and project.nuget.cache); the task requires no files left under src/MediatR/,yes,
+r00427,unrelated,embabel-agent-a2a/,1,"6 new IDE metadata files (.project, .classpath, .settings/*, .factorypath) unrelated to the task",yes,
+r00427,unrelated,embabel-agent-anthropic/,1,6 new IDE metadata files unrelated to the task,yes,
+r00427,unrelated,embabel-agent-api/,1,6 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-autoconfigure/,1,171 new IDE metadata files (.factorypath and .settings) unrelated to the task,yes,
+r00427,unrelated,embabel-agent-code/,1,6 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-common/,1,21 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-dependencies/,1,3 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-docs/,1,6 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-domain/,1,6 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-mcp/,1,15 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-observability/,1,6 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-onnx/,1,6 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-openai/,1,6 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-rag/,1,27 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-shell/,1,6 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-skills/,1,6 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-starters/,1,153 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,embabel-agent-test-support/,1,21 new IDE metadata files unrelated to the task,no,"same defect, another file"
+r00427,unrelated,.project,1,new root IDE metadata file (.project and .settings/*) unrelated to the task,yes,
+r00432,leftover,doc/api/general.rst,15,"exclude-members still lists UseInferenceDefault although the class was removed from doc/api/astroid.exceptions.rst, so it is now documented nowhere",no,optional in the task
+r00436,naming,mypy/applytype.py,10,renamed import left after mypy.type_visitor; sorted order now requires it before type_visitor,yes,
+r00436,naming,mypy/checker.py,238,renamed import left after mypy.typeanal; sorted order now requires it before typeanal,yes,
+r00444,naming,interop/kotlin-metadata/src/main/kotlin/com/squareup/kotlinpoet/metadata/specs/KotlinPoetMetadataSpecs.kt,49,"moved import left at old position; out of sorted order (should follow the other com.squareup.kotlinpoet imports, before/after PropertySpec per ASCII order)",yes,
+r00444,naming,interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/KsTypes.kt,35,"import com.squareup.kotlinpoet.parameterspec.ParameterSpec placed before STAR; should come after WildcardTypeName, before tags.TypeAliasTag",yes,
+r00444,naming,interop/ksp/test-processor/src/main/kotlin/com/squareup/kotlinpoet/ksp/test/processor/TestProcessor.kt,36,"import placed before ParameterizedTypeName; should come after WildcardTypeName, before the ksp.* imports",yes,
+r00449,leftover,include/fmt/format-inl.h,1966,"Hard-coded unprintable range 0x2a6de..0x2a700 is stale: U+2A6DE is assigned since Unicode 14.0, so it was not updated along with the test's example code point",yes,
+r00452,leftover,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt,120,"KDoc says trim() removes leading and trailing no-arg placeholders, but the new code keeps trailing ⇤ for unclosed ⇥ and re-appends them",yes,
+r00454,churn,core/scss/mixins/bootstrap/_caret.scss,36,Quoted 'left' literal changed to unquoted left (also at lines 50 and 67); not required for adding 'start' support and unrelated to the fix.,yes,
+r00459,churn,src/md4c.h,402,"Renamed #define is padded with 11 spaces instead of 12, so its value column is misaligned with the neighbouring MD_FLAG_* defines at lines 401 and 403",yes,
+r00463,leftover,doc/api/general.rst,15,Exceptions list still names UseInferenceDefault as an astroid.exceptions member; the class moved to astroid.use_inference_default,no,optional in the task
+r00463,leftover,doc/api/astroid.exceptions.rst,30,"Lists UseInferenceDefault under the astroid.exceptions module, which no longer defines it",no,optional in the task
+r00479,leftover,src/cli_common.c,362,still calls sdsnewlen; the task requires renaming it in the tools under src/,yes,
+r00479,leftover,src/redis-cli.c,901,still calls sdsnewlen; the task requires renaming it in the tools under src/,no,"same defect, another file"
+r00479,leftover,src/redis-cli.c,1088,still calls sdsnewlen; the task requires renaming it in the tools under src/,no,"same defect, another file"
+r00479,leftover,src/redis-cli.c,1569,still calls sdsnewlen; the task requires renaming it in the tools under src/,no,"same defect, another file"
+r00479,leftover,src/redis-cli.c,3433,still calls sdsnewlen; the task requires renaming it in the tools under src/,no,"same defect, another file"
+r00479,leftover,src/redis-cli.c,3434,still calls sdsnewlen; the task requires renaming it in the tools under src/,no,"same defect, another file"
+r00479,leftover,src/redis-cli.c,5228,still calls sdsnewlen; the task requires renaming it in the tools under src/,no,"same defect, another file"
+r00479,leftover,src/redis-cli.c,5578,still calls sdsnewlen; the task requires renaming it in the tools under src/,no,"same defect, another file"
+r00479,naming,src/sds.c,98,internal helper _sdsnewlen keeps the old name although the public sdsnewbuf now wraps it; inconsistent with the rename,yes,
+r00484,leftover,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt,120,"The trim() KDoc says it returns the block without leading and trailing no-arg placeholders, but the change now appends compensating ⇤ markers at the end, so the documented behavior is no longer accurate.",yes,
+r00494,leftover,doc/api/general.rst,15,UseInferenceDefault still listed in the exceptions summary although the class moved to astroid.use_inference_default and astroid.exceptions.rst was updated,no,optional in the task
+r00497,churn,docs/migration/v11.md,247,Extra trailing padding on the edited table row misaligns the markdown table columns,yes,
+r00497,churn,packages/styles/docs/sass.md,557,Extra padding in the edited @use table cell misaligns the markdown table columns,yes,
+r00499,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,72,"Rewritten KDoc line runs to about 115 columns, unlike the surrounding lines wrapped near 100.",yes,
+r00511,dead,src/bitops.c,882,setbitCommand's strOldSize is passed to lookupStringForBitCommand but never read after the removed histogram block; only strGrowSize is still used,yes,
+r00511,dead,src/bitops.c,1898,bitfieldGeneric's strOldSize is written by lookupStringForBitCommand at line 1992 but never read after the removed histogram block,yes,
+r00520,leftover,src/MediatR/obj/MediatR.csproj.nuget.g.props,1,"Stale obj/ output left in the old src/MediatR/ directory, which the task says should no longer contain files; the directory should be removed.",yes,
+r00522,leftover,src/utils/base64.ts,3,"Module docstring still says ""Encode utility"" after the rename to base64; the module now holds only the base64 helpers",yes,
+r00525,leftover,src/MediatR/obj/project.assets.json,1,"Old project's obj/ directory (project.assets.json, MediatR.csproj.nuget.*) remains under src/MediatR/, which the task says must not contain any files",yes,
+r00527,churn,gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java,315,"Signature wrap kept after the rename shortened it to 100 columns, so it fits on one line and the wrap is no longer needed",yes,
+r00529,leftover,doc/api/general.rst,15,"autodoc exclude-members list still names UseInferenceDefault, which is no longer defined in astroid.exceptions; the change updated astroid.exceptions.rst but not this file",no,optional in the task
+r00547,leftover,src/cli_common.c,362,call to old name sdsnewlen not renamed to sdsnewbuf,yes,
+r00547,leftover,src/redis-cli.c,901,call to old name sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r00547,leftover,src/redis-cli.c,1088,call to old name sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r00547,leftover,src/redis-cli.c,1569,call to old name sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r00547,leftover,src/redis-cli.c,3433,call to old name sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r00547,leftover,src/redis-cli.c,3434,call to old name sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r00547,leftover,src/redis-cli.c,5228,call to old name sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r00547,leftover,src/redis-cli.c,5578,call to old name sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r00547,naming,src/sds.c,98,internal helper _sdsnewlen keeps the old name while its public wrapper sdsnewbuf (line 195) was renamed,yes,
+r00554,naming,salt/crypt.py,29,isort order broken: salt.wire_payload now precedes salt.utils.* imports (same pattern in every renamed import block),yes,
+r00554,naming,salt/master.py,35,isort order broken: salt.wire_payload placed before salt.pillar,yes,
+r00554,naming,salt/fileclient.py,25,isort order broken: salt.wire_payload placed before salt.utils.atomicfile,no,"same defect, another file"
+r00554,naming,salt/minion.py,41,isort order broken: salt.wire_payload placed before salt.pillar,no,"same defect, another file"
+r00554,naming,salt/auth/__init__.py,26,isort order broken: salt.wire_payload placed before salt.utils.args,no,"same defect, another file"
+r00554,naming,salt/modules/event.py,14,isort order broken: salt.wire_payload placed before salt.utils.event,no,"same defect, another file"
+r00554,naming,salt/modules/publish.py,10,isort order broken: salt.wire_payload placed before salt.transport,no,"same defect, another file"
+r00554,naming,salt/modules/state.py,24,isort order broken: salt.wire_payload placed before salt.state,no,"same defect, another file"
+r00554,naming,salt/modules/data.py,10,isort order broken: salt.wire_payload placed before salt.utils.files,no,"same defect, another file"
+r00554,naming,salt/channel/server.py,28,isort order broken: salt.wire_payload placed before salt.transport.frame,no,"same defect, another file"
+r00554,naming,salt/thorium/__init__.py,20,isort order broken: salt.wire_payload placed before salt.state,no,"same defect, another file"
+r00554,naming,salt/cache/localfs.py,20,isort order broken: salt.wire_payload placed before salt.utils.atomicfile,no,"same defect, another file"
+r00554,naming,salt/returners/local_cache.py,16,isort order broken: salt.wire_payload placed before salt.utils.atomicfile,no,"same defect, another file"
+r00554,naming,salt/modules/saltutil.py,34,isort order broken: salt.wire_payload placed before salt.runner/salt.state,no,"same defect, another file"
+r00554,naming,salt/modules/mine.py,11,isort order broken: salt.wire_payload placed before salt.transport,no,"same defect, another file"
+r00554,naming,salt/modules/win_pkg.py,52,isort order broken: salt.wire_payload placed before salt.syspaths,no,"same defect, another file"
+r00556,naming,interop/kotlin-metadata/src/main/kotlin/com/squareup/kotlinpoet/metadata/specs/KotlinPoetMetadataSpecs.kt,49,moved import out of ASCII sort order; parameterspec.ParameterSpec should follow the TypeSpec import,yes,
+r00556,naming,interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/KsTypes.kt,35,"moved import out of sort order; should follow TypeVariableName, not precede STAR",yes,
+r00556,naming,interop/ksp/test-processor/src/main/kotlin/com/squareup/kotlinpoet/ksp/test/processor/TestProcessor.kt,36,"moved import out of sort order; should follow TypeName, not precede ParameterizedTypeName",yes,
+r00557,leftover,nvm.sh,1565,"Comment still says ""use sed to replace the existing nvm path"", but the branch now uses awk (sed was removed); the comment at line 1566 is stale too",yes,
+r00558,dead,src/md4c.c,351,"The ISASCII macro (and its ISASCII_ helper at line 335) has no remaining uses after the change, so it is now dead.",yes,
+r00560,leftover,core/scss/tests/_caret.test.scss,4,Header comment says only `left` changes the ::before/::after structure; the change now also treats `start` that way,yes,
+r00567,leftover,packages/react/src/components/FeatureFlags/index.tsx,192,"Warning text says the automatic migration (`npx @carbon/upgrade migrate`) will update imports to the stable name, but packages/upgrade/transforms/nonStableMapping.js maps unstable_* to preview_* names, so the advice is inconsistent with the tool.",yes,
+r00574,leftover,runtime/src/main/java/io/quarkiverse/httpproblem/ProblemPostProcessor.java,27,ProblemContext is used but not imported; it still lives in the old postprocessing package,yes,
+r00574,churn,runtime/src/main/java/io/quarkiverse/httpproblem/ProblemPostProcessor.java,4,Double blank line left where the removed HttpProblem import was,yes,
+r00585,leftover,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/AbstractLlmOperations.kt,417,Call to autoLlmSelectionCriteriaResolver.resolveAutoLlm() omits the new ModelSelectionContext argument that the interface signature now requires,yes,
+r00591,dead,astroid/use_inference_default.py,6,`from __future__ import annotations` is unused; the module has no annotations,yes,
+r00592,naming,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FunSpec.kt,630,New NO_ARG_EDGE_PLACEHOLDERS duplicates the existing private NO_ARG_PLACEHOLDERS in CodeBlock.kt:499 with identical contents under a different name,yes,
+r00593,leftover,packages/typeorm/src/driver/sap/SapQueryRunner.ts,2446,"JSDoc @param order still lists tableOrName before checkConstraint, not matching the new signature",yes,
+r00593,leftover,packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts,1039,"JSDoc @param order still lists tableOrName before checkConstraint, not matching the new signature",no,"same defect, another file"
+r00593,leftover,packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts,2994,"JSDoc @param order still lists tableOrName before checkConstraint, not matching the new signature",no,"same defect, another file"
+r00593,leftover,packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts,2714,"JSDoc @param order still lists tableOrName before checkConstraint, not matching the new signature",no,"same defect, another file"
+r00593,leftover,packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts,1184,"JSDoc @param order still lists tableOrName before checkConstraint, not matching the new signature",no,"same defect, another file"
+r00593,leftover,packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts,2211,"JSDoc @param order still lists tableOrName before checkConstraint, not matching the new signature",no,"same defect, another file"
+r00593,leftover,packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts,1780,"JSDoc @param order still lists tableOrName before checkConstraint, not matching the new signature",no,"same defect, another file"
+r00593,leftover,packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts,1366,"JSDoc @param order still lists tableOrName before checkConstraint, not matching the new signature",no,"same defect, another file"
+r00593,leftover,packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts,2539,"JSDoc @param order still lists tableOrName before checkConstraint, not matching the new signature",no,"same defect, another file"
+r00593,leftover,packages/typeorm/src/driver/oracle/OracleQueryRunner.ts,2106,"JSDoc @param order still lists tableOrName before checkConstraint, not matching the new signature",no,"same defect, another file"
+r00594,naming,mypy/checker.py,238,"`from mypy.type_operations` is left after `from mypy.typeanal`, but it now sorts before it, so the isort ordering is broken; same pattern in other files where the import follows typeanal",yes,
+r00598,leftover,embabel-agent-docs/src/main/asciidoc/reference/types/page.adoc,47,Says roles must be defined under embabel.models.llms only; the change adds embabel.models.roles as an alternative configuration source,yes,
+r00606,leftover,packages/upgrade/transforms/nonStableMapping.js,9,"Maps unstable_FeatureFlags to preview_FeatureFlags, but FeatureFlags is now stable and is the name consumers should migrate to.",yes,
+r00609,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,241,logger() has no production caller after the change; it is kept only as an override seam used by the test,yes,
+r00610,leftover,.agents/skills/backward-compat/SKILL.md,56,"Documents the old deprecate argument order (name first, then since, then removed-in) instead of the new version-first order",yes,
+r00620,leftover,tests/pytests/unit/utils/test_thin.py,68,"Expected file list still names salt/payload.py, which the rename removed; should be salt/wire_payload.py",yes,
+r00622,churn,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/config/spring/AgentPlatformConfiguration.kt,191,Fully qualified org.springframework.beans.factory.ObjectProvider duplicates the existing import at line 48; the short name should be used.,yes,
+r00624,leftover,test/install.bats,72,"Second install-layout block lists the bats-core libraries but omits setup_tracing.bash (the positive check at line 24 and negative check at line 47 were updated, this block was not)",yes,
+r00625,leftover,core/scss/tests/_caret.test.scss,4,Header comment says ::before/::after structure is for `left` only; the mixin now also uses it for `start`,yes,
+r00629,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,241,"protected logger() was only called by createFeature(); the change removed that call, so production code no longer uses it. It survives only as an override seam in ProblemProcessorTest.",yes,
+r00631,leftover,.agents/skills/backward-compat/SKILL.md,56,"Documents the old deprecate argument order ('<name>', '<since>', '<removed in>') instead of the new version-first order",yes,
+r00633,leftover,src/Core/Checkout/Customer/SalesChannel/UpsertAddressRoute.php,62,Constructor docblock has @param entries for the other repository arguments but none for the new $customerRepository parameter,yes,
+r00647,leftover,doc/api/astroid.exceptions.rst,30,"Documents UseInferenceDefault under astroid.exceptions, but the class is now defined in astroid.use_inference_default",no,optional in the task
+r00647,leftover,doc/api/general.rst,15,Lists UseInferenceDefault among astroid.exceptions names; the class moved to astroid.use_inference_default,no,optional in the task
+r00654,leftover,packages/styles/scss/utilities/__tests__/skeleton-animation-test.js,29,"`@include skeleton.skeleton` still uses the old namespace; the `@use` now yields `skeleton-animation`, so the reference no longer resolves",yes,
+r00654,leftover,packages/styles/scss/utilities/__tests__/skeleton-animation-test.js,47,`@include skeleton.skeleton(...)` still uses the old namespace after the `@use` was renamed,yes,
+r00654,leftover,packages/styles/scss/utilities/__tests__/skeleton-animation-test.js,69,`@include skeleton.skeleton(...)` still uses the old namespace after the `@use` was renamed,no,"same defect, another file"
+r00656,leftover,libexec/bats-core/bats,479,"abort does not interpret escapes, so the single-quoted '\n' prints a literal backslash-n in the error message",yes,
+r00657,naming,salt/auth/__init__.py,26,renamed import left out of alphabetical order with the surrounding salt.utils imports,yes,
+r00657,naming,salt/utils/minions.py,12,renamed import now sorts after salt.roster and salt.transport,yes,
+r00657,naming,salt/utils/minion.py,9,renamed import now sorts after salt.utils.files,no,"same defect, another file"
+r00657,naming,salt/utils/cache.py,13,renamed import now sorts after salt.utils.atomicfile and salt.utils.data,no,"same defect, another file"
+r00657,naming,salt/utils/state.py,12,renamed import now sorts after salt.state and salt.utils.files,no,"same defect, another file"
+r00657,naming,salt/utils/schedule.py,33,renamed import now sorts after salt.syspaths and salt.utils.args,no,"same defect, another file"
+r00657,naming,salt/utils/event.py,72,renamed import now sorts after salt.utils.asynchronous and salt.utils.cache,no,"same defect, another file"
+r00657,naming,salt/utils/master.py,17,renamed import now sorts after salt.pillar and salt.utils.atomicfile,no,"same defect, another file"
+r00657,naming,salt/fileclient.py,25,renamed import now sorts after salt.utils.atomicfile and salt.utils.data,no,"same defect, another file"
+r00657,naming,salt/tokens/localfs.py,9,renamed import now sorts after salt.utils.files and salt.utils.path,no,"same defect, another file"
+r00657,naming,salt/tokens/rediscluster.py,20,"renamed import now sorts before salt.config, which it follows",yes,
+r00657,naming,salt/client/__init__.py,34,renamed import now sorts after salt.syspaths and salt.utils.args,no,"same defect, another file"
+r00657,naming,tests/pytests/unit/utils/test_cache.py,15,renamed import now sorts after salt.utils.cache,no,"same defect, another file"
+r00657,naming,tests/pytests/unit/channel/test_server.py,12,renamed import now sorts after salt.utils.event and salt.utils.files,no,"same defect, another file"
+r00657,naming,tests/pytests/unit/crypt/test_crypt.py,14,renamed import now sorts after salt.utils.files,no,"same defect, another file"
+r00657,naming,tests/pytests/unit/test_payload.py,14,renamed import now sorts after salt.utils.msgpack,no,"same defect, another file"
+r00657,naming,tests/pytests/unit/modules/test_state.py,10,renamed import now sorts after salt.utils.files,no,"same defect, another file"
+r00657,naming,tests/pytests/unit/tokens/test_rediscluster.py,23,renamed import now sorts after salt.tokens.rediscluster,no,"same defect, another file"
+r00657,naming,tests/pytests/scenarios/multimaster/test_per_master_queue.py,25,renamed import now sorts after salt.utils.* imports that follow it,yes,
+r00659,leftover,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt,120,"Docstring says trim() returns a copy without trailing no-arg placeholders, but the change now re-appends trailing `⇤` placeholders, so the doc is stale.",yes,
+r00662,leftover,nvm.sh,1565,"Comment says the else branch uses sed to replace the nvm path, but the branch now uses awk",yes,
+r00662,leftover,test/fast/Unit tests/nvm_change_path,74,"Comment links to the bare nvm issues index with no issue number, so the reference is incomplete",yes,
+r00665,unrelated,include/fmt/base.h,1921,container_buffer was relocated above iterator_buffer (removed from after the T* specialization) only because the namespace split was placed earlier; the move is not required by the task,yes,
+r00668,leftover,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,72,Old sentence about calls/property reads/State access preventing read-only suggestion was kept and now duplicates the new default-argument paragraph; it no longer fits the new behaviour,yes,
+r00668,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,73,Line is far longer than the surrounding KDoc wrap width because the sentence was joined onto it without rewrapping,yes,
+r00671,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,241,logger() has no production callers after createFeature() now throws; only the test's anonymous override references it,yes,
+r00672,churn,docs/migration/v11.md,247,"Table row widened past the column width of the rest of the table; the padding was not realigned, so the markdown table is visibly misaligned.",yes,
+r00672,churn,packages/styles/docs/sass.md,557,"Table row text widened but the column padding was not realigned, leaving the markdown table misaligned with its other rows.",yes,
+r00673,leftover,src/Storefront/DependencyInjection/controller.php,199,AddressController service args list not updated with the new AbstractChangeCustomerProfileRoute constructor argument,yes,
+r00679,dead,src/md4c.c,351,The ISASCII(off) macro has no remaining users after the change; its helper ISASCII_ at line 335 is then also unused.,yes,
+r00686,leftover,core/scss/tests/_caret.test.scss,4,Header comment says only `left` gets the ::before/::after structure; `start` now also uses ::before.,yes,
+r00689,unrelated,.build/compat-baseline.txt,96,"Adds a new compat-baseline entry (two sass:@mixin deprecate lines, not marked accepted) that the task did not ask for and that would register as an unlisted break in check-compat",yes,
+r00689,unrelated,.changeset/deprecate-mixin-argument-order.md,1,Adds a release changeset file the task did not ask for,yes,
+r00693,leftover,docs/docs/migrations/09-api.md,462,"Parameter bullets still list `table` before `checkConstraint`, contradicting the reordered signature on line 460",no,optional in the task
+r00697,leftover,.agents/skills/backward-compat/SKILL.md,56,"Documents the old deprecate argument order (name first, since second) instead of the new version-first order",yes,
+r00700,leftover,packages/carbon-components-react/telemetry.yml,494,Comment still names the old `unstable_FeatureFlags` export; the component is now marked stable as `FeatureFlags`.,yes,
+r00707,leftover,packages/styles/scss/utilities/__tests__/skeleton-test.js,29,"Test now does `@use '../skeleton-animation'`, so the namespace is `skeleton-animation`, but the code still calls `skeleton.skeleton` (also on lines 47 and 69).",yes,
+r00714,leftover,nvm.sh,1559,"Comment still says the branch just prepends the supplementary path, but the branch now also strips stale nvm paths before prepending",yes,
+r00721,naming,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/CodeBlockTest.kt,498,Test named trimOnlyNoArgPlaceholders now asserts that indent placeholders (⇥⇤) are preserved; name is inconsistent with the new behaviour and with the renamed trimKeeps* tests,yes,
+r00722,dead,src/md4c.c,351,ISASCII(off) macro has no remaining users after the change replaced its only call site at line 6179 with ISALPHA,yes,
+r00724,naming,gson/src/test/java/com/google/gson/JsonPrimitiveTest.java,371,LazilyParsedNumber is used fully qualified although the file uses imports and no import was added for it,yes,
+r00724,churn,gson/src/test/java/com/google/gson/JsonPrimitiveTest.java,371,"new line is about 107 columns, exceeding the 100-column limit used elsewhere in the file",yes,
+r00744,leftover,src/MediatR/obj/MediatR.csproj.nuget.g.props,1,"Build output directory src/MediatR/ still exists under the old project path, violating the requirement that no file remain there",yes,
+r00744,unrelated,src/MediatR.Core/MediatR.Core.csproj,9,"Added PackageId MediatR, a packaging change the rename task did not ask for",yes,
+r00745,leftover,embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt,45,"KDoc lists @param actions before @param goal, but the signature now takes goal first",yes,
+r00753,dead,src/DataTableAbstract.php,946,"setupKeyword() has no remaining callers after the call in QueryDataTable was removed, so the method and its new starts_with branch are unused",yes,
+r00753,dead,src/QueryDataTable.php,438,"the if-branch returns $keyword and the fall-through also returns $keyword, so the condition is redundant",yes,
+r00756,churn,interop/kotlin-metadata/src/main/kotlin/com/squareup/kotlinpoet/metadata/specs/KotlinPoetMetadataSpecs.kt,49,New import out of ASCII sort order (placed before PropertySpec/TypeAliasSpec/TypeSpec); the file's import block is sorted,yes,
+r00756,churn,interop/ksp/test-processor/src/main/kotlin/com/squareup/kotlinpoet/ksp/test/processor/TestProcessor.kt,36,New import out of sort order (before ParameterizedTypeName and PropertySpec),yes,
+r00756,churn,interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/KsTypes.kt,35,New import out of sort order (before STAR and TypeName),yes,
+r00756,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/jvm/JvmAnnotationsTest.kt,28,New import out of sort order (before ParameterizedTypeName and PropertySpec),no,"same defect, another file"
+r00762,dead,compose-lint-checks/src/test/java/slack/lint/compose/RedundantComposableDetectorTest.kt,652,import androidx.compose.runtime.ReadOnlyComposable is no longer used in the test stub after the @ReadOnlyComposable annotation was removed,yes,
+r00762,dead,compose-lint-checks/src/test/java/slack/lint/compose/RedundantComposableDetectorTest.kt,653,import androidx.compose.runtime.compositionLocalOf is unused since LocalThing was removed from the test stub,yes,
+r00762,churn,compose-lint-checks/src/test/java/slack/lint/compose/RedundantComposableDetectorTest.kt,654,stray blank line splits the import block inside the test stub,yes,
+r00767,churn,core/scss/ui/_type.scss,13,Changed `in sRGB` to `in srgb` without need; the task only required the percentage scaling and argument order change (same case change repeated on line 16),yes,
+r00788,churn,embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableModelProvider.kt,23,"New java.security and java.util.concurrent imports are inserted between org.springframework imports, out of the file's import ordering",yes,
+r00788,churn,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/config/spring/AgentPlatformConfiguration.kt,187,"New sentence is placed after the @param providerInitialization line with no tag, so it reads as part of that parameter's doc instead of the method's",yes,
+r00788,dead,embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableModelProvider.kt,73,RoleModelProperties.temperature is declared but never read; resolveRole uses only target.model,yes,
+r00791,leftover,gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java,97,"Javadoc still refers to the interface by its old concept name, ""object constructor"", instead of ""object factory""",yes,
+r00792,naming,core/model/src/main/kotlin/au/com/dius/pact/core/model/V4Pact.kt,724,"deepMergeValues reimplements the existing deepMerge helper (KotlinLanguageSupport.kt:74) that the task asks to mirror, under a name inconsistent with the surrounding code",yes,
+r00794,leftover,src/MediatR/obj/project.assets.json,1,"Stale obj/ output (project.assets.json, MediatR.csproj.nuget.* files, project.nuget.cache) remains under src/MediatR/, which the task says must not exist; it references the old MediatR.csproj.",yes,
+r00799,leftover,packages/react/carbon.yml,1013,unstable_useFeatureFlag still listed as experimental; the change makes it a deprecated wrapper for the stable useFeatureFlag,yes,
+r00799,leftover,packages/react/carbon.yml,1021,unstable_useFeatureFlags still listed as experimental; the change makes it a deprecated wrapper for the stable useFeatureFlags,no,"same defect, another file"
+r00800,leftover,packages/styles/scss/utilities/__tests__/skeleton-test.js,29,"Test still uses the old `skeleton.` namespace (also at lines 47 and 69), but the `@use` now binds the module as `skeleton-animation`",yes,
+r00807,churn,tests/Integration/MaxLengthTest.php,10,"moved import `Yajra\DataTables\Request` is out of alphabetical order, placed after `Tests\TestCase`",yes,
+r00807,churn,tests/Unit/RequestTest.php,7,"moved import `Yajra\DataTables\Request` is out of alphabetical order, placed after `Yajra\DataTables\Tests\TestCase`",no,"same defect, another file"
+r00810,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,72,"Doc comment rewrap left this line at 122 columns, breaking the 100-column wrap used by the rest of the comment",yes,
+r00820,dead,packages/react/src/internal/noticeAvailableFeatureFlag.ts,49,resetFeatureFlagNotices is exported but never imported or used anywhere in the tree,yes,
+r00827,churn,lucene/core/src/java/org/apache/lucene/search/package-info.java,369,"edited Javadoc line now 103 columns, over the 100-column limit; paragraph needs reflowing",yes,
+r00838,dead,deployment/pom.xml,56,quarkus-junit-mockito test dependency is now unused in the deployment module after ProblemProcessorTest dropped its Mockito mock logger,yes,
+r00840,naming,lucene/CHANGES.txt,478,"Entry ends with an invented contributor tag ""(Claude)""; other entries use a real contributor name and/or GITHUB# issue reference, so this breaks the file's convention.",yes,
+r00846,leftover,tests/test_object_model.py,899,Docstring still describes the old behaviour (first exception argument need not be a str) while the test now asserts args is Uninferable,yes,
+r00846,naming,doc/whatsnew/fragments/exception-args.bugfix,1,"Fragment is named by description, not by issue number like the other bugfix fragments (e.g. 3212.bugfix)",yes,
+r00855,leftover,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt,120,"trim() KDoc still says it removes all leading/trailing no-arg placeholders including ⇥ and ⇤, but the change now preserves those indent markers",yes,
+r00862,churn,pydantic_extra_types/cron.py,124,"New raise is wrapped across three lines and uses double quotes around the f-string; it fits on one line and the file uses single quotes, so the formatter would rewrite it",yes,
+r00864,churn,src/md4c.h,402,"Padding before the value was not adjusted for the longer name, so the 0x20000 value and comment column no longer align with the neighbouring MD_FLAG_* defines.",yes,
+r00866,naming,src/sds.c,98,"Internal helper still named _sdsnewlen after sdsnewlen was renamed to sdsnewbuf; it is the sole backing function for sdsnewbuf (lines 196, 200), so the old name remains in the rename's scope",yes,
+r00871,naming,doc/whatsnew/fragments/4000.bugfix,1,Fragment number 4000 is not given anywhere in the task and looks invented; the fragment also lacks the `Refs #NNNN` line that the other fragments use.,yes,
+r00873,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,72,"Rewrapped KDoc line is 118 characters, breaking the ~100-column wrapping used by the rest of the comment",yes,
+r00878,leftover,src/MediatR/Licensing/LicenseAccessor.cs,80,"ResolveLicenseKey doc comment lists the explicit-key precedence (config LicenseKey, then Mediator.LicenseKey) but omits the new options-pattern key passed at line 60",yes,
+r00878,leftover,README.md,149,License key precedence list omits the options-pattern (IOptions/IConfigureOptions) key that the change now resolves before the env variables,yes,
+r00885,leftover,docs/docs/migrations/09-api.md,463,"Parameter list still documents `table` before `checkConstraint`, the old order, after the signature was reordered",no,optional in the task
+r00885,leftover,packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts,1039,"JSDoc @param tableOrName is listed before @param checkConstraint, the old order",yes,
+r00885,leftover,packages/typeorm/src/driver/sap/SapQueryRunner.ts,2446,"JSDoc @param tableOrName is listed before @param checkConstraint, the old order",no,"same defect, another file"
+r00885,leftover,packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts,2211,"JSDoc @param tableOrName is listed before @param checkConstraint, the old order",no,"same defect, another file"
+r00885,leftover,packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts,2714,"JSDoc @param tableOrName is listed before @param checkConstraint, the old order",no,"same defect, another file"
+r00885,leftover,packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts,1366,"JSDoc @param tableOrName is listed before @param checkConstraint, the old order",no,"same defect, another file"
+r00885,leftover,packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts,1184,"JSDoc @param tableOrName is listed before @param checkConstraint, the old order",no,"same defect, another file"
+r00885,leftover,packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts,2994,"JSDoc @param tableOrName is listed before @param checkConstraint, the old order",no,"same defect, another file"
+r00885,leftover,packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts,2539,"JSDoc @param tableOrName is listed before @param checkConstraint, the old order",no,"same defect, another file"
+r00885,leftover,packages/typeorm/src/driver/oracle/OracleQueryRunner.ts,2106,"JSDoc @param tableOrName is listed before @param checkConstraint, the old order",no,"same defect, another file"
+r00885,leftover,packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts,1780,"JSDoc @param tableOrName is listed before @param checkConstraint, the old order",no,"same defect, another file"
+r00886,leftover,packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts,2211,"JSDoc lists @param tableOrName before @param checkConstraint; signature order is now checkConstraint, tableOrName",yes,
+r00886,leftover,packages/typeorm/src/driver/sap/SapQueryRunner.ts,2446,"JSDoc @param order still tableOrName before checkConstraint, contradicting the new signature",yes,
+r00886,leftover,packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts,1039,"JSDoc @param order still tableOrName before checkConstraint, contradicting the new signature",no,"same defect, another file"
+r00886,leftover,packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts,2714,"JSDoc @param order still tableOrName before checkConstraint, contradicting the new signature",no,"same defect, another file"
+r00886,leftover,packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts,2994,"JSDoc @param order still tableOrName before checkConstraint, contradicting the new signature",no,"same defect, another file"
+r00886,leftover,packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts,1366,"JSDoc @param order still tableOrName before checkConstraint, contradicting the new signature",no,"same defect, another file"
+r00886,leftover,packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts,1184,"JSDoc @param order still tableOrName before checkConstraint, contradicting the new signature",no,"same defect, another file"
+r00886,leftover,packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts,2539,"JSDoc @param order still tableOrName before checkConstraint, contradicting the new signature",no,"same defect, another file"
+r00886,leftover,packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts,1780,"JSDoc @param order still tableOrName before checkConstraint, contradicting the new signature",no,"same defect, another file"
+r00886,leftover,packages/typeorm/src/driver/oracle/OracleQueryRunner.ts,2106,"JSDoc @param order still tableOrName before checkConstraint, contradicting the new signature",no,"same defect, another file"
+r00886,leftover,docs/docs/migrations/09-api.md,460,"Documented signature and parameter list still show the old order (table first, checkConstraint second)",no,optional in the task
+r00890,leftover,.agents/skills/backward-compat/SKILL.md,56,"Documents the old argument order `deprecate('<name>', '<since>', '<removed in>')`; the mixin now takes the version first",yes,
+r00894,leftover,src/MediatR/obj,1,"old src/MediatR directory still exists with an obj subdirectory, so files remain under src/MediatR/ after the rename",yes,
+r00894,unrelated,src/MediatR.Core/MediatR.Core.csproj,4,adds a PackageId property that the task did not ask for; the task only asked for the assembly name to change,yes,
+r00896,dead,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/config/spring/AgentPlatformConfiguration.kt,45,Duplicate import of org.springframework.beans.factory.ObjectProvider; already imported at line 53,yes,
+r00896,dead,embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableModelProvider.kt,73,RoleModelProperties.toLlmOptions() is defined but never called anywhere in the tree,yes,
+r00901,unrelated,pkg/debian/changelog,763,"Past release-note entries rewritten from salt.payload to salt.wire_payload (also ~1984, ~2241); historical changelog text should not change, and CHANGELOG.md and doc/topics/releases were left as-is",yes,
+r00901,unrelated,pkg/rpm/salt.spec,2040,"Past %changelog entries rewritten from salt.payload to salt.wire_payload (also ~3209, ~3458); historical text altered",yes,
+r00901,unrelated,salt/wire_payload.py,172,Comment path corrected from tests/unit/test_payload.py to tests/pytests/unit/test_payload.py; pre-existing stale path unrelated to the rename,yes,
+r00902,leftover,src/md4c.c,6178,"Comment says type 4 requires an uppercase letter, but the condition now uses ISALPHA, which accepts lowercase too",yes,
+r00902,dead,src/md4c.c,351,ISASCII(off) macro has no remaining users after the change; its helper ISASCII_ at line 335 is also only used by it,yes,
+r00903,dead,src/bitops.c,1898,`created` is passed to lookupStringForBitCommand but never read in bitfieldGeneric; only setbitCommand uses it,yes,
+r00909,leftover,.agents/skills/backward-compat/SKILL.md,56,"documents the mixin call as deprecate('<name>', '<since>', '<removed in>'), the old argument order",yes,
+r00918,naming,src/sds.c,98,"Internal helper _sdsnewlen was renamed to _sdsnewbuf (also at lines 196 and 200), but the task only asks to rename sdsnewlen; this identifier is not part of the requested rename",yes,
+r00924,leftover,src/MediatR/obj/project.assets.json,1,"Stale build output from the old MediatR.csproj remains under src/MediatR/, which the task says must not contain files after the rename; the directory (with 5 obj files) should be removed.",yes,
+r00931,leftover,embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt,49,"KDoc @param order still lists actions before goal, mismatching the new signature order",yes,
+r00935,naming,jsr.json,90,Renamed export entry './utils/base64' is left in the old alphabetical position between crypto and filepath instead of being sorted with the other utils entries,yes,
+r00937,dead,src/md4c.c,351,ISASCII(off) macro has no remaining callers after the change to ISALPHA at line 6179 (and ISASCII_ at line 335 is only used by it),yes,
+r00938,leftover,embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt,44,KDoc @param actions/@param goal still in old order; should list goal first to match new signature,yes,
+r00947,churn,test/ranges-test.cc,612,"New EXPECT_EQ line is 84 columns, exceeding the file's 80-column formatting",yes,
+r00947,churn,test/ranges-test.cc,613,"New EXPECT_EQ line is 84 columns, exceeding the file's 80-column formatting",no,"same defect, another file"
+r00952,churn,tests/Integration/MaxLengthTest.php,10,"moved `use Yajra\DataTables\Request;` after the Tests imports, breaking the alphabetical import order",yes,
+r00952,churn,tests/Unit/RequestTest.php,7,"moved `use Yajra\DataTables\Request;` after the Tests imports, breaking the alphabetical import order",no,"same defect, another file"
+r00957,leftover,gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java,97,Javadoc says 'Retrieves an object constructor' for the method that now returns ObjectFactory<T>; the old interface name in prose was not updated,yes,
+r00964,unrelated,test-data/unit/check-typevar-tuple.test,450,Generic prose word 'typeops' in a test-data comment was changed to 'type_operations'; it is not a module reference the rename needed to update,yes,
+r00964,leftover,mypy/checker.py,238,"Renamed import from mypy.type_operations is left at the old mypy.typeops position, so the import block is no longer sorted (type_operations sorts before typeanal)",yes,
+r00967,leftover,packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts,1184,JSDoc @param order still lists tableOrName before checkConstraint,yes,
+r00967,leftover,packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts,2714,JSDoc @param order still lists tableOrName before checkConstraint,no,"same defect, another file"
+r00967,leftover,packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts,2994,JSDoc @param order still lists tableOrName before checkConstraint,no,"same defect, another file"
+r00967,leftover,packages/typeorm/src/driver/oracle/OracleQueryRunner.ts,2106,JSDoc @param order still lists tableOrName before checkConstraint,no,"same defect, another file"
+r00967,leftover,packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts,1780,JSDoc @param order still lists tableOrName before checkConstraint,no,"same defect, another file"
+r00967,leftover,packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts,1366,JSDoc @param order still lists tableOrName before checkConstraint,no,"same defect, another file"
+r00967,leftover,packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts,2211,JSDoc @param order still lists tableOrName before checkConstraint,no,"same defect, another file"
+r00967,leftover,packages/typeorm/src/driver/sap/SapQueryRunner.ts,2446,JSDoc @param order still lists tableOrName before checkConstraint,no,"same defect, another file"
+r00967,leftover,packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts,1039,JSDoc @param order still lists tableOrName before checkConstraint,no,"same defect, another file"
+r00967,leftover,packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts,2539,JSDoc @param order still lists tableOrName before checkConstraint,no,"same defect, another file"
+r00967,leftover,docs/docs/migrations/09-api.md,463,parameter bullets still list table before checkConstraint after the signature was reordered,no,optional in the task
+r00969,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,241,logger() has no callers in main code after the error log was replaced by a throw; it is only overridden by the test seam,yes,
+r00978,naming,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/ToolLoopLlmOperations.kt,137,New parameter type written fully qualified (com.embabel.agent.spi.ModelSelectionContextFactory) instead of imported like the surrounding types,yes,
+r00979,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,241,protected logger() helper has no remaining production caller after createFeature() stopped logging; it survives only as a test override seam,yes,
+r00980,leftover,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt,120,"trim() KDoc still says it always removes leading and trailing indent/no-arg placeholders, but the new early return keeps the block untrimmed when indent markers are unbalanced",yes,
+r00986,churn,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/config/spring/AgentPlatformConfiguration.kt,41,RoleResolver import inserted out of alphabetical order before ModelProvider in the import block,yes,
+r00986,leftover,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/AbstractLlmOperations.kt,417,still calls the context-less resolveAutoLlm(); the caller-aware overload added by the diff is never used,yes,
+r00987,dead,src/md4c.c,351,ISASCII(off) macro has no remaining callers after the type-4 check switched to ISALPHA; the change left it unused,yes,
+r01000,dead,src/bitops.c,880,`created` is passed to lookupStringForBitCommand but never read in setbitCommand,yes,
+r01000,dead,src/bitops.c,1897,`created` is declared and passed in bitfieldGeneric but never read,yes,
+r01000,churn,src/bitops.c,791,trailing space removed from an unrelated blank comment line in the docstring,yes,
+r01001,leftover,embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt,46,"KDoc @param order (actions, goal) no longer matches the new signature (goal, actions)",yes,
+r01001,leftover,embabel-agent-api/src/main/kotlin/com/embabel/plan/utility/HybridUtilityPlanner.kt,81,"override still declares (actions, goal) parameter order",yes,
+r01001,leftover,embabel-agent-api/src/main/kotlin/com/embabel/plan/goap/OptimizingGoapPlanner.kt,30,"final override still declares (actions, goal) parameter order",yes,
+r01001,leftover,embabel-agent-api/src/main/kotlin/com/embabel/plan/utility/UtilityPlanner.kt,34,"override still declares (actions, goal) parameter order",no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/validation/GoapPathToCompletionValidator.kt,218,"call still passes (goapActions, conditionGoal) instead of goal first",yes,
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/utility/HybridUtilityPlannerTest.kt,75,call still passes actions before goal,yes,
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/utility/HybridUtilityPlannerTest.kt,93,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/utility/HybridUtilityPlannerTest.kt,127,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/utility/HybridUtilityPlannerTest.kt,147,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/utility/HybridUtilityPlannerTest.kt,178,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/utility/HybridUtilityPlannerTest.kt,220,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/utility/HybridUtilityPlannerTest.kt,333,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/GoapPlannerTest.kt,121,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/GoapPlannerTest.kt,171,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/GoapPlannerTest.kt,200,multi-line call still passes actions before goal,yes,
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/GoapPlannerTest.kt,234,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/IrrelevantActionsTest.kt,59,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/IrrelevantActionsTest.kt,96,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/IrrelevantActionsTest.kt,135,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/IrrelevantActionsTest.kt,179,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/IrrelevantActionsTest.kt,220,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/IrrelevantActionsTest.kt,265,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/IrrelevantActionsTest.kt,315,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt,74,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt,135,call still passes actions1 before goal,yes,
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt,138,call still passes actions2 before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt,194,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt,249,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt,298,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt,347,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt,386,call still passes listOf(action) before goal,yes,
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt,428,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt,466,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt,495,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/astar/AStarGoapPlannerTest.kt,549,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/OptimizingGoapPlannerTest.kt,77,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/OptimizingGoapPlannerTest.kt,137,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/OptimizingGoapPlannerTest.kt,200,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/OptimizingGoapPlannerTest.kt,290,call still passes actions before goal,no,"same defect, another file"
+r01001,leftover,embabel-agent-api/src/test/kotlin/com/embabel/plan/goap/OptimizingGoapPlannerTest.kt,358,call still passes actions before goal,no,"same defect, another file"
+r01005,leftover,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt,120,"KDoc for trim() still says it removes leading/trailing no-arg placeholders, but the new code re-appends trailing ⇤ to balance unclosed indents",yes,
+r01006,leftover,src/MediatR/Licensing/LicenseAccessor.cs,82,ResolveLicenseKey doc comment lists the precedence without the new DI license key factory,yes,
+r01006,leftover,README.md,158,Numbered key-precedence list omits the ConfigureLicenseKey factory added in the new paragraph at line 136,yes,
+r01006,churn,src/MediatR/Licensing/LicenseAccessor.cs,35,"Trailing whitespace removed from the first constructor's closing brace, a line the task did not need to touch",yes,
+r01006,churn,src/MediatR/Licensing/LicenseAccessor.cs,39,"Trailing whitespace removed from the blank line between the two constructors, unrelated to the task",yes,
+r01009,leftover,docs/docs/migrations/09-api.md,463,"Parameter list still documents `table` before `checkConstraint`, which no longer matches the new signature order",no,optional in the task
+r01012,churn,tests/Integration/MaxLengthTest.php,10,"moved import of Yajra\DataTables\Request is left after Tests\TestCase, out of the file's alphabetical use order",yes,
+r01012,churn,tests/Unit/RequestTest.php,7,"moved import of Yajra\DataTables\Request is left after Tests\TestCase, out of the file's alphabetical use order",no,"same defect, another file"
+r01013,churn,docs/migration/v11.md,247,Table cell widened without realigning the table; the row's trailing padding no longer matches the other rows.,yes,
+r01013,churn,packages/styles/docs/sass.md,557,"Table row widened to `skeleton-animation` without realigning the column, so the table is misaligned against its neighbours.",yes,
+r01014,leftover,src/MediatR/Registration/ServiceRegistrar.cs,796,"Comment says IOptions is only present when options infrastructure is registered, but AddOptions() is now always called at line 785",yes,
+r01014,churn,src/MediatR/Licensing/LicenseAccessor.cs,34,Trailing whitespace on the blank line after the constructor was stripped though the task did not need to touch that line,yes,
+r01014,naming,test/MediatR.Tests/Licensing/LicenseKeyOptionsTests.cs,49,"ShouldHaveUsedProvidedKey asserts an 'incomplete or corrupted' error log, so the name describes the opposite of what is checked",yes,
+r01015,dead,src/bitops.c,878,"New `created` out-parameter of lookupStringForBitCommand is written but never read; setbitCommand declares a local `created` only to cast it to void, and bitfieldGeneric does the same at line 1896 and 2118.",yes,
+r01021,leftover,src/MediatR/obj/project.assets.json,1,"Stale obj/ restore output for the old MediatR.csproj remains under src/MediatR/, which the task says must not contain any files after the rename.",yes,
+r01025,leftover,tests/pytests/unit/utils/test_thin.py,68,"expected thin archive path still uses old salt/payload.py instead of salt/wire_payload.py, which salt/utils/thin.py now lists",yes,
+r01027,leftover,docs/docs/migrations/09-api.md,460,"documented signature still shows the old argument order (table, checkConstraint)",no,optional in the task
+r01030,leftover,src/MediatR/Licensing/LicenseAccessor.cs,105,"ResolveLicenseKey doc comment lists only the explicit LicenseKey and Mediator.LicenseKey as precedence, omitting the new ConfigureLicenseKey source that now feeds the first argument",yes,
+r01030,churn,src/MediatR/Licensing/LicenseAccessor.cs,35,"Trailing whitespace removed from the constructor's closing brace line, which the task did not need to touch",yes,
+r01045,churn,src/Core/Checkout/Customer/SalesChannel/UpsertAddressRoute.php,179,Removed the space after the comma in the addressRepository->upsert() call; the line did not need to change,yes,
+r01049,leftover,gson/src/test/java/com/google/gson/internal/ConstructorConstructorTest.java,148,"local variable still named objectConstructor (also lines 149, 256, 257) though its type is now ObjectFactory; old interface name remains in the renamed test code",yes,
+r01058,naming,packages/styles/scss/utilities/__tests__/skeleton-test.js,23,"Test file name still says skeleton while its describe block and @use paths now target skeleton-animation, unlike sibling tests named after their module",yes,
+r01068,leftover,src/cli_common.c,362,call to sdsnewlen not renamed to sdsnewbuf,yes,
+r01068,leftover,src/redis-cli.c,901,call to sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r01068,leftover,src/redis-cli.c,1088,call to sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r01068,leftover,src/redis-cli.c,1569,call to sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r01068,leftover,src/redis-cli.c,3433,call to sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r01068,leftover,src/redis-cli.c,3434,call to sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r01068,leftover,src/redis-cli.c,5228,call to sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r01068,leftover,src/redis-cli.c,5578,call to sdsnewlen not renamed to sdsnewbuf,no,"same defect, another file"
+r01072,dead,src/bitops.c,878,`created` is passed to lookupStringForBitCommand but never read in setbitCommand,yes,
+r01072,dead,src/bitops.c,1895,`created` is initialised and passed to the helper in bitfieldGeneric but never read,yes,
+r01072,churn,src/bitops.c,786,trailing whitespace removed from an unrelated doc-comment line (' * ' changed to ' *'),yes,
+r01077,naming,jsr.json,90,Renamed export key ./utils/base64 left at the old alphabetical position after ./utils/crypto; it sorts before ./utils/body in the surrounding list,yes,
+r01091,dead,src/bitops.c,791,"The new `created` out-parameter is set in both branches, but neither setbitCommand (line 876) nor bitfieldGeneric (line 1895) reads it; the variables at those call sites are dead.",yes,
+r01096,unrelated,include/fmt/base.h,1922,"container_buffer was relocated within fmt::detail to before iterator_buffer; the task only moves iterator_buffer and its specializations, so this reorder is outside the requested change",yes,
+r01099,naming,jsr.json,90,"renamed export entry './utils/base64' left in the old './utils/encode' position, breaking the alphabetical order of the surrounding entries; it should sort before './utils/concurrent'",yes,
+r01105,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,72,Rewritten KDoc paragraph was not rewrapped; line is 128 chars while the surrounding comment wraps at 100,yes,
+r01106,leftover,embabel-agent-docs/src/main/asciidoc/reference/types/page.adoc,47,"Says roles must be defined via embabel.models.llms only; the change adds embabel.models.roles as another place to define them, so this statement is now stale",yes,
+r01107,dead,src/bitops.c,875,`created` is passed to lookupStringForBitCommand but its value is never read in setbitCommand,yes,
+r01107,dead,src/bitops.c,1892,`created` is passed to lookupStringForBitCommand in bitfieldGeneric but its value is never read,yes,
+r01112,churn,src/main/java/tools/jackson/databind/deser/SettableAnyProperty.java,11,"Extra blank line added in the import block, producing two consecutive blank lines before the tools.jackson imports",yes,
+r01116,leftover,src/MediatR/obj/project.assets.json,1,"Old project directory src/MediatR still exists with obj/ build artifacts (MediatR.csproj.nuget.* files, project.assets.json); task requires no file remain under src/MediatR/",yes,
+r01118,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,72,"KDoc line rewrapped by the change runs to 108 characters, past the file's 100-column width",yes,
+r01118,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,155,"New comment line is 101 characters, over the 100-column limit",yes,
+r01118,churn,compose-lint-checks/src/test/java/slack/lint/compose/RedundantComposableDetectorTest.kt,656,"New comment line is 104 characters, over the 100-column limit",no,"same defect, another file"
+r01118,churn,compose-lint-checks/src/test/java/slack/lint/compose/RedundantComposableDetectorTest.kt,660,"Reworded comment line is 101 characters, over the 100-column limit",yes,
+r01121,dead,deployment/pom.xml,56,quarkus-junit-mockito test dependency is no longer used by any deployment test after the Mockito-based logger mock was removed from ProblemProcessorTest,yes,
+r01125,dead,src/md4c.c,351,ISASCII(off) macro has no remaining uses after the type-4 check switched to ISALPHA,yes,
+r01125,dead,src/md4c.c,335,ISASCII_ helper is only used by the now-unused ISASCII macro,yes,
+r01131,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,72,"KDoc line rewrapped by the change is 128 columns, while the surrounding comment wraps near 100",yes,
+r01147,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,241,protected logger() is no longer called anywhere in ProblemProcessor after createFeature stopped logging; its Logger import (line 14) is only used by it,yes,
+r01149,churn,pydantic_extra_types/cron.py,121,"Missing space after comma in `validate` signature (`cls,__input_value`); unrelated formatting change to a line the task did not need to touch",yes,
+r01150,churn,tests/Integration/MaxLengthTest.php,9,Relocated import breaks the file's alphabetical use-statement order; it should sit after `Yajra\DataTables\DataTables` and before `Yajra\DataTables\Tests\Models\User`,yes,
+r01161,churn,tests/Integration/MaxLengthTest.php,10,"relocated use Yajra\DataTables\Request import now sits after Yajra\DataTables\Tests imports, breaking the alphabetical import order",yes,
+r01161,churn,tests/Unit/RequestTest.php,7,"relocated use Yajra\DataTables\Request import now sits after Yajra\DataTables\Tests\TestCase, breaking the alphabetical import order",no,"same defect, another file"
+r01175,dead,src/bitops.c,884,`created` is set by lookupStringForBitCommand but never read in setbitCommand,yes,
+r01175,dead,src/bitops.c,1901,`created` is set via &created at line 1996 but never read in bitfieldGeneric,yes,
+r01177,leftover,docs/docs/migrations/09-api.md,463,"Parameter bullets still list `table` before `checkConstraint`, the old order, after the signature was reordered to checkConstraint first.",no,optional in the task
+r01179,dead,src/bitops.c,1891,int created is declared in bitfieldGeneric and never read; the histogram update it was meant to support lives in the helper,yes,
+r01179,dead,src/bitops.c,1990,(void)created; only silences the unused-variable warning for the dead created variable,yes,
+r01179,dead,src/bitops.c,874,setbitCommand's created variable is written by the helper but never read in setbitCommand,yes,
+r01182,leftover,include/fmt/base.h,2097,"get_buffer inside fmt::detail still uses unqualified iterator_buffer, which now resolves to fmt::iterator_buffer by outer-scope lookup; not updated to the qualified name the task asked for",yes,
+r01182,churn,include/fmt/base.h,1922,container_buffer was moved to a new position in the file though the task did not ask for it to move; the original order already satisfied its dependency,yes,
+r01183,leftover,src/MediatR/obj,1,"Stale obj/ directory from the old MediatR.csproj remains under src/MediatR/, which the task says must not exist",yes,
+r01185,dead,src/DataTablesServiceProvider.php,8,Redundant `use Yajra\DataTables\Request;` import; the file is already in the Yajra\DataTables namespace where Request now lives,yes,
+r01188,leftover,doc/api/astroid.exceptions.rst,30,"Lists UseInferenceDefault as a member of astroid.exceptions, but the class has moved to astroid.use_inference_default and is no longer defined in that module",no,optional in the task
+r01197,leftover,gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java,97,Javadoc still says 'object constructor' where it describes the renamed ObjectFactory return type,yes,
+r01217,leftover,include/fmt/format-inl.h,1966,Stale special case for U+2A6DE (now assigned) remains in is_printable; generated table was not regenerated from current UnicodeData.txt,yes,
+r01227,leftover,nvm.sh,1558,"Stale comment: it says the branch just prepends the supplementary path, but the branch now also strips stale nvm entries from the path.",yes,
+r01229,naming,src/sds.c,98,"Internal helper still named _sdsnewlen after the public sdsnewlen was renamed to sdsnewbuf; it is called by sdsnewbuf (line 196) and sdstrynewlen (line 200), so the old name persists in the new wrapper's implementation",yes,
+r01231,churn,src/md4c.h,402,"The renamed #define has its value column padded to 24 characters, unlike the surrounding defines, which keep the value column at 20 characters. This breaks the column alignment of the flag block.",yes,
+r01244,leftover,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,69,"KDoc says the detector does not report when a default argument uses composition, but read-only default arguments now produce a ReadOnlyComposable report",yes,
+r01246,dead,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FunSpec.kt,26,"imports com.squareup.kotlinpoet.parameterspec.emit, but emit is an internal member of ParameterSpec, not a top-level declaration; the import is unresolvable and unneeded",yes,
+r01246,dead,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/LambdaTypeName.kt,19,"imports com.squareup.kotlinpoet.parameterspec.emit, which is a ParameterSpec member, not a top-level symbol; unresolvable and unneeded",yes,
+r01246,dead,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/TypeSpec.kt,34,"imports com.squareup.kotlinpoet.parameterspec.emit, which is a ParameterSpec member, not a top-level symbol; unresolvable and unneeded",no,"same defect, another file"
+r01248,leftover,include/fmt/format-inl.h,1966,"Hard-coded Unicode 13-era unassigned ranges (starting at 0x2a6de, which is now assigned; also 0x3134b..0xe0100 at line 1970, which wrongly covers CJK Ext H) were not updated along with the test's example code point",yes,
+r01256,leftover,embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt,49,"KDoc lists @param actions before @param goal, the old parameter order; the signature now takes goal first",yes,
+r01259,leftover,src/MediatR/obj/project.assets.json,1,"Old src/MediatR/ directory still exists with stale obj/ build output (project.assets.json, MediatR.csproj.nuget.* files); the task requires no file to remain under src/MediatR/",yes,
+r01260,naming,salt/auth/__init__.py,25,"import salt.wire_payload is placed before salt.utils.* imports, breaking the sorted import block; it should follow them",yes,
+r01264,leftover,changelog/_unreleased/2025-11-06-update-guest-account-type-on-address-save.md,3,"Placeholder issue number NEXT-00000 instead of a real issue reference, unlike the other changelog entries",yes,
+r01269,leftover,src/main/java/tools/jackson/databind/deser/BeanDeserializerFactory.java,897,"The existing constructAnySetter Javadoc is left above the new _anySetterMetadata helper, so it now documents the wrong method and constructAnySetter has no Javadoc.",yes,
+r01270,leftover,packages/styles/scss/utilities/__tests__/skeleton-animation-test.js,29,"Test still uses the old `skeleton.` namespace (`@include skeleton.skeleton`, also at lines 47 and 69), but `@use '../skeleton-animation'` now gives the namespace `skeleton-animation`.",yes,
+r01276,churn,src/Spectre.Console.Tests/Unit/Widgets/Table/TableTests.cs,1108,Closing brace rewritten only to add a trailing newline at end of file; the task did not need this line touched.,yes,
+r01276,churn,src/Spectre.Console.Tests/Unit/Widgets/TextTests.cs,176,Closing brace rewritten only to add a trailing newline at end of file; the task did not need this line touched.,no,"same defect, another file"
+r01277,churn,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/AutoLlmSelectionCriteriaResolver.kt,24,Blank line inserted directly after the interface opening brace; the task did not need this whitespace change.,yes,
+r01279,unrelated,salt/modules/disk.py,42,"Renamed postPrefixes to unit_suffixes (definition at line 42, uses at lines 52 and 54); the issue explicitly says the rename is unrelated to the bug",yes,
+r01279,naming,changelog/parse-numbers-factor.fixed.md,1,Changelog fragment uses a descriptive slug instead of the <number>.fixed.md convention used by every other file in changelog/,yes,
+r01281,leftover,doc/api/general.rst,15,"Still lists UseInferenceDefault among the exceptions-module names; the class now lives in astroid.use_inference_default, as the diff's own change to astroid.exceptions.rst shows",no,optional in the task
+r01283,leftover,tests/pytests/unit/utils/test_thin.py,68,"expected archive path still uses old module name os.path.join(""salt"", ""payload.py"") instead of salt/wire_payload.py",yes,
+r01286,churn,runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemDefaultsProvider.java,6,Added import io.quarkiverse.httpproblem.ProblemPostProcessor is out of sorted order; it precedes io.quarkiverse.httpproblem.InstanceUtils,yes,
+r01286,churn,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,27,Added import io.quarkiverse.httpproblem.ProblemPostProcessor is placed among the postprocessing imports instead of in sorted position,yes,
+r01286,churn,runtime-dev/src/main/java/io/quarkiverse/httpproblem/devui/ProblemJsonRpcService.java,15,Added import io.quarkiverse.httpproblem.ProblemPostProcessor is out of sorted order after io.quarkiverse.httpproblem.postprocessing.ProblemContext,yes,
+r01291,unrelated,salt/modules/disk.py,42,Renames the local dict postPrefixes to unit_suffixes; the issue explicitly calls this rename unrelated to the fix and it is not needed for the multiplier correction,yes,
+r01299,leftover,include/fmt/format-inl.h,1966,"Hard-coded unassigned range starts at 0x2a6de, the code point the change stopped using as an unassigned example and which the task says is assigned since Unicode 14.0; the range check was not updated alongside the test.",yes,
+r01302,dead,src/DataTableAbstract.php,946,setupKeyword() has no callers after the change; it is now unused,yes,
+r01302,dead,src/QueryDataTable.php,441,"both branches of the if return $keyword, so the raw/regex check is now a no-op",yes,
+r01315,churn,src/Spectre.Console.Tests/Unit/Widgets/TextTests.cs,176,"Adds a trailing newline after the final closing brace, which the original file lacked; the task did not require this whitespace change.",yes,
+r01317,leftover,src/MediatR/obj/project.assets.json,1,Stale obj directory left under src/MediatR/ (with MediatR.csproj.nuget.* and project.nuget.cache files); the task requires no file to remain under src/MediatR/,yes,
+r01319,churn,integration-test/core/src/main/java/io/quarkiverse/httpproblem/CustomPostProcessor.java,3,"Reorders the existing jakarta.enterprise import below the io.quarkiverse import, which the move did not require.",yes,
+r01333,leftover,README.md,156,"Precedence list does not include the ConfigureMediatR callback, which the new paragraph says overrides the AddMediatR configuration action",yes,
+r01342,churn,include/fmt/base.h,1941,Added blank line after FMT_BEGIN_EXPORT creates a double blank line before the iterator_buffer comment,yes,
+r01350,leftover,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,69,"KDoc still says the detector does not report when a default argument uses composition, but default arguments that read read-only composables are now reported",yes,
+r01359,leftover,nvm.sh,1572,"Comment still says 'use sed to replace the existing nvm path', but the branch now uses awk.",yes,
+r01360,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,72,"Rewrapped KDoc line is 135 characters, unlike the ~100-column wrapping used in the surrounding comment",yes,
+r01391,naming,src/Support/ResponseExtractor/ModelInfo.php,151,"reject closure still names its value `$cast`, but the value is now an array holding both 'cast' and 'return_type'; inconsistent with the `$info` name used in the adjacent map closure",yes,
+r01399,naming,changelog/disk-parse-numbers.fixed.md,1,Fragment is named by slug while all other changelog fragments use an issue/PR number prefix,yes,
+r01403,unrelated,src/sds.c,98,"Internal helper _sdsnewlen was renamed to _sdsnewbuf; the task only asked to rename sdsnewlen, so this is an unrequested extra rename (call sites at lines 196 and 200 were changed with it).",yes,
+r01411,naming,jsr.json,90,"Renamed export key ""./utils/base64"" is placed after ""./utils/crypto"", breaking the alphabetical order of the surrounding utils entries; it should sit before ""./utils/buffer"".",yes,
+r01413,leftover,.agents/skills/backward-compat/SKILL.md,56,"Documents the old deprecate argument order ('<name>', '<since>', '<removed in>'); the mixin now takes the version first",yes,
+r01415,leftover,.agents/skills/backward-compat/SKILL.md,56,Documents the deprecate mixin call with the old argument order (name first); the mixin now takes deprecate-version first.,yes,
+r01430,leftover,src/MediatR/obj/project.assets.json,1,"Old src/MediatR/ directory still exists with obj/ restore artifacts (project.assets.json, MediatR.csproj.nuget.dgspec.json/.g.props/.g.targets, project.nuget.cache) that name the old MediatR.csproj; the task says no file should remain under src/MediatR/",yes,
+r01436,unrelated,src/sds.c,98,Renames the private helper _sdsnewlen to _sdsnewbuf (also at lines 196 and 200); the task only asked to rename sdsnewlen,yes,
+r01439,dead,src/md4c.c,351,ISASCII(off) macro was only used by the condition this change replaced with ISALPHA; it is now unused (its helper ISASCII_ at line 335 is dead as well),yes,
+r01462,churn,include/fmt/base.h,2032,"Unnecessary line break: `template <typename T> class iterator_buffer<T*, T> : public detail::buffer<T> {` fits in 79 columns on one line, so splitting it is formatting churn",yes,
+r01463,churn,src/md4c.h,402,"Value column of the MD_FLAG_SUPERSCRIPT_SPANS define is shifted two characters right of its neighbours, breaking the alignment of the block",yes,
+r01472,churn,runtime/src/main/java/io/quarkiverse/httpproblem/postprocessing/ProblemLogger.java,9,Added import for ProblemPostProcessor placed in the third-party group before org.jboss.logging.Logger instead of with the io.quarkiverse imports,yes,
+r01472,churn,runtime/src/test/java/io/quarkiverse/httpproblem/postprocessing/PostProcessorsRegistryTest.java,10,Added import for ProblemPostProcessor placed in the org.* import group before org.junit instead of with the io.quarkiverse imports,yes,
+r01477,leftover,embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/RoleResolution.kt,16,stale 'package com.embabel.agent.spi' line left above the new package declaration after the file moved,yes,
+r01477,leftover,embabel-agent-api/src/test/kotlin/com/embabel/common/ai/model/RoleResolverTest.kt,16,stale 'package com.embabel.agent.spi' line left above the new package declaration after the file moved,no,"same defect, another file"
+r01482,leftover,src/utils/base64.ts,3,"Header comment still says ""Encode utility"", the old module name",yes,
+r01482,naming,jsr.json,90,"Renamed export key ""./utils/base64"" left in the old position; the surrounding keys are alphabetically sorted, so it belongs before ""./utils/body""",yes,
+r01483,dead,packages/react/src/internal/noticeAvailableFeatureFlag.ts,46,resetNoticedFeatureFlags is exported but never used anywhere in the tree,yes,
+r01483,leftover,packages/upgrade/transforms/nonStableMapping.js,9,"maps unstable_FeatureFlags/useFeatureFlag/useFeatureFlags to preview_ names, contradicting the new guidance to use the stable FeatureFlags exports",yes,
+r01487,leftover,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/support/AbstractLlmOperations.kt,417,"Calls resolveAutoLlm() without the new ModelSelectionContext argument, so the context the change added is never passed at this call site",yes,
+r01496,leftover,.agents/skills/backward-compat/SKILL.md,56,"Documents the old deprecate argument order ('<name>', '<since>', '<removed in>') instead of the new version-first order",yes,
+r01499,leftover,test-data/unit/check-typevar-tuple.test,450,"Comment still refers to the old module name ""typeops""; should read type_operations",yes,
+r01505,unrelated,include/fmt/base.h,1922,"container_buffer is not among the templates the task asks to move, yet the diff relocates it ahead of the iterator_buffer template, outside the requested change",yes,
+r01510,leftover,compose-lint-checks/src/test/java/slack/lint/compose/RedundantComposableDetectorTest.kt,664,"Comment says the rule only inspects the body and must not flag default-argument composition, which the change made false",yes,
+r01512,leftover,test-data/unit/check-typevar-tuple.test,450,Comment still refers to the old module name 'typeops' instead of 'type_operations',yes,
+r01512,naming,mypy/checker.py,238,"Renamed 'mypy.type_operations' import left after 'mypy.typeanal', breaking sorted import order",yes,
+r01512,naming,mypy/checkexpr.py,148,"Renamed 'mypy.type_operations' import left after 'mypy.typeanal', breaking sorted import order",no,"same defect, another file"
+r01516,dead,src/bitops.c,1899,"bitfieldGeneric declares 'created' and passes it to lookupStringForBitCommand, but the value is never read in that function; the variable is dead",yes,
+r01523,leftover,src/MediatR/obj/project.assets.json,1,"Build output directory for the old MediatR.csproj remains under src/MediatR/ (obj/ with MediatR.csproj.nuget.* and project.assets.json), though the task requires no file to remain there",yes,
+r01524,leftover,tests/test_inference.py,6196,"Still asserts exception instance `args` is nodes.Tuple, the old behaviour this change replaces with builtins.tuple instance; same expectation was updated in test_object_model.py but not here",yes,
+r01528,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/DelegatedConstructorCallTest.kt,18,"New import `parameterspec.ParameterSpec` is placed before the `assertk.*` imports, breaking the lexicographic import order that Spotless/ktlint enforces",yes,
+r01528,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/DocumentableTest.kt,18,"New import `parameterspec.ParameterSpec` is placed before the `assertk.*` imports, breaking lexicographic import order",no,"same defect, another file"
+r01528,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/ParameterSpecTest.kt,18,"New import `parameterspec.ParameterSpec` is placed before the `assertk.*` imports, breaking lexicographic import order",no,"same defect, another file"
+r01529,dead,deployment/pom.xml,56,test dependency quarkus-junit-mockito is no longer used by any deployment module source after ProblemProcessorTest dropped its Mockito usage,yes,
+r01532,naming,mypy/checker.py,238,"New `mypy.type_operations` import is placed after `mypy.typeanal`, out of sorted import order",yes,
+r01532,naming,mypy/checkexpr.py,148,"New `mypy.type_operations` import is placed after `mypy.typeanal`, out of sorted import order",no,"same defect, another file"
+r01532,unrelated,test-data/unit/check-typevar-tuple.test,450,"Prose comment word 'typeops' rewritten to 'type_operations' though it is a generic phrase, not a module reference",yes,
+r01533,unrelated,compose-lint-checks/src/main/java/slack/lint/compose/ModifierReusedCheck.kt,15,"Removed import of resolveToCall, which is unrelated to the rename and still used at lines 397, 576 and 607; likely breaks compilation",yes,
+r01541,churn,src/listener.ts,21,"The ./utils import is now 96 characters and fits Prettier's printWidth of 100, so it should be collapsed to a single line",yes,
+r01543,naming,mypy/checker.py,238,"`from mypy.type_operations` import is placed after `from mypy.typeanal`; it now sorts before it, so the import block is out of isort order",yes,
+r01543,naming,mypy/checkexpr.py,148,"`from mypy.type_operations` import is placed after `from mypy.typeanal`; it now sorts before it, so the import block is out of isort order",no,"same defect, another file"
+r01548,leftover,src/MediatR/MicrosoftExtensionsDI/ConfigureMediatRServiceConfiguration.cs,40,Param doc says 'configure the options' copied from the IOptions pattern; the delegate actually configures a MediatRServiceConfiguration,yes,
+r01551,leftover,test-data/unit/check-typevar-tuple.test,450,"Comment still says ""typeops"" where it refers to the renamed module's functions; may be intended as generic English",yes,
+r01560,unrelated,pydantic_extra_types/cron.py,81,"Removed the else branch that set cron_obj from _cron; validate() always passes _cron, so cron_obj is unbound and every validation raises UnboundLocalError",yes,
+r01566,leftover,embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt,49,"KDoc still lists @param actions before @param goal; the signature is now (goal, actions)",yes,
+r01569,leftover,.agents/skills/backward-compat/SKILL.md,56,"Documents the old argument order deprecate('<name>', '<since>', '<removed in>'); the mixin now takes the version first",yes,
+r01578,unrelated,include/fmt/base.h,1921,container_buffer was relocated up to before the namespace detail close; it stays in detail and the task did not require moving it,yes,
+r01580,leftover,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,69,"Class docstring says the detector does not report when a default argument uses composition, which the change makes false for READ_ONLY defaults (they are now reported as read-only candidates).",yes,
+r01582,leftover,src/MediatR/obj,1,Old project directory still exists with build output after the move; task says no file should remain under src/MediatR/,yes,
+r01586,naming,jsr.json,90,./utils/base64 entry left in the old encode position; breaks the alphabetical order of the exports map (should sort before ./utils/concurrent),yes,
+r01607,naming,src/main/java/tools/jackson/databind/deser/SettableAnyProperty.java,214,"Fully qualified com.fasterxml.jackson.annotation.JsonSetter/Nulls used inline in _shouldSkipNulls instead of imports, inconsistent with the file's existing import style",yes,
+r01617,dead,src/DataTableAbstract.php,946,"setupKeyword() has no remaining callers after the call in getColumnSearchKeyword() was removed, so the starts_with branch added to it is unreachable",yes,
+r01617,dead,src/QueryDataTable.php,438,"getColumnSearchKeyword() returns $keyword on both paths, so the $raw/isRegex check and the $raw parameter no longer affect the result",yes,
+r01626,leftover,test/fast/Unit tests/nvm_change_path,76,"Comment cites a bare nvm issues URL with no issue number and a dangling colon, so the reference is incomplete and points nowhere specific",yes,
+r01628,leftover,embabel-agent-api/src/main/kotlin/com/embabel/agent/api/common/Ai.kt,73,KDoc links com.embabel.agent.spi.RoleResolver but RoleResolver lives in com.embabel.common.ai.model,yes,
+r01628,dead,embabel-agent-api/src/test/kotlin/com/embabel/common/ai/model/RoleResolutionTest.kt,86,lambda parameter `role` is unused; should be `_`,yes,
+r01628,naming,embabel-agent-common/embabel-agent-ai/src/main/kotlin/com/embabel/common/ai/model/ModelSelectionCriteria.kt,101,fully qualified @com.fasterxml.jackson.annotation.JsonIgnore while the file imports Jackson annotations; inconsistent with surrounding code,yes,
+r01631,leftover,test-data/unit/check-typevar-tuple.test,450,"Comment still refers to the old module name 'typeops' (""various typeops need to be sure..."") after the rename to type_operations",yes,
+r01642,churn,src/utils.ts,3,"single-specifier import wrapped over three lines; fits within printWidth 100, so prettier would collapse it to one line",yes,
+r01642,churn,src/listener.ts,19,"single-specifier import wrapped over three lines; fits within printWidth 100, so prettier would collapse it to one line",no,"same defect, another file"
+r01642,churn,test/utils.test.ts,8,"single-specifier import wrapped over three lines; fits within printWidth 100, so prettier would collapse it to one line",no,"same defect, another file"
+r01644,naming,salt/auth/__init__.py,25,import salt.wire_payload is out of isort order; salt.utils.* imports follow it,yes,
+r01644,naming,salt/crypt.py,29,import salt.wire_payload is out of isort order before salt.utils.crypt,yes,
+r01644,naming,salt/master.py,35,import salt.wire_payload is out of isort order before salt.pillar,no,"same defect, another file"
+r01644,naming,salt/modules/event.py,14,import salt.wire_payload is out of isort order before salt.utils.event,no,"same defect, another file"
+r01644,naming,salt/modules/publish.py,10,import salt.wire_payload is out of isort order before salt.transport,no,"same defect, another file"
+r01644,naming,salt/minion.py,41,import salt.wire_payload is out of isort order before salt.pillar,no,"same defect, another file"
+r01644,naming,salt/modules/state.py,24,import salt.wire_payload is out of isort order before salt.state,no,"same defect, another file"
+r01644,naming,salt/modules/data.py,10,import salt.wire_payload is out of isort order before salt.utils.files,no,"same defect, another file"
+r01644,naming,salt/modules/win_pkg.py,52,import salt.wire_payload is out of isort order before salt.syspaths,no,"same defect, another file"
+r01644,naming,salt/modules/mine.py,11,import salt.wire_payload is out of isort order before salt.transport,no,"same defect, another file"
+r01644,naming,salt/modules/saltutil.py,34,import salt.wire_payload is out of isort order before salt.runner,no,"same defect, another file"
+r01644,naming,salt/thorium/__init__.py,20,import salt.wire_payload is out of isort order before salt.state,no,"same defect, another file"
+r01644,naming,salt/channel/client.py,18,import salt.wire_payload is out of isort order before salt.serializers.msgpack,no,"same defect, another file"
+r01644,naming,salt/channel/server.py,28,import salt.wire_payload is out of isort order before salt.transport.frame,no,"same defect, another file"
+r01644,naming,salt/fileclient.py,25,import salt.wire_payload is out of isort order before salt.utils.atomicfile,no,"same defect, another file"
+r01644,naming,salt/cache/mysql_cache.py,58,import salt.wire_payload is out of isort order before salt.utils.stringutils,no,"same defect, another file"
+r01644,naming,salt/cache/redis_cache.py,157,import salt.wire_payload is out of isort order before salt.utils.stringutils,no,"same defect, another file"
+r01644,naming,salt/cache/localfs.py,20,import salt.wire_payload is out of isort order before salt.utils.atomicfile,no,"same defect, another file"
+r01644,naming,salt/returners/local_cache.py,16,import salt.wire_payload is out of isort order before salt.utils.atomicfile,no,"same defect, another file"
+r01644,naming,salt/states/file.py,303,import salt.wire_payload is out of isort order before salt.utils.data,no,"same defect, another file"
+r01644,naming,salt/metaproxy/proxy.py,26,import salt.wire_payload is out of isort order before salt.pillar,no,"same defect, another file"
+r01644,naming,salt/daemons/masterapi.py,22,import salt.wire_payload is out of isort order before salt.pillar,no,"same defect, another file"
+r01644,naming,salt/cli/caller.py,17,import salt.wire_payload is out of isort order before salt.utils.args,no,"same defect, another file"
+r01644,naming,salt/metaproxy/deltaproxy.py,29,import salt.wire_payload is out of isort order before salt.pillar,no,"same defect, another file"
+r01644,naming,salt/runners/cache.py,12,import salt.wire_payload is out of isort order before salt.pillar.git_pillar,no,"same defect, another file"
+r01644,naming,salt/runners/jobs.py,11,import salt.wire_payload is out of isort order before salt.returners,no,"same defect, another file"
+r01644,naming,salt/transport/tcp.py,33,import salt.wire_payload is out of isort order before salt.transport.base,no,"same defect, another file"
+r01644,naming,salt/client/__init__.py,34,import salt.wire_payload is out of isort order before salt.syspaths,no,"same defect, another file"
+r01644,naming,salt/transport/zeromq.py,31,import salt.wire_payload is out of isort order before salt.transport.base,no,"same defect, another file"
+r01644,naming,salt/transport/ws.py,13,import salt.wire_payload is out of isort order before salt.transport.base,no,"same defect, another file"
+r01644,naming,salt/tokens/localfs.py,9,import salt.wire_payload is out of isort order before salt.utils.files,no,"same defect, another file"
+r01644,naming,salt/utils/master.py,17,import salt.wire_payload is out of isort order before salt.pillar,no,"same defect, another file"
+r01644,naming,salt/utils/state.py,12,import salt.wire_payload is out of isort order before salt.state,no,"same defect, another file"
+r01644,naming,salt/utils/event.py,72,import salt.wire_payload is out of isort order before salt.utils.asynchronous,no,"same defect, another file"
+r01644,naming,salt/utils/schedule.py,33,import salt.wire_payload is out of isort order before salt.syspaths,no,"same defect, another file"
+r01644,naming,salt/utils/cache.py,13,import salt.wire_payload is out of isort order before salt.utils.atomicfile,no,"same defect, another file"
+r01644,naming,salt/utils/minion.py,9,import salt.wire_payload is out of isort order before salt.utils.files,no,"same defect, another file"
+r01644,naming,salt/utils/minions.py,12,import salt.wire_payload is out of isort order before salt.roster,no,"same defect, another file"
+r01644,naming,tests/integration/runners/test_runner_returns.py,12,import salt.wire_payload is out of isort order before salt.utils.args,no,"same defect, another file"
+r01644,naming,tests/pytests/functional/channel/test_auth_downgrade.py,20,import salt.wire_payload is out of isort order before salt.utils.event,no,"same defect, another file"
+r01644,naming,tests/pytests/integration/modules/state/test_state_queue.py,6,import salt.wire_payload is out of isort order before salt.utils.files,no,"same defect, another file"
+r01644,naming,tests/pytests/integration/modules/state/test_queue_race.py,11,import salt.wire_payload is out of isort order before salt.utils.files,no,"same defect, another file"
+r01644,naming,tests/support/pytest/transport.py,19,import salt.wire_payload is out of isort order before salt.utils.msgpack,no,"same defect, another file"
+r01644,naming,tests/pytests/unit/modules/test_win_pkg.py,14,import salt.wire_payload is out of isort order before salt.utils.data,no,"same defect, another file"
+r01644,naming,tests/pytests/unit/modules/test_state.py,10,import salt.wire_payload is out of isort order before salt.utils.files,no,"same defect, another file"
+r01644,naming,tests/pytests/unit/channel/test_server.py,12,import salt.wire_payload is out of isort order before salt.utils.event,no,"same defect, another file"
+r01644,naming,tests/pytests/unit/cache/test_localfs.py,11,import salt.wire_payload is out of isort order before salt.utils.files,no,"same defect, another file"
+r01644,naming,tests/pytests/unit/returners/local_cache/test_local_cache.py,13,import salt.wire_payload is out of isort order before salt.returners.local_cache,no,"same defect, another file"
+r01644,naming,tests/pytests/unit/test_payload.py,14,import salt.wire_payload is out of isort order before salt.utils.msgpack,no,"same defect, another file"
+r01644,naming,tests/pytests/unit/crypt/test_crypt.py,14,import salt.wire_payload is out of isort order before salt.utils.files,no,"same defect, another file"
+r01644,naming,tests/pytests/unit/tokens/test_rediscluster.py,23,import salt.wire_payload is out of isort order before salt.tokens.rediscluster,no,"same defect, another file"
+r01644,naming,tests/pytests/unit/utils/test_cache.py,15,import salt.wire_payload is out of isort order before salt.utils.cache,no,"same defect, another file"
+r01644,naming,tests/pytests/scenarios/multimaster/test_per_master_queue.py,25,import salt.wire_payload is out of isort order before salt.utils.files,no,"same defect, another file"
+r01646,leftover,.agents/skills/backward-compat/SKILL.md,56,"Documents the old mixin argument order `deprecate('<name>', '<since>', '<removed in>')`; should now show version first, then name, then remove version.",yes,
+r01648,leftover,src/MediatR/obj/project.assets.json,1,"Old src/MediatR/ directory still exists with restore artifacts (obj/ containing MediatR.csproj.nuget.* and project.nuget.cache), contrary to the requirement that no file remain under src/MediatR/",yes,
+r01653,leftover,src/sds.c,98,internal helper still named _sdsnewlen (called at lines 197 and 201) after sdsnewlen was renamed to sdsnewbuf,yes,
+r01655,leftover,nvm.sh,1565,"Comment still says ""use sed to replace the existing nvm path"" but the branch now uses awk",yes,
+r01657,leftover,tests/pytests/unit/utils/test_thin.py,68,"exp_files still expects ""salt/payload.py""; the module was renamed to salt/wire_payload.py and salt/utils/thin.py was updated, so this path should be salt/wire_payload.py",yes,
+r01658,dead,src/md4c.c,351,The ISASCII(off) macro (and its helper ISASCII_ at line 335) has no remaining uses after the change removed its only call site at line 6179.,yes,
+r01664,leftover,core/model/src/main/kotlin/au/com/dius/pact/core/model/PactMerge.kt,29,"Still calls the old mergeInteractions(interactions) overload, so plugin metadata from newPact is dropped; the change did not switch this call site to the new mergeInteractions(other: Pact) overload.",yes,
+r01670,naming,mypy/applytype.py,10,"`from mypy.type_operations` is placed after `mypy.type_visitor`, out of isort order after the rename",yes,
+r01670,naming,mypy/checker.py,238,"`from mypy.type_operations` is placed after `mypy.typeanal`, out of isort order after the rename",no,"same defect, another file"
+r01691,dead,src/md4c.c,351,ISASCII(off) macro is now unused after the change replaced its only use at line 6178; ISASCII_ at line 335 is dead as well,yes,
+r01692,leftover,.agents/skills/backward-compat/SKILL.md,56,"Example call still uses the old argument order `deprecate('<name>', '<since>', '<removed in>')`; should be `deprecate('<since>', '<name>', '<removed in>')`.",yes,
+r01696,churn,interop/kotlin-metadata/src/main/kotlin/com/squareup/kotlinpoet/metadata/specs/KotlinPoetMetadataSpecs.kt,49,"renamed import placed before com.squareup.kotlinpoet.PropertySpec, breaking the lexicographic import order",yes,
+r01696,churn,interop/ksp/src/main/kotlin/com/squareup/kotlinpoet/ksp/KsTypes.kt,35,"renamed import placed before com.squareup.kotlinpoet.STAR, breaking the lexicographic import order",no,"same defect, another file"
+r01696,churn,interop/ksp/test-processor/src/main/kotlin/com/squareup/kotlinpoet/ksp/test/processor/TestProcessor.kt,36,"renamed import placed before com.squareup.kotlinpoet.ParameterizedTypeName, breaking the lexicographic import order",no,"same defect, another file"
+r01696,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/jvm/JvmAnnotationsTest.kt,28,"renamed import placed before com.squareup.kotlinpoet.ParameterizedTypeName, breaking the lexicographic import order",no,"same defect, another file"
+r01711,leftover,doc/api/astroid.exceptions.rst,30,"still lists UseInferenceDefault as a member of astroid.exceptions, which no longer defines it",no,optional in the task
+r01711,leftover,doc/api/general.rst,15,"still names UseInferenceDefault among the astroid.exceptions exceptions, but the class moved to astroid.use_inference_default",no,optional in the task
+r01714,leftover,src/MediatR/Licensing/LicenseAccessor.cs,81,ResolveLicenseKey doc comment lists only MediatRServiceConfiguration.LicenseKey and Mediator.LicenseKey as explicit sources; the new options-provided key is not mentioned,yes,
+r01714,leftover,README.md,149,License key precedence list omits the new IOptions<MediatRServiceConfiguration> source that now takes precedence over environment variables,yes,
+r01715,naming,src/Support/ResponseExtractor/ModelInfo.php,151,reject closure parameter still called $cast though it now receives the info array; inconsistent with the $info rename in the adjacent map closure,yes,
+r01719,churn,src/MediatR/Licensing/LicenseAccessor.cs,40,"Trailing whitespace after the constructor's closing brace was removed (`}   ` to `}`), an unrelated whitespace-only change to a line the task did not need to touch.",yes,
+r01721,dead,src/md4c.c,351,ISASCII(off) macro is no longer used anywhere after the condition switched to ISALPHA; the change left it dead,yes,
+r01723,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,70,"KDoc paragraph re-wrapped into a single line well over 100 columns, breaking the surrounding line wrapping",yes,
+r01729,churn,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,19,"Moved import placed out of alphabetical order (after ProblemRuntimeFixedConfig), inconsistent with the surrounding sorted import block",yes,
+r01733,leftover,.agents/skills/backward-compat/SKILL.md,56,"Documents the old argument order, deprecate('<name>', '<since>', '<removed in>'), which the mixin no longer accepts in that order",yes,
+r01739,leftover,.agents/skills/backward-compat/SKILL.md,56,"documents the old deprecate argument order ('<name>', '<since>', '<removed in>'); the mixin now takes the version first",yes,
+r01748,unrelated,test-data/unit/check-typevar-tuple.test,450,"Prose word 'typeops' is a generic reference to type operations, not a module path; renaming it is outside the task's scope",yes,
+r01754,leftover,test-data/unit/check-typevar-tuple.test,450,"Comment still refers to the old module name ""typeops"" instead of ""type_operations""",yes,
+r01758,leftover,doc/api/general.rst,15,Still lists UseInferenceDefault as an astroid.exceptions member after the class moved to astroid.use_inference_default; the sibling astroid.exceptions.rst was updated but this file was not.,no,optional in the task
+r01761,leftover,gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java,97,Javadoc says 'Retrieves an object constructor' for a method that now returns ObjectFactory; should follow the new interface name,yes,
+r01761,churn,gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java,315,"Signature still wrapped, but with ObjectFactory the joined line is exactly 100 columns, so the wrap is no longer needed",yes,
+r01761,churn,gson/src/main/java/com/google/gson/internal/bind/CollectionTypeAdapterFactory.java,68,"Adapter constructor still wrapped, but the joined line is exactly 100 columns, so the wrap is no longer needed",yes,
+r01763,leftover,lucene/core/src/test/org/apache/lucene/util/TestQueryBuilder.java,1,Test file and class are still named after the old QueryBuilder while every use inside now targets TextQueryBuilder,yes,
+r01767,leftover,tests/pytests/unit/utils/test_thin.py,68,"expected file list still uses os.path.join(""salt"", ""payload.py""); the renamed module is salt/wire_payload.py, as updated in salt/utils/thin.py",yes,
+r01770,naming,src/sds.c,98,Internal helper _sdsnewlen renamed to _sdsnewbuf (also call sites at lines 196 and 200); the task only asked to rename sdsnewlen,yes,
+r01771,naming,src/main/java/tools/jackson/databind/deser/SettableAnyProperty.java,234,New helper `_findValueNulls` breaks the `find...` naming used by the similar null-handling lookup `StdDeserializer.findContentNullStyle`.,yes,
+r01773,leftover,src/main/java/tools/jackson/databind/deser/SettableAnyProperty.java,219,"New method's @since tag says 3.1, but the project version is 3.3.0-SNAPSHOT (pom.xml:12, release-notes/VERSION shows 3.3.0 unreleased)",yes,
+r01776,leftover,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt,120,"trim() KDoc says all leading and trailing no-arg placeholders are removed, but the new code preserves trailing ⇤ and » that balance openers inside the kept range",yes,
+r01785,dead,src/main/java/tools/jackson/databind/deser/bean/BeanDeserializer.java,844,"Empty if-branch containing only a 'nothing to do' comment; the [databind#4639] comment is displaced inside the chain, so the skip logic is harder to read than a guard would be",yes,
+r01787,naming,src/sds.c,98,"Internal helper _sdsnewlen renamed to _sdsnewbuf, which the task did not ask for; its sibling sdstrynewlen (line 199) keeps the newlen name and calls this helper, so naming is now inconsistent",yes,
+r01791,naming,salt/master.py,35,"renamed import salt.wire_payload left in old slot; now sorts before salt.pillar, breaking alphabetical import order",yes,
+r01791,naming,salt/fileclient.py,25,"salt.wire_payload import sorts after salt.utils.atomicfile, breaking import order",yes,
+r01791,naming,salt/crypt.py,29,"salt.wire_payload import sorts after salt.utils.crypt, breaking import order",no,"same defect, another file"
+r01791,naming,salt/minion.py,41,"salt.wire_payload import sorts after salt.pillar, breaking import order",no,"same defect, another file"
+r01791,naming,salt/modules/event.py,14,"salt.wire_payload import sorts after salt.utils.event, breaking import order",no,"same defect, another file"
+r01791,naming,salt/modules/publish.py,10,"salt.wire_payload import sorts after salt.transport, breaking import order",no,"same defect, another file"
+r01791,naming,salt/modules/data.py,10,"salt.wire_payload import sorts after salt.utils.files, breaking import order",no,"same defect, another file"
+r01791,naming,salt/modules/win_pkg.py,52,"salt.wire_payload import sorts after salt.syspaths, breaking import order",no,"same defect, another file"
+r01791,naming,salt/modules/saltutil.py,34,"salt.wire_payload import sorts after salt.runner, breaking import order",no,"same defect, another file"
+r01791,naming,salt/modules/mine.py,11,"salt.wire_payload import sorts after salt.transport, breaking import order",no,"same defect, another file"
+r01791,naming,salt/thorium/__init__.py,20,"salt.wire_payload import sorts after salt.state, breaking import order",no,"same defect, another file"
+r01791,naming,salt/auth/__init__.py,25,"salt.wire_payload import sorts after salt.utils.args, breaking import order",no,"same defect, another file"
+r01791,naming,salt/channel/client.py,18,"salt.wire_payload import sorts after salt.serializers.msgpack, breaking import order",no,"same defect, another file"
+r01791,naming,salt/channel/server.py,28,"salt.wire_payload import sorts after salt.transport.frame, breaking import order",no,"same defect, another file"
+r01791,naming,salt/returners/local_cache.py,16,"salt.wire_payload import sorts after salt.utils.atomicfile, breaking import order",no,"same defect, another file"
+r01791,naming,salt/cache/localfs.py,20,"salt.wire_payload import sorts after salt.utils.atomicfile, breaking import order",no,"same defect, another file"
+r01791,naming,salt/states/file.py,303,"salt.wire_payload import sorts after salt.utils.data, breaking import order",no,"same defect, another file"
+r01791,naming,salt/modules/state.py,24,"salt.wire_payload import sorts after salt.state, breaking import order",no,"same defect, another file"
+r01791,naming,salt/cache/mysql_cache.py,58,"salt.wire_payload import sorts after salt.utils.stringutils, breaking import order",no,"same defect, another file"
+r01791,naming,salt/cache/redis_cache.py,157,"salt.wire_payload import sorts after salt.utils.stringutils, breaking import order",no,"same defect, another file"
+r01791,naming,salt/metaproxy/proxy.py,26,"salt.wire_payload import sorts after salt.pillar, breaking import order",no,"same defect, another file"
+r01791,naming,salt/metaproxy/deltaproxy.py,29,"salt.wire_payload import sorts after salt.pillar, breaking import order",no,"same defect, another file"
+r01791,naming,salt/daemons/masterapi.py,22,"salt.wire_payload import sorts after salt.pillar, breaking import order",no,"same defect, another file"
+r01791,naming,salt/cli/caller.py,17,"salt.wire_payload import sorts after salt.utils.args, breaking import order",no,"same defect, another file"
+r01791,naming,salt/runners/jobs.py,11,"salt.wire_payload import sorts after salt.returners, breaking import order",no,"same defect, another file"
+r01791,naming,salt/runners/cache.py,12,"salt.wire_payload import sorts after salt.pillar.git_pillar, breaking import order",no,"same defect, another file"
+r01791,naming,salt/transport/zeromq.py,31,"salt.wire_payload import sorts after salt.transport.base, breaking import order",no,"same defect, another file"
+r01791,naming,salt/transport/tcp.py,33,"salt.wire_payload import sorts after salt.transport.base, breaking import order",no,"same defect, another file"
+r01791,naming,salt/transport/ws.py,13,"salt.wire_payload import sorts after salt.transport.base, breaking import order",no,"same defect, another file"
+r01791,naming,salt/client/__init__.py,34,"salt.wire_payload import sorts after salt.syspaths, breaking import order",no,"same defect, another file"
+r01791,naming,salt/tokens/localfs.py,9,"salt.wire_payload import sorts after salt.utils.files, breaking import order",no,"same defect, another file"
+r01791,naming,salt/utils/master.py,17,"salt.wire_payload import sorts after salt.pillar, breaking import order",no,"same defect, another file"
+r01791,naming,salt/utils/event.py,72,"salt.wire_payload import sorts after salt.utils.asynchronous, breaking import order",no,"same defect, another file"
+r01791,naming,salt/utils/schedule.py,33,"salt.wire_payload import sorts after salt.syspaths, breaking import order",no,"same defect, another file"
+r01791,naming,salt/utils/state.py,12,"salt.wire_payload import sorts after salt.state, breaking import order",no,"same defect, another file"
+r01791,naming,salt/utils/cache.py,13,"salt.wire_payload import sorts after salt.utils.atomicfile, breaking import order",no,"same defect, another file"
+r01791,naming,salt/utils/minion.py,9,"salt.wire_payload import sorts after salt.utils.files, breaking import order",no,"same defect, another file"
+r01791,naming,salt/utils/minions.py,12,"salt.wire_payload import sorts after salt.roster, breaking import order",no,"same defect, another file"
+r01791,naming,tests/integration/runners/test_runner_returns.py,12,"salt.wire_payload import sorts after salt.utils.args, breaking import order",no,"same defect, another file"
+r01791,naming,tests/support/pytest/transport.py,19,"salt.wire_payload import sorts after salt.utils.msgpack, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/functional/channel/test_auth_downgrade.py,20,"salt.wire_payload import sorts after salt.utils.event, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/integration/modules/state/test_queue_race.py,11,"salt.wire_payload import sorts after salt.utils.files, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/integration/modules/state/test_state_queue.py,6,"salt.wire_payload import sorts after salt.utils.files, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/unit/test_payload.py,14,"salt.wire_payload import sorts after salt.utils.msgpack, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/unit/modules/test_win_pkg.py,14,"salt.wire_payload import sorts after salt.utils.data, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/unit/modules/test_state.py,10,"salt.wire_payload import sorts after salt.utils.files, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/unit/channel/test_server.py,12,"salt.wire_payload import sorts after salt.utils.event, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/unit/returners/local_cache/test_local_cache.py,13,"salt.wire_payload import sorts after salt.returners.local_cache, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/unit/cache/test_localfs.py,11,"salt.wire_payload import sorts after salt.utils.files, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/unit/crypt/test_crypt.py,14,"salt.wire_payload import sorts after salt.utils.files, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/unit/tokens/test_rediscluster.py,23,"salt.wire_payload import sorts after salt.tokens.rediscluster, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/unit/utils/test_cache.py,15,"salt.wire_payload import sorts after salt.utils.cache, breaking import order",no,"same defect, another file"
+r01791,naming,tests/pytests/scenarios/multimaster/test_per_master_queue.py,25,"salt.wire_payload import sorts after salt.utils.files, breaking import order",no,"same defect, another file"
+r01792,churn,compose-lint-checks/src/main/java/slack/lint/compose/CodeFlowAnalysis.kt,36,"KDoc re-wrapped unchanged sentences (""its own file..."", ""orthogonal..."") although only the [ModifierReusedDetector] reference needed renaming",yes,
+r01797,dead,src/bitops.c,876,`created` is set by lookupStringForBitCommand but never read in setbitCommand,yes,
+r01797,dead,src/bitops.c,1893,`created` is initialised and passed to lookupStringForBitCommand but never read in bitfieldGeneric,yes,
+r01800,leftover,packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts,1780,"JSDoc still lists @param tableOrName before @param checkConstraint, the old argument order",yes,
+r01800,leftover,packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts,2714,"JSDoc still lists @param tableOrName before @param checkConstraint, the old argument order",no,"same defect, another file"
+r01800,leftover,packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts,1184,"JSDoc still lists @param tableOrName before @param checkConstraint, the old argument order",no,"same defect, another file"
+r01800,leftover,packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts,2211,"JSDoc still lists @param tableOrName before @param checkConstraint, the old argument order",no,"same defect, another file"
+r01800,leftover,packages/typeorm/src/driver/oracle/OracleQueryRunner.ts,2106,"JSDoc still lists @param tableOrName before @param checkConstraint, the old argument order",no,"same defect, another file"
+r01800,leftover,packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts,2994,"JSDoc still lists @param tableOrName before @param checkConstraint, the old argument order",no,"same defect, another file"
+r01800,leftover,packages/typeorm/src/driver/sap/SapQueryRunner.ts,2446,"JSDoc still lists @param tableOrName before @param checkConstraint, the old argument order",no,"same defect, another file"
+r01800,leftover,packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts,1366,"JSDoc still lists @param tableOrName before @param checkConstraint, the old argument order",no,"same defect, another file"
+r01800,leftover,packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts,1039,"JSDoc still lists @param tableOrName before @param checkConstraint, the old argument order",no,"same defect, another file"
+r01800,leftover,packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts,2539,"JSDoc still lists @param tableOrName before @param checkConstraint, the old argument order",no,"same defect, another file"
+r01802,unrelated,salt/modules/disk.py,42,Renames postPrefixes to unit_to_bytes; the task says this rename is unrelated to the bug,yes,
+r01803,leftover,compose-lint-checks/src/test/java/slack/lint/compose/RedundantComposableDetectorTest.kt,712,"Comment says the rule 'only inspects the body' and so must not flag default-value composable calls; the change now inspects default values, so this statement is stale.",yes,
+r01805,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,72,"KDoc paragraph reflowed into a 117-column line, exceeding the 100-column width used in the file",yes,
+r01808,naming,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FunSpec.kt,626,New NO_ARG_PLACEHOLDER_PARTS set duplicates the existing private NO_ARG_PLACEHOLDERS set in CodeBlock.kt:499 under a different name; the same concept now has two definitions.,yes,
+r01816,naming,src/Support/ResponseExtractor/ModelInfo.php,151,"Reject closure still names its value `$cast`, but it is now a [kind, return type] pair introduced by this change",yes,
+r01821,dead,integration-test/core/src/main/java/io/quarkiverse/httpproblem/CustomPostProcessor.java,3,Import of io.quarkiverse.httpproblem.ProblemPostProcessor is redundant because the class is already in package io.quarkiverse.httpproblem,yes,
+r01822,leftover,src/cli_common.c,362,call to old name sdsnewlen; should be sdsnewbuf,yes,
+r01822,leftover,src/redis-cli.c,901,call to old name sdsnewlen; should be sdsnewbuf,no,"same defect, another file"
+r01822,leftover,src/redis-cli.c,1088,call to old name sdsnewlen; should be sdsnewbuf,no,"same defect, another file"
+r01822,leftover,src/redis-cli.c,1569,call to old name sdsnewlen; should be sdsnewbuf,no,"same defect, another file"
+r01822,leftover,src/redis-cli.c,3433,call to old name sdsnewlen; should be sdsnewbuf,no,"same defect, another file"
+r01822,leftover,src/redis-cli.c,3434,call to old name sdsnewlen; should be sdsnewbuf,no,"same defect, another file"
+r01822,leftover,src/redis-cli.c,5228,call to old name sdsnewlen; should be sdsnewbuf,no,"same defect, another file"
+r01822,leftover,src/redis-cli.c,5578,call to old name sdsnewlen; should be sdsnewbuf,no,"same defect, another file"
+r01822,leftover,src/sds.c,98,"internal helper still named _sdsnewlen, which embeds the old name that sdsnewbuf now wraps (less certain: task names only the public function)",yes,
+r01823,dead,src/DataTableAbstract.php,946,setupKeyword() lost its only caller when getColumnSearchKeyword() stopped calling it; nothing references it now,yes,
+r01831,churn,src/Support/ResponseExtractor/ModelInfo.php,237,Missing blank line between the new getAccessorReflectionReturnType() method's closing brace and the following docblock; breaks the file's method spacing.,yes,
+r01842,leftover,embabel-agent-docs/src/main/asciidoc/reference/types/page.adoc,47,"Says a role must be defined via embabel.models.llms.<role>; the change also allows roles to be defined under embabel.models.roles, which this sentence does not mention",yes,
+r01845,leftover,nvm.sh,1566,"Comment still says sed replaces the nvm path and preserves order, but the branch now also strips other nvm entries via nvm_strip_path",yes,
+r01852,leftover,packages/styles/scss/utilities/__tests__/skeleton-test.js,29,Sass namespace still `skeleton.` after the `@use` changed to `skeleton-animation` (same stale namespace on lines 47 and 69),yes,
+r01853,churn,lucene/core/src/java/org/apache/lucene/search/package-info.java,369,"Renaming to TextQueryBuilder lengthened this line to 103 columns, over the 100-column limit; it was not rewrapped",yes,
+r01855,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,71,"KDoc paragraph not rewrapped; line is 136 chars, breaking the 100-column wrap used elsewhere in the comment",yes,
+r01864,naming,jsr.json,86,"New ""./utils/base64"" export is inserted out of alphabetical order (between buffer and color); it belongs before ./utils/body, where the sorted list would place it.",yes,
+r01868,leftover,compose-lint-checks/src/test/java/slack/lint/compose/RedundantComposableDetectorTest.kt,696,"Comment says the rule only inspects the body and must not flag default-argument composition; the change now makes the rule inspect default values, so the comment is stale",yes,
+r01868,naming,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,156,"`bodyUsage` now also folds in parameter default-value usage, so the name no longer matches its contents",yes,
+r01883,dead,deployment/pom.xml,56,quarkus-junit-mockito test dependency is no longer used by any deployment test after the logger mock was removed from ProblemProcessorTest,yes,
+r01885,leftover,tests/unit/Core/Checkout/Customer/SalesChannel/UpsertAddressRouteTest.php,259,Constructor call at line 250 not updated for the new $customerRepository argument; only two of four calls were changed,yes,
+r01885,leftover,tests/unit/Core/Checkout/Customer/SalesChannel/UpsertAddressRouteTest.php,298,Constructor call at line 289 not updated for the new $customerRepository argument,no,"same defect, another file"
+r01886,churn,src/bitops.c,787,"Trailing whitespace on the blank doc-comment line was removed, an edit the task did not need",yes,
+r01886,dead,src/bitops.c,878,`created` in setbitCommand is written by lookupStringForBitCommand but never read,yes,
+r01886,dead,src/bitops.c,1897,`created` in bitfieldGeneric is initialized and written but never read,yes,
+r01890,naming,test/fast/Running 'nvm-exec' should display required node version,41,Variable NVM_EXEC still names the renamed nvm-runner path (and is used at line 48); the sibling test renamed the same variable to NVM_RUNNER,yes,
+r01900,dead,astroid/use_inference_default.py,7,`from __future__ import annotations` is unused; the module contains no type annotations,yes,
+r01904,unrelated,lucene/CHANGES.txt,477,Bug-fix entry was added under the released Lucene 10.6.0 section (header at line 348); it belongs in the unreleased 11.0.0 Bug Fixes section (line 218).,yes,
+r01905,churn,astroid/exceptions.py,332,Four blank lines left where the removed UseInferenceDefault class was; the file uses two between top-level definitions,yes,
+r01909,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,241,logger() has no production caller after createFeature() stopped logging; it survives only as a test seam overridden in ProblemProcessorTest,yes,
+r01925,leftover,src/MediatR/Licensing/LicenseAccessor.cs,85,"ResolveLicenseKey doc comment still says the configured MediatRServiceConfiguration.LicenseKey is resolved here, but that argument was removed from the call",yes,
+r01925,leftover,README.md,149,Documented license key precedence omits the new LicenseKeyFactory level between the explicit key and the environment variables,yes,
+r01925,churn,src/MediatR/Registration/ServiceRegistrar.cs,783,"Removed the static modifier from the AddRequiredServices lambda, which captures nothing and does not need the change",yes,
+r01928,naming,tests/test_cron.py,51,"New slash-preservation assertions (lines 52-53) were added to test_cron_str_strips_whitespace, whose name no longer describes the test body",yes,
+r01930,churn,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/PropertySpec.kt,25,"new import placed after java.* imports, out of sorted order (spotless import-order)",yes,
+r01930,churn,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/FunSpec.kt,34,"new parameterspec imports placed after javax.*/kotlin.* imports, out of sorted order",yes,
+r01930,churn,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/TypeSpec.kt,37,"new parameterspec imports placed after java.* imports, out of sorted order",yes,
+r01930,churn,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/LambdaTypeName.kt,19,"new parameterspec imports placed after kotlin.* imports, out of sorted order",no,"same defect, another file"
+r01930,churn,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt,27,"new import placed after javax.* imports, out of sorted order",yes,
+r01930,churn,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/Taggable.kt,19,"new import placed after java.*/kotlin.* imports, out of sorted order",yes,
+r01930,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/PropertySpecTest.kt,34,"new import placed after java.* imports, out of sorted order",no,"same defect, another file"
+r01930,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/KotlinPoetTest.kt,27,"new import placed after java.*/kotlin.* imports, out of sorted order",no,"same defect, another file"
+r01930,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/DelegatedConstructorCallTest.kt,23,"new import placed after java.*/kotlin.* imports, out of sorted order",no,"same defect, another file"
+r01930,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/DocumentableTest.kt,22,"new import placed after java.*/kotlin.* imports, out of sorted order",no,"same defect, another file"
+r01930,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/jvm/JvmAnnotationsTest.kt,36,"new import placed after java.*/kotlin.* imports, out of sorted order",no,"same defect, another file"
+r01930,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/TypeSpecTest.kt,62,"new import placed after java.*/kotlin.* imports, out of sorted order",no,"same defect, another file"
+r01930,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/FunSpecTest.kt,43,"new import placed after java.*/kotlin.* imports, out of sorted order",no,"same defect, another file"
+r01930,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/LambdaTypeNameTest.kt,26,"new import placed after kotlin.* imports, out of sorted order",no,"same defect, another file"
+r01930,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/ParameterSpecTest.kt,30,"new import placed after java.*/kotlin.* imports, out of sorted order",no,"same defect, another file"
+r01930,churn,kotlinpoet/src/jvmTest/kotlin/com/squareup/kotlinpoet/FileSpecTest.kt,36,"new import placed after java.*/kotlin.* imports, out of sorted order",no,"same defect, another file"
+r01948,naming,packages/styles/scss/utilities/__tests__/skeleton-test.js,23,"Test file keeps the old `skeleton-test.js` name while its describe block and @use paths now target the `skeleton-animation` module, so the file name no longer matches the module under test.",yes,
+r01950,leftover,embabel-agent-docs/src/main/asciidoc/reference/types/page.adoc,47,withRole() says roles are defined only via embabel.models.llms.<role>; embabel.models.roles now also defines them,yes,
+r01950,leftover,embabel-agent-docs/src/main/asciidoc/reference/configuration/page.adoc,66,Configuration table presents embabel.models.llms as the role mapping and has no entry for the new embabel.models.roles property,yes,
+r01951,leftover,src/MediatR/obj/project.assets.json,1,"Old src/MediatR/ directory still exists with obj/ build artifacts (project.assets.json, MediatR.csproj.nuget.*) that reference the old MediatR.csproj; the task requires no file to remain under src/MediatR/",yes,
+r01952,leftover,kotlinpoet/api/kotlinpoet.api,660,"Moved ParameterSpec entries were renamed in place and keep the old alphabetical position; the dump was not regenerated, so its sort order is stale.",no,optional in the task
+r01955,leftover,embabel-agent-api/src/main/kotlin/com/embabel/plan/Planner.kt,46,"KDoc @param order still lists actions before goal, not matching the new signature order",yes,
+r01957,dead,src/DataTableAbstract.php,946,setupKeyword() has no callers after the change removed its only call site,yes,
+r01957,dead,src/QueryDataTable.php,438,"The raw/regex early-return branch returns the same value as the fallthrough return, so the condition is now redundant",yes,
+r01960,churn,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,117,"KDoc line introduced by the reflow is about 118 columns, exceeding the 100-column wrap of the surrounding paragraph",yes,
+r01963,leftover,lucene/core/src/test/org/apache/lucene/util/TestQueryBuilder.java,46,Test class and file still named TestQueryBuilder though it now tests TextQueryBuilder; the old name survives in the test naming,yes,
+r01965,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,241,protected logger() is no longer called by any production code after createFeature() stopped logging; only the test override references it,yes,
+r01970,leftover,test-data/unit/check-typevar-tuple.test,450,"Comment refers to the old module name ""typeops"" instead of type_operations",yes,
+r01973,leftover,core/scss/tests/_caret.test.scss,4,"Header comment says only `left` gets the ::before/::after structure; `start` now does too, so the comment is stale",yes,
+r01980,churn,embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableModelProvider.kt,200,Added a second consecutive blank line after embeddingSetupRequired,yes,
+r01980,churn,embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableModelProvider.kt,302,"No blank line between the new getLlm(criteria, context) override and the init block",yes,
+r01980,churn,embabel-agent-api/src/main/kotlin/com/embabel/agent/spi/config/spring/AgentPlatformConfiguration.kt,79,"CredentialLlmServiceFactory import is out of alphabetical order, placed after EmbeddingService",yes,
+r01980,churn,embabel-agent-autoconfigure/models/embabel-agent-anthropic-autoconfigure/src/main/kotlin/com/embabel/agent/config/models/anthropic/AnthropicModelsConfig.kt,18,New imports from com.embabel.agent.anthropic and com.embabel.common.ai.model are inserted out of order among the existing imports,yes,
+r01986,naming,jsr.json,90,"./utils/base64 key was placed where ./utils/encode was, breaking the alphabetical order of the exports list; it belongs before ./utils/concurrent",yes,
+r01995,leftover,src/utils/base64.ts,3,"module docstring still says ""Encode utility."" instead of describing the base64 module",yes,
+r01995,naming,jsr.json,90,"""./utils/base64"" export is placed between crypto and filepath, breaking the alphabetical order of the surrounding entries (it belongs before body at line 83)",yes,
+r01997,leftover,embabel-agent-docs/src/main/asciidoc/reference/types/page.adoc,47,"Says a role must be defined via embabel.models.llms.<role>; embabel.models.roles is now also a valid source, so the statement is stale.",yes,
+r01997,leftover,embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableModelProvider.kt,375,"Comment cites 'the spec', an external task reference not present in the repository, so it is meaningless to readers of the code.",yes,
+r01999,leftover,.agents/skills/backward-compat/SKILL.md,56,"Documents the old deprecate() argument order ('<name>', '<since>', ...) instead of the new ('<since>', '<name>', ...)",yes,
+r02000,leftover,packages/typeorm/test/functional/schema-builder/foreign-key/constraint-names-sqlite/migration/1657067039716-CreateCheckConstraintToUser.ts,6,"Call still uses old argument order (tableOrName first, checkConstraint second); not updated to createCheckConstraint(checkConstraint, tableOrName)",yes,
+r02000,leftover,docs/docs/migrations/09-api.md,463,"Parameter bullets still list `table` before `checkConstraint`, contradicting the updated signature on line 460",no,optional in the task
+r02001,leftover,test-data/unit/check-typevar-tuple.test,450,"Comment still refers to the old module name ""typeops"" instead of type_operations",yes,
+r02006,dead,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt,499,NO_ARG_PLACEHOLDERS is no longer referenced after trim() switched to STATEMENT_PLACEHOLDERS,yes,
+r02006,leftover,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt,119,"trim() KDoc still lists ⇥ and ⇤ as trimmed placeholders, but only « and » are now trimmed",yes,
+r02009,leftover,compose-lint-checks/src/main/java/slack/lint/compose/RedundantComposableDetector.kt,69,"Class KDoc says the detector does not report when a default argument uses composition, which the change made false: read-only default usages are now reported",yes,
+r02016,churn,lucene/core/src/java/org/apache/lucene/search/package-info.java,369,"Renamed Javadoc line is now 103 columns, over the 100-column limit; the rename left it unwrapped.",yes,
+r02019,leftover,packages/styles/scss/utilities/__tests__/skeleton-animation-test.js,29,Stale namespace `skeleton.skeleton` in Sass code string; the @use now yields namespace `skeleton-animation`,yes,
+r02019,leftover,packages/styles/scss/utilities/__tests__/skeleton-animation-test.js,47,Stale namespace `skeleton.skeleton` in Sass code string after the @use path change,yes,
+r02019,leftover,packages/styles/scss/utilities/__tests__/skeleton-animation-test.js,69,Stale namespace `skeleton.skeleton` in Sass code string after the @use path change,no,"same defect, another file"
+r02019,unrelated,packages/styles/scss/utilities/__tests__/skeleton-animation-test.js,1,"Test file renamed from skeleton-test.js, which the task did not ask for",yes,
+r02020,unrelated,consumer/bin/,1,"About 2,045 build/IDE artifacts (bin/ copies of .kt sources, .class files, doctest output, Eclipse .project/.classpath/.settings) appear as new files in the change; they are unrelated to the task.",yes,
+r02021,leftover,kotlinpoet/src/jvmMain/kotlin/com/squareup/kotlinpoet/CodeBlock.kt,120,"trim() KDoc still says it removes leading and trailing ⇥/⇤/«/» unconditionally; the new code only trims statement markers when indents are unbalanced, so the doc no longer matches behavior",yes,
+r02027,dead,src/md4c.c,351,ISASCII(off) macro lost its only use when the change replaced it with ISALPHA(off+1); it is now unused (ISASCII_ at line 335 is then also dead),yes,
+r02033,naming,embabel-agent-docs/src/main/asciidoc/reference/configuration/page.adoc,72,"Documents the value type as `RoleModel`, but the class introduced in ConfigurableModelProvider.kt is `RoleModelProperties`.",yes,
+r02039,leftover,src/MediatR/obj/MediatR.csproj.nuget.dgspec.json,1,"Stale obj/ directory (project.assets.json, MediatR.csproj.nuget.* files) remains under src/MediatR/ after the rename; the task requires no file to remain there",yes,
+r02043,churn,mypy/subtypes.py,1704,"New line is 101 characters, exceeding the project's configured line-length of 99; it should be wrapped.",yes,
+r02051,dead,core/model/src/test/groovy/au/com/dius/pact/core/model/V3PactSpec.groovy,123,Added override of the new default-bodied mergeInteractions(Pact) in anonymous Pact stub is unnecessary (same applies to the stub at line 183),yes,
+r02053,leftover,src/sds.c,98,"Private helper still named `_sdsnewlen` (also called at lines 196 and 200) while the public function was renamed to `sdsnewbuf`; likely should be `_sdsnewbuf` for consistency, though it may be a deliberate reading of the task.",yes,
+r02058,churn,docs/migration/v11.md,247,Table cell lengthened to `_skeleton-animation.scss` with extra padding; column alignment with the other rows is broken,yes,
+r02058,churn,packages/styles/docs/sass.md,557,Table row lengthened for `skeleton-animation` with extra padding; columns no longer aligned with the rest of the table,yes,
+r02069,dead,src/md4c.c,351,"The only use of the ISASCII(off) macro was removed by this change, leaving it unused (its helper ISASCII_ at line 335 is dead as well).",yes,
+r02073,dead,embabel-agent-api/src/main/kotlin/com/embabel/common/ai/model/ConfigurableModelProvider.kt,583,CredentialLlmServiceCache.size() is never called anywhere in the tree,yes,
+r02073,leftover,embabel-agent-docs/src/main/asciidoc/reference/types/page.adoc,47,says roles must be defined under embabel.models.llms only; embabel.models.roles now also defines roles,yes,
+r02073,leftover,embabel-agent-docs/src/main/asciidoc/reference/configuration/page.adoc,69,configuration table describes embabel.models.llms as the role map and has no entry for the new embabel.models.roles property,yes,
+r02085,dead,src/md4c.c,351,ISASCII(off) macro has no remaining uses after the change removed its only use at line 6179; ISASCII_ at line 335 is then also unused,yes,
+r02088,leftover,src/MediatR/obj/,1,"Old obj directory with MediatR.csproj.* restore artifacts and project.assets.json remains under src/MediatR/, which the task says must be removed",yes,
+r02089,leftover,embabel-agent-docs/src/main/asciidoc/reference/types/page.adoc,47,withRole doc says roles must be defined in embabel.models.llms; roles now also resolve from embabel.models.roles and unmapped roles fall back to the default LLM,yes,
+r02089,leftover,embabel-agent-docs/src/main/asciidoc/reference/configuration/page.adoc,66,configuration property table documents embabel.models.llms but omits the new embabel.models.roles property,yes,
+r02119,leftover,src/main/java/tools/jackson/databind/deser/SettableAnyProperty.java,55,javadoc '@since 3.1' is stale; project version is 3.3.0-SNAPSHOT,yes,
+r02119,leftover,src/main/java/tools/jackson/databind/deser/SettableAnyProperty.java,244,javadoc '@since 3.1' is stale; project version is 3.3.0-SNAPSHOT,no,"same defect, another file"
+r02119,leftover,src/main/java/tools/jackson/databind/deser/BeanDeserializerFactory.java,896,javadoc '@since 3.1' is stale; project version is 3.3.0-SNAPSHOT,no,"same defect, another file"
+r02119,leftover,src/main/java/tools/jackson/databind/deser/BasicDeserializerFactory.java,640,javadoc '@since 3.1' is stale; project version is 3.3.0-SNAPSHOT,no,"same defect, another file"
+r02127,dead,src/bitops.c,877,`created` is set by lookupStringForBitCommand() but never read in setbitCommand(),yes,
+r02127,dead,src/bitops.c,1894,`created` is set by lookupStringForBitCommand() but never read in bitfieldGeneric(),yes,
+r02130,dead,embabel-agent-api/src/test/kotlin/com/embabel/common/ai/model/RoleResolutionTest.kt,66,No-op `.let { it }` wrapper around getLlm(...) with a misleading comment about classifier; the wrapper does nothing and should be removed.,yes,
+r02141,dead,deployment/src/main/java/io/quarkiverse/httpproblem/deployment/ProblemProcessor.java,241,logger() has no remaining callers in the processor after createFeature() stopped logging; it survives only as a test override hook,yes,
+r02142,churn,src/Spectre.Console.Tests/Unit/Widgets/TextTests.cs,196,"Adds a trailing newline to the final closing brace, which the original file lacked; the task did not need this line touched",yes,
+r02148,leftover,packages/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts,1039,"JSDoc lists @param tableOrName before @param checkConstraint, which is the old argument order",yes,
+r02148,leftover,packages/typeorm/src/driver/cockroachdb/CockroachQueryRunner.ts,2714,"JSDoc lists @param tableOrName before @param checkConstraint, which is the old argument order",no,"same defect, another file"
+r02148,leftover,packages/typeorm/src/driver/postgres/PostgresQueryRunner.ts,2994,"JSDoc lists @param tableOrName before @param checkConstraint, which is the old argument order",no,"same defect, another file"
+r02148,leftover,packages/typeorm/src/driver/mysql/MysqlQueryRunner.ts,2211,"JSDoc lists @param tableOrName before @param checkConstraint, which is the old argument order",no,"same defect, another file"
+r02148,leftover,packages/typeorm/src/driver/sqlserver/SqlServerQueryRunner.ts,2539,"JSDoc lists @param tableOrName before @param checkConstraint, which is the old argument order",no,"same defect, another file"
+r02148,leftover,packages/typeorm/src/driver/oracle/OracleQueryRunner.ts,2106,"JSDoc lists @param tableOrName before @param checkConstraint, which is the old argument order",no,"same defect, another file"
+r02148,leftover,packages/typeorm/src/driver/aurora-mysql/AuroraMysqlQueryRunner.ts,1780,"JSDoc lists @param tableOrName before @param checkConstraint, which is the old argument order",no,"same defect, another file"
+r02148,leftover,packages/typeorm/src/driver/sap/SapQueryRunner.ts,2446,"JSDoc lists @param tableOrName before @param checkConstraint, which is the old argument order",no,"same defect, another file"
+r02148,leftover,packages/typeorm/src/driver/mongodb/MongoQueryRunner.ts,1184,"JSDoc lists @param tableOrName before @param checkConstraint, which is the old argument order",no,"same defect, another file"
+r02148,leftover,packages/typeorm/src/driver/spanner/SpannerQueryRunner.ts,1366,"JSDoc lists @param tableOrName before @param checkConstraint, which is the old argument order",no,"same defect, another file"
+r02158,leftover,.agents/skills/backward-compat/SKILL.md,56,"Documents the old argument order ('<name>', '<since>', '<removed in>') for the deprecate mixin; should be '<since>', '<name>', '<removed in>'",yes,
+r02165,dead,src/MediatR/obj/project.assets.json,1,Stale obj/ output (MediatR.csproj.* and project.assets.json) left under src/MediatR/ after the project moved; the task says nothing should remain there,yes,
+r02169,leftover,include/fmt/format-inl.h,1966,"Hard-coded special case treats U+2A6DE as unassigned; the task says it is assigned since Unicode 14.0, so this stale line was not updated.",yes,
+r02171,dead,src/bitops.c,877,`created` is set by lookupStringForBitCommand but never read in setbitCommand,yes,
+r02171,dead,src/bitops.c,1894,`created` is declared and passed to lookupStringForBitCommand but never read in bitfieldGeneric,yes,
+r02171,churn,src/bitops.c,790,"trailing whitespace removed from the function signature's first line, which the task did not need to change",yes,
+r02183,naming,src/Support/ResponseExtractor/ModelInfo.php,241,"Change adds `use Throwable;` but the existing catch still uses fully qualified `\Throwable`, so the file now mixes two styles for the same class",yes,
+r02186,unrelated,.project,1,Eclipse/Buildship workspace file added by the patch; not part of the task (about 105 IDE files like this are in the patch),yes,
+r02186,unrelated,.settings/org.eclipse.buildship.core.prefs,1,IDE prefs with machine-specific /cache/... init-script and JDK paths; unrelated to the task,yes,
+r02186,unrelated,consumer/bin/main/au/com/dius/pact/consumer/ConsumerPactBuilder.kt,1,"build-output copy of source added under bin/; not part of the task (about 1,700 bin/ files are in the patch)",yes,
+r02187,leftover,kotlinpoet/api/kotlinpoet.api,660,"API dump still declares com/squareup/kotlinpoet/ParameterSpec (also at lines 401, 564, 575, 578), so it no longer matches the moved class; optional per task but stale",no,optional in the task
+r02200,churn,embabel-agent-docs/src/main/asciidoc/reference/llms/page.adoc,1301,"Extra blank line added before the new section, leaving two consecutive blank lines in the document.",yes,
+r02209,unrelated,.project,1,Buildship/Eclipse workspace metadata added by the patch; unrelated to the class rename (same pattern in every module's .project/.classpath/.settings),yes,
+r02216,leftover,src/MediatR/obj/project.assets.json,1,"Stale build output from the old project still sits under src/MediatR/ (obj/ with MediatR.csproj.nuget.* and project.nuget.cache), which the task says must not remain",yes,
+r02232,dead,deployment/pom.xml,56,quarkus-junit-mockito test dependency is no longer used by any deployment test after the mock logger was removed from ProblemProcessorTest,yes,
