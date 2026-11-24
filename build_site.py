@@ -375,7 +375,7 @@ def main():
     enf_c_txt = f"{float(enf_c['estimate']):.2f}"
     opus_adopt = f"{float(find(descriptive, model='claude-opus-5-5', arm='optional')['lsp_used']) * 100:.0f}%"
     results = [("success-barely-moves", "LS tools don't raise success rates"),
-               ("flaws", "LS tools do not reduce refactoring flaws"),
+               ("flaws", "LS tools don't reduce refactoring flaws"),
                ("no-model-solves-more", "No model solves more tasks with LS tools"),
                ("only-opus-uses-optional-tools", "Only Opus uses tools when they're optional"),
                ("cost-goes-up-when-lsp-use-is-enforced", "Cost goes up when LSP use is enforced"),
@@ -690,7 +690,7 @@ def main():
         {chart_success}
         {spoiler("Show the numbers", table(hdr, s_rows))}
 
-        <h3 id="flaws">LS tools do not reduce refactoring flaws{tag_all}</h3>
+        <h3 id="flaws">LS tools don't reduce refactoring flaws{tag_all}</h3>
         {flaw_summary}
         {arm_note}
         <p>Tests decide whether a change works. A flaw is damage the tests cannot see. After each edit run, a reviewer
